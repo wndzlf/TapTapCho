@@ -77,10 +77,48 @@ func _setup_ui() -> void:
 	help_label.add_theme_font_size_override("font_size", 18)
 	help_label.position = Vector2(16, 44)
 	layer.add_child(help_label)
+
+	# Mobile controls
+	if DisplayServer.is_touchscreen_available():
+		help_label.text = "TOUCH CONTROLS\nUse buttons to move"
+		var btn_size = Vector2(70, 70)
+		var base = Vector2(30, 360)
+		var up = Button.new()
+		up.text = "▲"
+		up.size = btn_size
+		up.position = base + Vector2(70, -70)
+		up.pressed.connect(func(): Input.action_press("move_up"))
+		up.button_up.connect(func(): Input.action_release("move_up"))
+		layer.add_child(up)
+
+		var down = Button.new()
+		down.text = "▼"
+		down.size = btn_size
+		down.position = base + Vector2(70, 70)
+		down.pressed.connect(func(): Input.action_press("move_down"))
+		down.button_up.connect(func(): Input.action_release("move_down"))
+		layer.add_child(down)
+
+		var left = Button.new()
+		left.text = "◀"
+		left.size = btn_size
+		left.position = base + Vector2(0, 0)
+		left.pressed.connect(func(): Input.action_press("move_left"))
+		left.button_up.connect(func(): Input.action_release("move_left"))
+		layer.add_child(left)
+
+		var right = Button.new()
+		right.text = "▶"
+		right.size = btn_size
+		right.position = base + Vector2(140, 0)
+		right.pressed.connect(func(): Input.action_press("move_right"))
+		right.button_up.connect(func(): Input.action_release("move_right"))
+		layer.add_child(right)
+
 	add_child(layer)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed:
+	if event is InputEventMouseButton and event.pressed and not DisplayServer.is_touchscreen_available():
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 		if help_label:
 			help_label.text = "WASD: Move  |  Mouse: Look  |  ESC: Release Mouse"

@@ -11,7 +11,11 @@ var t := 0.0
 
 func _ready() -> void:
 	camera.fov = 75
-	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	camera.current = true
+	if DisplayServer.is_touchscreen_available():
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	else:
+		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
