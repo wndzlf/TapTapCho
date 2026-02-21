@@ -17,6 +17,7 @@ var level_idx := 0
 var rng := RandomNumberGenerator.new()
 var exit_area: Area3D
 var ui_label: Label
+var help_label: Label
 var exit_audio: AudioStreamPlayer
 var maze_root: Node3D
 var player: CharacterBody3D
@@ -83,6 +84,14 @@ func _setup_ui() -> void:
 	ui_label.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
 	ui_label.position = Vector2(16, 16)
 	layer.add_child(ui_label)
+
+	help_label = Label.new()
+	help_label.text = "CLICK TO START\nWASD: Move  |  Mouse: Look  |  ESC: Release Mouse"
+	help_label.add_theme_color_override("font_color", Color(0.9, 0.95, 1.0))
+	help_label.add_theme_font_size_override("font_size", 18)
+	help_label.position = Vector2(16, 44)
+	layer.add_child(help_label)
+
 	add_child(layer)
 
 func _update_ui() -> void:
@@ -298,5 +307,7 @@ func _on_exit(body: Node) -> void:
 	level_idx += 1
 	if level_idx >= levels.size():
 		ui_label.text = "ESCAPED!"
+		if help_label:
+			help_label.text = "ESCAPED!"
 		return
 	_build_level()
