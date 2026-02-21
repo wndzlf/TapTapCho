@@ -7,8 +7,10 @@ extends CharacterBody3D
 
 var yaw := 0.0
 var pitch := 0.0
+var t := 0.0
 
 func _ready() -> void:
+	camera.fov = 75
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -30,3 +32,10 @@ func _physics_process(delta: float) -> void:
 	velocity.z = dir.z * speed
 	velocity.y += -9.8 * delta
 	move_and_slide()
+
+	# subtle head bob for 3D feel
+	if input.length() > 0.01:
+		t += delta * 8.0
+		camera.position.y = 0.6 + sin(t) * 0.03
+	else:
+		camera.position.y = lerp(camera.position.y, 0.6, 0.1)

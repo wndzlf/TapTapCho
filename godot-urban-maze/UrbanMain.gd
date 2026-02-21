@@ -71,6 +71,12 @@ func _setup_ui() -> void:
 	layer.add_child(help_label)
 	add_child(layer)
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed:
+		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+		if help_label:
+			help_label.text = "WASD: Move  |  Mouse: Look  |  ESC: Release Mouse"
+
 func _build_maze() -> void:
 	if maze_root:
 		maze_root.queue_free()

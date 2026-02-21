@@ -94,6 +94,12 @@ func _setup_ui() -> void:
 
 	add_child(layer)
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed:
+		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+		if help_label:
+			help_label.text = "WASD: Move  |  Mouse: Look  |  ESC: Release Mouse"
+
 func _update_ui() -> void:
 	ui_label.text = "Maze %d / %d  |  Find the EXIT" % [level_idx + 1, levels.size()]
 
