@@ -34,16 +34,18 @@ func _ready() -> void:
 
 func _setup_materials() -> void:
 	floor_mat.albedo_texture = load("res://assets/textures/asphalt.png")
-	floor_mat.roughness = 0.9
+	floor_mat.roughness = 0.8
 	wall_mat.albedo_texture = load("res://assets/textures/metal_wall.png")
-	wall_mat.roughness = 0.8
+	wall_mat.albedo_color = Color(0.9, 0.9, 0.95)
+	wall_mat.roughness = 0.6
 
 func _setup_environment() -> void:
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.05, 0.06, 0.08)
-	env.ambient_light_color = Color(0.2, 0.22, 0.25)
-	env.ambient_light_energy = 1.1
+	env.background_color = Color(0.2, 0.22, 0.25)
+	env.ambient_light_color = Color(0.6, 0.6, 0.65)
+	env.ambient_light_energy = 2.0
+	env.fog_enabled = false
 
 	var world_env := WorldEnvironment.new()
 	world_env.environment = env
@@ -51,9 +53,15 @@ func _setup_environment() -> void:
 
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-35, 25, 0)
-	sun.light_energy = 0.8
-	sun.light_color = Color(0.7, 0.7, 0.8)
+	sun.light_energy = 1.6
+	sun.light_color = Color(0.9, 0.95, 1.0)
 	add_child(sun)
+
+	var fill := OmniLight3D.new()
+	fill.light_color = Color(0.9, 0.9, 1.0)
+	fill.light_energy = 0.8
+	fill.position = Vector3((grid_w-1) * cell_size * 0.5, 4.0, (grid_h-1) * cell_size * 0.5)
+	add_child(fill)
 
 func _setup_ui() -> void:
 	var layer := CanvasLayer.new()
@@ -88,7 +96,7 @@ func _build_maze() -> void:
 	var floor_body := StaticBody3D.new()
 	var floor_mesh := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(grid_w * cell_size, grid_h * cell_size)
+	plane.size = Vector2(grid_w * cell_size + 4.0, grid_h * cell_size + 4.0)
 	floor_mesh.mesh = plane
 	floor_mesh.material_override = floor_mat
 	floor_mesh.position = Vector3((grid_w-1) * cell_size * 0.5, 0, (grid_h-1) * cell_size * 0.5)
@@ -129,6 +137,14 @@ func _build_maze() -> void:
 	for seg in lines:
 		_create_wall_segment(seg[0], seg[1])
 
+	# debug landmark to ensure 3D visibility
+	var marker := MeshInstance3D.new()
+	var mbox := BoxMesh.new()
+	mbox.size = Vector3(0.8, 0.8, 0.8)
+	marker.mesh = mbox
+	marker.position = Vector3(1 * cell_size, 0.4, 1 * cell_size)
+	maze_root.add_child(marker)
+
 func _create_wall_segment(a: Vector2, b: Vector2) -> void:
 	var dx = b.x - a.x
 	var dy = b.y - a.y
@@ -168,11 +184,20 @@ func _create_wall(pos: Vector3, size: Vector3) -> void:
 func _spawn_player() -> void:
 	player = CharacterBody3D.new()
 	player.name = "Player"
-	player.position = Vector3(0, 1.2, 0)
+	player.position = Vector3(1 * cell_size, 1.2, 1 * cell_size)
 
 	var cam := Camera3D.new()
 	cam.position = Vector3(0, 0.6, 0)
 	player.add_child(cam)
+
+	var flashlight := SpotLight3D.new()
+	flashlight.light_color = Color(0.95, 0.98, 1.0)
+	flashlight.light_energy = 2.0
+	flashlight.range = 18.0
+	flashlight.spot_angle = 35.0
+	flashlight.position = Vector3(0, 0.6, 0)
+	flashlight.rotation_degrees = Vector3(-2, 0, 0)
+	player.add_child(flashlight)
 
 	player.set_script(load("res://Player3D.gd"))
 	add_child(player)
