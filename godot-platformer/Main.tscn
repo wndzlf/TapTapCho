@@ -1,10 +1,12 @@
-[gd_scene load_steps=7 format=3 uid="uid://bqf5r0n1r8k2a"]
+[gd_scene load_steps=10 format=3 uid="uid://bqf5r0n1r8k2a"]
 
 [ext_resource type="Script" path="res://Player.gd" id="1_0l7qv"]
 [ext_resource type="Script" path="res://Main.gd" id="2_main"]
+[ext_resource type="Script" path="res://PlayerVisual.gd" id="3_vis"]
+[ext_resource type="AudioStream" path="res://audio/ambient.wav" id="4_audio"]
 
 [sub_resource type="RectangleShape2D" id="1_player_shape"]
-size = Vector2(36, 36)
+size = Vector2(24, 28)
 
 [sub_resource type="RectangleShape2D" id="2_wall"]
 size = Vector2(900, 40)
@@ -13,19 +15,36 @@ size = Vector2(900, 40)
 size = Vector2(40, 460)
 
 [sub_resource type="RectangleShape2D" id="4_item"]
-size = Vector2(28, 28)
+size = Vector2(24, 24)
+
+[sub_resource type="RectangleShape2D" id="5_inner"]
+size = Vector2(420, 24)
 
 [node name="Main" type="Node2D"]
 script = ExtResource("2_main")
 
+[node name="Room" type="Node2D" parent="."]
+
+[node name="Back" type="ColorRect" parent="Room"]
+color = Color(0.08, 0.08, 0.1, 1)
+size = Vector2(960, 540)
+
+[node name="Floor" type="ColorRect" parent="Room"]
+color = Color(0.15, 0.12, 0.12, 1)
+size = Vector2(960, 220)
+position = Vector2(0, 320)
+
+[node name="Stain" type="ColorRect" parent="Room"]
+color = Color(0.2, 0.1, 0.1, 0.7)
+size = Vector2(120, 60)
+position = Vector2(520, 380)
+
 [node name="Player" type="CharacterBody2D" parent="."]
-position = Vector2(140, 300)
+position = Vector2(160, 360)
 script = ExtResource("1_0l7qv")
 
-[node name="Sprite" type="ColorRect" parent="Player"]
-color = Color(0.4, 0.94, 1, 1)
-size = Vector2(36, 36)
-position = Vector2(-18, -18)
+[node name="Visual" type="Node2D" parent="Player"]
+script = ExtResource("3_vis")
 
 [node name="Collision" type="CollisionShape2D" parent="Player"]
 shape = SubResource("1_player_shape")
@@ -39,7 +58,7 @@ position = Vector2(480, 80)
 shape = SubResource("2_wall")
 
 [node name="WallTopVisual" type="ColorRect" parent="WallTop"]
-color = Color(0.1, 0.12, 0.18, 1)
+color = Color(0.12, 0.12, 0.14, 1)
 size = Vector2(900, 40)
 position = Vector2(-450, -20)
 
@@ -50,7 +69,7 @@ position = Vector2(480, 480)
 shape = SubResource("2_wall")
 
 [node name="WallBottomVisual" type="ColorRect" parent="WallBottom"]
-color = Color(0.1, 0.12, 0.18, 1)
+color = Color(0.12, 0.12, 0.14, 1)
 size = Vector2(900, 40)
 position = Vector2(-450, -20)
 
@@ -61,7 +80,7 @@ position = Vector2(60, 280)
 shape = SubResource("3_wall_v")
 
 [node name="WallLeftVisual" type="ColorRect" parent="WallLeft"]
-color = Color(0.1, 0.12, 0.18, 1)
+color = Color(0.12, 0.12, 0.14, 1)
 size = Vector2(40, 460)
 position = Vector2(-20, -230)
 
@@ -72,7 +91,7 @@ position = Vector2(900, 280)
 shape = SubResource("3_wall_v")
 
 [node name="WallRightVisual" type="ColorRect" parent="WallRight"]
-color = Color(0.1, 0.12, 0.18, 1)
+color = Color(0.12, 0.12, 0.14, 1)
 size = Vector2(40, 460)
 position = Vector2(-20, -230)
 
@@ -80,12 +99,12 @@ position = Vector2(-20, -230)
 position = Vector2(480, 300)
 
 [node name="InnerWallShape" type="CollisionShape2D" parent="InnerWall"]
-shape = SubResource("2_wall")
+shape = SubResource("5_inner")
 
 [node name="InnerWallVisual" type="ColorRect" parent="InnerWall"]
-color = Color(0.1, 0.12, 0.18, 1)
-size = Vector2(500, 30)
-position = Vector2(-250, -15)
+color = Color(0.1, 0.1, 0.12, 1)
+size = Vector2(420, 24)
+position = Vector2(-210, -12)
 
 [node name="Key" type="Area2D" parent="."]
 position = Vector2(760, 160)
@@ -95,8 +114,8 @@ shape = SubResource("4_item")
 
 [node name="KeyVisual" type="ColorRect" parent="Key"]
 color = Color(1, 0.84, 0.2, 1)
-size = Vector2(28, 28)
-position = Vector2(-14, -14)
+size = Vector2(24, 24)
+position = Vector2(-12, -12)
 
 [node name="Door" type="Area2D" parent="."]
 position = Vector2(820, 420)
@@ -105,9 +124,19 @@ position = Vector2(820, 420)
 shape = SubResource("4_item")
 
 [node name="DoorVisual" type="ColorRect" parent="Door"]
-color = Color(1, 0.45, 0.45, 1)
-size = Vector2(28, 28)
-position = Vector2(-14, -14)
+color = Color(0.5, 0.2, 0.2, 1)
+size = Vector2(30, 40)
+position = Vector2(-15, -20)
+
+[node name="Doorknob" type="ColorRect" parent="Door"]
+color = Color(0.9, 0.8, 0.4, 1)
+size = Vector2(6, 6)
+position = Vector2(6, 0)
+
+[node name="Audio" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("4_audio")
+autoplay = true
+volume_db = -8.0
 
 [node name="UI" type="CanvasLayer" parent="."]
 
@@ -118,3 +147,11 @@ position = Vector2(18, 12)
 [node name="State" type="Label" parent="UI"]
 text = "Key: NO"
 position = Vector2(18, 36)
+
+[node name="Vignette" type="ColorRect" parent="UI"]
+color = Color(0, 0, 0, 0.25)
+size = Vector2(960, 540)
+
+[node name="Flicker" type="ColorRect" parent="UI"]
+color = Color(0, 0, 0, 0.2)
+size = Vector2(960, 540)

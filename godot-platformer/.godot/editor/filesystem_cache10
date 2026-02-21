@@ -1,7 +1,10 @@
 63f7b34db8d8cdea90c76aacccf841ec
-::res://::1771691687
+::res://::1771692333
 export_presets.cfg::TextFile::-1::1771691142::0::1::::<><><>0<>0<><>::
 input_map_note.md::TextFile::-1::1771690527::0::1::::<><><>0<>0<><>::
-Main.gd::GDScript::9119028698269747821::1771691687::0::1::::<>Node2D<><>0<>0<><>::
-Main.tscn::PackedScene::3521617273322854486::1771691699::0::1::::<><><>0<>0<><>::res://Player.gd<>res://Main.gd
+Main.gd::GDScript::9119028698269747821::1771692295::0::1::::<>Node2D<><>0<>0<><>::
+Main.tscn::PackedScene::3521617273322854486::1771692354::0::1::::<><><>0<>0<><>::res://Player.gd<>res://Main.gd<>res://PlayerVisual.gd<>res://audio/ambient.wav
 Player.gd::GDScript::3695410043235046165::1771691661::0::1::::<>CharacterBody2D<><>0<>0<><>::
+PlayerVisual.gd::GDScript::2019644063009179780::1771692283::0::1::::<>Node2D<><>0<>0<><>::
+::res://audio/::1771692333
+ambient.wav::AudioStreamWAV::5062552338816665349::1771692278::1771692333::1::::<><><>0<>0<>2a0e67d71842f8c3a3b7950bfd7955ed<>res://.godot/imported/ambient.wav-2a6767f87592cdc627b9bfad750237f5.sample::
