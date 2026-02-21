@@ -1,68 +1,120 @@
-[gd_scene load_steps=4 format=3 uid="uid://bqf5r0n1r8k2a"]
+[gd_scene load_steps=7 format=3 uid="uid://bqf5r0n1r8k2a"]
 
 [ext_resource type="Script" path="res://Player.gd" id="1_0l7qv"]
+[ext_resource type="Script" path="res://Main.gd" id="2_main"]
 
-[sub_resource type="RectangleShape2D" id="1_0b7kp"]
-size = Vector2(60, 60)
+[sub_resource type="RectangleShape2D" id="1_player_shape"]
+size = Vector2(36, 36)
 
-[sub_resource type="RectangleShape2D" id="2_8p9yw"]
-size = Vector2(1000, 40)
+[sub_resource type="RectangleShape2D" id="2_wall"]
+size = Vector2(900, 40)
+
+[sub_resource type="RectangleShape2D" id="3_wall_v"]
+size = Vector2(40, 460)
+
+[sub_resource type="RectangleShape2D" id="4_item"]
+size = Vector2(28, 28)
 
 [node name="Main" type="Node2D"]
+script = ExtResource("2_main")
 
 [node name="Player" type="CharacterBody2D" parent="."]
-position = Vector2(160, 360)
+position = Vector2(140, 300)
 script = ExtResource("1_0l7qv")
 
 [node name="Sprite" type="ColorRect" parent="Player"]
 color = Color(0.4, 0.94, 1, 1)
-size = Vector2(60, 60)
-position = Vector2(-30, -30)
+size = Vector2(36, 36)
+position = Vector2(-18, -18)
 
 [node name="Collision" type="CollisionShape2D" parent="Player"]
-shape = SubResource("1_0b7kp")
+shape = SubResource("1_player_shape")
 
-[node name="Ground" type="StaticBody2D" parent="."]
-position = Vector2(0, 420)
+[node name="Walls" type="Node2D" parent="."]
 
-[node name="GroundShape" type="CollisionShape2D" parent="Ground"]
-position = Vector2(480, 20)
-shape = SubResource("2_8p9yw")
+[node name="WallTop" type="StaticBody2D" parent="Walls"]
+position = Vector2(480, 80)
 
-[node name="GroundVisual" type="ColorRect" parent="Ground"]
-color = Color(1, 0.48, 0, 1)
-size = Vector2(1000, 40)
-position = Vector2(0, 0)
+[node name="WallTopShape" type="CollisionShape2D" parent="WallTop"]
+shape = SubResource("2_wall")
 
-[node name="Platform" type="StaticBody2D" parent="."]
-position = Vector2(460, 300)
+[node name="WallTopVisual" type="ColorRect" parent="WallTop"]
+color = Color(0.1, 0.12, 0.18, 1)
+size = Vector2(900, 40)
+position = Vector2(-450, -20)
 
-[node name="PlatformShape" type="CollisionShape2D" parent="Platform"]
-position = Vector2(0, 0)
-shape = SubResource("2_8p9yw")
+[node name="WallBottom" type="StaticBody2D" parent="Walls"]
+position = Vector2(480, 480)
 
-[node name="PlatformVisual" type="ColorRect" parent="Platform"]
-color = Color(1, 0.48, 0, 1)
-size = Vector2(220, 20)
-position = Vector2(-110, -10)
+[node name="WallBottomShape" type="CollisionShape2D" parent="WallBottom"]
+shape = SubResource("2_wall")
 
-[node name="Platform2" type="StaticBody2D" parent="."]
-position = Vector2(750, 220)
+[node name="WallBottomVisual" type="ColorRect" parent="WallBottom"]
+color = Color(0.1, 0.12, 0.18, 1)
+size = Vector2(900, 40)
+position = Vector2(-450, -20)
 
-[node name="Platform2Shape" type="CollisionShape2D" parent="Platform2"]
-position = Vector2(0, 0)
-shape = SubResource("2_8p9yw")
+[node name="WallLeft" type="StaticBody2D" parent="Walls"]
+position = Vector2(60, 280)
 
-[node name="Platform2Visual" type="ColorRect" parent="Platform2"]
-color = Color(1, 0.48, 0, 1)
-size = Vector2(220, 20)
-position = Vector2(-110, -10)
+[node name="WallLeftShape" type="CollisionShape2D" parent="WallLeft"]
+shape = SubResource("3_wall_v")
 
-[node name="Camera2D" type="Camera2D" parent="Player"]
-current = true
+[node name="WallLeftVisual" type="ColorRect" parent="WallLeft"]
+color = Color(0.1, 0.12, 0.18, 1)
+size = Vector2(40, 460)
+position = Vector2(-20, -230)
+
+[node name="WallRight" type="StaticBody2D" parent="Walls"]
+position = Vector2(900, 280)
+
+[node name="WallRightShape" type="CollisionShape2D" parent="WallRight"]
+shape = SubResource("3_wall_v")
+
+[node name="WallRightVisual" type="ColorRect" parent="WallRight"]
+color = Color(0.1, 0.12, 0.18, 1)
+size = Vector2(40, 460)
+position = Vector2(-20, -230)
+
+[node name="InnerWall" type="StaticBody2D" parent="Walls"]
+position = Vector2(480, 300)
+
+[node name="InnerWallShape" type="CollisionShape2D" parent="InnerWall"]
+shape = SubResource("2_wall")
+
+[node name="InnerWallVisual" type="ColorRect" parent="InnerWall"]
+color = Color(0.1, 0.12, 0.18, 1)
+size = Vector2(500, 30)
+position = Vector2(-250, -15)
+
+[node name="Key" type="Area2D" parent="."]
+position = Vector2(760, 160)
+
+[node name="KeyShape" type="CollisionShape2D" parent="Key"]
+shape = SubResource("4_item")
+
+[node name="KeyVisual" type="ColorRect" parent="Key"]
+color = Color(1, 0.84, 0.2, 1)
+size = Vector2(28, 28)
+position = Vector2(-14, -14)
+
+[node name="Door" type="Area2D" parent="."]
+position = Vector2(820, 420)
+
+[node name="DoorShape" type="CollisionShape2D" parent="Door"]
+shape = SubResource("4_item")
+
+[node name="DoorVisual" type="ColorRect" parent="Door"]
+color = Color(1, 0.45, 0.45, 1)
+size = Vector2(28, 28)
+position = Vector2(-14, -14)
 
 [node name="UI" type="CanvasLayer" parent="."]
 
 [node name="Label" type="Label" parent="UI"]
-text = "Move: A/D or ← → | Jump: Space"
+text = "Find the KEY → Go to DOOR"
 position = Vector2(18, 12)
+
+[node name="State" type="Label" parent="UI"]
+text = "Key: NO"
+position = Vector2(18, 36)

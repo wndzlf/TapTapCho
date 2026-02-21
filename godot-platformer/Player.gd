@@ -1,21 +1,16 @@
 extends CharacterBody2D
 
-@export var speed := 260.0
-@export var jump_velocity := -520.0
-@export var gravity := 1200.0
+@export var speed := 220.0
 
 func _physics_process(delta: float) -> void:
-	if not is_on_floor():
-		velocity.y += gravity * delta
-	else:
-		if Input.is_action_just_pressed("jump"):
-			velocity.y = jump_velocity
-
-	var dir := 0.0
+	var dir := Vector2.ZERO
 	if Input.is_action_pressed("move_left"):
-		dir -= 1.0
+		dir.x -= 1
 	if Input.is_action_pressed("move_right"):
-		dir += 1.0
-	velocity.x = dir * speed
-
+		dir.x += 1
+	if Input.is_action_pressed("move_up"):
+		dir.y -= 1
+	if Input.is_action_pressed("move_down"):
+		dir.y += 1
+	velocity = dir.normalized() * speed
 	move_and_slide()
