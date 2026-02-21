@@ -1,9 +1,12 @@
-[gd_scene load_steps=10 format=3 uid="uid://bqf5r0n1r8k2a"]
+[gd_scene load_steps=13 format=3 uid="uid://bqf5r0n1r8k2a"]
 
 [ext_resource type="Script" path="res://Player.gd" id="1_0l7qv"]
 [ext_resource type="Script" path="res://Main.gd" id="2_main"]
 [ext_resource type="Script" path="res://PlayerVisual.gd" id="3_vis"]
 [ext_resource type="AudioStream" path="res://audio/ambient.wav" id="4_audio"]
+[ext_resource type="AudioStream" path="res://audio/footsteps.wav" id="5_steps"]
+[ext_resource type="AudioStream" path="res://audio/door_creak.wav" id="6_creak"]
+[ext_resource type="Shader" path="res://Flashlight.gdshader" id="7_flash"]
 
 [sub_resource type="RectangleShape2D" id="1_player_shape"]
 size = Vector2(24, 28)
@@ -19,6 +22,9 @@ size = Vector2(24, 24)
 
 [sub_resource type="RectangleShape2D" id="5_inner"]
 size = Vector2(420, 24)
+
+[sub_resource type="ShaderMaterial" id="8_flash_mat"]
+shader = ExtResource("7_flash")
 
 [node name="Main" type="Node2D"]
 script = ExtResource("2_main")
@@ -48,6 +54,11 @@ script = ExtResource("3_vis")
 
 [node name="Collision" type="CollisionShape2D" parent="Player"]
 shape = SubResource("1_player_shape")
+
+[node name="StepAudio" type="AudioStreamPlayer" parent="Player"]
+stream = ExtResource("5_steps")
+autoplay = false
+volume_db = -12.0
 
 [node name="Walls" type="Node2D" parent="."]
 
@@ -133,6 +144,11 @@ color = Color(0.9, 0.8, 0.4, 1)
 size = Vector2(6, 6)
 position = Vector2(6, 0)
 
+[node name="DoorAudio" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("6_creak")
+autoplay = false
+volume_db = -6.0
+
 [node name="Audio" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("4_audio")
 autoplay = true
@@ -148,8 +164,12 @@ position = Vector2(18, 12)
 text = "Key: NO"
 position = Vector2(18, 36)
 
+[node name="Flashlight" type="ColorRect" parent="UI"]
+material = SubResource("8_flash_mat")
+size = Vector2(960, 540)
+
 [node name="Vignette" type="ColorRect" parent="UI"]
-color = Color(0, 0, 0, 0.25)
+color = Color(0, 0, 0, 0.1)
 size = Vector2(960, 540)
 
 [node name="Flicker" type="ColorRect" parent="UI"]
