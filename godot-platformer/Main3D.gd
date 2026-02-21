@@ -40,24 +40,24 @@ func _ready() -> void:
 	_build_level()
 
 func _setup_materials() -> void:
-	floor_mat.albedo_color = Color(0.05, 0.15, 0.25)
-	floor_mat.metallic = 0.15
-	floor_mat.roughness = 0.1
+	floor_mat.albedo_color = Color(0.08, 0.25, 0.4)
+	floor_mat.metallic = 0.05
+	floor_mat.roughness = 0.2
 	floor_mat.clearcoat_enabled = true
-	floor_mat.clearcoat = 0.6
+	floor_mat.clearcoat = 0.5
 
-	wall_mat.albedo_color = Color(0.08, 0.08, 0.1)
-	wall_mat.roughness = 0.8
+	wall_mat.albedo_color = Color(0.15, 0.15, 0.18)
+	wall_mat.roughness = 0.7
 
 func _setup_environment() -> void:
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.01, 0.02, 0.03)
+	env.background_color = Color(0.03, 0.05, 0.08)
 	env.fog_enabled = true
-	env.fog_color = Color(0.03, 0.04, 0.06)
-	env.fog_density = 0.05
-	env.ambient_light_color = Color(0.05, 0.06, 0.08)
-	env.ambient_light_energy = 0.7
+	env.fog_color = Color(0.05, 0.08, 0.12)
+	env.fog_density = 0.03
+	env.ambient_light_color = Color(0.12, 0.14, 0.2)
+	env.ambient_light_energy = 1.2
 
 	var world_env := WorldEnvironment.new()
 	world_env.environment = env
@@ -65,8 +65,8 @@ func _setup_environment() -> void:
 
 	var moon := DirectionalLight3D.new()
 	moon.rotation_degrees = Vector3(-35, 25, 0)
-	moon.light_energy = 0.5
-	moon.light_color = Color(0.35, 0.45, 0.65)
+	moon.light_energy = 0.9
+	moon.light_color = Color(0.5, 0.6, 0.8)
 	add_child(moon)
 
 	# Light flicker timer (scary vibe)
@@ -252,6 +252,15 @@ func _spawn_player() -> void:
 	var cam := Camera3D.new()
 	cam.position = Vector3(0, 0.6, 0)
 	player.add_child(cam)
+
+	var flashlight := SpotLight3D.new()
+	flashlight.light_color = Color(0.9, 0.95, 1.0)
+	flashlight.light_energy = 2.2
+	flashlight.range = 18.0
+	flashlight.spot_angle = 35.0
+	flashlight.position = Vector3(0, 0.6, 0)
+	flashlight.rotation_degrees = Vector3(-2, 0, 0)
+	player.add_child(flashlight)
 
 	player.set_script(load("res://Player3D.gd"))
 	add_child(player)
