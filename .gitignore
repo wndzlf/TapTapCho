@@ -4,8 +4,5 @@
 .export/
 .export_presets.cfg
 
-# Godot 4 specific
-*.godot
-
 # OS
 .DS_Store
