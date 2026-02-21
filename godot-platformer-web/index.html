@@ -97,6 +97,7 @@ body {
 
 	</head>
 	<body>
+		<button id="fs-btn" style="position:fixed;top:12px;right:12px;z-index:5;padding:8px 10px;border:0;border-radius:8px;background:#111;color:#fff;opacity:.7;">Fullscreen</button>
 		<canvas id="canvas">
 			Your browser does not support the canvas tag.
 		</canvas>
@@ -113,6 +114,16 @@ body {
 
 		<script src="index.js"></script>
 		<script>
+const fsBtn = document.getElementById('fs-btn');
+const canvas = document.getElementById('canvas');
+fsBtn.addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    (canvas.requestFullscreen || canvas.webkitRequestFullscreen || canvas.mozRequestFullScreen || canvas.msRequestFullscreen).call(canvas);
+  } else {
+    (document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen).call(document);
+  }
+});
+
 const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":365548,"index.wasm":37685705},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
