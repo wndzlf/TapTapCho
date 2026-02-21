@@ -1,0 +1,17 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly.
+
+config_version=5
+
+[application]
+config/name="MiniPlatformer"
+run/main_scene="res://Main.tscn"
+
+[display]
+window/size/viewport_width=960
+window/size/viewport_height=540
+window/size/window_width=960
+window/size/window_height=540
+
+[rendering]
+renderer/rendering_method="forward_plus"

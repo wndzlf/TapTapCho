@@ -1,0 +1,68 @@
+[gd_scene load_steps=4 format=3 uid="uid://bqf5r0n1r8k2a"]
+
+[ext_resource type="Script" path="res://Player.gd" id="1_0l7qv"]
+
+[sub_resource type="RectangleShape2D" id="1_0b7kp"]
+size = Vector2(60, 60)
+
+[sub_resource type="RectangleShape2D" id="2_8p9yw"]
+size = Vector2(1000, 40)
+
+[node name="Main" type="Node2D"]
+
+[node name="Player" type="CharacterBody2D" parent="."]
+position = Vector2(160, 360)
+script = ExtResource("1_0l7qv")
+
+[node name="Sprite" type="ColorRect" parent="Player"]
+color = Color(0.4, 0.94, 1, 1)
+size = Vector2(60, 60)
+position = Vector2(-30, -30)
+
+[node name="Collision" type="CollisionShape2D" parent="Player"]
+shape = SubResource("1_0b7kp")
+
+[node name="Ground" type="StaticBody2D" parent="."]
+position = Vector2(0, 420)
+
+[node name="GroundShape" type="CollisionShape2D" parent="Ground"]
+position = Vector2(480, 20)
+shape = SubResource("2_8p9yw")
+
+[node name="GroundVisual" type="ColorRect" parent="Ground"]
+color = Color(1, 0.48, 0, 1)
+size = Vector2(1000, 40)
+position = Vector2(0, 0)
+
+[node name="Platform" type="StaticBody2D" parent="."]
+position = Vector2(460, 300)
+
+[node name="PlatformShape" type="CollisionShape2D" parent="Platform"]
+position = Vector2(0, 0)
+shape = SubResource("2_8p9yw")
+
+[node name="PlatformVisual" type="ColorRect" parent="Platform"]
+color = Color(1, 0.48, 0, 1)
+size = Vector2(220, 20)
+position = Vector2(-110, -10)
+
+[node name="Platform2" type="StaticBody2D" parent="."]
+position = Vector2(750, 220)
+
+[node name="Platform2Shape" type="CollisionShape2D" parent="Platform2"]
+position = Vector2(0, 0)
+shape = SubResource("2_8p9yw")
+
+[node name="Platform2Visual" type="ColorRect" parent="Platform2"]
+color = Color(1, 0.48, 0, 1)
+size = Vector2(220, 20)
+position = Vector2(-110, -10)
+
+[node name="Camera2D" type="Camera2D" parent="Player"]
+current = true
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="Label" type="Label" parent="UI"]
+text = "Move: A/D or ← → | Jump: Space"
+position = Vector2(18, 12)
