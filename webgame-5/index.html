@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Party Roulette</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Party Roulette</h1>
+      <p>Add items, spin the wheel, get a random pick.</p>
+    </header>
+
+    <div class="panel">
+      <div class="row">
+        <label>Items (comma separated)</label>
+        <input id="items" value="Shot, Safe, Shot, Water, Skip" />
+      </div>
+      <div class="row buttons">
+        <button id="btnSpin">Spin</button>
+        <button id="btnShuffle" class="ghost">Shuffle</button>
+      </div>
+      <div id="result" class="result">Ready</div>
+    </div>
+
+    <canvas id="wheel" width="520" height="520"></canvas>
+
+    <footer>
+      <small>Tap Spin to roll. Shuffle randomizes order.</small>
+    </footer>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

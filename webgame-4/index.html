@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ladder Draw</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Ladder Draw</h1>
+      <p>Enter names & results, then draw the ladder.</p>
+    </header>
+
+    <div class="panel">
+      <div class="row">
+        <label>Players (2–6)</label>
+        <input id="players" value="Alex, Ben, Chris, Dana" />
+      </div>
+      <div class="row">
+        <label>Results (same count)</label>
+        <input id="results" value="Shot, Safe, Shot, Safe" />
+      </div>
+      <div class="row">
+        <label>Rungs (difficulty)</label>
+        <input id="rungs" type="number" min="6" max="30" value="12" />
+      </div>
+      <div class="row buttons">
+        <button id="btnDraw">Draw</button>
+        <button id="btnShuffle" class="ghost">Shuffle</button>
+      </div>
+    </div>
+
+    <canvas id="game" width="720" height="520"></canvas>
+
+    <footer>
+      <small>Tap Draw to generate a new ladder. Shuffle randomizes players/results.</small>
+    </footer>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
