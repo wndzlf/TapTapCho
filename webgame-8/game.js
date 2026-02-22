@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+import { PointerLockControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/PointerLockControls.js';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
 
 const canvas = document.getElementById('c');
@@ -11,17 +11,15 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b1020);
 
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
-camera.position.set(0, 8, 14);
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 200);
+camera.position.set(0, 2.2, 8);
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.06;
-controls.target.set(0, 2, 0);
-controls.maxPolarAngle = Math.PI * 0.48;
-controls.minDistance = 4;
-controls.maxDistance = 40;
-controls.enablePan = false;
+const controls = new PointerLockControls(camera, renderer.domElement);
+scene.add(controls.getObject());
+
+renderer.domElement.addEventListener('click', () => {
+  if (!controls.isLocked) controls.lock();
+});
 
 const hemi = new THREE.HemisphereLight(0xbad4ff, 0x1f2937, 1.0);
 scene.add(hemi);
@@ -34,12 +32,12 @@ const ground = new THREE.Mesh(
   new THREE.MeshStandardMaterial({ color: 0x101622 })
 );
 
-// debug helpers
-const grid = new THREE.GridHelper(120, 60, 0x1f2a3a, 0x151b27);
-scene.add(grid);
-const axes = new THREE.AxesHelper(3);
-axes.position.y = 0.1;
-scene.add(axes);
+// debug helpers (숨김)
+// const grid = new THREE.GridHelper(120, 60, 0x1f2a3a, 0x151b27);
+// scene.add(grid);
+// const axes = new THREE.AxesHelper(3);
+// axes.position.y = 0.1;
+// scene.add(axes);
 ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
 
@@ -89,11 +87,11 @@ async function buildVillage() {
   }
 
   const tileSize = 2;
-  const grid = 9;
+  const grid = 12;
 
-  function place(obj, x, z, rotY = 0) {
+  function place(obj, x, z, rotY = 0, y = 0) {
     const o = obj.clone();
-    o.position.set(x * tileSize, 0, z * tileSize);
+    o.position.set(x * tileSize, y, z * tileSize);
     o.rotation.y = rotY;
     scene.add(o);
   }
@@ -104,73 +102,73 @@ async function buildVillage() {
     }
   }
 
-  for (let x = -4; x <= 4; x++) {
+  // main cross roads
+  for (let x = -6; x <= 6; x++) {
     place(roadStraight, x, 0, 0);
-    place(roadStraight, x, -2, 0);
   }
   for (let z = -6; z <= 6; z++) {
     place(roadStraight, 0, z, Math.PI / 2);
-    place(roadStraight, 2, z, Math.PI / 2);
   }
-
   place(roadCenter, 0, 0);
-  place(roadCenter, 2, -2);
 
-  place(roadCorner, -4, -2, 0);
-  place(roadCorner, 4, 0, Math.PI / 2);
-  place(roadCorner, -2, 4, Math.PI);
-  place(roadCorner, 2, -6, -Math.PI / 2);
+  // side streets
+  for (let x = -6; x <= 6; x++) place(roadStraight, x, 4, 0);
+  for (let z = -6; z <= 6; z++) place(roadStraight, 4, z, Math.PI / 2);
+  place(roadCenter, 4, 4);
 
-  // simple houses
-  function house(cx, cz) {
-    place(wall, cx, cz);
-    place(wallWindow, cx + 1, cz);
-    place(wallWindow, cx - 1, cz);
-    place(wallDoor, cx, cz + 1, Math.PI / 2);
-    place(roof, cx, cz, 0);
+  // simple houses block
+  function house(cx, cz, rot = 0) {
+    place(wall, cx, cz, rot);
+    place(wallWindow, cx + 1, cz, rot);
+    place(wallWindow, cx - 1, cz, rot);
+    place(wallDoor, cx, cz + 1, rot + Math.PI / 2);
+    place(roof, cx, cz, rot);
   }
 
-  house(-6, 3);
-  house(6, -3);
-  house(-6, -4);
-  house(5, 5);
+  const homes = [
+    [-6, 3], [-6, 6], [-6, -4], [-6, -7],
+    [6, -3], [6, -6], [6, 4], [6, 7],
+    [2, 8], [8, 2], [2, -8], [-8, 2]
+  ];
+  homes.forEach(([x,z]) => house(x, z, (x+z)%2===0 ? 0 : Math.PI));
 
+  // decor
   place(tree, -8, 1);
   place(tree, 8, -1);
   place(tree, -5, -7);
+  place(tree, 7, 7);
+  place(tree, -9, 6);
+  place(tree, 6, -9);
   place(bench, -3, 6);
   place(bench, 3, -6);
 }
 
 buildVillage();
 
-// movement
+// movement (1st person)
 const keys = new Set();
 window.addEventListener('keydown', (e) => keys.add(e.key.toLowerCase()));
 window.addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
 
 function updateMovement(delta) {
+  if (!controls.isLocked) return;
   const speed = 6 * delta;
-  const dir = new THREE.Vector3();
-  camera.getWorldDirection(dir);
-  dir.y = 0;
-  dir.normalize();
-  const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0,1,0)).normalize();
+  const forward = new THREE.Vector3();
+  controls.getDirection(forward);
+  forward.y = 0;
+  forward.normalize();
+  const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
 
   const move = new THREE.Vector3();
-  if (keys.has('w')) move.add(dir);
-  if (keys.has('s')) move.addScaledVector(dir, -1);
+  if (keys.has('w')) move.add(forward);
+  if (keys.has('s')) move.addScaledVector(forward, -1);
   if (keys.has('a')) move.addScaledVector(right, -1);
   if (keys.has('d')) move.add(right);
 
   if (move.lengthSq() > 0) {
     move.normalize().multiplyScalar(speed);
-    camera.position.add(move);
-    controls.target.add(move);
+    controls.getObject().position.add(move);
   }
-
-  if (keys.has('q')) controls.rotateLeft(1.2 * delta);
-  if (keys.has('e')) controls.rotateLeft(-1.2 * delta);
 }
 
 let last = performance.now();
@@ -178,7 +176,6 @@ function animate(now) {
   const delta = (now - last) / 1000;
   last = now;
   updateMovement(delta);
-  controls.update();
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
 }
