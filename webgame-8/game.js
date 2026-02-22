@@ -17,8 +17,16 @@ camera.position.set(0, 2.2, 8);
 const controls = new PointerLockControls(camera, renderer.domElement);
 scene.add(controls.getObject());
 
+const startOverlay = document.getElementById('start');
 renderer.domElement.addEventListener('click', () => {
   if (!controls.isLocked) controls.lock();
+});
+startOverlay.addEventListener('click', () => {
+  controls.lock();
+  startOverlay.classList.add('hidden');
+});
+controls.addEventListener('unlock', () => {
+  startOverlay.classList.remove('hidden');
 });
 
 const hemi = new THREE.HemisphereLight(0xbad4ff, 0x1f2937, 1.0);
@@ -174,10 +182,9 @@ window.addEventListener('keydown', (e) => keys.add(e.key.toLowerCase()));
 window.addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
 
 function updateMovement(delta) {
-  if (!controls.isLocked) return;
   const speed = 6 * delta;
   const forward = new THREE.Vector3();
-  controls.getDirection(forward);
+  camera.getWorldDirection(forward);
   forward.y = 0;
   forward.normalize();
   const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
