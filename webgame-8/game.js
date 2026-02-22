@@ -86,8 +86,15 @@ async function buildVillage() {
     bench = box;
   }
 
-  const tileSize = 2;
+  let tileSize = 2;
   const grid = 12;
+
+  // auto tile size from asset bounds
+  try {
+    const size = new THREE.Box3().setFromObject(grass).getSize(new THREE.Vector3());
+    const maxSide = Math.max(size.x, size.z);
+    if (Number.isFinite(maxSide) && maxSide > 0) tileSize = maxSide;
+  } catch {}
 
   function place(obj, x, z, rotY = 0, y = 0) {
     const o = obj.clone();
