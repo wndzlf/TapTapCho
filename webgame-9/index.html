@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8573384818394891" crossorigin="anonymous"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Weird Tetris</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Weird Tetris</h1>
+      <p>Gravity flips. Blocks mutate. Survive anyway.</p>
+    </header>
+
+    <div class="hud">
+      <div class="stat">
+        <div class="label">Score</div>
+        <div id="score" class="value">0</div>
+      </div>
+      <div class="stat">
+        <div class="label">Flip</div>
+        <div id="flip" class="value">↓</div>
+      </div>
+      <div class="stat">
+        <div class="label">Next</div>
+        <canvas id="next" width="96" height="96"></canvas>
+      </div>
+    </div>
+
+    <canvas id="board" width="240" height="480"></canvas>
+
+    <div class="buttons">
+      <button id="btnLeft">◀</button>
+      <button id="btnRotate">⟳</button>
+      <button id="btnRight">▶</button>
+      <button id="btnDown">▼</button>
+      <button id="btnDrop" class="primary">DROP</button>
+      <button id="btnFlip" class="ghost">FLIP</button>
+      <button id="btnRestart" class="ghost">RESTART</button>
+    </div>
+
+    <footer>
+      <small>Keyboard: ← → move, ↑ rotate, ↓ soft drop, Space drop, F flip.</small>
+    </footer>
+  </div>
+
+  <div id="overlay" class="overlay hidden">
+    <div class="panel">
+      <h2 id="overlayTitle">Game Over</h2>
+      <p id="overlayDesc">Tap restart to play again.</p>
+      <button id="btnResume" class="primary">RESTART</button>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
