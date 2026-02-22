@@ -14,21 +14,26 @@ const roadPadding = 12;
 
 const player = {
   lane: 1,
+  targetLane: 1,
   x: 0,
   y: H - 140,
   w: 50,
   h: 90,
   img: null,
+  vx: 0,
 };
 
 const enemyCars = [];
+const decor = [];
 const particles = [];
 let speed = 4.2;
 let score = 0;
 let best = Number(localStorage.getItem('laneDashBest') || 0);
 let running = true;
 let spawnTimer = 0;
+let decorTimer = 0;
 let lastTime = 0;
+let stripeOffset = 0;
 
 const assetBase = '../assets/kenney_car-kit/Previews/';
 const carImages = [
@@ -38,6 +43,11 @@ const carImages = [
   'sedan.png',
   'suv.png',
   'hatchback-sports.png'
+].map(name => loadImage(assetBase + name));
+const decorImages = [
+  'cone.png',
+  'box.png',
+  'wheel-default.png'
 ].map(name => loadImage(assetBase + name));
 
 player.img = loadImage(assetBase + 'race-future.png');
@@ -65,18 +75,43 @@ function spawnEnemy() {
   });
 }
 
+function spawnDecor() {
+  const side = Math.random() > 0.5 ? -1 : 1;
+  const img = decorImages[Math.floor(Math.random() * decorImages.length)];
+  decor.push({
+    x: side < 0 ? roadPadding - 18 : W - roadPadding + 18,
+    y: -40,
+    w: 28,
+    h: 28,
+    img,
+    side
+  });
+}
+
 function drawRoad() {
-  ctx.fillStyle = '#0b0f16';
+  // sky
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#0b1020');
+  g.addColorStop(0.4, '#0f1a2a');
+  g.addColorStop(1, '#0b0f16');
+  ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = '#161b24';
+
+  // road body
+  ctx.fillStyle = '#151a24';
   ctx.fillRect(roadPadding, 0, W - roadPadding * 2, H);
 
+  // borders
   ctx.strokeStyle = '#2a3242';
   ctx.lineWidth = 2;
   ctx.strokeRect(roadPadding, 0, W - roadPadding * 2, H);
 
+  // lane stripes (scrolling)
   ctx.strokeStyle = '#3b4457';
-  ctx.setLineDash([20, 20]);
+  ctx.lineWidth = 2;
+  ctx.setLineDash([26, 22]);
+  stripeOffset = (stripeOffset + speed * 0.6) % 48;
+  ctx.lineDashOffset = -stripeOffset;
   for (let i = 1; i < lanes; i++) {
     const x = i * laneWidth;
     ctx.beginPath();
@@ -94,6 +129,17 @@ function drawCar(obj) {
     ctx.drawImage(obj.img, x, y, obj.w, obj.h);
   } else {
     ctx.fillStyle = '#3b82f6';
+    ctx.fillRect(x, y, obj.w, obj.h);
+  }
+}
+
+function drawDecor(obj) {
+  const x = obj.x - obj.w / 2;
+  const y = obj.y - obj.h / 2;
+  if (obj.img && obj.img.complete && obj.img.naturalWidth) {
+    ctx.drawImage(obj.img, x, y, obj.w, obj.h);
+  } else {
+    ctx.fillStyle = '#facc15';
     ctx.fillRect(x, y, obj.w, obj.h);
   }
 }
@@ -139,10 +185,23 @@ function update(dt) {
 
   speed = 4.2 + Math.min(6, score / 600);
   spawnTimer += dt;
+  decorTimer += dt;
+
   if (spawnTimer > Math.max(420, 900 - score * 0.4)) {
     spawnTimer = 0;
     spawnEnemy();
   }
+  if (decorTimer > 380) {
+    decorTimer = 0;
+    spawnDecor();
+  }
+
+  // smooth lane change
+  const targetX = laneX(player.targetLane);
+  const dx = targetX - player.x;
+  player.vx += dx * 0.02 * dt;
+  player.vx *= 0.85;
+  player.x += player.vx * 0.06;
 
   for (let i = enemyCars.length - 1; i >= 0; i--) {
     const e = enemyCars[i];
@@ -155,6 +214,12 @@ function update(dt) {
     }
   }
 
+  for (let i = decor.length - 1; i >= 0; i--) {
+    const d = decor[i];
+    d.y += speed * dt * 0.06;
+    if (d.y > H + 60) decor.splice(i, 1);
+  }
+
   score += speed * dt * 0.05;
   scoreEl.textContent = Math.floor(score);
   updateParticles(dt);
@@ -162,6 +227,7 @@ function update(dt) {
 
 function draw() {
   drawRoad();
+  for (const d of decor) drawDecor(d);
   for (const e of enemyCars) drawCar(e);
   drawCar(player);
   drawParticles();
@@ -177,8 +243,7 @@ function gameLoop(time = 0) {
 
 function moveLane(dir) {
   if (!running) return;
-  player.lane = Math.min(lanes - 1, Math.max(0, player.lane + dir));
-  player.x = laneX(player.lane);
+  player.targetLane = Math.min(lanes - 1, Math.max(0, player.targetLane + dir));
 }
 
 function gameOver() {
@@ -194,13 +259,17 @@ function gameOver() {
 
 function restart() {
   enemyCars.length = 0;
+  decor.length = 0;
   particles.length = 0;
   score = 0;
   running = true;
   player.lane = 1;
+  player.targetLane = 1;
   player.x = laneX(player.lane);
   player.y = H - 140;
+  player.vx = 0;
   spawnTimer = 0;
+  decorTimer = 0;
   overlay.classList.add('hidden');
   scoreEl.textContent = 0;
   bestEl.textContent = best;
