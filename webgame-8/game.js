@@ -21,6 +21,7 @@ controls.target.set(0, 2, 0);
 controls.maxPolarAngle = Math.PI * 0.48;
 controls.minDistance = 4;
 controls.maxDistance = 40;
+controls.enablePan = false;
 
 const hemi = new THREE.HemisphereLight(0xbad4ff, 0x1f2937, 1.0);
 scene.add(hemi);
@@ -32,6 +33,13 @@ const ground = new THREE.Mesh(
   new THREE.PlaneGeometry(120, 120),
   new THREE.MeshStandardMaterial({ color: 0x101622 })
 );
+
+// debug helpers
+const grid = new THREE.GridHelper(120, 60, 0x1f2a3a, 0x151b27);
+scene.add(grid);
+const axes = new THREE.AxesHelper(3);
+axes.position.y = 0.1;
+scene.add(axes);
 ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
 
@@ -50,16 +58,35 @@ function loadGLB(name, scale = 1) {
 }
 
 async function buildVillage() {
-  const roadStraight = await loadGLB('road-asphalt-straight.glb');
-  const roadCorner = await loadGLB('road-asphalt-corner.glb');
-  const roadCenter = await loadGLB('road-asphalt-center.glb');
-  const grass = await loadGLB('grass.glb');
-  const wall = await loadGLB('wall-a-flat.glb');
-  const wallWindow = await loadGLB('wall-a-window.glb');
-  const wallDoor = await loadGLB('wall-a-door.glb');
-  const roof = await loadGLB('wall-a-roof.glb');
-  const tree = await loadGLB('tree-park-large.glb');
-  const bench = await loadGLB('detail-bench.glb');
+  let roadStraight, roadCorner, roadCenter, grass, wall, wallWindow, wallDoor, roof, tree, bench;
+  try {
+    roadStraight = await loadGLB('road-asphalt-straight.glb');
+    roadCorner = await loadGLB('road-asphalt-corner.glb');
+    roadCenter = await loadGLB('road-asphalt-center.glb');
+    grass = await loadGLB('grass.glb');
+    wall = await loadGLB('wall-a-flat.glb');
+    wallWindow = await loadGLB('wall-a-window.glb');
+    wallDoor = await loadGLB('wall-a-door.glb');
+    roof = await loadGLB('wall-a-roof.glb');
+    tree = await loadGLB('tree-park-large.glb');
+    bench = await loadGLB('detail-bench.glb');
+  } catch (e) {
+    console.error('GLB load failed', e);
+    // fallback simple boxes
+    const box = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.2, 1.8), new THREE.MeshStandardMaterial({ color: 0x4b5563 }));
+    const tile = new THREE.Mesh(new THREE.BoxGeometry(2, 0.1, 2), new THREE.MeshStandardMaterial({ color: 0x1f2937 }));
+    const treeBox = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 2.2, 8), new THREE.MeshStandardMaterial({ color: 0x16a34a }));
+    roadStraight = tile;
+    roadCorner = tile;
+    roadCenter = tile;
+    grass = tile;
+    wall = box;
+    wallWindow = box;
+    wallDoor = box;
+    roof = box;
+    tree = treeBox;
+    bench = box;
+  }
 
   const tileSize = 2;
   const grid = 9;
@@ -130,14 +157,20 @@ function updateMovement(delta) {
   dir.normalize();
   const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0,1,0)).normalize();
 
-  if (keys.has('w')) camera.position.addScaledVector(dir, speed);
-  if (keys.has('s')) camera.position.addScaledVector(dir, -speed);
-  if (keys.has('a')) camera.position.addScaledVector(right, -speed);
-  if (keys.has('d')) camera.position.addScaledVector(right, speed);
-  if (keys.has('q')) camera.rotation.y += 1.2 * delta;
-  if (keys.has('e')) camera.rotation.y -= 1.2 * delta;
+  const move = new THREE.Vector3();
+  if (keys.has('w')) move.add(dir);
+  if (keys.has('s')) move.addScaledVector(dir, -1);
+  if (keys.has('a')) move.addScaledVector(right, -1);
+  if (keys.has('d')) move.add(right);
 
-  controls.target.copy(camera.position).add(new THREE.Vector3(0, 2, 0));
+  if (move.lengthSq() > 0) {
+    move.normalize().multiplyScalar(speed);
+    camera.position.add(move);
+    controls.target.add(move);
+  }
+
+  if (keys.has('q')) controls.rotateLeft(1.2 * delta);
+  if (keys.has('e')) controls.rotateLeft(-1.2 * delta);
 }
 
 let last = performance.now();
