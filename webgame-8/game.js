@@ -39,6 +39,7 @@ const ground = new THREE.Mesh(
 // axes.position.y = 0.1;
 // scene.add(axes);
 ground.rotation.x = -Math.PI / 2;
+ground.position.y = -0.2;
 scene.add(ground);
 
 const loader = new GLTFLoader();
@@ -96,8 +97,21 @@ async function buildVillage() {
     if (Number.isFinite(maxSide) && maxSide > 0) tileSize = maxSide;
   } catch {}
 
-  function place(obj, x, z, rotY = 0, y = 0) {
+  function tuneMaterials(o) {
+    o.traverse((child) => {
+      if (child.isMesh && child.material) {
+        const mats = Array.isArray(child.material) ? child.material : [child.material];
+        mats.forEach(m => {
+          m.side = THREE.DoubleSide;
+          m.needsUpdate = true;
+        });
+      }
+    });
+  }
+
+  function place(obj, x, z, rotY = 0, y = 0.02) {
     const o = obj.clone();
+    tuneMaterials(o);
     o.position.set(x * tileSize, y, z * tileSize);
     o.rotation.y = rotY;
     scene.add(o);
@@ -150,7 +164,9 @@ async function buildVillage() {
   place(bench, 3, -6);
 }
 
-buildVillage();
+buildVillage().then(() => {
+  controls.getObject().position.set(0, 2.2, 8);
+});
 
 // movement (1st person)
 const keys = new Set();
