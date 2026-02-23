@@ -58,6 +58,13 @@ button {
   color: #e8eaf0;
   font-weight: 600;
 }
+#btnRotate {
+  min-height: 56px;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 8px 10px;
+}
 button:active { transform: scale(0.98); }
 .primary { background: #3b82f6; border-color: #3b82f6; }
 .ghost { background: transparent; color: #9aa3b2; }
