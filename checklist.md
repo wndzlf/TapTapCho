@@ -25,3 +25,4 @@
 | 19 | Merge 2048 Tiny | 숫자 병합 | DONE | webgame-19 |
 | 20 | Lights Out Rush | 격자 토글 퍼즐 | DONE | webgame-20 |
 | 21 | Zigzag Memory Run | 좌우 패턴 기억 | DONE | webgame-21 |
+| 22 | Mine Sweep Sprint | 지뢰찾기 퍼즐 | DONE | webgame-22 |

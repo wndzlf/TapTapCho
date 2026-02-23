@@ -9,6 +9,8 @@ const W = canvas.width;
 const H = canvas.height;
 const STORAGE_KEY = 'color-switch-dot-best';
 const TAU = Math.PI * 2;
+const SEGMENT_ARC = TAU / 4;
+const RING_GAP_ANGLE = 0.12;
 
 const COLORS = ['#ff5f6d', '#ffd166', '#4ecdc4', '#5f8cff'];
 
@@ -86,7 +88,7 @@ function makeObstacle(y) {
     r: rand(56, 72),
     thickness: 14,
     rot: rand(0, TAU),
-    rotSpeed: (Math.random() > 0.5 ? 1 : -1) * rand(0.015, 0.028),
+    rotSpeed: (Math.random() > 0.5 ? 1 : -1) * rand(0.009, 0.018),
     cleared: false,
   };
 }
@@ -96,14 +98,14 @@ function buildInitialObstacles() {
   let y = 410;
   for (let i = 0; i < 10; i += 1) {
     obstacles.push(makeObstacle(y));
-    y -= rand(210, 250);
+    y -= rand(235, 290);
   }
 }
 
 function extendObstacles() {
   while (obstacles[obstacles.length - 1].y > player.y - 1900) {
     const last = obstacles[obstacles.length - 1];
-    obstacles.push(makeObstacle(last.y - rand(210, 250)));
+    obstacles.push(makeObstacle(last.y - rand(235, 290)));
   }
 }
 
@@ -149,7 +151,7 @@ function jump() {
     return;
   }
 
-  player.vy = -7.2;
+  player.vy = -7.6;
   addBurst(player.x, player.y, player.color, 8);
   beep(540, 0.04, 0.02);
 }
@@ -167,8 +169,8 @@ function update() {
 
   if (state !== 'running') return;
 
-  player.vy += 0.29;
-  if (player.vy > 8.5) player.vy = 8.5;
+  player.vy += 0.25;
+  if (player.vy > 7.8) player.vy = 7.8;
   player.y += player.vy;
 
   if (player.y < cameraY + H * 0.42) {
@@ -195,7 +197,14 @@ function update() {
     if (intersectsBand) {
       const contactAngle = dy < 0 ? -Math.PI / 2 : Math.PI / 2;
       const localAngle = normalizeAngle(contactAngle - obs.rot);
-      const segmentIndex = Math.floor(localAngle / (Math.PI / 2)) % 4;
+      const angleInSegment = localAngle % SEGMENT_ARC;
+
+      // Match render gap and collision gap so near-boundary hits feel fair.
+      if (angleInSegment < RING_GAP_ANGLE || angleInSegment > SEGMENT_ARC - RING_GAP_ANGLE) {
+        continue;
+      }
+
+      const segmentIndex = Math.floor(localAngle / SEGMENT_ARC) % 4;
       const segmentColor = COLORS[segmentIndex];
 
       if (segmentColor !== player.color) {
@@ -208,7 +217,7 @@ function update() {
       obs.cleared = true;
       score += 1;
       scoreEl.textContent = String(score);
-      player.color = randomColorExcept(player.color);
+      player.color = Math.random() < 0.4 ? player.color : randomColorExcept(player.color);
 
       addBurst(player.x, player.y, '#ffffff', 10);
       beep(780, 0.045, 0.02);
@@ -220,12 +229,11 @@ function drawObstacle(obs) {
   const y = obs.y - cameraY;
   if (y < -120 || y > H + 120) return;
 
-  const gap = 0.08;
   ctx.lineCap = 'round';
 
   for (let i = 0; i < 4; i += 1) {
-    const start = obs.rot + i * (Math.PI / 2) + gap;
-    const end = obs.rot + (i + 1) * (Math.PI / 2) - gap;
+    const start = obs.rot + i * SEGMENT_ARC + RING_GAP_ANGLE;
+    const end = obs.rot + (i + 1) * SEGMENT_ARC - RING_GAP_ANGLE;
 
     ctx.strokeStyle = COLORS[i];
     ctx.lineWidth = obs.thickness;
