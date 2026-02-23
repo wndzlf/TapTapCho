@@ -14,9 +14,9 @@
 | 08 | Retro Village 3D | 간단 탐험 | DONE | webgame-8 |
 | 09 | Weird Tetris | 변형 퍼즐 | DONE | webgame-9 |
 | 10 | Zigzag Rush | 탭 타이밍 전환 | DONE | webgame-10 |
-| 11 | Stack Tower | 타이밍 적층 | TODO | webgame-11 |
-| 12 | Knife Hit Lite | 회전 목표 명중 | TODO | webgame-12 |
-| 13 | Color Switch Dot | 색상 매칭 통과 | TODO | webgame-13 |
+| 11 | Stack Tower | 타이밍 적층 | DONE | webgame-11 |
+| 12 | Knife Hit Lite | 회전 목표 명중 | DONE | webgame-12 |
+| 13 | Color Switch Dot | 색상 매칭 통과 | DONE | webgame-13 |
 | 14 | Helix Fall Mini | 낙하 회전 회피 | TODO | webgame-14 |
 | 15 | Drift One-Tap | 원터치 드리프트 | TODO | webgame-15 |
 | 16 | Slide Puzzle Rush | 한 줄 퍼즐 정렬 | TODO | webgame-16 |
