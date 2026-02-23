@@ -4,7 +4,7 @@
 config_version=5
 
 [application]
-config/name="MiniPlatformer"
+config/name="NeonVillageExplorer"
 run/main_scene="res://Main3D.tscn"
 
 [display]
@@ -29,6 +29,10 @@ move_up={
 move_down={
 "deadzone": 0.5,
 "events": [Object(InputEventKey,"physical_keycode":83), Object(InputEventKey,"physical_keycode":16777234)]
+}
+jump={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":32)]
 }
 
 [rendering]

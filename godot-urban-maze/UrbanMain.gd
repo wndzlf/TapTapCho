@@ -1,23 +1,41 @@
 extends Node3D
 
-@export var cell_size := 4.0
-@export var wall_height := 3.0
-@export var wall_thickness := 0.5
+@export var block_count_x := 4
+@export var block_count_z := 4
+@export var block_size := 14.0
+@export var road_width := 6.0
+@export var building_margin := 1.1
 @export var seed := 0
 
-# fixed maze layout based on image (simple hand-crafted)
-var grid_w := 12
-var grid_h := 8
+const LANDMARKS := ["Town Square", "Food Street", "Sky Park"]
 
 var rng := RandomNumberGenerator.new()
-var exit_area: Area3D
+var town_root: Node3D
+var player: CharacterBody3D
+
 var ui_label: Label
 var help_label: Label
-var player: CharacterBody3D
-var maze_root: Node3D
+var quest_label: Label
 
-var floor_mat := StandardMaterial3D.new()
+var ambient_audio: AudioStreamPlayer
+var goal_audio: AudioStreamPlayer
+
+var city_size_x := 0.0
+var city_size_z := 0.0
+
+var discovered_landmarks := {}
+
+var mobile_look_left := false
+var mobile_look_right := false
+
+var grass_mat := StandardMaterial3D.new()
+var road_mat := StandardMaterial3D.new()
+var pavement_mat := StandardMaterial3D.new()
 var wall_mat := StandardMaterial3D.new()
+var roof_mat := StandardMaterial3D.new()
+var window_mat := StandardMaterial3D.new()
+var trunk_mat := StandardMaterial3D.new()
+var leaves_mat := StandardMaterial3D.new()
 
 func _ready() -> void:
 	if seed == 0:
@@ -29,22 +47,73 @@ func _ready() -> void:
 	_setup_environment()
 	_spawn_player()
 	_setup_ui()
-	_build_maze()
-	_spawn_exit()
+	_setup_audio()
+	_rebuild_town()
+
+func _process(delta: float) -> void:
+	if not DisplayServer.is_touchscreen_available():
+		return
+	if not player:
+		return
+	if not player.has_method("add_touch_look"):
+		return
+
+	var axis := 0.0
+	if mobile_look_left:
+		axis -= 1.0
+	if mobile_look_right:
+		axis += 1.0
+	if absf(axis) > 0.01:
+		player.add_touch_look(Vector2(axis * 220.0 * delta, 0.0))
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and not DisplayServer.is_touchscreen_available():
+		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+		if help_label:
+			help_label.text = "WASD: Move  |  Shift: Run  |  Space: Jump  |  R: New Town"
+	elif event is InputEventKey and event.pressed and event.keycode == KEY_R:
+		rng.randomize()
+		_rebuild_town()
 
 func _setup_materials() -> void:
-	floor_mat.albedo_texture = load("res://assets/textures/asphalt.png")
-	floor_mat.roughness = 0.8
-	wall_mat.albedo_texture = load("res://assets/textures/metal_wall.png")
-	wall_mat.albedo_color = Color(0.9, 0.9, 0.95)
-	wall_mat.roughness = 0.6
+	grass_mat.albedo_texture = load("res://assets/textures/grass.png")
+	grass_mat.roughness = 0.95
+	grass_mat.uv1_scale = Vector3(8.0, 8.0, 1.0)
+
+	road_mat.albedo_texture = load("res://assets/textures/asphalt.png")
+	road_mat.roughness = 0.85
+	road_mat.uv1_scale = Vector3(7.0, 7.0, 1.0)
+
+	pavement_mat.albedo_texture = load("res://assets/textures/concrete.png")
+	pavement_mat.roughness = 0.92
+	pavement_mat.uv1_scale = Vector3(5.0, 5.0, 1.0)
+
+	wall_mat.albedo_texture = load("res://assets/textures/wall.png")
+	wall_mat.albedo_color = Color(0.95, 0.95, 0.97)
+	wall_mat.roughness = 0.78
+
+	roof_mat.albedo_texture = load("res://assets/textures/roof.png")
+	roof_mat.roughness = 0.72
+
+	window_mat.albedo_texture = load("res://assets/textures/windows.png")
+	window_mat.emission_enabled = true
+	window_mat.emission = Color(0.55, 0.7, 1.0)
+	window_mat.emission_energy_multiplier = 0.8
+	window_mat.roughness = 0.2
+
+	trunk_mat.albedo_color = Color(0.33, 0.22, 0.12)
+	trunk_mat.roughness = 0.95
+
+	leaves_mat.albedo_texture = load("res://assets/textures/treeA.png")
+	leaves_mat.albedo_color = Color(0.82, 0.95, 0.86)
+	leaves_mat.roughness = 0.88
 
 func _setup_environment() -> void:
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.2, 0.22, 0.25)
-	env.ambient_light_color = Color(0.6, 0.6, 0.65)
-	env.ambient_light_energy = 2.0
+	env.background_color = Color(0.58, 0.73, 0.93)
+	env.ambient_light_color = Color(0.82, 0.88, 0.96)
+	env.ambient_light_energy = 1.35
 	env.fog_enabled = false
 
 	var world_env := WorldEnvironment.new()
@@ -52,161 +121,428 @@ func _setup_environment() -> void:
 	add_child(world_env)
 
 	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-35, 25, 0)
-	sun.light_energy = 1.6
-	sun.light_color = Color(0.9, 0.95, 1.0)
+	sun.rotation_degrees = Vector3(-42.0, 35.0, 0.0)
+	sun.light_energy = 1.8
+	sun.light_color = Color(1.0, 0.98, 0.94)
 	add_child(sun)
 
 	var fill := OmniLight3D.new()
-	fill.light_color = Color(0.9, 0.9, 1.0)
-	fill.light_energy = 0.8
-	fill.position = Vector3((grid_w-1) * cell_size * 0.5, 4.0, (grid_h-1) * cell_size * 0.5)
+	fill.light_color = Color(0.74, 0.85, 1.0)
+	fill.light_energy = 0.7
+	fill.position = Vector3(40.0, 9.0, 40.0)
 	add_child(fill)
 
 func _setup_ui() -> void:
 	var layer := CanvasLayer.new()
+
 	ui_label = Label.new()
-	ui_label.text = "CITY MAZE | Find the EXIT"
-	ui_label.add_theme_color_override("font_color", Color(0.95, 0.95, 1.0))
-	ui_label.position = Vector2(16, 16)
+	ui_label.text = "Urban Village Explorer"
+	ui_label.position = Vector2(16, 12)
+	ui_label.add_theme_font_size_override("font_size", 24)
+	ui_label.add_theme_color_override("font_color", Color(0.95, 0.98, 1.0))
 	layer.add_child(ui_label)
 
 	help_label = Label.new()
-	help_label.text = "CLICK TO START\nWASD: Move  |  Mouse: Look  |  ESC: Release Mouse"
-	help_label.add_theme_color_override("font_color", Color(0.9, 0.95, 1.0))
+	help_label.text = "CLICK TO START\nWASD: Move  |  Shift: Run  |  Space: Jump  |  R: New Town"
+	help_label.position = Vector2(16, 48)
 	help_label.add_theme_font_size_override("font_size", 18)
-	help_label.position = Vector2(16, 44)
+	help_label.add_theme_color_override("font_color", Color(0.9, 0.97, 1.0))
 	layer.add_child(help_label)
 
-	# Mobile controls
+	quest_label = Label.new()
+	quest_label.position = Vector2(16, 106)
+	quest_label.add_theme_font_size_override("font_size", 17)
+	quest_label.add_theme_color_override("font_color", Color(0.93, 0.98, 1.0))
+	layer.add_child(quest_label)
+
 	if DisplayServer.is_touchscreen_available():
-		help_label.text = "TOUCH CONTROLS\nUse buttons to move"
-		var btn_size = Vector2(70, 70)
-		var base = Vector2(30, 360)
-		var up = Button.new()
-		up.text = "▲"
-		up.size = btn_size
-		up.position = base + Vector2(70, -70)
+		help_label.text = "TOUCH MODE\nMove + Look buttons to explore"
+		var btn_size := Vector2(68.0, 68.0)
+		var move_base := Vector2(30.0, 350.0)
+		var look_base := Vector2(770.0, 390.0)
+
+		var up := _create_touch_button(layer, "▲", move_base + Vector2(68.0, -70.0), btn_size)
 		up.pressed.connect(func(): Input.action_press("move_up"))
 		up.button_up.connect(func(): Input.action_release("move_up"))
-		layer.add_child(up)
 
-		var down = Button.new()
-		down.text = "▼"
-		down.size = btn_size
-		down.position = base + Vector2(70, 70)
+		var down := _create_touch_button(layer, "▼", move_base + Vector2(68.0, 70.0), btn_size)
 		down.pressed.connect(func(): Input.action_press("move_down"))
 		down.button_up.connect(func(): Input.action_release("move_down"))
-		layer.add_child(down)
 
-		var left = Button.new()
-		left.text = "◀"
-		left.size = btn_size
-		left.position = base + Vector2(0, 0)
+		var left := _create_touch_button(layer, "◀", move_base + Vector2(0.0, 0.0), btn_size)
 		left.pressed.connect(func(): Input.action_press("move_left"))
 		left.button_up.connect(func(): Input.action_release("move_left"))
-		layer.add_child(left)
 
-		var right = Button.new()
-		right.text = "▶"
-		right.size = btn_size
-		right.position = base + Vector2(140, 0)
+		var right := _create_touch_button(layer, "▶", move_base + Vector2(136.0, 0.0), btn_size)
 		right.pressed.connect(func(): Input.action_press("move_right"))
 		right.button_up.connect(func(): Input.action_release("move_right"))
-		layer.add_child(right)
+
+		var jump := _create_touch_button(layer, "JUMP", look_base + Vector2(80.0, -80.0), Vector2(110.0, 56.0))
+		jump.pressed.connect(func():
+			if InputMap.has_action("jump"):
+				Input.action_press("jump")
+			Input.action_press("ui_accept")
+		)
+		jump.button_up.connect(func():
+			if InputMap.has_action("jump"):
+				Input.action_release("jump")
+			Input.action_release("ui_accept")
+		)
+
+		var look_left := _create_touch_button(layer, "⟲", look_base + Vector2(0.0, 0.0), btn_size)
+		look_left.pressed.connect(func(): mobile_look_left = true)
+		look_left.button_up.connect(func(): mobile_look_left = false)
+
+		var look_right := _create_touch_button(layer, "⟳", look_base + Vector2(136.0, 0.0), btn_size)
+		look_right.pressed.connect(func(): mobile_look_right = true)
+		look_right.button_up.connect(func(): mobile_look_right = false)
 
 	add_child(layer)
 
-func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and not DisplayServer.is_touchscreen_available():
-		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
-		if help_label:
-			help_label.text = "WASD: Move  |  Mouse: Look  |  ESC: Release Mouse"
+func _create_touch_button(layer: CanvasLayer, text_value: String, pos: Vector2, size: Vector2) -> Button:
+	var button := Button.new()
+	button.text = text_value
+	button.position = pos
+	button.size = size
+	button.add_theme_font_size_override("font_size", 24)
+	button.modulate = Color(1.0, 1.0, 1.0, 0.9)
+	layer.add_child(button)
+	return button
 
-func _build_maze() -> void:
-	if maze_root:
-		maze_root.queue_free()
-	maze_root = Node3D.new()
-	maze_root.name = "Maze"
-	add_child(maze_root)
+func _setup_audio() -> void:
+	ambient_audio = AudioStreamPlayer.new()
+	ambient_audio.stream = load("res://audio/ambient.wav")
+	ambient_audio.volume_db = -8.0
+	ambient_audio.autoplay = true
+	add_child(ambient_audio)
 
-	# Floor
-	var floor_body := StaticBody3D.new()
-	var floor_mesh := MeshInstance3D.new()
-	var plane := PlaneMesh.new()
-	plane.size = Vector2(grid_w * cell_size + 4.0, grid_h * cell_size + 4.0)
-	floor_mesh.mesh = plane
-	floor_mesh.material_override = floor_mat
-	floor_mesh.position = Vector3((grid_w-1) * cell_size * 0.5, 0, (grid_h-1) * cell_size * 0.5)
-	floor_body.add_child(floor_mesh)
+	goal_audio = AudioStreamPlayer.new()
+	goal_audio.stream = load("res://audio/door_creak.wav")
+	goal_audio.volume_db = -9.0
+	add_child(goal_audio)
 
-	var floor_shape := CollisionShape3D.new()
-	var floor_box := BoxShape3D.new()
-	floor_box.size = Vector3(grid_w * cell_size, 0.2, grid_h * cell_size)
-	floor_shape.shape = floor_box
-	floor_shape.position = floor_mesh.position - Vector3(0, 0.1, 0)
-	floor_body.add_child(floor_shape)
-	maze_root.add_child(floor_body)
+func _spawn_player() -> void:
+	player = CharacterBody3D.new()
+	player.name = "Player"
+	player.position = Vector3(2.0, 1.2, 2.0)
 
-	# Maze walls (hand-drawn like reference)
-	# 1 = wall segment, 0 = empty. We'll draw walls as thick lines.
-	var lines = [
-		# Outer border
-		[Vector2(0,0), Vector2(11,0)],
-		[Vector2(0,7), Vector2(11,7)],
-		[Vector2(0,0), Vector2(0,7)],
-		[Vector2(11,0), Vector2(11,7)],
+	var cam := Camera3D.new()
+	cam.position = Vector3(0.0, 0.6, 0.0)
+	player.add_child(cam)
 
-		# Inner walls (approx layout)
-		[Vector2(2,1), Vector2(5,1)],
-		[Vector2(5,1), Vector2(5,3)],
-		[Vector2(1,2), Vector2(1,5)],
-		[Vector2(3,2), Vector2(3,4)],
-		[Vector2(2,4), Vector2(6,4)],
-		[Vector2(7,1), Vector2(10,1)],
-		[Vector2(7,1), Vector2(7,3)],
-		[Vector2(9,2), Vector2(9,5)],
-		[Vector2(6,3), Vector2(8,3)],
-		[Vector2(6,5), Vector2(10,5)],
-		[Vector2(4,6), Vector2(8,6)],
-		[Vector2(8,4), Vector2(8,6)],
-	]
+	var flashlight := SpotLight3D.new()
+	flashlight.light_color = Color(0.95, 0.98, 1.0)
+	flashlight.light_energy = 1.6
+	flashlight.range = 20.0
+	flashlight.spot_angle = 36.0
+	flashlight.position = Vector3(0.0, 0.6, 0.0)
+	flashlight.rotation_degrees = Vector3(-4.0, 0.0, 0.0)
+	player.add_child(flashlight)
 
-	for seg in lines:
-		_create_wall_segment(seg[0], seg[1])
+	player.set_script(load("res://Player3D.gd"))
+	add_child(player)
 
-	# debug landmark to ensure 3D visibility
-	var marker := MeshInstance3D.new()
-	var mbox := BoxMesh.new()
-	mbox.size = Vector3(0.8, 0.8, 0.8)
-	marker.mesh = mbox
-	marker.position = Vector3(1 * cell_size, 0.4, 1 * cell_size)
-	maze_root.add_child(marker)
+func _rebuild_town() -> void:
+	discovered_landmarks.clear()
+	if town_root:
+		town_root.queue_free()
 
-func _create_wall_segment(a: Vector2, b: Vector2) -> void:
-	var dx = b.x - a.x
-	var dy = b.y - a.y
-	var length = abs(dx) + abs(dy)
-	if length <= 0:
-		return
+	city_size_x = block_count_x * block_size + (block_count_x + 1) * road_width
+	city_size_z = block_count_z * block_size + (block_count_z + 1) * road_width
 
-	for i in range(int(length)):
-		var px = a.x
-		var py = a.y
-		if dx != 0:
-			px += sign(dx) * i
-		if dy != 0:
-			py += sign(dy) * i
-		_create_wall(Vector3(px * cell_size, wall_height * 0.5, py * cell_size),
-			Vector3(cell_size, wall_height, wall_thickness))
+	town_root = Node3D.new()
+	town_root.name = "Town"
+	add_child(town_root)
 
-func _create_wall(pos: Vector3, size: Vector3) -> void:
+	_build_ground()
+	_build_roads()
+	_build_blocks()
+	_build_boundaries()
+	_spawn_landmarks()
+	_reset_player_position()
+	_update_quest_text()
+
+func _build_ground() -> void:
 	var body := StaticBody3D.new()
+	var mesh := MeshInstance3D.new()
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(city_size_x + road_width * 2.0, city_size_z + road_width * 2.0)
+	mesh.mesh = plane
+	mesh.material_override = grass_mat
+	mesh.position = Vector3(city_size_x * 0.5, 0.0, city_size_z * 0.5)
+	body.add_child(mesh)
+
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(city_size_x + road_width * 2.0, 0.2, city_size_z + road_width * 2.0)
+	shape.shape = box
+	shape.position = mesh.position - Vector3(0.0, 0.1, 0.0)
+	body.add_child(shape)
+
+	town_root.add_child(body)
+
+func _build_roads() -> void:
+	for ix in range(block_count_x + 1):
+		var x_center := ix * (block_size + road_width) + road_width * 0.5
+		_create_road_strip(Vector3(x_center, 0.02, city_size_z * 0.5), Vector2(road_width, city_size_z))
+
+	for iz in range(block_count_z + 1):
+		var z_center := iz * (block_size + road_width) + road_width * 0.5
+		_create_road_strip(Vector3(city_size_x * 0.5, 0.02, z_center), Vector2(city_size_x, road_width))
+
+func _create_road_strip(center: Vector3, size: Vector2) -> void:
+	var road := MeshInstance3D.new()
+	var plane := PlaneMesh.new()
+	plane.size = size
+	road.mesh = plane
+	road.material_override = road_mat
+	road.position = center
+	town_root.add_child(road)
+
+	# lane marking
+	if size.x > size.y:
+		for i in range(6):
+			var mark := MeshInstance3D.new()
+			var box := BoxMesh.new()
+			box.size = Vector3(2.2, 0.02, 0.24)
+			mark.mesh = box
+			mark.material_override = _make_mark_material()
+			mark.position = center + Vector3(-size.x * 0.42 + i * size.x * 0.17, 0.03, 0.0)
+			town_root.add_child(mark)
+	else:
+		for i in range(6):
+			var mark := MeshInstance3D.new()
+			var box := BoxMesh.new()
+			box.size = Vector3(0.24, 0.02, 2.2)
+			mark.mesh = box
+			mark.material_override = _make_mark_material()
+			mark.position = center + Vector3(0.0, 0.03, -size.y * 0.42 + i * size.y * 0.17)
+			town_root.add_child(mark)
+
+func _make_mark_material() -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.95, 0.95, 0.9)
+	mat.roughness = 0.8
+	return mat
+
+func _build_blocks() -> void:
+	for bx in range(block_count_x):
+		for bz in range(block_count_z):
+			var block_min_x := road_width + bx * (block_size + road_width)
+			var block_min_z := road_width + bz * (block_size + road_width)
+			var lot := Rect2(block_min_x, block_min_z, block_size, block_size)
+
+			_create_sidewalk(lot)
+			if rng.randf() < 0.22:
+				_create_park(lot)
+			else:
+				_populate_lot(lot)
+			_create_corner_lamps(lot)
+
+func _create_sidewalk(lot: Rect2) -> void:
+	var t := 0.8
+	_create_static_box(Vector3(lot.position.x + lot.size.x * 0.5, 0.08, lot.position.y + t * 0.5), Vector3(lot.size.x, 0.16, t), pavement_mat)
+	_create_static_box(Vector3(lot.position.x + lot.size.x * 0.5, 0.08, lot.end.y - t * 0.5), Vector3(lot.size.x, 0.16, t), pavement_mat)
+	_create_static_box(Vector3(lot.position.x + t * 0.5, 0.08, lot.position.y + lot.size.y * 0.5), Vector3(t, 0.16, lot.size.y), pavement_mat)
+	_create_static_box(Vector3(lot.end.x - t * 0.5, 0.08, lot.position.y + lot.size.y * 0.5), Vector3(t, 0.16, lot.size.y), pavement_mat)
+
+func _populate_lot(lot: Rect2) -> void:
+	var footprints: Array[Rect2] = []
+	var building_count := rng.randi_range(2, 4)
+
+	for _i in range(building_count):
+		var w := rng.randf_range(2.8, 5.4)
+		var d := rng.randf_range(2.8, 5.4)
+		var h := rng.randf_range(3.2, 9.2)
+		var created := false
+		for _try in range(14):
+			var x := rng.randf_range(lot.position.x + building_margin + w * 0.5, lot.end.x - building_margin - w * 0.5)
+			var z := rng.randf_range(lot.position.y + building_margin + d * 0.5, lot.end.y - building_margin - d * 0.5)
+			var rect := Rect2(x - w * 0.5 - 0.45, z - d * 0.5 - 0.45, w + 0.9, d + 0.9)
+
+			var overlaps := false
+			for used in footprints:
+				if used.intersects(rect):
+					overlaps = true
+					break
+
+			if not overlaps:
+				footprints.append(rect)
+				_create_building(Vector3(x, 0.0, z), Vector3(w, h, d))
+				created = true
+				break
+
+		if not created:
+			continue
+
+	var tree_count := rng.randi_range(2, 4)
+	for _t in range(tree_count):
+		var tx := rng.randf_range(lot.position.x + 1.4, lot.end.x - 1.4)
+		var tz := rng.randf_range(lot.position.y + 1.4, lot.end.y - 1.4)
+		var blocked := false
+		for used in footprints:
+			if used.has_point(Vector2(tx, tz)):
+				blocked = true
+				break
+		if not blocked:
+			_create_tree(Vector3(tx, 0.0, tz), rng.randf_range(1.0, 1.4))
+
+func _create_park(lot: Rect2) -> void:
+	var center := Vector3(lot.position.x + lot.size.x * 0.5, 0.03, lot.position.y + lot.size.y * 0.5)
+	var patch := MeshInstance3D.new()
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(lot.size.x - 2.2, lot.size.y - 2.2)
+	patch.mesh = plane
+	patch.material_override = grass_mat
+	patch.position = center
+	town_root.add_child(patch)
+
+	var fountain_size := Vector3(2.2, 0.6, 2.2)
+	_create_static_box(Vector3(center.x, 0.3, center.z), fountain_size, pavement_mat)
+
+	var water := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 0.7
+	cyl.bottom_radius = 0.8
+	cyl.height = 0.35
+	water.mesh = cyl
+	var water_mat := StandardMaterial3D.new()
+	water_mat.albedo_color = Color(0.4, 0.73, 0.95)
+	water_mat.emission_enabled = true
+	water_mat.emission = Color(0.2, 0.5, 0.9)
+	water_mat.emission_energy_multiplier = 0.7
+	water.material_override = water_mat
+	water.position = center + Vector3(0.0, 0.7, 0.0)
+	town_root.add_child(water)
+
+	for i in range(4):
+		var angle := i * PI * 0.5
+		var offset := Vector3(cos(angle), 0.0, sin(angle)) * (lot.size.x * 0.26)
+		_create_tree(center + offset, rng.randf_range(1.1, 1.5))
+
+func _create_corner_lamps(lot: Rect2) -> void:
+	var corners = [
+		Vector3(lot.position.x + 0.8, 0.0, lot.position.y + 0.8),
+		Vector3(lot.end.x - 0.8, 0.0, lot.position.y + 0.8),
+		Vector3(lot.position.x + 0.8, 0.0, lot.end.y - 0.8),
+		Vector3(lot.end.x - 0.8, 0.0, lot.end.y - 0.8),
+	]
+	for pos in corners:
+		_create_lamp(pos)
+
+func _create_building(center: Vector3, size: Vector3) -> void:
+	var body := StaticBody3D.new()
+
+	var base_mesh := MeshInstance3D.new()
+	var base_box := BoxMesh.new()
+	base_box.size = size
+	base_mesh.mesh = base_box
+	var wall_variant := wall_mat.duplicate()
+	var tint := rng.randf_range(0.88, 1.08)
+	wall_variant.albedo_color = Color(tint * 0.9, tint * 0.93, tint)
+	base_mesh.material_override = wall_variant
+	base_mesh.position = Vector3(center.x, size.y * 0.5, center.z)
+	body.add_child(base_mesh)
+
+	var roof_mesh := MeshInstance3D.new()
+	var roof_box := BoxMesh.new()
+	roof_box.size = Vector3(size.x * 1.06, 0.45, size.z * 1.06)
+	roof_mesh.mesh = roof_box
+	roof_mesh.material_override = roof_mat
+	roof_mesh.position = Vector3(center.x, size.y + 0.23, center.z)
+	body.add_child(roof_mesh)
+
+	var front_window := MeshInstance3D.new()
+	var win_box := BoxMesh.new()
+	win_box.size = Vector3(size.x * 0.55, max(1.0, size.y * 0.45), 0.1)
+	front_window.mesh = win_box
+	front_window.material_override = window_mat
+	front_window.position = Vector3(center.x, size.y * 0.58, center.z + size.z * 0.5 + 0.06)
+	body.add_child(front_window)
+
+	var side_window := MeshInstance3D.new()
+	var side_box := BoxMesh.new()
+	side_box.size = Vector3(0.1, max(1.0, size.y * 0.42), size.z * 0.5)
+	side_window.mesh = side_box
+	side_window.material_override = window_mat
+	side_window.position = Vector3(center.x + size.x * 0.5 + 0.06, size.y * 0.56, center.z)
+	body.add_child(side_window)
+
+	var shape := CollisionShape3D.new()
+	var col := BoxShape3D.new()
+	col.size = size
+	shape.shape = col
+	shape.position = base_mesh.position
+	body.add_child(shape)
+
+	town_root.add_child(body)
+
+func _create_tree(pos: Vector3, scale_value: float) -> void:
+	var body := StaticBody3D.new()
+
+	var trunk := MeshInstance3D.new()
+	var trunk_mesh := CylinderMesh.new()
+	trunk_mesh.top_radius = 0.14 * scale_value
+	trunk_mesh.bottom_radius = 0.19 * scale_value
+	trunk_mesh.height = 1.6 * scale_value
+	trunk.mesh = trunk_mesh
+	trunk.material_override = trunk_mat
+	trunk.position = pos + Vector3(0.0, 0.8 * scale_value, 0.0)
+	body.add_child(trunk)
+
+	var leaves := MeshInstance3D.new()
+	var leaves_mesh := SphereMesh.new()
+	leaves_mesh.radius = 0.85 * scale_value
+	leaves_mesh.height = 1.7 * scale_value
+	leaves.mesh = leaves_mesh
+	leaves.material_override = leaves_mat
+	leaves.position = pos + Vector3(0.0, 2.0 * scale_value, 0.0)
+	body.add_child(leaves)
+
+	var shape := CollisionShape3D.new()
+	var col := CapsuleShape3D.new()
+	col.radius = 0.28 * scale_value
+	col.height = 1.6 * scale_value
+	shape.shape = col
+	shape.position = pos + Vector3(0.0, 0.8 * scale_value, 0.0)
+	body.add_child(shape)
+
+	town_root.add_child(body)
+
+func _create_lamp(pos: Vector3) -> void:
+	var pole := MeshInstance3D.new()
+	var pole_mesh := CylinderMesh.new()
+	pole_mesh.top_radius = 0.08
+	pole_mesh.bottom_radius = 0.1
+	pole_mesh.height = 2.6
+	pole.mesh = pole_mesh
+	var pole_mat := StandardMaterial3D.new()
+	pole_mat.albedo_color = Color(0.3, 0.34, 0.4)
+	pole.material_override = pole_mat
+	pole.position = pos + Vector3(0.0, 1.3, 0.0)
+	town_root.add_child(pole)
+
+	var bulb := OmniLight3D.new()
+	bulb.light_color = Color(1.0, 0.95, 0.75)
+	bulb.light_energy = 0.9
+	bulb.omni_range = 9.0
+	bulb.position = pos + Vector3(0.0, 2.5, 0.0)
+	town_root.add_child(bulb)
+
+func _build_boundaries() -> void:
+	_create_static_box(Vector3(city_size_x * 0.5, 1.1, -0.4), Vector3(city_size_x + 1.2, 2.2, 0.8), pavement_mat)
+	_create_static_box(Vector3(city_size_x * 0.5, 1.1, city_size_z + 0.4), Vector3(city_size_x + 1.2, 2.2, 0.8), pavement_mat)
+	_create_static_box(Vector3(-0.4, 1.1, city_size_z * 0.5), Vector3(0.8, 2.2, city_size_z + 1.2), pavement_mat)
+	_create_static_box(Vector3(city_size_x + 0.4, 1.1, city_size_z * 0.5), Vector3(0.8, 2.2, city_size_z + 1.2), pavement_mat)
+
+func _create_static_box(pos: Vector3, size: Vector3, mat: Material) -> void:
+	var body := StaticBody3D.new()
+
 	var mesh := MeshInstance3D.new()
 	var box := BoxMesh.new()
 	box.size = size
 	mesh.mesh = box
-	mesh.material_override = wall_mat
+	mesh.material_override = mat
 	mesh.position = pos
 	body.add_child(mesh)
 
@@ -217,50 +553,90 @@ func _create_wall(pos: Vector3, size: Vector3) -> void:
 	shape.position = pos
 	body.add_child(shape)
 
-	maze_root.add_child(body)
+	town_root.add_child(body)
 
-func _spawn_player() -> void:
-	player = CharacterBody3D.new()
-	player.name = "Player"
-	player.position = Vector3(1 * cell_size, 1.2, 1 * cell_size)
+func _spawn_landmarks() -> void:
+	var points = [
+		{"name": LANDMARKS[0], "pos": Vector3(city_size_x * 0.5, 0.4, city_size_z * 0.5), "color": Color(0.35, 0.9, 1.0)},
+		{"name": LANDMARKS[1], "pos": Vector3(city_size_x - road_width * 0.75, 0.4, road_width * 0.75), "color": Color(1.0, 0.72, 0.35)},
+		{"name": LANDMARKS[2], "pos": Vector3(road_width * 0.75, 0.4, city_size_z - road_width * 0.75), "color": Color(0.62, 1.0, 0.55)},
+	]
 
-	var cam := Camera3D.new()
-	cam.position = Vector3(0, 0.6, 0)
-	player.add_child(cam)
+	for data in points:
+		_create_landmark(data["name"], data["pos"], data["color"])
 
-	var flashlight := SpotLight3D.new()
-	flashlight.light_color = Color(0.95, 0.98, 1.0)
-	flashlight.light_energy = 2.0
-	flashlight.range = 18.0
-	flashlight.spot_angle = 35.0
-	flashlight.position = Vector3(0, 0.6, 0)
-	flashlight.rotation_degrees = Vector3(-2, 0, 0)
-	player.add_child(flashlight)
-
-	player.set_script(load("res://Player3D.gd"))
-	add_child(player)
-
-func _spawn_exit() -> void:
-	var ex := Vector3((grid_w-1) * cell_size, 0.5, (grid_h-1) * cell_size)
-
-	exit_area = Area3D.new()
-	exit_area.position = ex
+func _create_landmark(label_text: String, pos: Vector3, color: Color) -> void:
+	var area := Area3D.new()
+	area.position = pos
 	var shape := CollisionShape3D.new()
 	var box := BoxShape3D.new()
-	box.size = Vector3(2.0, 2.0, 2.0)
+	box.size = Vector3(3.2, 2.0, 3.2)
 	shape.shape = box
-	exit_area.add_child(shape)
-	exit_area.body_entered.connect(_on_exit)
-	add_child(exit_area)
+	area.add_child(shape)
+	area.body_entered.connect(_on_landmark_entered.bind(label_text))
+	town_root.add_child(area)
 
-	var glow := OmniLight3D.new()
-	glow.light_color = Color(0.2, 0.9, 0.5)
-	glow.light_energy = 1.2
-	glow.position = ex + Vector3(0, 1.2, 0)
-	add_child(glow)
+	var marker := MeshInstance3D.new()
+	var marker_mesh := CylinderMesh.new()
+	marker_mesh.top_radius = 0.7
+	marker_mesh.bottom_radius = 0.9
+	marker_mesh.height = 0.35
+	marker.mesh = marker_mesh
+	var marker_mat := StandardMaterial3D.new()
+	marker_mat.albedo_color = color
+	marker_mat.emission_enabled = true
+	marker_mat.emission = color
+	marker_mat.emission_energy_multiplier = 1.3
+	marker.material_override = marker_mat
+	marker.position = pos + Vector3(0.0, 0.18, 0.0)
+	town_root.add_child(marker)
 
-func _on_exit(body: Node) -> void:
+	var beacon := OmniLight3D.new()
+	beacon.light_color = color
+	beacon.light_energy = 1.7
+	beacon.omni_range = 11.0
+	beacon.position = pos + Vector3(0.0, 1.8, 0.0)
+	town_root.add_child(beacon)
+
+	var label := Label3D.new()
+	label.text = label_text
+	label.position = pos + Vector3(0.0, 2.5, 0.0)
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.modulate = color.lightened(0.35)
+	label.pixel_size = 0.01
+	town_root.add_child(label)
+
+func _on_landmark_entered(body: Node, landmark_name: String) -> void:
 	if body.name != "Player":
 		return
-	ui_label.text = "ESCAPED!"
-	help_label.text = "ESCAPED!"
+	if discovered_landmarks.has(landmark_name):
+		return
+
+	discovered_landmarks[landmark_name] = true
+	if goal_audio:
+		goal_audio.play()
+
+	ui_label.text = "Discovered: %s" % landmark_name
+	_update_quest_text()
+
+	if discovered_landmarks.size() >= LANDMARKS.size():
+		help_label.text = "Village tour complete!\nYou can keep exploring freely."
+		ui_label.text = "Urban Village Explorer - Complete"
+
+func _update_quest_text() -> void:
+	var found := discovered_landmarks.size()
+	if found >= LANDMARKS.size():
+		quest_label.text = "Landmarks: %d/%d  |  COMPLETE" % [found, LANDMARKS.size()]
+		return
+
+	var remaining := PackedStringArray()
+	for landmark in LANDMARKS:
+		if not discovered_landmarks.has(landmark):
+			remaining.append(landmark)
+	quest_label.text = "Landmarks: %d/%d  |  Next: %s" % [found, LANDMARKS.size(), ", ".join(remaining)]
+
+func _reset_player_position() -> void:
+	if not player:
+		return
+	player.position = Vector3(road_width * 0.7, 1.2, road_width * 0.7)
+	player.velocity = Vector3.ZERO

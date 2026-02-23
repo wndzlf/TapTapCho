@@ -49,3 +49,14 @@ bash scripts/create-webgame.sh webgame-10 "Zigzag Rush" "Reflex · Zigzag"
 - 한 에이전트 = 한 게임 폴더만 수정
 - 공통 파일(`style.css`, `index.html`)은 통합 담당만 수정
 - 머지 직전 `python3 -m http.server 8080`로 클릭/모바일 터치 직접 확인
+
+## 6) Godot 3D 게임 반영(필수)
+
+`godot-urban-maze`, `godot-platformer`는 **소스 프로젝트**, `godot-urban-maze-web`, `godot-platformer-web`는 **웹 export 결과물**입니다.
+
+Godot 소스 변경 후 웹에 반영하려면:
+
+1. Godot 4에서 `/Users/user/TapTapCho/godot-urban-maze/project.godot` 열기
+2. `Project -> Export -> Web` 선택
+3. `export_path`가 `../godot-urban-maze-web/index.html`인지 확인 후 Export
+4. 같은 방식으로 `godot-platformer`도 `../godot-platformer-web/index.html`로 Export
