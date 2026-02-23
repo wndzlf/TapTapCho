@@ -17,10 +17,10 @@
 | 11 | Stack Tower | 타이밍 적층 | DONE | webgame-11 |
 | 12 | Knife Hit Lite | 회전 목표 명중 | DONE | webgame-12 |
 | 13 | Color Switch Dot | 색상 매칭 통과 | DONE | webgame-13 |
-| 14 | Helix Fall Mini | 낙하 회전 회피 | TODO | webgame-14 |
-| 15 | Drift One-Tap | 원터치 드리프트 | TODO | webgame-15 |
-| 16 | Slide Puzzle Rush | 한 줄 퍼즐 정렬 | TODO | webgame-16 |
-| 17 | Cross Road Micro | 타이밍 길건너기 | TODO | webgame-17 |
-| 18 | Merge 2048 Tiny | 숫자 병합 | TODO | webgame-18 |
+| 14 | Helix Fall Mini | 낙하 회전 회피 | DONE | webgame-14 |
+| 15 | Drift One-Tap | 원터치 드리프트 | DONE | webgame-15 |
+| 16 | Slide Puzzle Rush | 한 줄 퍼즐 정렬 | DONE | webgame-16 |
+| 17 | Cross Road Micro | 타이밍 길건너기 | DONE | webgame-17 |
+| 18 | Orbit Survivor | 궤도 회피 생존 | DONE | webgame-18 |
 | 19 | Brick Break Dash | 빠른 벽돌깨기 | TODO | webgame-19 |
-| 20 | Orbit Survivor | 궤도 회피 생존 | TODO | webgame-20 |
+| 20 | Merge 2048 Tiny | 숫자 병합 | TODO | webgame-20 |

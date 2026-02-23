@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Helix Fall Mini</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Helix Fall Mini</h1>
+      <p>Tap to spin. Drop through gaps and avoid red segments.</p>
+    </header>
+
+    <div class="hud">
+      <div>Score: <span id="score">0</span></div>
+      <div>Best: <span id="best">0</span></div>
+      <button id="btnStart">Start</button>
+    </div>
+
+    <canvas id="game" width="420" height="700"></canvas>
+
+    <footer>
+      <small>Tap / Space: change spin direction</small>
+    </footer>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
