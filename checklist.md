@@ -22,5 +22,6 @@
 | 16 | Slide Puzzle Rush | 한 줄 퍼즐 정렬 | DONE | webgame-16 |
 | 17 | Cross Road Micro | 타이밍 길건너기 | DONE | webgame-17 |
 | 18 | Orbit Survivor | 궤도 회피 생존 | DONE | webgame-18 |
-| 19 | Brick Break Dash | 빠른 벽돌깨기 | TODO | webgame-19 |
-| 20 | Merge 2048 Tiny | 숫자 병합 | TODO | webgame-20 |
+| 19 | Merge 2048 Tiny | 숫자 병합 | DONE | webgame-19 |
+| 20 | Lights Out Rush | 격자 토글 퍼즐 | DONE | webgame-20 |
+| 21 | Zigzag Memory Run | 좌우 패턴 기억 | DONE | webgame-21 |
