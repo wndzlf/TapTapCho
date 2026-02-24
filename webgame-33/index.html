@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Neon Bubble Shooter</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Neon Bubble Shooter</h1>
+      <p>Shoot bubbles to match 3+.</p>
+    </header>
+
+    <div class="hud">
+      <div>Score: <span id="score">0</span></div>
+      <button id="btnNew">New</button>
+    </div>
+
+    <canvas id="game" width="420" height="560"></canvas>
+
+    <footer>
+      <small>Tap to shoot straight up.</small>
+    </footer>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>

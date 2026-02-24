@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Neon Tile Connect</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Neon Tile Connect</h1>
+      <p>Match identical tiles in a clear row/column.</p>
+    </header>
+
+    <div class="hud">
+      <div>Pairs Left: <span id="left">0</span></div>
+      <button id="btnNew">New</button>
+    </div>
+
+    <canvas id="game" width="420" height="560"></canvas>
+
+    <footer>
+      <small>Select two identical tiles in the same row/column.</small>
+    </footer>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Neon Gravity Drop</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Neon Gravity Drop</h1>
+      <p>Drop the ball to reach the goal.</p>
+    </header>
+
+    <div class="hud">
+      <div>Wins: <span id="wins">0</span></div>
+      <button id="btnReset">Reset</button>
+    </div>
+
+    <canvas id="game" width="420" height="560"></canvas>
+
+    <footer>
+      <small>Tap to drop ball. Goal: hit the green zone.</small>
+    </footer>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>

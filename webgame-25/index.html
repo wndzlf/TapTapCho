@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Neon Match-3</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Neon Match-3</h1>
+      <p>Swap adjacent tiles. Match 3+ to clear.</p>
+    </header>
+
+    <div class="hud">
+      <div>Score: <span id="score">0</span></div>
+      <div>Moves: <span id="moves">30</span></div>
+      <button id="btnNew">New</button>
+    </div>
+
+    <canvas id="game" width="420" height="560"></canvas>
+
+    <footer>
+      <small>Tap two tiles to swap.</small>
+    </footer>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>

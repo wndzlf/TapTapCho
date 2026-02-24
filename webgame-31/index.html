@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Neon Jigsaw</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Neon Jigsaw</h1>
+      <p>Swap tiles to rebuild the image.</p>
+    </header>
+
+    <div class="hud">
+      <div>Swaps: <span id="moves">0</span></div>
+      <button id="btnNew">Shuffle</button>
+    </div>
+
+    <canvas id="game" width="420" height="520"></canvas>
+
+    <footer>
+      <small>Tap two tiles to swap.</small>
+    </footer>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>

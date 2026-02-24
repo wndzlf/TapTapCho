@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Neon Hidden Object</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Neon Hidden Object</h1>
+      <p>Find all objects in the scene.</p>
+    </header>
+
+    <div class="hud">
+      <div>Found: <span id="found">0</span></div>
+      <button id="btnNew">New</button>
+    </div>
+
+    <canvas id="game" width="420" height="520"></canvas>
+    <div id="list" class="hud"></div>
+
+    <footer>
+      <small>Tap the objects to collect.</small>
+    </footer>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>

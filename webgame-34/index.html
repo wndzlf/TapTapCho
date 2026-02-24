@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Neon Solitaire Lite</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Neon Solitaire Lite</h1>
+      <p>Draw cards, build foundations Ace→King.</p>
+    </header>
+
+    <div class="hud">
+      <div>Moves: <span id="moves">0</span></div>
+      <button id="btnNew">New</button>
+    </div>
+
+    <canvas id="game" width="420" height="520"></canvas>
+
+    <footer>
+      <small>Tap deck to draw. Tap waste to move to foundation.</small>
+    </footer>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>
