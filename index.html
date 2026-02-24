@@ -240,6 +240,26 @@
           </div>
         </a>
 
+        <a class="card" href="./webgame-37/index.html">
+          <div class="thumb">
+            <div class="thumb-title">Worm Arena Rush</div>
+          </div>
+          <div class="meta">
+            <div class="title">Worm Arena Rush</div>
+            <div class="tags">Arcade · Worm</div>
+          </div>
+        </a>
+
+        <a class="card" href="./webgame-38/index.html">
+          <div class="thumb">
+            <div class="thumb-title">Worm Arena LAN</div>
+          </div>
+          <div class="meta">
+            <div class="title">Worm Arena LAN</div>
+            <div class="tags">Arcade · Multiplayer</div>
+          </div>
+        </a>
+
         <a class="card" href="./webgame-24/index.html">
           <div class="thumb">
             <div class="thumb-title">Neon Sudoku</div>
@@ -412,5 +432,21 @@
   </main>
 
   <footer class="foot">© TapTapCho</footer>
+  <script>
+    (function () {
+      var thumbs = document.querySelectorAll('.card .thumb');
+      thumbs.forEach(function (thumb) {
+        var card = thumb.closest('.card');
+        if (!card) return;
+        var href = card.getAttribute('href') || '';
+        var key = href
+          .replace(/^\.\//, '')
+          .replace(/\/index\.html$/, '')
+          .replace(/\//g, '__');
+        if (!key) return;
+        thumb.style.setProperty('--thumb-url', "url('./assets/thumbs/" + key + ".svg')");
+      });
+    })();
+  </script>
 </body>
 </html>

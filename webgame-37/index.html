@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Worm Arena Rush</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Worm Arena Rush</h1>
+      <p>Roam, eat snacks, grow longer, avoid worm bodies.</p>
+    </header>
+
+    <div class="hud">
+      <div>Score: <span id="score">0</span></div>
+      <div>Best: <span id="best">0</span></div>
+      <div>Length: <span id="length">0</span></div>
+      <div>Bots: <span id="alive">0</span></div>
+      <button id="btnStart">Start</button>
+    </div>
+
+    <canvas id="game" width="420" height="700"></canvas>
+
+    <footer>
+      <small>Move: mouse/touch or WASD/Arrow · Boost: Shift/Space</small>
+    </footer>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

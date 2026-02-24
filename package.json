@@ -1,0 +1,12 @@
+{
+  "name": "taptapcho-lan-server",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "worm-lan-server": "node scripts/worm-lan-server.js",
+    "generate-thumbnails": "node scripts/generate-thumbnails.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

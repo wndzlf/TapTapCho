@@ -10,7 +10,8 @@ const H = canvas.height;
 const STORAGE_KEY = 'color-switch-dot-best';
 const TAU = Math.PI * 2;
 const SEGMENT_ARC = TAU / 4;
-const RING_GAP_ANGLE = 0.12;
+const RING_GAP_ANGLE = 0.18;
+const KEEP_COLOR_CHANCE = 0.7;
 
 const COLORS = ['#ff5f6d', '#ffd166', '#4ecdc4', '#5f8cff'];
 
@@ -85,11 +86,12 @@ function addBurst(x, y, color, amount = 10) {
 function makeObstacle(y) {
   return {
     y,
-    r: rand(56, 72),
-    thickness: 14,
+    r: rand(62, 80),
+    thickness: 12,
     rot: rand(0, TAU),
-    rotSpeed: (Math.random() > 0.5 ? 1 : -1) * rand(0.009, 0.018),
+    rotSpeed: (Math.random() > 0.5 ? 1 : -1) * rand(0.006, 0.013),
     cleared: false,
+    checkedThisPass: false,
   };
 }
 
@@ -98,14 +100,14 @@ function buildInitialObstacles() {
   let y = 410;
   for (let i = 0; i < 10; i += 1) {
     obstacles.push(makeObstacle(y));
-    y -= rand(235, 290);
+    y -= rand(260, 320);
   }
 }
 
 function extendObstacles() {
   while (obstacles[obstacles.length - 1].y > player.y - 1900) {
     const last = obstacles[obstacles.length - 1];
-    obstacles.push(makeObstacle(last.y - rand(235, 290)));
+    obstacles.push(makeObstacle(last.y - rand(260, 320)));
   }
 }
 
@@ -151,7 +153,7 @@ function jump() {
     return;
   }
 
-  player.vy = -7.6;
+  player.vy = -8.2;
   addBurst(player.x, player.y, player.color, 8);
   beep(540, 0.04, 0.02);
 }
@@ -169,8 +171,8 @@ function update() {
 
   if (state !== 'running') return;
 
-  player.vy += 0.25;
-  if (player.vy > 7.8) player.vy = 7.8;
+  player.vy += 0.22;
+  if (player.vy > 7.2) player.vy = 7.2;
   player.y += player.vy;
 
   if (player.y < cameraY + H * 0.42) {
@@ -187,6 +189,14 @@ function update() {
   for (const obs of obstacles) {
     obs.rot += obs.rotSpeed;
 
+    if (!obs.cleared && obs.checkedThisPass && player.y > obs.y + obs.r + 26) {
+      obs.checkedThisPass = false;
+    }
+
+    if (obs.cleared) {
+      continue;
+    }
+
     const dy = player.y - obs.y;
     const radial = Math.abs(dy);
     const inner = obs.r - obs.thickness * 0.5;
@@ -194,7 +204,9 @@ function update() {
 
     const intersectsBand = radial + player.r > inner && radial - player.r < outer;
 
-    if (intersectsBand) {
+    // Easier and fairer: only judge while rising into the ring once per pass.
+    if (!obs.checkedThisPass && intersectsBand && player.vy < 0 && dy > 0) {
+      obs.checkedThisPass = true;
       const contactAngle = dy < 0 ? -Math.PI / 2 : Math.PI / 2;
       const localAngle = normalizeAngle(contactAngle - obs.rot);
       const angleInSegment = localAngle % SEGMENT_ARC;
@@ -217,7 +229,7 @@ function update() {
       obs.cleared = true;
       score += 1;
       scoreEl.textContent = String(score);
-      player.color = Math.random() < 0.4 ? player.color : randomColorExcept(player.color);
+      player.color = Math.random() < KEEP_COLOR_CHANCE ? player.color : randomColorExcept(player.color);
 
       addBurst(player.x, player.y, '#ffffff', 10);
       beep(780, 0.045, 0.02);

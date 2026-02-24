@@ -19,6 +19,7 @@ const BOARD_X = (W - BOARD_W) * 0.5;
 const BOARD_Y = 170;
 
 const BASE_MINES = 10;
+const AUTO_REVEAL_LIMIT = 12;
 const STORAGE_KEY = 'mine-sweep-sprint-best';
 
 let state = 'idle'; // idle | running | gameover
@@ -155,20 +156,27 @@ function nextRound() {
 }
 
 function revealFlood(startR, startC) {
-  const stack = [[startR, startC]];
+  const queue = [[startR, startC]];
+  const visited = new Set([idx(startR, startC)]);
+  let opened = 0;
 
-  while (stack.length > 0) {
-    const [r, c] = stack.pop();
+  while (queue.length > 0 && opened < AUTO_REVEAL_LIMIT) {
+    const [r, c] = queue.shift();
 
     forEachNeighbor(r, c, (nr, nc) => {
-      const cell = board[idx(nr, nc)];
+      if (opened >= AUTO_REVEAL_LIMIT) return;
+
+      const cellId = idx(nr, nc);
+      const cell = board[cellId];
       if (cell.revealed || cell.flagged || cell.mine) return;
 
       cell.revealed = true;
       safeLeft -= 1;
+      opened += 1;
 
-      if (cell.count === 0) {
-        stack.push([nr, nc]);
+      if (cell.count === 0 && !visited.has(cellId)) {
+        visited.add(cellId);
+        queue.push([nr, nc]);
       }
     });
   }

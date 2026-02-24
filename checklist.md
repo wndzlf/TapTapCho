@@ -26,3 +26,5 @@
 | 20 | Lights Out Rush | 격자 토글 퍼즐 | DONE | webgame-20 |
 | 21 | Zigzag Memory Run | 좌우 패턴 기억 | DONE | webgame-21 |
 | 22 | Mine Sweep Sprint | 지뢰찾기 퍼즐 | DONE | webgame-22 |
+| 37 | Worm Arena Rush | 먹이 성장/회피 | DONE | webgame-37 |
+| 38 | Worm Arena LAN | 같은 와이파이 룸 대전 | DONE | webgame-38 |

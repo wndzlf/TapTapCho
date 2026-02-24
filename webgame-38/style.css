@@ -1,0 +1,126 @@
+:root {
+  --bg: #101a3b;
+  --panel: #142449;
+  --line: #314d8d;
+  --text: #eaf0ff;
+  --accent: #ffd372;
+  --ok: #8fffbc;
+  --warn: #ffe08a;
+  --bad: #ff8f9d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: var(--text);
+  background: radial-gradient(1300px 700px at 50% -10%, #334f9a, var(--bg) 64%);
+}
+
+.wrap {
+  width: min(500px, 96vw);
+  margin: 18px auto;
+}
+
+header h1 {
+  margin: 0;
+  color: var(--accent);
+}
+
+header p {
+  margin: 8px 0 12px;
+  opacity: 0.9;
+}
+
+.hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.net-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.net-panel label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  opacity: 0.95;
+}
+
+.net-panel input {
+  width: 100%;
+  border: 1px solid #466dc0;
+  background: #1e3270;
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.net-actions {
+  display: flex;
+  gap: 8px;
+}
+
+button {
+  border: 1px solid #466dc0;
+  background: #1e3270;
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+button.ghost {
+  background: transparent;
+}
+
+.status {
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--warn);
+}
+
+.status.ok {
+  color: var(--ok);
+}
+
+.status.bad {
+  color: var(--bad);
+}
+
+canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #1d316e;
+  touch-action: none;
+}
+
+footer {
+  margin-top: 10px;
+  opacity: 0.78;
+  text-align: center;
+}
