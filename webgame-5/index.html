@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
 <head>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8573384818394891" crossorigin="anonymous"></script>
   <meta charset="utf-8" />
@@ -11,25 +11,47 @@
   <div class="wrap">
     <header>
       <h1>Party Roulette</h1>
-      <p>Add items, spin the wheel, get a random pick.</p>
+      <p>모드별 룰렛으로 연속 성공 스트릭을 쌓아 최고 점수를 갱신하세요.</p>
     </header>
 
     <div class="panel">
       <div class="row">
-        <label>Items (comma separated)</label>
-        <input id="items" value="Shot, Safe, Shot, Water, Skip" />
+        <label>아이템 (콤마 구분)</label>
+        <input id="items" value="Shot, Safe, Water, Skip, Bonus" />
+      </div>
+      <div class="row">
+        <label>모드</label>
+        <select id="mode">
+          <option value="normal">일반</option>
+          <option value="norepeat">노리핏 (연속 중복 없음)</option>
+          <option value="elimination">제거전 (뽑힌 항목 제거)</option>
+        </select>
       </div>
       <div class="row buttons">
-        <button id="btnSpin">Spin</button>
-        <button id="btnShuffle" class="ghost">Shuffle</button>
+        <button id="btnSpin">스핀</button>
+        <button id="btnShuffle" class="ghost">섞기</button>
+        <button id="btnReset" class="ghost">초기화</button>
+        <button id="btnSound" class="ghost">사운드: 켜짐</button>
       </div>
-      <div id="result" class="result">Ready</div>
+      <div id="result" class="result">준비 완료</div>
     </div>
 
-    <canvas id="wheel" width="520" height="520"></canvas>
+    <div class="hud">
+      <div>점수 <span id="score">0</span></div>
+      <div>스트릭 <span id="streak">0</span></div>
+      <div>최고 스트릭 <span id="bestStreak">0</span></div>
+      <div>라운드 <span id="round">1</span></div>
+    </div>
+
+    <canvas id="wheel" width="620" height="620"></canvas>
+
+    <div class="history-wrap">
+      <strong>최근 결과</strong>
+      <ul id="history"></ul>
+    </div>
 
     <footer>
-      <small>Tap Spin to roll. Shuffle randomizes order.</small>
+      <small>스핀 후 포인터가 가리키는 항목이 선택됩니다.</small>
     </footer>
   </div>
 

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
 <head>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8573384818394891" crossorigin="anonymous"></script>
   <meta charset="utf-8" />
@@ -11,22 +11,17 @@
   <div class="wrap">
     <header>
       <h1>TapTap Tetris</h1>
-      <p>Drop blocks, clear lines, survive.</p>
+      <p>홀드/고스트/콤보/레벨 시스템이 포함된 모바일 친화 테트리스</p>
     </header>
 
     <div class="hud">
-      <div class="stat">
-        <div class="label">Score</div>
-        <div id="score" class="value">0</div>
-      </div>
-      <div class="stat">
-        <div class="label">Lines</div>
-        <div id="lines" class="value">0</div>
-      </div>
-      <div class="stat">
-        <div class="label">Next</div>
-        <canvas id="next" width="96" height="96"></canvas>
-      </div>
+      <div class="stat"><div class="label">점수</div><div id="score" class="value">0</div></div>
+      <div class="stat"><div class="label">최고</div><div id="best" class="value">0</div></div>
+      <div class="stat"><div class="label">라인</div><div id="lines" class="value">0</div></div>
+      <div class="stat"><div class="label">레벨</div><div id="level" class="value">1</div></div>
+      <div class="stat"><div class="label">콤보</div><div id="combo" class="value">x1.0</div></div>
+      <div class="stat preview-box"><div class="label">홀드</div><canvas id="hold" width="96" height="96"></canvas></div>
+      <div class="stat preview-box"><div class="label">다음</div><canvas id="next" width="96" height="96"></canvas></div>
     </div>
 
     <canvas id="board" width="240" height="480"></canvas>
@@ -36,21 +31,23 @@
       <button id="btnRotate">⟳</button>
       <button id="btnRight">▶</button>
       <button id="btnDown">▼</button>
-      <button id="btnDrop" class="primary">DROP</button>
-      <button id="btnPause" class="ghost">PAUSE</button>
-      <button id="btnRestart" class="ghost">RESTART</button>
+      <button id="btnDrop" class="primary">드롭</button>
+      <button id="btnHold">홀드</button>
+      <button id="btnSound" class="ghost">사운드</button>
+      <button id="btnPause" class="ghost">일시정지</button>
+      <button id="btnRestart" class="ghost">재시작</button>
     </div>
 
     <footer>
-      <small>Keyboard: ← → to move, ↑ rotate, ↓ soft drop, Space hard drop.</small>
+      <small>키보드: ← → 이동, ↑ 회전, ↓ 내리기, Space 하드드롭, C 홀드, P 일시정지</small>
     </footer>
   </div>
 
   <div id="overlay" class="overlay hidden">
     <div class="panel">
-      <h2 id="overlayTitle">Paused</h2>
-      <p id="overlayDesc">Tap resume to continue.</p>
-      <button id="btnResume" class="primary">RESUME</button>
+      <h2 id="overlayTitle">일시정지</h2>
+      <p id="overlayDesc">이어하기를 누르면 게임이 재개됩니다.</p>
+      <button id="btnResume" class="primary">이어하기</button>
     </div>
   </div>
 

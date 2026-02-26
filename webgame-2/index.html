@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
 <head>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8573384818394891" crossorigin="anonymous"></script>
   <meta charset="utf-8" />
@@ -11,19 +11,23 @@
   <div class="wrap">
     <header>
       <h1>Ball Bounce</h1>
-      <p>Catch the ball with the paddle. Don’t let it fall.</p>
+      <p>브릭을 부수고 파워업을 모아 멀티볼 콤보를 이어가세요.</p>
     </header>
 
     <div class="hud">
-      <div>Score: <span id="score">0</span></div>
-      <div>Best: <span id="best">0</span></div>
-      <button id="btnStart">Start</button>
+      <div>점수 <span id="score">0</span></div>
+      <div>최고 <span id="best">0</span></div>
+      <div>레벨 <span id="level">1</span></div>
+      <div>생명 <span id="lives">3</span></div>
+      <button id="btnSound" type="button">사운드: 켜짐</button>
+      <button id="btnPause" type="button">일시정지</button>
+      <button id="btnStart" type="button">시작</button>
     </div>
 
     <canvas id="game" width="420" height="700"></canvas>
 
     <footer>
-      <small>Move: ← → / A D · Tap left/right on mobile</small>
+      <small>조작: ← → / A D / 드래그 · 발사: 스페이스 또는 탭</small>
     </footer>
   </div>
   <script src="game.js"></script>

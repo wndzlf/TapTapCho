@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
 <head>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8573384818394891" crossorigin="anonymous"></script>
   <meta charset="utf-8" />
@@ -11,32 +11,49 @@
   <div class="wrap">
     <header>
       <h1>Ladder Draw</h1>
-      <p>Enter names & results, then draw the ladder.</p>
+      <p>예측하고 추적하면서 스트릭을 쌓는 인터랙티브 사다리 게임</p>
     </header>
 
     <div class="panel">
       <div class="row">
-        <label>Players (2–6)</label>
+        <label>참가자 (2~6)</label>
         <input id="players" value="Alex, Ben, Chris, Dana" />
       </div>
       <div class="row">
-        <label>Results (same count)</label>
+        <label>결과 (같은 개수)</label>
         <input id="results" value="Shot, Safe, Shot, Safe" />
       </div>
       <div class="row">
-        <label>Rungs (difficulty)</label>
-        <input id="rungs" type="number" min="6" max="30" value="12" />
+        <label>가로줄 수</label>
+        <input id="rungs" type="number" min="6" max="36" value="14" />
+      </div>
+      <div class="row">
+        <label>예측 참가자</label>
+        <select id="guessPlayer"></select>
+      </div>
+      <div class="row">
+        <label>예측 결과</label>
+        <select id="guessResult"></select>
       </div>
       <div class="row buttons">
-        <button id="btnDraw">Draw</button>
-        <button id="btnShuffle" class="ghost">Shuffle</button>
+        <button id="btnDraw">생성</button>
+        <button id="btnShuffle" class="ghost">섞기</button>
+        <button id="btnTraceAll" class="ghost">전체 추적</button>
+        <button id="btnResetScore" class="ghost">점수 초기화</button>
       </div>
     </div>
 
-    <canvas id="game" width="720" height="520"></canvas>
+    <div class="hud">
+      <div>라운드 <span id="round">1</span></div>
+      <div>점수 <span id="score">0</span></div>
+      <div>연속 성공 <span id="streak">0</span></div>
+      <div>최고 스트릭 <span id="bestStreak">0</span></div>
+    </div>
+
+    <canvas id="game" width="820" height="560"></canvas>
 
     <footer>
-      <small>Tap Draw to generate a new ladder. Shuffle randomizes players/results.</small>
+      <small>상단 이름을 누르면 경로 추적. 예측 성공 시 보너스 점수.</small>
     </footer>
   </div>
 
