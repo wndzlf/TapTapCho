@@ -23,7 +23,6 @@ let state = 'idle'; // idle | running | gameover
 let score = 0;
 let best = Number(localStorage.getItem(STORAGE_KEY) || 0);
 let tick = 0;
-let flash = 0;
 
 let player;
 let bots = [];
@@ -147,7 +146,6 @@ function resetGame() {
   state = 'idle';
   score = 0;
   tick = 0;
-  flash = 0;
 
   player = createWorm({
     x: WORLD_W * 0.5,
@@ -296,7 +294,6 @@ function consumeFood(worm) {
 
     if (worm.isPlayer) {
       score += food.value;
-      flash = 6;
       scoreEl.textContent = String(score);
       lengthEl.textContent = String(worm.segments.length);
 
@@ -509,11 +506,6 @@ function render() {
   }
   drawWorm(player);
 
-  if (flash > 0) {
-    ctx.fillStyle = 'rgba(255, 235, 149, 0.08)';
-    ctx.fillRect(0, 0, W, H);
-  }
-
   drawMiniMap();
 
   ctx.fillStyle = '#eaf1ff';
@@ -536,7 +528,6 @@ function render() {
 
 function update(dt) {
   tick += 1;
-  if (flash > 0) flash -= 1;
 
   if (state !== 'running') return;
 
