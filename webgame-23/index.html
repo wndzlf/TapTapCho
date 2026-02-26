@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -10,20 +10,41 @@
   <div class="wrap">
     <header>
       <h1>Neon Snake</h1>
-      <p>Eat, grow, survive. Classic snake with a neon glow.</p>
+      <p>먹고, 성장하고, 장애물과 패턴 웨이브를 돌파하세요.</p>
     </header>
 
     <div class="hud">
-      <div>Score: <span id="score">0</span></div>
-      <div>Best: <span id="best">0</span></div>
-      <button id="btnStart">Start</button>
-      <button id="btnPause">Pause</button>
+      <div>점수 <span id="score">0</span></div>
+      <div>최고 <span id="best">0</span></div>
+      <div>레벨 <span id="level">1</span></div>
+      <div>콤보 <span id="combo">x1.0</span></div>
+      <div>실드 <span id="shield">0</span></div>
+      <button id="btnSound" type="button">사운드: 켜짐</button>
+      <button id="btnStart" type="button">시작</button>
+      <button id="btnPause" type="button">일시정지</button>
+    </div>
+
+    <div class="challenge-wrap">
+      <div class="challenge-head">
+        <strong>챌린지</strong>
+        <span id="challengeText">게임을 시작하세요</span>
+      </div>
+      <div class="challenge-bar"><div id="challengeFill"></div></div>
     </div>
 
     <canvas id="game" width="420" height="700"></canvas>
 
+    <div class="touch-pad" aria-label="모바일 조작 버튼">
+      <button id="btnUp" type="button">▲</button>
+      <div class="mid">
+        <button id="btnLeft" type="button">◀</button>
+        <button id="btnRight" type="button">▶</button>
+      </div>
+      <button id="btnDown" type="button">▼</button>
+    </div>
+
     <footer>
-      <small>Arrow/WASD · Swipe on mobile · Space: pause</small>
+      <small>방향키/WASD/스와이프/터치패드 · Space 일시정지</small>
     </footer>
   </div>
 
