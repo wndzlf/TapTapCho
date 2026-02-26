@@ -1,3 +1,5 @@
+const bgmAudio = window.TapTapNeonAudio?.create('webgame-5', document.querySelector('.hud'), { theme: 'arcade', showSfxToggle: false });
+
 const canvas = document.getElementById('wheel');
 const ctx = canvas.getContext('2d');
 

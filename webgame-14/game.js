@@ -1,3 +1,5 @@
+const bgmAudio = window.TapTapNeonAudio?.create('webgame-14', document.querySelector('.hud'), { theme: 'drift' });
+
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 

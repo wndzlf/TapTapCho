@@ -1,3 +1,5 @@
+const bgmAudio = window.TapTapNeonAudio?.create('godot-air-striker-web', document.querySelector('.hud'), { theme: 'arcade', showSfxToggle: false });
+
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 

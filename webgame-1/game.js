@@ -1,3 +1,5 @@
+const bgmAudio = window.TapTapNeonAudio?.create('webgame-1', document.querySelector('.hud'), { theme: 'neon' });
+
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
