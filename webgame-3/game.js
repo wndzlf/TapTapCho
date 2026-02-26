@@ -1,103 +1,901 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
+
 const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
+const levelEl = document.getElementById('level');
+const comboEl = document.getElementById('combo');
+const shieldEl = document.getElementById('shield');
+const challengeTextEl = document.getElementById('challengeText');
+const challengeFillEl = document.getElementById('challengeFill');
 
-const W = canvas.width, H = canvas.height;
-let running=false, score=0, t=0;
-let best = Number(localStorage.getItem('lane-best')||0);
-bestEl.textContent = best;
+const btnStart = document.getElementById('btnStart');
+const btnPause = document.getElementById('btnPause');
+const btnSound = document.getElementById('btnSound');
+const btnLeft = document.getElementById('btnLeft');
+const btnRight = document.getElementById('btnRight');
 
-const lanes = [W*0.25, W*0.5, W*0.75];
-const player = { lane: 1, y: H-90, w: 36, h: 36 };
+const W = canvas.width;
+const H = canvas.height;
+
+const BEST_KEY = 'lane-runner-best-v3';
+const SOUND_KEY = 'lane-runner-sound-v3';
+
+const lanes = [W * 0.23, W * 0.5, W * 0.77];
+
+const player = {
+  lane: 1,
+  targetLane: 1,
+  x: lanes[1],
+  y: H - 120,
+  w: 44,
+  h: 58,
+  moveSpeed: 16,
+  invuln: 0,
+  tilt: 0,
+};
+
+let state = 'idle'; // idle | running | paused | gameover
+let scoreFloat = 0;
+let score = 0;
+let best = Number(localStorage.getItem(BEST_KEY) || 0);
+let level = 1;
+let distance = 0;
+let elapsed = 0;
+let worldSpeed = 260;
+let spawnTimer = 0;
+let roadTick = 0;
+let flash = 0;
+let shake = 0;
+let comboCount = 0;
+let comboTimer = 0;
+let shield = 0;
+let coinCount = 0;
+let slowTimer = 0;
+let overdriveTimer = 0;
+let scorePop = 0;
+
 let obstacles = [];
+let pickups = [];
+let particles = [];
 
-function reset(){
-  running=false; score=0; t=0; obstacles=[]; player.lane=1;
-  scoreEl.textContent = score;
+const keys = Object.create(null);
+const pointer = { active: false, downX: 0, swiped: false };
+
+const challengePool = [
+  { type: 'survive', label: '생존', base: 22 },
+  { type: 'coins', label: '코인', base: 6 },
+  { type: 'near', label: '근접회피', base: 5 },
+];
+
+let challenge = {
+  type: 'survive',
+  label: '생존',
+  target: 22,
+  progress: 0,
+  done: false,
+};
+
+bestEl.textContent = String(best);
+
+function rand(min, max) {
+  return min + Math.random() * (max - min);
 }
 
-function spawn(){
-  const lane = Math.floor(Math.random()*3);
-  obstacles.push({ lane, y: -40, w: 40, h: 40, v: 3.0 + Math.min(2, score/350) });
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, v));
 }
 
-function collide(a,b){
-  return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y;
+function lerp(a, b, t) {
+  return a + (b - a) * t;
 }
 
-function update(){
-  if(!running) return;
-  t++;
-  if(t % 40 === 0) spawn();
+function createSfx() {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  let audioCtx = null;
+  let enabled = localStorage.getItem(SOUND_KEY) !== 'off';
 
-  for(const o of obstacles) o.y += o.v;
-  obstacles = obstacles.filter(o => o.y < H+50);
+  function ensure() {
+    if (!Ctx) return;
+    if (!audioCtx) audioCtx = new Ctx();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  }
 
-  const pBox = { x: lanes[player.lane]-player.w/2, y: player.y-player.h/2, w: player.w, h: player.h };
-  for(const o of obstacles){
-    const oBox = { x: lanes[o.lane]-o.w/2, y: o.y, w: o.w, h: o.h };
-    if(collide(pBox, oBox)){
-      running=false;
-      best = Math.max(best, score);
-      localStorage.setItem('lane-best', best);
-      bestEl.textContent = best;
+  function tone({ freq = 440, endFreq = null, type = 'triangle', gain = 0.05, duration = 0.08 }) {
+    if (!enabled || !audioCtx) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const amp = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, now);
+    if (endFreq != null) {
+      osc.frequency.linearRampToValueAtTime(endFreq, now + duration);
+    }
+
+    amp.gain.setValueAtTime(0.0001, now);
+    amp.gain.linearRampToValueAtTime(gain, now + 0.008);
+    amp.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+    osc.connect(amp);
+    amp.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + duration + 0.02);
+  }
+
+  return {
+    ensure,
+    toggle() {
+      enabled = !enabled;
+      localStorage.setItem(SOUND_KEY, enabled ? 'on' : 'off');
+      return enabled;
+    },
+    isEnabled() {
+      return enabled;
+    },
+    start() {
+      tone({ freq: 520, endFreq: 700, gain: 0.05, duration: 0.11 });
+    },
+    move() {
+      tone({ freq: 360, endFreq: 510, gain: 0.03, duration: 0.05 });
+    },
+    coin() {
+      tone({ freq: 760, endFreq: 1040, gain: 0.04, duration: 0.09 });
+    },
+    hit() {
+      tone({ freq: 180, endFreq: 90, type: 'sawtooth', gain: 0.07, duration: 0.14 });
+    },
+    shield() {
+      tone({ freq: 420, endFreq: 880, type: 'triangle', gain: 0.05, duration: 0.12 });
+    },
+    challenge() {
+      tone({ freq: 480, endFreq: 920, type: 'square', gain: 0.06, duration: 0.12 });
+    },
+    near() {
+      tone({ freq: 640, endFreq: 540, gain: 0.03, duration: 0.05 });
+    },
+    over() {
+      tone({ freq: 140, endFreq: 70, type: 'sawtooth', gain: 0.08, duration: 0.2 });
+    },
+  };
+}
+
+const sfx = createSfx();
+
+function updateSoundButton() {
+  btnSound.textContent = `사운드: ${sfx.isEnabled() ? '켜짐' : '꺼짐'}`;
+}
+
+function addParticleBurst(x, y, color, count = 12, spread = 3.2) {
+  for (let i = 0; i < count; i += 1) {
+    particles.push({
+      x,
+      y,
+      vx: rand(-spread, spread),
+      vy: rand(-spread, spread),
+      life: rand(20, 34),
+      size: rand(2, 4),
+      color,
+    });
+  }
+
+  if (particles.length > 180) {
+    particles.splice(0, particles.length - 180);
+  }
+}
+
+function scoreMultiplier() {
+  return 1 + Math.min(2.2, Math.floor(comboCount / 4) * 0.2 + (overdriveTimer > 0 ? 0.3 : 0));
+}
+
+function addScore(points) {
+  scoreFloat += points * scoreMultiplier();
+  score = Math.floor(scoreFloat);
+}
+
+function updateHud() {
+  scoreEl.textContent = String(score);
+  bestEl.textContent = String(best);
+  levelEl.textContent = String(level);
+  comboEl.textContent = `x${scoreMultiplier().toFixed(1)}`;
+  shieldEl.textContent = String(shield);
+}
+
+function setChallenge() {
+  const base = challengePool[Math.floor(Math.random() * challengePool.length)];
+  const extra = Math.floor((level - 1) * 0.6);
+  challenge = {
+    type: base.type,
+    label: base.label,
+    target: base.base + extra,
+    progress: 0,
+    done: false,
+  };
+  updateChallengeUi();
+}
+
+function challengeStatusText() {
+  const p = Math.min(challenge.target, Math.floor(challenge.progress));
+  return `${challenge.label} ${p}/${challenge.target}`;
+}
+
+function updateChallengeUi() {
+  challengeTextEl.textContent = challengeStatusText();
+  const ratio = clamp(challenge.progress / Math.max(1, challenge.target), 0, 1);
+  challengeFillEl.style.width = `${ratio * 100}%`;
+}
+
+function addChallengeProgress(type, amount) {
+  if (challenge.done || challenge.type !== type) return;
+  challenge.progress += amount;
+  if (challenge.progress >= challenge.target) {
+    challenge.progress = challenge.target;
+    challenge.done = true;
+    const bonus = 180 + level * 30;
+    addScore(bonus);
+    shield = Math.min(2, shield + 1);
+    scorePop = bonus;
+    addParticleBurst(player.x, player.y - 30, '#9dffbe', 24, 3.9);
+    sfx.challenge();
+    setTimeout(() => {
+      if (state === 'running') setChallenge();
+    }, 700);
+  }
+  updateChallengeUi();
+}
+
+function obstacleSize(type) {
+  if (type === 'fast') return { w: 34, h: 46 };
+  if (type === 'gate') return { w: 46, h: 64 };
+  if (type === 'drifter') return { w: 42, h: 52 };
+  return { w: 46, h: 56 };
+}
+
+function spawnObstacle(laneIndex, type = 'normal') {
+  const size = obstacleSize(type);
+  const speedMul = type === 'fast' ? 1.35 : type === 'gate' ? 1.05 : type === 'drifter' ? 1.12 : 1;
+
+  obstacles.push({
+    lane: laneIndex,
+    x: lanes[laneIndex],
+    y: -size.h - rand(8, 30),
+    w: size.w,
+    h: size.h,
+    type,
+    speedMul,
+    drift: type === 'drifter' ? rand(-0.9, 0.9) : 0,
+    nearGiven: false,
+  });
+}
+
+function spawnPickup(type, laneIndex) {
+  pickups.push({
+    type,
+    lane: laneIndex,
+    x: lanes[laneIndex],
+    y: -26,
+    r: 12,
+    vyMul: rand(0.86, 1.08),
+    spin: rand(0, Math.PI * 2),
+  });
+}
+
+function spawnPattern() {
+  const roll = Math.random();
+
+  if (level < 3) {
+    if (roll < 0.62) {
+      spawnObstacle(Math.floor(Math.random() * 3), Math.random() < 0.23 ? 'fast' : 'normal');
+    } else {
+      const safe = Math.floor(Math.random() * 3);
+      for (let i = 0; i < 3; i += 1) {
+        if (i !== safe) spawnObstacle(i, 'normal');
+      }
+    }
+  } else if (level < 6) {
+    if (roll < 0.45) {
+      const lane = Math.floor(Math.random() * 3);
+      spawnObstacle(lane, 'fast');
+      if (Math.random() < 0.4) spawnObstacle((lane + 2) % 3, 'normal');
+    } else if (roll < 0.82) {
+      const safe = Math.floor(Math.random() * 3);
+      for (let i = 0; i < 3; i += 1) {
+        if (i !== safe) spawnObstacle(i, 'gate');
+      }
+    } else {
+      spawnObstacle(Math.floor(Math.random() * 3), 'drifter');
+    }
+  } else {
+    if (roll < 0.36) {
+      spawnObstacle(Math.floor(Math.random() * 3), 'fast');
+      spawnObstacle(Math.floor(Math.random() * 3), 'drifter');
+    } else if (roll < 0.7) {
+      const safe = Math.floor(Math.random() * 3);
+      for (let i = 0; i < 3; i += 1) {
+        if (i !== safe) spawnObstacle(i, Math.random() < 0.35 ? 'fast' : 'gate');
+      }
+    } else {
+      spawnObstacle(Math.floor(Math.random() * 3), 'drifter');
+      if (Math.random() < 0.55) spawnObstacle(Math.floor(Math.random() * 3), 'fast');
     }
   }
 
-  score += 1;
-  scoreEl.textContent = score;
+  if (Math.random() < 0.34) {
+    const lane = Math.floor(Math.random() * 3);
+    const p = Math.random();
+    if (p < 0.7) spawnPickup('coin', lane);
+    else if (p < 0.88) spawnPickup('shield', lane);
+    else if (p < 0.95) spawnPickup('slow', lane);
+    else spawnPickup('overdrive', lane);
+  }
 }
 
-function render(){
-  ctx.clearRect(0,0,W,H);
-  ctx.fillStyle = '#0b1020';
-  ctx.fillRect(0,0,W,H);
+function resetGame() {
+  state = 'idle';
+  scoreFloat = 0;
+  score = 0;
+  level = 1;
+  distance = 0;
+  elapsed = 0;
+  worldSpeed = 260;
+  spawnTimer = 0.8;
+  roadTick = 0;
+  flash = 0;
+  shake = 0;
+  comboCount = 0;
+  comboTimer = 0;
+  shield = 0;
+  coinCount = 0;
+  slowTimer = 0;
+  overdriveTimer = 0;
+  scorePop = 0;
 
-  // lanes
-  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-  for(let i=1;i<3;i++){
+  obstacles = [];
+  pickups = [];
+  particles = [];
+
+  player.lane = 1;
+  player.targetLane = 1;
+  player.x = lanes[1];
+  player.invuln = 0;
+  player.tilt = 0;
+
+  setChallenge();
+  updateHud();
+}
+
+function startGame() {
+  sfx.ensure();
+  resetGame();
+  state = 'running';
+  btnStart.textContent = '재시작';
+  sfx.start();
+}
+
+function endGame() {
+  state = 'gameover';
+  best = Math.max(best, score);
+  localStorage.setItem(BEST_KEY, String(best));
+  updateHud();
+  sfx.over();
+}
+
+function togglePause() {
+  if (state === 'running') state = 'paused';
+  else if (state === 'paused') state = 'running';
+}
+
+function moveLane(dir) {
+  if (state !== 'running') return;
+  const next = clamp(player.targetLane + dir, 0, 2);
+  if (next === player.targetLane) return;
+  player.targetLane = next;
+  player.tilt = dir * 0.2;
+  comboTimer = Math.max(0, comboTimer - 0.08);
+  sfx.move();
+}
+
+function difficultyUpdate(dt) {
+  level = clamp(1 + Math.floor(distance / 880), 1, 12);
+  const base = 250 + (level - 1) * 17;
+  let mod = 1;
+  if (slowTimer > 0) mod *= 0.7;
+  if (overdriveTimer > 0) mod *= 1.08;
+  worldSpeed = base * mod;
+
+  const spawnInterval = clamp(1.16 - level * 0.065, 0.42, 1.16);
+  spawnTimer -= dt;
+  if (spawnTimer <= 0) {
+    spawnPattern();
+    spawnTimer = spawnInterval * rand(0.86, 1.18);
+  }
+}
+
+function updatePlayer(dt) {
+  const tx = lanes[player.targetLane];
+  player.x = lerp(player.x, tx, clamp(dt * player.moveSpeed, 0, 1));
+  player.tilt = lerp(player.tilt, 0, clamp(dt * 8, 0, 1));
+  player.invuln = Math.max(0, player.invuln - dt);
+}
+
+function playerBox() {
+  return {
+    x: player.x - player.w * 0.5,
+    y: player.y - player.h * 0.5,
+    w: player.w,
+    h: player.h,
+  };
+}
+
+function overlap(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+function damagePlayer() {
+  if (player.invuln > 0) return;
+
+  if (shield > 0) {
+    shield -= 1;
+    player.invuln = 1.0;
+    flash = 10;
+    shake = 7;
+    addParticleBurst(player.x, player.y, '#9dffbe', 18, 3.4);
+    sfx.shield();
+    return;
+  }
+
+  flash = 18;
+  shake = 14;
+  addParticleBurst(player.x, player.y, '#ff96b4', 30, 4.6);
+  sfx.hit();
+  endGame();
+}
+
+function updateObstacles(dt) {
+  const pBox = playerBox();
+
+  for (let i = obstacles.length - 1; i >= 0; i -= 1) {
+    const o = obstacles[i];
+
+    if (o.type === 'drifter') {
+      const laneFloat = o.lane + o.drift * dt;
+      o.drift = clamp(o.drift + rand(-0.45, 0.45) * dt, -0.95, 0.95);
+      o.lane = clamp(laneFloat, 0, 2);
+      o.x = lerp(o.x, lanes[Math.round(o.lane)], clamp(dt * 6, 0, 1));
+    }
+
+    o.y += worldSpeed * o.speedMul * dt;
+
+    const box = {
+      x: o.x - o.w * 0.5,
+      y: o.y,
+      w: o.w,
+      h: o.h,
+    };
+
+    if (!o.nearGiven) {
+      const dx = Math.abs(o.x - player.x);
+      const dy = Math.abs((o.y + o.h * 0.5) - player.y);
+      if (dx > 44 && dx < 92 && dy < 32) {
+        o.nearGiven = true;
+        comboCount += 1;
+        comboTimer = 2.3;
+        addScore(16);
+        addChallengeProgress('near', 1);
+        sfx.near();
+      }
+    }
+
+    if (overlap(pBox, box)) {
+      obstacles.splice(i, 1);
+      damagePlayer();
+      continue;
+    }
+
+    if (o.y > H + 80) obstacles.splice(i, 1);
+  }
+}
+
+function applyPickup(type) {
+  if (type === 'coin') {
+    coinCount += 1;
+    comboCount += 1;
+    comboTimer = 2.8;
+    addScore(24);
+    addChallengeProgress('coins', 1);
+    scorePop = 24;
+    sfx.coin();
+  } else if (type === 'shield') {
+    shield = Math.min(2, shield + 1);
+    addScore(20);
+    sfx.shield();
+  } else if (type === 'slow') {
+    slowTimer = Math.max(slowTimer, 4.8);
+    addScore(18);
+    sfx.shield();
+  } else if (type === 'overdrive') {
+    overdriveTimer = Math.max(overdriveTimer, 6.5);
+    addScore(28);
+    sfx.challenge();
+  }
+
+  addParticleBurst(player.x, player.y - 10, '#ffe3a1', 14, 2.6);
+}
+
+function updatePickups(dt) {
+  const pBox = playerBox();
+
+  for (let i = pickups.length - 1; i >= 0; i -= 1) {
+    const p = pickups[i];
+    p.y += worldSpeed * p.vyMul * dt;
+    p.spin += dt * 6;
+
+    const box = { x: p.x - 12, y: p.y - 12, w: 24, h: 24 };
+    if (overlap(pBox, box)) {
+      applyPickup(p.type);
+      pickups.splice(i, 1);
+      continue;
+    }
+
+    if (p.y > H + 40) pickups.splice(i, 1);
+  }
+}
+
+function updateParticles(dt) {
+  for (let i = particles.length - 1; i >= 0; i -= 1) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.08;
+    p.life -= dt * 60;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+function update(dt) {
+  updateParticles(dt);
+
+  if (state !== 'running') return;
+
+  elapsed += dt;
+  distance += worldSpeed * dt;
+  roadTick += worldSpeed * dt * 0.2;
+
+  if (comboTimer > 0) {
+    comboTimer -= dt;
+    if (comboTimer <= 0) comboCount = 0;
+  }
+
+  if (slowTimer > 0) slowTimer -= dt;
+  if (overdriveTimer > 0) overdriveTimer -= dt;
+
+  addScore(dt * (5.8 + level * 1.1));
+
+  difficultyUpdate(dt);
+  updatePlayer(dt);
+  updateObstacles(dt);
+  updatePickups(dt);
+
+  addChallengeProgress('survive', dt);
+
+  score = Math.floor(scoreFloat);
+  if (score > best) {
+    best = score;
+    localStorage.setItem(BEST_KEY, String(best));
+  }
+
+  if (flash > 0) flash -= 1;
+  if (shake > 0) shake = Math.max(0, shake - dt * 36);
+  if (scorePop > 0) scorePop = Math.max(0, scorePop - dt * 90);
+
+  updateChallengeUi();
+  updateHud();
+}
+
+function drawRoad() {
+  const grd = ctx.createLinearGradient(0, 0, 0, H);
+  grd.addColorStop(0, '#142955');
+  grd.addColorStop(1, '#0b1634');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, W, H);
+
+  for (let i = 1; i < 3; i += 1) {
+    const x = (W * i) / 3;
+    ctx.strokeStyle = 'rgba(130, 180, 255, 0.28)';
+    ctx.setLineDash([20, 18]);
+    ctx.lineDashOffset = -roadTick * 0.7;
     ctx.beginPath();
-    ctx.moveTo(W*i/3, 0);
-    ctx.lineTo(W*i/3, H);
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, H);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  for (let i = 0; i < 52; i += 1) {
+    const sx = (i * 83 + 17) % W;
+    const sy = (i * 57 + roadTick * 1.4) % H;
+    ctx.fillStyle = i % 4 === 0 ? 'rgba(255, 255, 255, 0.21)' : 'rgba(150, 190, 255, 0.17)';
+    ctx.fillRect(sx, sy, 2, 2);
+  }
+}
+
+function drawPlayer() {
+  ctx.save();
+  ctx.translate(player.x, player.y);
+  ctx.rotate(player.tilt);
+
+  if (player.invuln > 0) {
+    ctx.globalAlpha = 0.45 + Math.sin(roadTick * 0.1) * 0.25;
+  }
+
+  if (shield > 0) {
+    ctx.strokeStyle = 'rgba(157, 255, 190, 0.8)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, 34 + Math.sin(roadTick * 0.12) * 2, 0, Math.PI * 2);
     ctx.stroke();
   }
 
-  // player
-  ctx.fillStyle = '#ff5f9e';
-  ctx.fillRect(lanes[player.lane]-player.w/2, player.y-player.h/2, player.w, player.h);
+  ctx.fillStyle = '#ff8fc5';
+  ctx.fillRect(-22, -26, 44, 58);
 
-  // obstacles
-  ctx.fillStyle = '#66f0ff';
-  for(const o of obstacles){
-    ctx.fillRect(lanes[o.lane]-o.w/2, o.y, o.w, o.h);
-  }
+  ctx.fillStyle = '#d7edff';
+  ctx.fillRect(-12, -16, 24, 22);
 
-  if(!running){
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.fillRect(0,0,W,H);
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 26px system-ui';
-    ctx.textAlign = 'center';
-    ctx.fillText('Tap / Click to Start', W/2, H/2 - 8);
+  ctx.fillStyle = '#ffea9a';
+  ctx.fillRect(-18, 28, 8, 4);
+  ctx.fillRect(10, 28, 8, 4);
+
+  ctx.fillStyle = '#83f2ff';
+  ctx.fillRect(-18, -26, 8, 5);
+  ctx.fillRect(10, -26, 8, 5);
+
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
+function obstacleColor(type) {
+  if (type === 'fast') return '#79e6ff';
+  if (type === 'gate') return '#ffd792';
+  if (type === 'drifter') return '#b59dff';
+  return '#9dd8ff';
+}
+
+function drawObstacles() {
+  for (const o of obstacles) {
+    ctx.save();
+    ctx.translate(o.x, o.y + o.h * 0.5);
+
+    ctx.fillStyle = obstacleColor(o.type);
+    ctx.fillRect(-o.w * 0.5, -o.h * 0.5, o.w, o.h);
+
+    ctx.fillStyle = '#16345f';
+    ctx.fillRect(-o.w * 0.3, -o.h * 0.2, o.w * 0.6, o.h * 0.34);
+
+    ctx.restore();
   }
 }
 
-function loop(){ update(); render(); requestAnimationFrame(loop); }
-loop();
+function drawPickups() {
+  for (const p of pickups) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.spin);
 
-function moveLeft(){ player.lane = Math.max(0, player.lane-1); }
-function moveRight(){ player.lane = Math.min(2, player.lane+1); }
+    let fill = '#ffe4a0';
+    let label = '$';
+    if (p.type === 'shield') {
+      fill = '#9dffbe';
+      label = 'S';
+    } else if (p.type === 'slow') {
+      fill = '#9fd8ff';
+      label = 'T';
+    } else if (p.type === 'overdrive') {
+      fill = '#ffb0e0';
+      label = 'O';
+    }
 
-window.addEventListener('keydown', (e)=>{
-  if(e.key==='ArrowLeft' || e.key==='a') moveLeft();
-  if(e.key==='ArrowRight' || e.key==='d') moveRight();
-  if(e.key===' ') { if(!running){ reset(); running=true; } }
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.arc(0, 0, p.r, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#0d2048';
+    ctx.font = 'bold 12px system-ui';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, 0, 0);
+
+    ctx.restore();
+  }
+  ctx.textBaseline = 'alphabetic';
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    ctx.globalAlpha = Math.max(0, p.life / 30);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x, p.y, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawTopInfo() {
+  ctx.fillStyle = 'rgba(3, 10, 26, 0.35)';
+  ctx.fillRect(12, 12, 215, 62);
+  ctx.fillStyle = '#d5e7ff';
+  ctx.font = '12px system-ui';
+  ctx.textAlign = 'left';
+  ctx.fillText(`속도 ${Math.round(worldSpeed)} · 레벨 ${level}`, 18, 34);
+  ctx.fillText(`코인 ${coinCount} · 거리 ${Math.round(distance / 10)}m`, 18, 52);
+
+  if (scorePop > 0) {
+    ctx.fillStyle = '#9dffbe';
+    ctx.font = 'bold 16px system-ui';
+    ctx.textAlign = 'right';
+    ctx.fillText(`+${Math.round(scorePop)}`, W - 14, 32);
+  }
+}
+
+function drawOverlay() {
+  if (flash > 0) {
+    ctx.fillStyle = `rgba(255, 126, 168, ${0.05 + flash / 200})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  if (state === 'paused') {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.48)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 30px system-ui';
+    ctx.fillText('일시정지', W / 2, H / 2 - 6);
+    ctx.font = '16px system-ui';
+    ctx.fillText('일시정지 버튼으로 재개', W / 2, H / 2 + 24);
+  }
+
+  if (state === 'idle' || state === 'gameover') {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.52)';
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 34px system-ui';
+    ctx.fillText(state === 'idle' ? 'Tap to Start' : 'Game Over', W / 2, H / 2 - 20);
+
+    ctx.font = '16px system-ui';
+    ctx.fillText('스와이프/버튼으로 레인 전환', W / 2, H / 2 + 8);
+    ctx.fillText('코인, 근접회피, 챌린지로 점수 가속', W / 2, H / 2 + 30);
+
+    if (state === 'gameover') {
+      ctx.fillStyle = '#ffe29f';
+      ctx.font = 'bold 20px system-ui';
+      ctx.fillText(`최종 점수 ${score}`, W / 2, H / 2 + 62);
+    }
+  }
+}
+
+function render() {
+  let sx = 0;
+  let sy = 0;
+  if (shake > 0) {
+    sx = rand(-shake, shake);
+    sy = rand(-shake, shake);
+  }
+
+  ctx.save();
+  ctx.translate(sx, sy);
+
+  drawRoad();
+  drawObstacles();
+  drawPickups();
+  drawPlayer();
+  drawParticles();
+  drawTopInfo();
+  drawOverlay();
+
+  ctx.restore();
+}
+
+let last = 0;
+function loop(ts) {
+  if (!last) last = ts;
+  const dt = Math.min(0.033, (ts - last) / 1000);
+  last = ts;
+
+  update(dt);
+  render();
+  requestAnimationFrame(loop);
+}
+
+function startOrRestart() {
+  if (state === 'running') {
+    startGame();
+    return;
+  }
+  if (state === 'paused') {
+    state = 'running';
+    return;
+  }
+  startGame();
+}
+
+btnStart.addEventListener('click', startOrRestart);
+
+btnPause.addEventListener('click', () => {
+  if (state === 'idle' || state === 'gameover') return;
+  togglePause();
 });
 
-canvas.addEventListener('pointerdown', (e)=>{
+btnSound.addEventListener('click', () => {
+  sfx.ensure();
+  sfx.toggle();
+  updateSoundButton();
+});
+
+btnLeft.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  moveLane(-1);
+});
+
+btnRight.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  moveLane(1);
+});
+
+window.addEventListener('keydown', (e) => {
+  keys[e.code] = true;
+
+  if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+    e.preventDefault();
+    moveLane(-1);
+  }
+  if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+    e.preventDefault();
+    moveLane(1);
+  }
+  if ((e.code === 'Space' || e.code === 'Enter') && state !== 'running') {
+    e.preventDefault();
+    startGame();
+  }
+  if (e.code === 'KeyP') {
+    e.preventDefault();
+    if (state === 'running' || state === 'paused') togglePause();
+  }
+});
+
+window.addEventListener('keyup', (e) => {
+  keys[e.code] = false;
+});
+
+canvas.addEventListener('pointerdown', (e) => {
+  sfx.ensure();
+  pointer.active = true;
+  pointer.downX = e.clientX;
+  pointer.swiped = false;
+
+  if (state === 'idle' || state === 'gameover') {
+    startGame();
+    return;
+  }
+
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
-  if(!running){ reset(); running=true; return; }
-  if(x < rect.width/2) moveLeft(); else moveRight();
+  if (x < rect.width * 0.5) moveLane(-1);
+  else moveLane(1);
 });
+
+canvas.addEventListener('pointermove', (e) => {
+  if (!pointer.active || state !== 'running') return;
+  const dx = e.clientX - pointer.downX;
+  if (Math.abs(dx) < 44 || pointer.swiped) return;
+  pointer.swiped = true;
+  moveLane(dx > 0 ? 1 : -1);
+});
+
+window.addEventListener('pointerup', () => {
+  pointer.active = false;
+});
+
+updateSoundButton();
+resetGame();
+requestAnimationFrame(loop);

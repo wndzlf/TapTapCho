@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
 <head>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8573384818394891" crossorigin="anonymous"></script>
   <meta charset="utf-8" />
@@ -11,19 +11,39 @@
   <div class="wrap">
     <header>
       <h1>Lane Runner</h1>
-      <p>Switch lanes to avoid walls. Get as far as you can.</p>
+      <p>레인 전환, 근접 회피, 챌린지를 클리어하며 최고 점수를 노리세요.</p>
     </header>
 
     <div class="hud">
-      <div>Score: <span id="score">0</span></div>
-      <div>Best: <span id="best">0</span></div>
-      <button id="btnStart">Start</button>
+      <div>점수 <span id="score">0</span></div>
+      <div>최고 <span id="best">0</span></div>
+      <div>레벨 <span id="level">1</span></div>
+      <div>콤보 <span id="combo">x1.0</span></div>
+      <div>실드 <span id="shield">0</span></div>
+      <button id="btnSound" type="button">사운드: 켜짐</button>
+      <button id="btnPause" type="button">일시정지</button>
+      <button id="btnStart" type="button">시작</button>
+    </div>
+
+    <div class="challenge-wrap" aria-live="polite">
+      <div class="challenge-head">
+        <strong>챌린지</strong>
+        <span id="challengeText">게임을 시작하세요</span>
+      </div>
+      <div class="challenge-bar">
+        <div id="challengeFill"></div>
+      </div>
     </div>
 
     <canvas id="game" width="420" height="700"></canvas>
 
+    <div class="touch-controls" aria-label="모바일 조작 버튼">
+      <button id="btnLeft" type="button">◀ 왼쪽</button>
+      <button id="btnRight" type="button">오른쪽 ▶</button>
+    </div>
+
     <footer>
-      <small>Move: ← → / A D · Tap left/right on mobile</small>
+      <small>조작: ← → / A D / 스와이프 · 목표: 장애물 회피 + 코인 + 챌린지</small>
     </footer>
   </div>
   <script src="game.js"></script>

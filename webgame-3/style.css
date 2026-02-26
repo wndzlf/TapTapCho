@@ -1,46 +1,146 @@
 :root {
-  --bg: #0b0f19;
-  --panel: #121827;
-  --neon: #66f0ff;
-  --accent: #ff5f9e;
-  --text: #e6eef8;
+  --bg: #050a18;
+  --panel: rgba(13, 24, 49, 0.9);
+  --line: #2e4979;
+  --text: #e9f2ff;
+  --neon: #79f3ff;
+  --accent: #ff8fc5;
+  --good: #9dffbe;
+  --warn: #ffd67e;
 }
-* { box-sizing: border-box; }
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans", sans-serif;
-  background: radial-gradient(1200px 700px at 50% -10%, #1b2740 0%, #0b0f19 55%);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", sans-serif;
+  background: radial-gradient(1400px 800px at 50% -20%, #183061 0%, var(--bg) 58%);
   color: var(--text);
   display: grid;
   place-items: center;
   min-height: 100vh;
 }
-.wrap { width: min(92vw, 520px); text-align: center; }
-header h1 { margin: 12px 0 6px; }
-header p { margin: 0 0 12px; opacity: .8; }
+
+.wrap {
+  width: min(560px, 95vw);
+}
+
+header h1 {
+  margin: 14px 0 6px;
+}
+
+header p {
+  margin: 0 0 12px;
+  opacity: 0.86;
+}
+
 .hud {
   display: flex;
-  gap: 12px;
-  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
   align-items: center;
-  margin: 8px 0 10px;
+  margin-bottom: 10px;
 }
-.hud div { background: var(--panel); padding: 6px 12px; border-radius: 8px; }
-button {
-  border: 0;
-  background: linear-gradient(135deg, var(--neon), #6aa9ff);
-  color: #021018;
-  padding: 8px 14px;
+
+.hud > div {
+  background: var(--panel);
+  border: 1px solid var(--line);
   border-radius: 10px;
-  font-weight: 700;
-  cursor: pointer;
+  padding: 7px 10px;
+  min-width: 82px;
 }
+
+button {
+  border: 1px solid #4f74bc;
+  background: linear-gradient(140deg, #1f356d, #2a4f9c);
+  color: var(--text);
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+.challenge-wrap {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+
+.challenge-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 14px;
+}
+
+#challengeText {
+  color: #cae0ff;
+  text-align: right;
+}
+
+.challenge-bar {
+  margin-top: 6px;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.13);
+  overflow: hidden;
+}
+
+#challengeFill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #8ce8ff, #9dffbe);
+  transition: width 120ms linear;
+}
+
 canvas {
   width: 100%;
   height: auto;
-  background: #0c1322;
-  border: 2px solid #1d2a44;
+  display: block;
+  border: 1px solid var(--line);
   border-radius: 14px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.5), inset 0 0 40px rgba(102,240,255,.12);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45), inset 0 0 36px rgba(120, 220, 255, 0.1);
+  background: #0b1530;
+  touch-action: none;
 }
-footer { margin-top: 10px; opacity: .7; }
+
+.touch-controls {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.touch-controls button {
+  flex: 1;
+  min-height: 58px;
+  font-size: 18px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #1a3166, #254a98);
+}
+
+footer {
+  margin: 10px 0 14px;
+  opacity: 0.8;
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .hud > div {
+    min-width: 76px;
+  }
+
+  .touch-controls button {
+    min-height: 64px;
+    font-size: 20px;
+  }
+}
