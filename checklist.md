@@ -18,7 +18,7 @@
 | 12 | Knife Hit Lite | 회전 목표 명중 | DONE | webgame-12 |
 | 13 | Color Switch Dot | 색상 매칭 통과 | DONE | webgame-13 |
 | 14 | Helix Fall Mini | 낙하 회전 회피 | DONE | webgame-14 |
-| 15 | Drift One-Tap | 원터치 드리프트 | DONE | webgame-15 |
+| 15 | Drift One-Tap | 원터치 드리프트 | REMOVED | webgame-15 |
 | 16 | Slide Puzzle Rush | 한 줄 퍼즐 정렬 | DONE | webgame-16 |
 | 17 | Cross Road Micro | 타이밍 길건너기 | DONE | webgame-17 |
 | 18 | Orbit Survivor | 궤도 회피 생존 | DONE | webgame-18 |
