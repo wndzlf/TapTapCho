@@ -15,6 +15,7 @@ Source of truth: this file is the baseline for future game-improvement answers.
 - Scoring policy:
   - User-provided scores are treated as fixed until user updates them.
   - Games without explicit user score are tracked as provisional scores and should be updated after playtest feedback.
+  - Every game creation or major gameplay update must include a same-day score check in this file.
 
 ## Evaluation Table
 
