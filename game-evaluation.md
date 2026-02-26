@@ -16,6 +16,36 @@ Source of truth: this file is the baseline for future game-improvement answers.
   - User-provided scores are treated as fixed until user updates them.
   - Games without explicit user score are tracked as provisional scores and should be updated after playtest feedback.
   - Every game creation or major gameplay update must include a same-day score check in this file.
+  - Category raw score is `1-10`, and total score is calculated by weighted rubric below.
+
+## Weighted Rubric (v2)
+
+Formula:
+- `Category Points = (Raw Score / 10) * Weight`
+- `Total Score (0-100) = sum(Category Points)`
+- Example: Performance raw `9` with weight `20` => `(9/10)*20 = 18`
+
+| Category | Weight | Detailed Checklist | GOOD (8+) Target |
+|---|---:|---|---|
+| Performance | 20 | FPS (desktop 60+, mobile 30+), loading under 5s (build under 10MB), memory under 200MB | Stable frame + fast load |
+| Mobile Fit | 15 | touch control(48px+), multitouch, portrait/landscape adaptation, orientation rotation | iOS/Android Safari/Chrome smooth |
+| Gameplay | 25 | fun loop, avg playtime 5m+, difficulty curve, score/enemy fairness | replay 3+ times naturally |
+| Graphics/UI | 15 | style consistency, smooth animation, clear HUD/menu, accessibility, responsive scale | attractive but lightweight |
+| Audio | 10 | BGM/SE quality, volume balance, WebAudio compatibility, mute/volume options | noticeable immersion gain |
+| Stability/Compatibility | 10 | zero crash in repeated tests, browser compatibility, localStorage reliability | cross-platform stable |
+| Engagement/Originality | 5 | unique twist beyond clone, social/share/leaderboard potential | clear differentiation |
+
+## Core Games Weighted Breakdown
+
+`Raw` columns are `1-10`.
+
+| Game | Perf | Mobile | Gameplay | Gfx/UI | Audio | Stability | Engage | Total |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| AirStrikerLite | 8 | 7 | 7 | 6 | 6 | 7 | 8 | 70 |
+| Lane Runner | 3 | 7 | 2 | 3 | 1 | 2 | 2 | 30 |
+| Color Switch Dot | 6 | 5 | 5 | 4 | 3 | 6 | 6 | 50 |
+| Neon Snake | 5 | 6 | 3 | 4 | 2 | 4 | 3 | 40 |
+| Worm Arena Rush | 6 | 7 | 6 | 6 | 4 | 6 | 7 | 60 |
 
 ## Evaluation Table
 
@@ -70,3 +100,4 @@ Source of truth: this file is the baseline for future game-improvement answers.
 - 2026-02-26: Added mobile-fit column. Updated Urban Village=0, Drift One-Tap=0, Lane Runner=30.
 - 2026-02-26: Added Color Switch Dot=50 (high starting difficulty, fine-control burden).
 - 2026-02-26: Synced evaluation table with all currently exposed games (36 entries) and removed hidden games from the table.
+- 2026-02-26: Added weighted rubric(v2), score formula, and core-game category breakdown(1-10 raw scores).
