@@ -41,7 +41,7 @@ Formula:
 
 | Game | Perf | Mobile | Gameplay | Gfx/UI | Audio | Stability | Engage | Total |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| AirStrikerLite | 8 | 7 | 7 | 6 | 6 | 7 | 8 | 70 |
+| AirStrikerLite | 9 | 8 | 8 | 7 | 7 | 8 | 9 | 80 |
 | Lane Runner | 3 | 7 | 2 | 3 | 1 | 2 | 2 | 30 |
 | Color Switch Dot | 6 | 5 | 5 | 4 | 3 | 6 | 6 | 50 |
 | Neon Snake | 5 | 6 | 3 | 4 | 2 | 4 | 3 | 40 |
@@ -74,7 +74,7 @@ Formula:
 | Neon Snake | 40 | LIVE | FAIR | 재밌지만 너무 단순함 | 장애물/파워업/미션 모드 추가 |
 | Worm Arena Rush | 60 | LIVE | GOOD | 재밌지만 다양성이 부족함 | 특수 먹이, 부스트 리스크, 이벤트 존 추가 |
 | Worm Arena LAN | 62 | LIVE | FAIR | 로컬 멀티 재미 잠재력은 높지만 접속 UX 부담이 있음 | 방 생성/입장 UX 단순화 + 동기화 안정화 |
-| AirStrikerLite | 70 | LIVE | GOOD | 재밌지만 보스/후반 난이도 상승이 약함(기존 기준) | 보스 페이즈 + 웨이브 난이도 곡선 + 패턴 다양화 |
+| AirStrikerLite | 80 | LIVE | GOOD | 보스 페이즈/패턴/사운드 개선으로 재미가 크게 상승함 | 100점 목표: 보스 2종 추가 + 웨이브 미션/업그레이드 루프 확장 |
 | Neon Sudoku | 57 | LIVE | GOOD | 가평가: 퍼즐 완성도는 무난하나 차별점 약함 | 난이도 묶음/데일리 퍼즐 추가 |
 | Neon Match-3 | 56 | LIVE | GOOD | 가평가: 장르 친숙성은 좋으나 특수 타일 연계 강화 필요 | 콤보 이펙트 + 목표형 스테이지 추가 |
 | Neon Tile Connect | 55 | LIVE | GOOD | 가평가: 규칙은 직관적이나 진행 가속 장치 부족 | 콤보 타이머/특수 연결 규칙 추가 |
@@ -101,3 +101,4 @@ Formula:
 - 2026-02-26: Added Color Switch Dot=50 (high starting difficulty, fine-control burden).
 - 2026-02-26: Synced evaluation table with all currently exposed games (36 entries) and removed hidden games from the table.
 - 2026-02-26: Added weighted rubric(v2), score formula, and core-game category breakdown(1-10 raw scores).
+- 2026-02-26: Updated AirStrikerLite score to 80 based on latest user feedback.
