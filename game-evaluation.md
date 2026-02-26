@@ -1,45 +1,45 @@
-# Game Evaluation Board
+# 게임 평가표
 
-Last Updated: 2026-02-26
-Source of truth: this file is the baseline for future game-improvement answers.
+최종 업데이트: 2026-02-26
+기준 문서: 앞으로 게임 개선 피드백 답변은 이 파일을 단일 기준으로 사용
 
-## Rules
-- Score range: 0-100
-- Status:
-  - `LIVE`: keep exposed on homepage
-  - `REMOVE`: hide from homepage (can be fixed and re-evaluated later)
-- Mobile Fit:
-  - `GOOD`: mobile touch play is comfortable
-  - `FAIR`: playable but needs UX/input tuning
-  - `POOR`: hard to play on mobile
-- Scoring policy:
-  - User-provided scores are treated as fixed until user updates them.
-  - Games without explicit user score are tracked as provisional scores and should be updated after playtest feedback.
-  - Every game creation or major gameplay update must include a same-day score check in this file.
-  - Category raw score is `1-10`, and total score is calculated by weighted rubric below.
+## 규칙
+- 총점 범위: 0~100점
+- 상태:
+  - `운영`: 메인 페이지 노출 유지
+  - `제거`: 메인 페이지 비노출(수정 후 재평가 가능)
+- 모바일 적합성:
+  - `좋음`: 터치 플레이가 편하고 안정적
+  - `보통`: 플레이 가능하지만 입력/UX 보정 필요
+  - `낮음`: 모바일 플레이 난이도가 높음
+- 점수 정책:
+  - 사용자가 직접 지정한 점수는 사용자가 다시 바꾸기 전까지 고정
+  - 사용자 점수가 없는 게임은 임시 점수로 관리하고, 실플레이 피드백으로 갱신
+  - 게임 신규 제작 또는 핵심 업데이트가 있으면 당일 이 파일에 점수 재기록 필수
+  - 카테고리 원점수는 `1~10`으로 기록하고, 총점은 아래 가중치 공식으로 계산
 
-## Weighted Rubric (v2)
+## 가중치 평가 루브릭 (v2)
 
-Formula:
-- `Category Points = (Raw Score / 10) * Weight`
-- `Total Score (0-100) = sum(Category Points)`
-- Example: Performance raw `9` with weight `20` => `(9/10)*20 = 18`
+계산식:
+- `카테고리 점수 = (원점수 / 10) * 가중치`
+- `총점(0~100) = 카테고리 점수 합`
+- 예시: 성능 원점수 `9`, 가중치 `20`이면 `(9/10)*20 = 18`
 
-| Category | Weight | Detailed Checklist | GOOD (8+) Target |
+| 카테고리 | 가중치 | 세부 체크리스트 | GOOD 기준(원점수 8+) |
 |---|---:|---|---|
-| Performance | 20 | FPS (desktop 60+, mobile 30+), loading under 5s (build under 10MB), memory under 200MB | Stable frame + fast load |
-| Mobile Fit | 15 | touch control(48px+), multitouch, portrait/landscape adaptation, orientation rotation | iOS/Android Safari/Chrome smooth |
-| Gameplay | 25 | fun loop, avg playtime 5m+, difficulty curve, score/enemy fairness | replay 3+ times naturally |
-| Graphics/UI | 15 | style consistency, smooth animation, clear HUD/menu, accessibility, responsive scale | attractive but lightweight |
-| Audio | 10 | BGM/SE quality, volume balance, WebAudio compatibility, mute/volume options | noticeable immersion gain |
-| Stability/Compatibility | 10 | zero crash in repeated tests, browser compatibility, localStorage reliability | cross-platform stable |
-| Engagement/Originality | 5 | unique twist beyond clone, social/share/leaderboard potential | clear differentiation |
+| 성능 | 20 | FPS(데스크탑 60+, 모바일 30+), 로딩 5초 미만(빌드 10MB 미만), 메모리 200MB 미만 | 프레임 안정 + 빠른 로드 |
+| 모바일 적합성 | 15 | 터치 조작(48px+), 멀티터치, 세로/가로 적응, 회전 대응 | iOS/Android 브라우저에서 자연스러운 조작 |
+| 게임성 | 25 | 핵심 재미 루프, 평균 플레이 5분+, 난이도 곡선, 점수/적 밸런스 | 자연스러운 재플레이 3회+ |
+| 그래픽/UI | 15 | 시각 스타일 일관성, 애니메이션, HUD/메뉴 직관성, 접근성, 반응형 스케일 | 저사양에서도 매력 유지 |
+| 오디오 | 10 | BGM/효과음 품질, 볼륨 밸런스, WebAudio 호환, 음소거/볼륨 옵션 | 몰입감 상승 체감 |
+| 안정성/호환성 | 10 | 반복 플레이 시 크래시 0, 브라우저 호환성, localStorage 안정성 | 크로스플랫폼 안정 동작 |
+| 몰입/독창성 | 5 | 클론을 넘는 변형 요소, 공유/리더보드 잠재력 | 장르 내 차별성 명확 |
 
-## Core Games Weighted Breakdown
+## 핵심 게임 가중치 상세
 
-`Raw` columns are `1-10`.
+`원점수` 컬럼은 `1~10` 기준.
 
-| Game | Perf | Mobile | Gameplay | Gfx/UI | Audio | Stability | Engage | Total |
+| 게임명 | 성능 | 모바일 | 게임성 | 그래픽/UI | 오디오 | 안정성 | 몰입/독창성 | 총점 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | AirStrikerLite | 9 | 8 | 8 | 7 | 7 | 8 | 9 | 80 |
 | Lane Runner | 3 | 7 | 2 | 3 | 1 | 2 | 2 | 30 |
@@ -47,58 +47,58 @@ Formula:
 | Neon Snake | 5 | 6 | 3 | 4 | 2 | 4 | 3 | 40 |
 | Worm Arena Rush | 6 | 7 | 6 | 6 | 4 | 6 | 7 | 60 |
 
-## Evaluation Table
+## 전체 게임 평가표
 
-| Game | Score | Status | Mobile Fit | Reason | Improvement Action (Next) |
+| 게임명 | 총점 | 상태 | 모바일 적합성 | 평가 사유 | 다음 개선 액션 |
 |---|---:|---|---|---|---|
-| Neon Dodge | 50 | LIVE | GOOD | 가평가: 기본 루프는 명확하나 사용자 피드백 미수집 | 난이도 곡선(속도/패턴) 3단계 추가 |
-| Ball Bounce | 50 | LIVE | GOOD | 가평가: 반사 코어는 직관적이나 변주 데이터 부족 | 공속/패들폭/멀티볼 모드 추가 |
-| Lane Runner | 30 | LIVE | GOOD | 너무 단순하고 난이도 조절이 없음 | 속도/패턴 기반 난이도 스케일 + 장애물 다양화 |
-| Ladder Draw | 50 | LIVE | GOOD | 가평가: 캐주얼성은 있으나 반복 플레이 동기 약함 | 리워드/벌칙 이벤트 세트 확장 |
-| Party Roulette | 50 | LIVE | GOOD | 가평가: 즉시성은 좋으나 장기 재미 루프 약함 | 결과별 미니미션/연속 보상 추가 |
-| TapTap Tetris | 55 | LIVE | FAIR | 가평가: 퍼즐 재미는 있으나 모바일 조작 최적화 여지 있음 | 모바일 버튼 크기/배치 최적화 + 템포 튜닝 |
-| Lane Dash | 50 | LIVE | FAIR | 가평가: 러닝 코어는 있으나 차별화 요소 부족 | 부스터/코인/패턴 테마 분리 |
-| Weird Tetris | 48 | LIVE | FAIR | 가평가: 콘셉트는 독특하나 난해함이 큼 | 난이도 단계 분리 + 초반 가이드 힌트 추가 |
-| Zigzag Rush | 68 | LIVE | GOOD | 사용자 반응 긍정, 즉시 몰입 포인트가 명확함 | 스피드 램프 + 보상 구간(체크포인트) 추가 |
-| Stack Tower | 58 | LIVE | GOOD | 가평가: 타이밍 재미는 안정적이나 콘텐츠 확장 필요 | 블록 타입/리스크 블록 추가 |
-| Knife Hit Lite | 70 | LIVE | GOOD | 사용자 반응 긍정, 조작-피드백 루프가 선명함 | 보스 원판/특수 과일 패턴 추가 |
-| Color Switch Dot | 50 | LIVE | FAIR | 아이디어는 좋지만 시작 난이도가 높고 미세 컨트롤 부담이 큼 | 초반 속도 완화 + 판정 여유 확대 + 모바일 입력 보정 |
-| Helix Fall Mini | 55 | LIVE | GOOD | 가평가: 캐주얼 플레이는 원활하나 패턴 다양성 제한 | 층별 기믹/스코어 배수 구간 추가 |
-| Slide Puzzle Rush | 72 | LIVE | GOOD | 사용자 반응 긍정, 퍼즐 흡입력과 반복성이 좋음 | 목표 다양화(제한 이동수/타임어택) 추가 |
-| Cross Road Micro | 54 | LIVE | FAIR | 가평가: 타이밍 코어는 명확하나 콘텐츠 볼륨이 작음 | 이동 오브젝트 변주 + 연속 성공 보너스 추가 |
-| Orbit Survivor | 52 | LIVE | FAIR | 가평가: 생존 루프는 있으나 후반 다양성 약함 | 이벤트 웨이브 + 파워업 트리 추가 |
-| Merge 2048 Tiny | 60 | LIVE | GOOD | 가평가: 기본 퍼즐 몰입도가 준수함 | 목표 모드/장애 타일 추가 |
-| Lights Out Rush | 58 | LIVE | GOOD | 가평가: 논리 퍼즐성은 좋으나 난이도 곡선 보강 필요 | 레벨팩/힌트/실수 복구 기능 추가 |
-| Zigzag Memory Run | 57 | LIVE | GOOD | 가평가: 기억+반응 조합은 좋으나 긴장 변주 부족 | 패턴 길이 단계화 + 보너스 라운드 추가 |
-| Mine Sweep Sprint | 55 | LIVE | FAIR | 가평가: 퍼즐 매력은 있으나 오픈 범위/초반 밸런스 튜닝 필요 | 자동 오픈 범위 축소 + 난이도 프리셋 추가 |
-| Neon Snake | 40 | LIVE | FAIR | 재밌지만 너무 단순함 | 장애물/파워업/미션 모드 추가 |
-| Worm Arena Rush | 60 | LIVE | GOOD | 재밌지만 다양성이 부족함 | 특수 먹이, 부스트 리스크, 이벤트 존 추가 |
-| Worm Arena LAN | 62 | LIVE | FAIR | 로컬 멀티 재미 잠재력은 높지만 접속 UX 부담이 있음 | 방 생성/입장 UX 단순화 + 동기화 안정화 |
-| AirStrikerLite | 80 | LIVE | GOOD | 보스 페이즈/패턴/사운드 개선으로 재미가 크게 상승함 | 100점 목표: 보스 2종 추가 + 웨이브 미션/업그레이드 루프 확장 |
-| Neon Sudoku | 57 | LIVE | GOOD | 가평가: 퍼즐 완성도는 무난하나 차별점 약함 | 난이도 묶음/데일리 퍼즐 추가 |
-| Neon Match-3 | 56 | LIVE | GOOD | 가평가: 장르 친숙성은 좋으나 특수 타일 연계 강화 필요 | 콤보 이펙트 + 목표형 스테이지 추가 |
-| Neon Tile Connect | 55 | LIVE | GOOD | 가평가: 규칙은 직관적이나 진행 가속 장치 부족 | 콤보 타이머/특수 연결 규칙 추가 |
-| Neon Mahjong Pair | 54 | LIVE | FAIR | 가평가: 퍼즐성은 있으나 모바일 가독성 개선 필요 | 타일 대비/터치 판정 확대 |
-| Neon Block Puzzle | 57 | LIVE | GOOD | 가평가: 블록 퍼즐 코어는 안정적 | 미션 목표/연쇄 보너스 시스템 추가 |
-| Neon Gravity Drop | 53 | LIVE | FAIR | 가평가: 물리 기반 재미는 있으나 오차 피로도가 있음 | 판정 완화 + 레벨 템포 조절 |
-| Neon Lights Out | 55 | LIVE | GOOD | 가평가: 로직 퍼즐 기본기는 양호 | 난이도별 보드 템플릿 확장 |
-| Neon Jigsaw | 52 | LIVE | FAIR | 가평가: 퍼즐 의도는 명확하나 반복 동기 약함 | 조각 테마/보상/도전 과제 추가 |
-| Neon Word Search | 54 | LIVE | GOOD | 가평가: 모바일 적합성은 높으나 긴장감 요소 약함 | 시간 제한 모드 + 연속 발견 보너스 추가 |
-| Neon Solitaire Lite | 53 | LIVE | GOOD | 가평가: 카드 루프는 안정적이나 하이퍼캐주얼성 약함 | 빠른 모드/연속 클리어 보너스 추가 |
-| Neon Escape Room | 51 | LIVE | FAIR | 가평가: 탐색 재미 잠재력은 있으나 단서 밀도 보강 필요 | 힌트 구조/퍼즐 연결성 강화 |
-| Neon Hidden Object | 50 | LIVE | FAIR | 가평가: 찾기 루프는 명확하나 리텐션 장치 부족 | 스테이지 다양화 + 제한 시간 모드 추가 |
+| Neon Dodge | 50 | 운영 | 좋음 | 임시평가: 기본 루프는 명확하나 사용자 피드백이 부족함 | 난이도 곡선(속도/패턴) 3단계 추가 |
+| Ball Bounce | 50 | 운영 | 좋음 | 임시평가: 반사 코어는 직관적이나 변주 데이터가 부족함 | 공속/패들폭/멀티볼 모드 추가 |
+| Lane Runner | 30 | 운영 | 좋음 | 너무 단순하고 난이도 조절이 없음 | 속도/패턴 기반 난이도 스케일 + 장애물 다양화 |
+| Ladder Draw | 50 | 운영 | 좋음 | 임시평가: 캐주얼성은 있으나 반복 플레이 동기가 약함 | 리워드/벌칙 이벤트 세트 확장 |
+| Party Roulette | 50 | 운영 | 좋음 | 임시평가: 즉시성은 좋으나 장기 재미 루프가 약함 | 결과별 미니미션/연속 보상 추가 |
+| TapTap Tetris | 55 | 운영 | 보통 | 임시평가: 퍼즐 재미는 있으나 모바일 조작 최적화 여지가 있음 | 모바일 버튼 크기/배치 최적화 + 템포 튜닝 |
+| Lane Dash | 50 | 운영 | 보통 | 임시평가: 러닝 코어는 있으나 차별화 요소가 부족함 | 부스터/코인/패턴 테마 분리 |
+| Weird Tetris | 48 | 운영 | 보통 | 임시평가: 콘셉트는 독특하나 난해함이 큼 | 난이도 단계 분리 + 초반 가이드 힌트 추가 |
+| Zigzag Rush | 68 | 운영 | 좋음 | 사용자 반응 긍정, 즉시 몰입 포인트가 명확함 | 스피드 램프 + 보상 구간(체크포인트) 추가 |
+| Stack Tower | 58 | 운영 | 좋음 | 임시평가: 타이밍 재미는 안정적이나 콘텐츠 확장이 필요함 | 블록 타입/리스크 블록 추가 |
+| Knife Hit Lite | 70 | 운영 | 좋음 | 사용자 반응 긍정, 조작-피드백 루프가 선명함 | 보스 원판/특수 과일 패턴 추가 |
+| Color Switch Dot | 50 | 운영 | 보통 | 아이디어는 좋지만 시작 난이도가 높고 미세 컨트롤 부담이 큼 | 초반 속도 완화 + 판정 여유 확대 + 모바일 입력 보정 |
+| Helix Fall Mini | 55 | 운영 | 좋음 | 임시평가: 캐주얼 플레이는 원활하나 패턴 다양성이 제한됨 | 층별 기믹/스코어 배수 구간 추가 |
+| Slide Puzzle Rush | 72 | 운영 | 좋음 | 사용자 반응 긍정, 퍼즐 흡입력과 반복성이 좋음 | 목표 다양화(제한 이동수/타임어택) 추가 |
+| Cross Road Micro | 54 | 운영 | 보통 | 임시평가: 타이밍 코어는 명확하나 콘텐츠 볼륨이 작음 | 이동 오브젝트 변주 + 연속 성공 보너스 추가 |
+| Orbit Survivor | 52 | 운영 | 보통 | 임시평가: 생존 루프는 있으나 후반 다양성이 약함 | 이벤트 웨이브 + 파워업 트리 추가 |
+| Merge 2048 Tiny | 60 | 운영 | 좋음 | 임시평가: 기본 퍼즐 몰입도가 준수함 | 목표 모드/장애 타일 추가 |
+| Lights Out Rush | 58 | 운영 | 좋음 | 임시평가: 논리 퍼즐성은 좋으나 난이도 곡선 보강이 필요함 | 레벨팩/힌트/실수 복구 기능 추가 |
+| Zigzag Memory Run | 57 | 운영 | 좋음 | 임시평가: 기억+반응 조합은 좋으나 긴장 변주가 부족함 | 패턴 길이 단계화 + 보너스 라운드 추가 |
+| Mine Sweep Sprint | 55 | 운영 | 보통 | 임시평가: 퍼즐 매력은 있으나 오픈 범위/초반 밸런스 튜닝 필요 | 자동 오픈 범위 축소 + 난이도 프리셋 추가 |
+| Neon Snake | 40 | 운영 | 보통 | 재밌지만 너무 단순함 | 장애물/파워업/미션 모드 추가 |
+| Worm Arena Rush | 60 | 운영 | 좋음 | 재밌지만 다양성이 부족함 | 특수 먹이, 부스트 리스크, 이벤트 존 추가 |
+| Worm Arena LAN | 62 | 운영 | 보통 | 로컬 멀티 재미 잠재력은 높지만 접속 UX 부담이 있음 | 방 생성/입장 UX 단순화 + 동기화 안정화 |
+| AirStrikerLite | 80 | 운영 | 좋음 | 보스 페이즈/패턴/사운드 개선으로 재미가 크게 상승함 | 100점 목표: 보스 2종 추가 + 웨이브 미션/업그레이드 루프 확장 |
+| Neon Sudoku | 57 | 운영 | 좋음 | 임시평가: 퍼즐 완성도는 무난하나 차별점이 약함 | 난이도 묶음/데일리 퍼즐 추가 |
+| Neon Match-3 | 56 | 운영 | 좋음 | 임시평가: 장르 친숙성은 좋으나 특수 타일 연계 강화 필요 | 콤보 이펙트 + 목표형 스테이지 추가 |
+| Neon Tile Connect | 55 | 운영 | 좋음 | 임시평가: 규칙은 직관적이나 진행 가속 장치가 부족함 | 콤보 타이머/특수 연결 규칙 추가 |
+| Neon Mahjong Pair | 54 | 운영 | 보통 | 임시평가: 퍼즐성은 있으나 모바일 가독성 개선 필요 | 타일 대비/터치 판정 확대 |
+| Neon Block Puzzle | 57 | 운영 | 좋음 | 임시평가: 블록 퍼즐 코어는 안정적임 | 미션 목표/연쇄 보너스 시스템 추가 |
+| Neon Gravity Drop | 53 | 운영 | 보통 | 임시평가: 물리 기반 재미는 있으나 오차 피로도가 있음 | 판정 완화 + 레벨 템포 조절 |
+| Neon Lights Out | 55 | 운영 | 좋음 | 임시평가: 로직 퍼즐 기본기는 양호함 | 난이도별 보드 템플릿 확장 |
+| Neon Jigsaw | 52 | 운영 | 보통 | 임시평가: 퍼즐 의도는 명확하나 반복 동기가 약함 | 조각 테마/보상/도전 과제 추가 |
+| Neon Word Search | 54 | 운영 | 좋음 | 임시평가: 모바일 적합성은 높으나 긴장감 요소가 약함 | 시간 제한 모드 + 연속 발견 보너스 추가 |
+| Neon Solitaire Lite | 53 | 운영 | 좋음 | 임시평가: 카드 루프는 안정적이나 하이퍼캐주얼성은 약함 | 빠른 모드/연속 클리어 보너스 추가 |
+| Neon Escape Room | 51 | 운영 | 보통 | 임시평가: 탐색 재미 잠재력은 있으나 단서 밀도 보강 필요 | 힌트 구조/퍼즐 연결성 강화 |
+| Neon Hidden Object | 50 | 운영 | 보통 | 임시평가: 찾기 루프는 명확하나 리텐션 장치가 부족함 | 스테이지 다양화 + 제한 시간 모드 추가 |
 
-## Priority Backlog
+## 우선순위 백로그
 1. AirStrikerLite 100점 목표: 보스/웨이브/패턴/사운드 추가 개선 후 재평가
 2. Lane Runner(30점) 코어 고도화: 난이도 곡선 + 장애물 다양화
 3. Neon Snake(40점) 확장: 미션/위험 요소/파워업 추가
 4. Color Switch Dot(50점) 밸런싱: 초반 완화 + 입력 허용치 개선
-5. 신규 편입 게임 1차 실플레이 평가: 가평가 점수를 사용자 피드백 점수로 치환
+5. 신규 편입 게임 1차 실플레이 평가: 임시 점수를 사용자 피드백 점수로 치환
 
-## Change Log
-- 2026-02-26: Initial board created from user-provided sample scores.
-- 2026-02-26: Added mobile-fit column. Updated Urban Village=0, Drift One-Tap=0, Lane Runner=30.
-- 2026-02-26: Added Color Switch Dot=50 (high starting difficulty, fine-control burden).
-- 2026-02-26: Synced evaluation table with all currently exposed games (36 entries) and removed hidden games from the table.
-- 2026-02-26: Added weighted rubric(v2), score formula, and core-game category breakdown(1-10 raw scores).
-- 2026-02-26: Updated AirStrikerLite score to 80 based on latest user feedback.
+## 변경 이력
+- 2026-02-26: 사용자 샘플 점수 기반 초기 평가표 생성.
+- 2026-02-26: 모바일 적합성 컬럼 추가, Urban Village=0/Drift One-Tap=0/Lane Runner=30 반영.
+- 2026-02-26: Color Switch Dot=50(초반 난이도 및 미세 조작 부담) 반영.
+- 2026-02-26: 현재 노출 게임 36개 기준으로 표 동기화, 비노출 게임은 표에서 제거.
+- 2026-02-26: 가중치 루브릭(v2), 계산식, 핵심 게임 카테고리 원점수 표 추가.
+- 2026-02-26: 사용자 피드백에 따라 AirStrikerLite 점수를 80으로 상향.
