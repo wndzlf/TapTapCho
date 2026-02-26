@@ -15,6 +15,7 @@ Source of truth: this file is the baseline for future game-improvement answers.
 | Game | Score | Status | Mobile Fit | Reason | Improvement Action (Next) |
 |---|---:|---|---|---|---|
 | AirStrikerLite | 70 | LIVE | GOOD | 재밌지만 보스/후반 난이도 상승이 약함 | 보스 페이즈 + 웨이브 난이도 곡선 + 패턴 다양화 |
+| Color Switch Dot | 50 | LIVE | FAIR | 아이디어는 좋지만 시작 난이도가 높고 미세 컨트롤 부담이 큼 | 초반 속도 완화 + 판정 여유 확대 + 모바일 입력 보정 |
 | Lane Runner | 30 | LIVE | GOOD | 너무 단순하고 난이도 조절이 없음 | 속도/패턴 기반 난이도 스케일 + 장애물 다양화 |
 | Neon Snake | 40 | LIVE | FAIR | 재밌지만 너무 단순함 | 장애물/파워업/미션 모드 추가 |
 | Worm Arena Rush | 60 | LIVE | GOOD | 재밌지만 다양성이 부족함 | 특수 먹이, 부스트 리스크, 이벤트 존 추가 |
@@ -34,10 +35,12 @@ Source of truth: this file is the baseline for future game-improvement answers.
 ## Priority Backlog
 1. AirStrikerLite 고도화: 보스 + 웨이브 스케일링
 2. Worm Arena Rush 다양화: 특수 아이템/위험 구역
-3. Lane Runner 개선: 난이도 곡선 + 패턴 다양화
-4. Neon Snake 확장: 모드/목표/위험 요소
-5. 0점 게임은 재작업 후 재평가 전까지 비노출 유지
+3. Color Switch Dot 밸런싱: 초반 완화 + 입력 난이도 조정
+4. Lane Runner 개선: 난이도 곡선 + 패턴 다양화
+5. Neon Snake 확장: 모드/목표/위험 요소
+6. 0점 게임은 재작업 후 재평가 전까지 비노출 유지
 
 ## Change Log
 - 2026-02-26: Initial board created from user-provided sample scores.
 - 2026-02-26: Added mobile-fit column. Updated Urban Village=0, Drift One-Tap=0, Lane Runner=30.
+- 2026-02-26: Added Color Switch Dot=50 (high starting difficulty, fine-control burden).
