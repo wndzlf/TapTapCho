@@ -28,3 +28,4 @@
 | 22 | Mine Sweep Sprint | 지뢰찾기 퍼즐 | DONE | webgame-22 |
 | 37 | Worm Arena Rush | 먹이 성장/회피 | DONE | webgame-37 |
 | 38 | Worm Arena LAN | 같은 와이파이 룸 대전 | DONE | webgame-38 |
+| 39 | Air Striker Lite (Godot) | 2D 비행 슈팅 | DONE | godot-air-striker |

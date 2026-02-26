@@ -89,3 +89,13 @@ Godot 소스 변경 후 웹에 반영하려면:
 2. `Project -> Export -> Web` 선택
 3. `export_path`가 `../godot-urban-maze-web/index.html`인지 확인 후 Export
 4. 같은 방식으로 `godot-platformer`도 `../godot-platformer-web/index.html`로 Export
+
+## 7) Godot 2D 비행 슈팅 (AirStrikerLite)
+
+- 소스: `godot-air-striker`
+- 웹 export 결과물 경로: `godot-air-striker-web`
+
+Export 순서:
+1. Godot 4에서 `/Users/user/TapTapCho/godot-air-striker/project.godot` 열기
+2. `Project -> Export -> Web`
+3. export path를 `../godot-air-striker-web/index.html`로 지정 후 Export

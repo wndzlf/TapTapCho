@@ -97,6 +97,22 @@ function makeRocks() {
   }
 }
 
+function makeBot() {
+  return createWorm({
+    x: rand(180, WORLD_W - 180),
+    y: rand(180, WORLD_H - 180),
+    angle: rand(0, Math.PI * 2),
+    segCount: 12 + Math.floor(rand(0, 8)),
+    turnSpeed: rand(2.2, 3.5),
+    baseSpeed: rand(126, 156),
+    radius: rand(7.4, 8.8),
+    headColor: '#e6f3ff',
+    bodyColor: `hsl(${Math.floor(rand(180, 340))} 78% 62%)`,
+    eyeColor: '#0d1a34',
+    isPlayer: false,
+  });
+}
+
 function createWorm(options) {
   const segCount = options.segCount;
   const segments = [];
@@ -149,19 +165,7 @@ function resetGame() {
 
   bots = [];
   for (let i = 0; i < BOT_COUNT; i += 1) {
-    bots.push(createWorm({
-      x: rand(180, WORLD_W - 180),
-      y: rand(180, WORLD_H - 180),
-      angle: rand(0, Math.PI * 2),
-      segCount: 12 + Math.floor(rand(0, 8)),
-      turnSpeed: rand(2.2, 3.5),
-      baseSpeed: rand(126, 156),
-      radius: rand(7.4, 8.8),
-      headColor: '#e6f3ff',
-      bodyColor: `hsl(${Math.floor(rand(180, 340))} 78% 62%)`,
-      eyeColor: '#0d1a34',
-      isPlayer: false,
-    }));
+    bots.push(makeBot());
   }
 
   foods = Array.from({ length: FOOD_COUNT }, () => makeFood());
@@ -305,26 +309,72 @@ function consumeFood(worm) {
   }
 }
 
-function checkPlayerCrash() {
-  const hitRadius = (player.radius + 7.5) * (player.radius + 7.5);
+function headHitsBody(headWorm, bodyWorm, bodyStart = 4) {
+  const hitRadius = (headWorm.radius + 7.5) * (headWorm.radius + 7.5);
+  for (let i = bodyStart; i < bodyWorm.segments.length; i += 2) {
+    const seg = bodyWorm.segments[i];
+    if (distSq(headWorm.x, headWorm.y, seg.x, seg.y) < hitRadius) return true;
+  }
+  return false;
+}
 
-  for (let i = 8; i < player.segments.length; i += 2) {
-    const seg = player.segments[i];
-    if (distSq(player.x, player.y, seg.x, seg.y) < hitRadius) {
+function scatterFoodFromWorm(worm, density = 14) {
+  const stride = Math.max(2, Math.floor(worm.segments.length / density));
+  for (let i = 4; i < worm.segments.length; i += stride) {
+    const seg = worm.segments[i];
+    foods.push({
+      x: clamp(seg.x + rand(-8, 8), 32, WORLD_W - 32),
+      y: clamp(seg.y + rand(-8, 8), 32, WORLD_H - 32),
+      r: rand(4.5, 7.0),
+      color: FOOD_COLORS[Math.floor(Math.random() * FOOD_COLORS.length)],
+      value: 1,
+    });
+  }
+
+  while (foods.length > FOOD_COUNT + 120) {
+    foods.shift();
+  }
+}
+
+function resolveCollisions() {
+  // Player should die only on other worms' bodies (not own body).
+  for (const bot of bots) {
+    if (headHitsBody(player, bot, 4)) {
       endGame();
       return;
     }
   }
 
-  for (const bot of bots) {
-    for (let i = 4; i < bot.segments.length; i += 2) {
-      const seg = bot.segments[i];
-      if (distSq(player.x, player.y, seg.x, seg.y) < hitRadius) {
-        endGame();
-        return;
+  // Bots also die when their head hits player body or another bot body.
+  const deadBotIndexes = [];
+
+  for (let i = 0; i < bots.length; i += 1) {
+    const bot = bots[i];
+    let crashed = headHitsBody(bot, player, 4);
+
+    if (!crashed) {
+      for (let j = 0; j < bots.length; j += 1) {
+        if (i === j) continue;
+        if (headHitsBody(bot, bots[j], 4)) {
+          crashed = true;
+          break;
+        }
       }
     }
+
+    if (crashed) deadBotIndexes.push(i);
   }
+
+  if (deadBotIndexes.length === 0) return;
+
+  deadBotIndexes.sort((a, b) => b - a);
+  for (const idx of deadBotIndexes) {
+    const deadBot = bots[idx];
+    scatterFoodFromWorm(deadBot, 16);
+    bots.splice(idx, 1);
+  }
+
+  beep(760, 0.05, 0.02);
 }
 
 function drawWorm(worm) {
@@ -499,8 +549,12 @@ function update(dt) {
   consumeFood(player);
   for (const bot of bots) consumeFood(bot);
 
-  checkPlayerCrash();
+  resolveCollisions();
   if (state !== 'running') return;
+
+  if (bots.length < BOT_COUNT && tick % 48 === 0) {
+    bots.push(makeBot());
+  }
 
   camera.x = clamp(player.x - W * 0.5, 0, WORLD_W - W);
   camera.y = clamp(player.y - H * 0.5, 0, WORLD_H - H);
