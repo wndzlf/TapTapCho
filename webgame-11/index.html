@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -10,19 +10,35 @@
   <div class="wrap">
     <header>
       <h1>Stack Tower</h1>
-      <p>Drop moving blocks with perfect timing and build higher.</p>
+      <p>정밀 적층 + 특수 블록 + 챌린지로 타이밍 재미를 확장한 스택 게임.</p>
     </header>
 
     <div class="hud">
-      <div>Score: <span id="score">0</span></div>
-      <div>Best: <span id="best">0</span></div>
-      <button id="btnStart">Start</button>
+      <div>점수 <span id="score">0</span></div>
+      <div>최고 <span id="best">0</span></div>
+      <div>레벨 <span id="level">1</span></div>
+      <div>콤보 <span id="combo">x1.0</span></div>
+      <div>실드 <span id="shield">1</span></div>
+      <div>완벽 <span id="perfect">0</span></div>
+      <button id="btnSound" type="button">사운드: 켜짐</button>
+      <button id="btnPause" type="button">일시정지</button>
+      <button id="btnStart" type="button">시작</button>
+    </div>
+
+    <div class="challenge-wrap">
+      <div class="challenge-head">
+        <strong>챌린지</strong>
+        <span id="challengeText">게임을 시작하세요</span>
+      </div>
+      <div class="challenge-bar">
+        <div id="challengeFill"></div>
+      </div>
     </div>
 
     <canvas id="game" width="420" height="700"></canvas>
 
     <footer>
-      <small>Tap / Space: drop block</small>
+      <small>탭/Space: 블록 드롭 · P: 일시정지 · M: 사운드</small>
     </footer>
   </div>
 
