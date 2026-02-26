@@ -1,73 +1,155 @@
-* { box-sizing: border-box; }
+:root {
+  --bg: #060d20;
+  --panel: rgba(10, 24, 52, 0.9);
+  --line: #315a97;
+  --text: #e9f3ff;
+  --neon: #7cf4ff;
+  --accent: #ffb16f;
+  --good: #9dffbe;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, sans-serif;
-  background: #0f1117;
-  color: #e8eaf0;
-  display: flex;
-  justify-content: center;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", sans-serif;
+  background: radial-gradient(1300px 760px at 50% -20%, #194386 0%, var(--bg) 60%);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
 }
+
 .wrap {
-  width: 100%;
-  max-width: 720px;
-  padding: 20px;
-  text-align: center;
+  width: min(560px, 95vw);
 }
-header h1 { margin: 8px 0 4px; }
-header p { margin: 0 0 16px; color: #9aa3b2; }
+
+header h1 {
+  margin: 14px 0 6px;
+  color: var(--neon);
+}
+
+header p {
+  margin: 0 0 12px;
+  opacity: 0.86;
+}
 
 .hud {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
 }
-.stat {
-  background: #161b24;
-  border: 1px solid #222a38;
-  border-radius: 12px;
-  padding: 10px;
-}
-.label { font-size: 12px; color: #8f98a8; }
-.value { font-size: 20px; font-weight: 700; }
 
-#game {
-  background: #0b0f16;
-  border: 2px solid #2a3242;
-  border-radius: 14px;
+.hud > div {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 7px 10px;
+  min-width: 84px;
+}
+
+button {
+  border: 1px solid #4f74bc;
+  background: linear-gradient(140deg, #1f356d, #2a4f9c);
+  color: var(--text);
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+#btnDash {
+  border-color: #c58a45;
+  background: linear-gradient(145deg, #8a4f1a, #b06923);
+}
+
+.challenge-wrap {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+
+.challenge-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 14px;
+}
+
+#challengeText {
+  color: #cae0ff;
+  text-align: right;
+}
+
+.challenge-bar {
+  margin-top: 6px;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.13);
+  overflow: hidden;
+}
+
+#challengeFill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #8ce8ff, #ffd08e);
+  transition: width 120ms linear;
+}
+
+canvas {
+  width: 100%;
+  height: auto;
   display: block;
-  margin: 0 auto 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45), inset 0 0 36px rgba(120, 220, 255, 0.1);
+  background: #0b1530;
   touch-action: none;
 }
 
-.buttons {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin: 8px 0 12px;
+.touch-controls {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
 }
-button {
-  padding: 12px 10px;
-  border-radius: 10px;
-  border: 1px solid #2a3242;
-  background: #1b2230;
-  color: #e8eaf0;
-  font-weight: 600;
-}
-button:active { transform: scale(0.98); }
-.ghost { background: transparent; color: #9aa3b2; }
-.primary { background: #3b82f6; border-color: #3b82f6; }
 
-footer { color: #9aa3b2; font-size: 12px; }
+.touch-controls button {
+  flex: 1;
+  min-height: 58px;
+  font-size: 18px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #1a3166, #254a98);
+}
 
-.overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
-  display: flex; align-items: center; justify-content: center;
+.touch-controls #btnDash {
+  background: linear-gradient(145deg, #8a4f1a, #b06923);
 }
-.overlay.hidden { display: none; }
-.overlay .panel {
-  background: #161b24; border: 1px solid #2a3242; border-radius: 12px;
-  padding: 20px; width: 80%; max-width: 320px;
+
+footer {
+  margin: 10px 0 14px;
+  opacity: 0.8;
+  text-align: center;
 }
-.overlay h2 { margin: 0 0 8px; }
-.overlay p { margin: 0 0 16px; color: #9aa3b2; }
+
+@media (max-width: 560px) {
+  .hud > div {
+    min-width: 76px;
+  }
+
+  .touch-controls button {
+    min-height: 64px;
+    font-size: 20px;
+  }
+}
