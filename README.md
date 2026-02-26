@@ -100,3 +100,9 @@ Export 순서:
 1. Godot 4에서 `/Users/user/TapTapCho/godot-air-striker/project.godot` 열기
 2. `Project -> Export -> Web`
 3. export path를 `../godot-air-striker-web/index.html`로 지정 후 Export
+
+## 8) Godot 공식 데모 레퍼런스(항상 참고)
+
+- 레퍼런스 저장소: `https://github.com/godotengine/godot-demo-projects`
+- 앞으로 Godot 기반 기능(이동, 카메라, 보스 패턴, HUD, 물리, 입력)은 위 공식 데모 코드 구조를 우선 참고합니다.
+- 특히 2D 액션/슈팅 및 3D 이동 안정화 작업에서 데모 프로젝트의 씬 구성과 스크립트 패턴을 기준으로 적용합니다.

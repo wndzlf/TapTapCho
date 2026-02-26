@@ -26,6 +26,9 @@
 - 상태: `idle / running / gameover` 구분
 - 최소 HUD: 점수, 최고점, 시작/재시작
 - 사운드: WebAudio 또는 경량 효과음
+- Godot 작업 시 공식 데모 우선 참고:
+  - `https://github.com/godotengine/godot-demo-projects`
+  - 이동, 카메라, 적 AI, UI/HUD, 슈팅 패턴은 데모 구조를 먼저 확인하고 적용
 
 ## Builder Prompt Template
 
