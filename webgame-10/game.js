@@ -39,6 +39,7 @@ let shake = 0;
 let flash = 0;
 let cornersPassed = 0;
 let bonusCount = 0;
+let lastDistanceScore = 0;
 
 let challenge = {
   type: 'score',
@@ -278,6 +279,7 @@ function resetGame() {
   flash = 0;
   cornersPassed = 0;
   bonusCount = 0;
+  lastDistanceScore = 0;
   particles.length = 0;
 
   buildInitialPath();
@@ -373,6 +375,7 @@ function update(dt) {
   const tolerance = seg.width * 0.5 - PLAYER_RADIUS * 0.35;
   if (Math.abs(player.x - centerX) > tolerance) {
     absorbCrash(seg);
+    if (state !== 'running') return;
   }
 
   for (const s of segments) {
@@ -415,7 +418,9 @@ function update(dt) {
     sfx.checkpoint();
   }
 
-  addChallenge('score', distanceScore);
+  const distanceDelta = Math.max(0, distanceScore - lastDistanceScore);
+  lastDistanceScore = distanceScore;
+  addChallenge('score', distanceDelta);
 
   if (score > best) {
     best = score;
