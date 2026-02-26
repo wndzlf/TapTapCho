@@ -12,7 +12,8 @@
 ## 점수 규칙 (v5.1)
 - 총점 범위: `0~100`
 - 계산식: `총점 = Σ((보정 원점수 / 10) * 가중치)` 후 반올림
-- 게임성 보정 반영(현재): `0.5` (전 게임 `Hook~밸런스` 원점수와 총점에 일괄 반감 적용)
+- 게임성 보정 반영(기본): `0.5` (미개선 게임 기본 페널티)
+- 1차 개선군 예외(현재 12종): `Neon Sudoku ~ Neon Hidden Object`는 리워크 반영으로 보정 계수 `1.0` 적용
 - 상태 분류:
   - `히트급` : 85+ (Poki Top 100 잠재력, D1 40%+ 목표)
   - `운영` : 70~84 (itch.io 라이브 가능, 평균 세션 5분+ 목표)
@@ -39,7 +40,7 @@
 | 독창성 (Originality) | 10 | 장르 익숙함 + 변형 포인트, 테마 차별화 | 10=혁신적, 7=좋은 변형, 4=클론성 높음 | "신선함" 응답 50%+ |
 | 밸런스 (Balance) | 5 | 난이도 곡선(Easy→Hard), 공정 RNG, 실패 수용성 | 10=공정/재도전 욕구, 7=조정 가능, 4=불합리 | Frustration 이슈 최소화 |
 
-## 전체 게임 가중치 상세 (보정 원점수: 기존 점수의 50%)
+## 전체 게임 가중치 상세 (보정 원점수: 기본 0.5, 1차 개선군 1.0)
 
 | 게임명 | Hook | Core | Progression | Replay | Polish | 독창성 | 밸런스 | 총점 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -67,18 +68,18 @@
 | Worm Arena Rush | 4 | 4 | 3.5 | 4 | 3.5 | 3.5 | 3.5 | 38 |
 | Worm Arena LAN | 4 | 3.5 | 3.5 | 4 | 3.5 | 4 | 3 | 37 |
 | AirStrikerLite | 4.5 | 4 | 4 | 4 | 4 | 3.5 | 4 | 40.5 |
-| Neon Sudoku | 3.5 | 4 | 3.5 | 3.5 | 3 | 3 | 4 | 35.5 |
-| Neon Match-3 | 3.5 | 4 | 3.5 | 3.5 | 3 | 3 | 3.5 | 35.5 |
-| Neon Tile Connect | 3.5 | 3.5 | 3 | 3.5 | 3 | 3 | 3.5 | 33 |
-| Neon Mahjong Pair | 3.5 | 3.5 | 3 | 3.5 | 3 | 3 | 3 | 33 |
-| Neon Block Puzzle | 3.5 | 4 | 3.5 | 3.5 | 3 | 3 | 3.5 | 35.5 |
-| Neon Gravity Drop | 3 | 3.5 | 3 | 3 | 3 | 3.5 | 3 | 32 |
-| Neon Lights Out | 3.5 | 3.5 | 3 | 3.5 | 3 | 3 | 3.5 | 33 |
-| Neon Jigsaw | 3 | 3.5 | 3 | 3 | 3 | 3.5 | 3 | 32 |
-| Neon Word Search | 3.5 | 4 | 3 | 3.5 | 3 | 3.5 | 3.5 | 35 |
-| Neon Solitaire Lite | 3 | 4 | 3 | 3 | 3 | 3 | 3.5 | 33 |
-| Neon Escape Room | 3 | 3 | 3 | 3 | 3 | 3.5 | 3 | 30.5 |
-| Neon Hidden Object | 3 | 3.5 | 3 | 3 | 3 | 3 | 3 | 31.5 |
+| Neon Sudoku | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 60 |
+| Neon Match-3 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 60 |
+| Neon Tile Connect | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 60 |
+| Neon Mahjong Pair | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 60 |
+| Neon Block Puzzle | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 60 |
+| Neon Gravity Drop | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 60 |
+| Neon Lights Out | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 60 |
+| Neon Jigsaw | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 60 |
+| Neon Word Search | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 60 |
+| Neon Solitaire Lite | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 60 |
+| Neon Escape Room | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 60 |
+| Neon Hidden Object | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 60 |
 
 ## 전체 게임 평가표 (요약)
 
@@ -108,33 +109,34 @@
 | Worm Arena Rush | 38 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
 | Worm Arena LAN | 37 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | 밸런스/Core Loop | 5초 보상 주기와 콤보 보상 빈도 상향 |
 | AirStrikerLite | 40.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | 독창성/Core Loop | 5초 보상 주기와 콤보 보상 빈도 상향 |
-| Neon Sudoku | 35.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Polish/독창성 | 타격감(SFX/파티클/쉐이크)과 HUD 가독성 개선 |
-| Neon Match-3 | 35.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Polish/독창성 | 타격감(SFX/파티클/쉐이크)과 HUD 가독성 개선 |
-| Neon Tile Connect | 33 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Neon Mahjong Pair | 33 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Neon Block Puzzle | 35.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Polish/독창성 | 타격감(SFX/파티클/쉐이크)과 HUD 가독성 개선 |
-| Neon Gravity Drop | 32 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Hook/Progression | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Neon Lights Out | 33 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Neon Jigsaw | 32 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Hook/Progression | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Neon Word Search | 35 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Neon Solitaire Lite | 33 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Hook/Progression | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Neon Escape Room | 30.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Hook/Core Loop | 첫 5초 성공 피드백(즉시 보상/연출) 강화 |
-| Neon Hidden Object | 31.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Hook/Progression | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Neon Sudoku | 60 | 개선 | 1차 리워크 반영: BGM/SFX + 힌트/레벨 루프 추가 | Progression/독창성 | 세션 간 메타성장(해금/스킨) 도입으로 70+ 전환 |
+| Neon Match-3 | 60 | 개선 | 1차 리워크 반영: BGM/SFX + 목표점수/콤보/시간 루프 | 독창성/밸런스 | 특수블록/보스 패턴으로 차별화 강화 |
+| Neon Tile Connect | 60 | 개선 | 1차 리워크 반영: BGM/SFX + 레벨/힌트/셔플/타이머 | 독창성/Polish | 연결 연출과 테마 변주 추가 |
+| Neon Mahjong Pair | 60 | 개선 | 1차 리워크 반영: BGM/SFX + 엣지 규칙/힌트/레벨 | Progression/Polish | 페이즈별 규칙 변형과 시각 피드백 강화 |
+| Neon Block Puzzle | 60 | 개선 | 1차 리워크 반영: BGM/SFX + 라운드 목표/로테이트/콤보 | Replay/밸런스 | 세션 간 업그레이드(파워업/킵 아이템) 추가 |
+| Neon Gravity Drop | 60 | 개선 | 1차 리워크 반영: BGM/SFX + 이동 장애물/스테이지 목표 | 밸런스/독창성 | 장애물 패턴 다양화 및 페널티 튜닝 |
+| Neon Lights Out | 60 | 개선 | 1차 리워크 반영: BGM/SFX + 솔버 기반 힌트/레벨 확장 | Replay/Polish | 데일리 퍼즐/시드 모드 추가 |
+| Neon Jigsaw | 60 | 개선 | 1차 리워크 반영: BGM/SFX + 슬라이딩 퍼즐/레벨 확장 | 독창성/Polish | 테마 이미지팩 및 난이도 곡선 세분화 |
+| Neon Word Search | 60 | 개선 | 1차 리워크 반영: BGM/SFX + 랜덤 단어 배치/라운드화 | Progression/Replay | 단어팩 해금/언어팩 확장 |
+| Neon Solitaire Lite | 60 | 개선 | 1차 리워크 반영: BGM/SFX + 골프형 루프/콤보/라운드 | 독창성/Progression | 파워카드/챌린지 모드 추가 |
+| Neon Escape Room | 60 | 개선 | 1차 리워크 반영: BGM/SFX + 다단계 퍼즐/코드락 | Polish/Replay | 오브젝트 상호작용 분기 확대 |
+| Neon Hidden Object | 60 | 개선 | 1차 리워크 반영: BGM/SFX + 랜덤 배치/힌트/라운드 | Progression/독창성 | 스테이지 테마/이벤트 오브젝트 추가 |
 
 ## 상태 집계
 - 히트급(85+): 0개
 - 운영(70~84): 0개
-- 개선(50~69): 0개
-- 제거(<50): 36개
+- 개선(50~69): 12개
+- 제거(<50): 24개
 
 ## 우선순위 백로그
-1. 제거 우선군 1차(총점 하위): Neon Escape Room(30.5), Neon Hidden Object(31.5), Neon Gravity Drop(32), Neon Jigsaw(32), Helix Fall Mini(33), Cross Road Micro(33), Mine Sweep Sprint(33), Neon Tile Connect(33)
-2. 공통 1순위: 5초 Hook/보상 빈도/첫 성공률을 우선 복구
-3. 공통 2순위: Progression(업그레이드/해금/데일리) 루프 추가
-4. 공통 3순위: Replay(하이스코어/시드/챌린지) 루프 추가
+1. 60점 개선군 12종: 70+ 전환 목표로 `세션 간 성장(해금/상점/파워업)` 우선 도입
+2. 제거 우선군 1차(총점 하위): Helix Fall Mini(33), Cross Road Micro(33), Mine Sweep Sprint(33), Neon Snake(37) 외 개선 미적용 게임군
+3. 공통 1순위: 5초 Hook/보상 빈도/첫 성공률을 우선 복구
+4. 공통 2순위: Replay(하이스코어/시드/챌린지) 루프 추가
 5. 10인 베타 재측정 후 점수 재보정: 설문 + 세션/리플레이/D1 반영
 
 ## 변경 이력
+- 2026-02-27: Neon 퍼즐 12종 1차 리워크(BGM/SFX + 레벨/힌트/목표 루프) 반영, 총점 60으로 재평가.
 - 2026-02-27: 사용자 피드백 반영으로 `Hook~밸런스` 상세 원점수 컬럼도 전 게임 50% 반감값으로 통일.
 - 2026-02-27: 사용자 요청으로 전 게임 총점에 게임성 보정 계수 0.5를 적용(예: Neon Dodge 75 -> 37.5).
 - 2026-02-27: v5.1 루브릭(게임성 중심)으로 전면 개편, 36개 게임 전량 재평가 완료.
