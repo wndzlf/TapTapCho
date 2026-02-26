@@ -12,6 +12,7 @@
 ## 점수 규칙 (v5.1)
 - 총점 범위: `0~100`
 - 계산식: `총점 = Σ((원점수 1~10 / 10) * 가중치)` 후 반올림
+- 게임성 보정 계수(현재): `0.5` (전 게임 총점 일괄 반감 적용)
 - 상태 분류:
   - `히트급` : 85+ (Poki Top 100 잠재력, D1 40%+ 목표)
   - `운영` : 70~84 (itch.io 라이브 가능, 평균 세션 5분+ 목표)
@@ -42,97 +43,98 @@
 
 | 게임명 | Hook | Core | Progression | Replay | Polish | 독창성 | 밸런스 | 총점 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Neon Dodge | 8 | 8 | 7 | 7 | 8 | 7 | 7 | 75 |
-| Ball Bounce | 8 | 8 | 7 | 8 | 8 | 6 | 8 | 76 |
-| Lane Runner | 8 | 8 | 7 | 7 | 7 | 6 | 8 | 74 |
-| Ladder Draw | 8 | 7 | 6 | 7 | 8 | 8 | 7 | 72 |
-| Party Roulette | 8 | 7 | 6 | 7 | 7 | 8 | 8 | 71 |
-| TapTap Tetris | 9 | 9 | 8 | 9 | 8 | 8 | 8 | 86 |
-| Lane Dash | 8 | 8 | 7 | 8 | 8 | 7 | 7 | 77 |
-| Weird Tetris | 7 | 7 | 7 | 7 | 8 | 8 | 7 | 72 |
-| Zigzag Rush | 9 | 8 | 7 | 8 | 8 | 7 | 8 | 79 |
-| Stack Tower | 8 | 8 | 7 | 8 | 8 | 7 | 8 | 77 |
-| Knife Hit Lite | 9 | 8 | 8 | 8 | 8 | 7 | 8 | 81 |
-| Color Switch Dot | 8 | 8 | 7 | 8 | 8 | 8 | 7 | 78 |
-| Helix Fall Mini | 7 | 7 | 6 | 7 | 6 | 6 | 6 | 66 |
-| Slide Puzzle Rush | 8 | 8 | 7 | 8 | 7 | 6 | 8 | 75 |
-| Cross Road Micro | 7 | 7 | 6 | 7 | 6 | 6 | 6 | 66 |
-| Orbit Survivor | 7 | 7 | 6 | 7 | 6 | 7 | 6 | 67 |
-| Merge 2048 Tiny | 7 | 8 | 7 | 7 | 6 | 6 | 7 | 71 |
-| Lights Out Rush | 7 | 7 | 7 | 7 | 6 | 6 | 7 | 68 |
-| Zigzag Memory Run | 7 | 7 | 6 | 7 | 6 | 7 | 6 | 67 |
-| Mine Sweep Sprint | 7 | 7 | 6 | 7 | 6 | 6 | 6 | 66 |
-| Neon Snake | 8 | 8 | 7 | 7 | 7 | 7 | 7 | 74 |
-| Worm Arena Rush | 8 | 8 | 7 | 8 | 7 | 7 | 7 | 76 |
-| Worm Arena LAN | 8 | 7 | 7 | 8 | 7 | 8 | 6 | 74 |
-| AirStrikerLite | 9 | 8 | 8 | 8 | 8 | 7 | 8 | 81 |
-| Neon Sudoku | 7 | 8 | 7 | 7 | 6 | 6 | 8 | 71 |
-| Neon Match-3 | 7 | 8 | 7 | 7 | 6 | 6 | 7 | 71 |
-| Neon Tile Connect | 7 | 7 | 6 | 7 | 6 | 6 | 7 | 66 |
-| Neon Mahjong Pair | 7 | 7 | 6 | 7 | 6 | 6 | 6 | 66 |
-| Neon Block Puzzle | 7 | 8 | 7 | 7 | 6 | 6 | 7 | 71 |
-| Neon Gravity Drop | 6 | 7 | 6 | 6 | 6 | 7 | 6 | 64 |
-| Neon Lights Out | 7 | 7 | 6 | 7 | 6 | 6 | 7 | 66 |
-| Neon Jigsaw | 6 | 7 | 6 | 6 | 6 | 7 | 6 | 64 |
-| Neon Word Search | 7 | 8 | 6 | 7 | 6 | 7 | 7 | 70 |
-| Neon Solitaire Lite | 6 | 8 | 6 | 6 | 6 | 6 | 7 | 66 |
-| Neon Escape Room | 6 | 6 | 6 | 6 | 6 | 7 | 6 | 61 |
-| Neon Hidden Object | 6 | 7 | 6 | 6 | 6 | 6 | 6 | 63 |
+| Neon Dodge | 8 | 8 | 7 | 7 | 8 | 7 | 7 | 37.5 |
+| Ball Bounce | 8 | 8 | 7 | 8 | 8 | 6 | 8 | 38 |
+| Lane Runner | 8 | 8 | 7 | 7 | 7 | 6 | 8 | 37 |
+| Ladder Draw | 8 | 7 | 6 | 7 | 8 | 8 | 7 | 36 |
+| Party Roulette | 8 | 7 | 6 | 7 | 7 | 8 | 8 | 35.5 |
+| TapTap Tetris | 9 | 9 | 8 | 9 | 8 | 8 | 8 | 43 |
+| Lane Dash | 8 | 8 | 7 | 8 | 8 | 7 | 7 | 38.5 |
+| Weird Tetris | 7 | 7 | 7 | 7 | 8 | 8 | 7 | 36 |
+| Zigzag Rush | 9 | 8 | 7 | 8 | 8 | 7 | 8 | 39.5 |
+| Stack Tower | 8 | 8 | 7 | 8 | 8 | 7 | 8 | 38.5 |
+| Knife Hit Lite | 9 | 8 | 8 | 8 | 8 | 7 | 8 | 40.5 |
+| Color Switch Dot | 8 | 8 | 7 | 8 | 8 | 8 | 7 | 39 |
+| Helix Fall Mini | 7 | 7 | 6 | 7 | 6 | 6 | 6 | 33 |
+| Slide Puzzle Rush | 8 | 8 | 7 | 8 | 7 | 6 | 8 | 37.5 |
+| Cross Road Micro | 7 | 7 | 6 | 7 | 6 | 6 | 6 | 33 |
+| Orbit Survivor | 7 | 7 | 6 | 7 | 6 | 7 | 6 | 33.5 |
+| Merge 2048 Tiny | 7 | 8 | 7 | 7 | 6 | 6 | 7 | 35.5 |
+| Lights Out Rush | 7 | 7 | 7 | 7 | 6 | 6 | 7 | 34 |
+| Zigzag Memory Run | 7 | 7 | 6 | 7 | 6 | 7 | 6 | 33.5 |
+| Mine Sweep Sprint | 7 | 7 | 6 | 7 | 6 | 6 | 6 | 33 |
+| Neon Snake | 8 | 8 | 7 | 7 | 7 | 7 | 7 | 37 |
+| Worm Arena Rush | 8 | 8 | 7 | 8 | 7 | 7 | 7 | 38 |
+| Worm Arena LAN | 8 | 7 | 7 | 8 | 7 | 8 | 6 | 37 |
+| AirStrikerLite | 9 | 8 | 8 | 8 | 8 | 7 | 8 | 40.5 |
+| Neon Sudoku | 7 | 8 | 7 | 7 | 6 | 6 | 8 | 35.5 |
+| Neon Match-3 | 7 | 8 | 7 | 7 | 6 | 6 | 7 | 35.5 |
+| Neon Tile Connect | 7 | 7 | 6 | 7 | 6 | 6 | 7 | 33 |
+| Neon Mahjong Pair | 7 | 7 | 6 | 7 | 6 | 6 | 6 | 33 |
+| Neon Block Puzzle | 7 | 8 | 7 | 7 | 6 | 6 | 7 | 35.5 |
+| Neon Gravity Drop | 6 | 7 | 6 | 6 | 6 | 7 | 6 | 32 |
+| Neon Lights Out | 7 | 7 | 6 | 7 | 6 | 6 | 7 | 33 |
+| Neon Jigsaw | 6 | 7 | 6 | 6 | 6 | 7 | 6 | 32 |
+| Neon Word Search | 7 | 8 | 6 | 7 | 6 | 7 | 7 | 35 |
+| Neon Solitaire Lite | 6 | 8 | 6 | 6 | 6 | 6 | 7 | 33 |
+| Neon Escape Room | 6 | 6 | 6 | 6 | 6 | 7 | 6 | 30.5 |
+| Neon Hidden Object | 6 | 7 | 6 | 6 | 6 | 6 | 6 | 31.5 |
 
 ## 전체 게임 평가표 (요약)
 
 | 게임명 | 총점 | 상태 | 평가 사유 | 취약 축 | 다음 개선 액션 |
 |---|---:|---|---|---|---|
-| Neon Dodge | 75 | 운영 | 핵심 루프는 안정적이며 라이브 운영 가능한 수준 | Progression/Replay | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Ball Bounce | 76 | 운영 | 핵심 루프는 안정적이며 라이브 운영 가능한 수준 | 독창성/Progression | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Lane Runner | 74 | 운영 | 핵심 루프는 안정적이며 라이브 운영 가능한 수준 | 독창성/Progression | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Ladder Draw | 72 | 운영 | 핵심 루프는 안정적이며 라이브 운영 가능한 수준 | Progression/Core Loop | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Party Roulette | 71 | 운영 | 핵심 루프는 안정적이며 라이브 운영 가능한 수준 | Progression/Core Loop | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| TapTap Tetris | 86 | 히트급 | 베타 지표 기준 상위권 잠재력(세션/리플레이/재방문) | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Lane Dash | 77 | 운영 | 핵심 루프는 안정적이며 라이브 운영 가능한 수준 | Progression/독창성 | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Weird Tetris | 72 | 운영 | 핵심 루프는 안정적이며 라이브 운영 가능한 수준 | Hook/Core Loop | 첫 5초 성공 피드백(즉시 보상/연출) 강화 |
-| Zigzag Rush | 79 | 운영 | 핵심 루프는 안정적이며 라이브 운영 가능한 수준 | Progression/독창성 | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Stack Tower | 77 | 운영 | 핵심 루프는 안정적이며 라이브 운영 가능한 수준 | Progression/독창성 | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Knife Hit Lite | 81 | 운영 | 핵심 루프는 안정적이며 라이브 운영 가능한 수준 | 독창성/Core Loop | 5초 보상 주기와 콤보 보상 빈도 상향 |
-| Color Switch Dot | 78 | 운영 | 핵심 루프는 안정적이며 라이브 운영 가능한 수준 | Progression/밸런스 | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Helix Fall Mini | 66 | 개선 | 기본 재미는 있으나 성장/리플레이 루프 보강이 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Slide Puzzle Rush | 75 | 운영 | 핵심 루프는 안정적이며 라이브 운영 가능한 수준 | 독창성/Progression | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Cross Road Micro | 66 | 개선 | 기본 재미는 있으나 성장/리플레이 루프 보강이 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Orbit Survivor | 67 | 개선 | 기본 재미는 있으나 성장/리플레이 루프 보강이 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Merge 2048 Tiny | 71 | 운영 | 핵심 루프는 안정적이며 라이브 운영 가능한 수준 | Polish/독창성 | 타격감(SFX/파티클/쉐이크)과 HUD 가독성 개선 |
-| Lights Out Rush | 68 | 개선 | 기본 재미는 있으나 성장/리플레이 루프 보강이 필요 | Polish/독창성 | 타격감(SFX/파티클/쉐이크)과 HUD 가독성 개선 |
-| Zigzag Memory Run | 67 | 개선 | 기본 재미는 있으나 성장/리플레이 루프 보강이 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Mine Sweep Sprint | 66 | 개선 | 기본 재미는 있으나 성장/리플레이 루프 보강이 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Neon Snake | 74 | 운영 | 핵심 루프는 안정적이며 라이브 운영 가능한 수준 | Progression/Replay | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Worm Arena Rush | 76 | 운영 | 핵심 루프는 안정적이며 라이브 운영 가능한 수준 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Worm Arena LAN | 74 | 운영 | 핵심 루프는 안정적이며 라이브 운영 가능한 수준 | 밸런스/Core Loop | 5초 보상 주기와 콤보 보상 빈도 상향 |
-| AirStrikerLite | 81 | 운영 | 핵심 루프는 안정적이며 라이브 운영 가능한 수준 | 독창성/Core Loop | 5초 보상 주기와 콤보 보상 빈도 상향 |
-| Neon Sudoku | 71 | 운영 | 핵심 루프는 안정적이며 라이브 운영 가능한 수준 | Polish/독창성 | 타격감(SFX/파티클/쉐이크)과 HUD 가독성 개선 |
-| Neon Match-3 | 71 | 운영 | 핵심 루프는 안정적이며 라이브 운영 가능한 수준 | Polish/독창성 | 타격감(SFX/파티클/쉐이크)과 HUD 가독성 개선 |
-| Neon Tile Connect | 66 | 개선 | 기본 재미는 있으나 성장/리플레이 루프 보강이 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Neon Mahjong Pair | 66 | 개선 | 기본 재미는 있으나 성장/리플레이 루프 보강이 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Neon Block Puzzle | 71 | 운영 | 핵심 루프는 안정적이며 라이브 운영 가능한 수준 | Polish/독창성 | 타격감(SFX/파티클/쉐이크)과 HUD 가독성 개선 |
-| Neon Gravity Drop | 64 | 개선 | 기본 재미는 있으나 성장/리플레이 루프 보강이 필요 | Hook/Progression | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Neon Lights Out | 66 | 개선 | 기본 재미는 있으나 성장/리플레이 루프 보강이 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Neon Jigsaw | 64 | 개선 | 기본 재미는 있으나 성장/리플레이 루프 보강이 필요 | Hook/Progression | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Neon Word Search | 70 | 운영 | 핵심 루프는 안정적이며 라이브 운영 가능한 수준 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Neon Solitaire Lite | 66 | 개선 | 기본 재미는 있으나 성장/리플레이 루프 보강이 필요 | Hook/Progression | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
-| Neon Escape Room | 61 | 개선 | 기본 재미는 있으나 성장/리플레이 루프 보강이 필요 | Hook/Core Loop | 첫 5초 성공 피드백(즉시 보상/연출) 강화 |
-| Neon Hidden Object | 63 | 개선 | 기본 재미는 있으나 성장/리플레이 루프 보강이 필요 | Hook/Progression | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Neon Dodge | 37.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/Replay | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Ball Bounce | 38 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | 독창성/Progression | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Lane Runner | 37 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | 독창성/Progression | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Ladder Draw | 36 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/Core Loop | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Party Roulette | 35.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/Core Loop | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| TapTap Tetris | 43 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Lane Dash | 38.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/독창성 | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Weird Tetris | 36 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Hook/Core Loop | 첫 5초 성공 피드백(즉시 보상/연출) 강화 |
+| Zigzag Rush | 39.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/독창성 | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Stack Tower | 38.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/독창성 | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Knife Hit Lite | 40.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | 독창성/Core Loop | 5초 보상 주기와 콤보 보상 빈도 상향 |
+| Color Switch Dot | 39 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/밸런스 | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Helix Fall Mini | 33 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Slide Puzzle Rush | 37.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | 독창성/Progression | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Cross Road Micro | 33 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Orbit Survivor | 33.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Merge 2048 Tiny | 35.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Polish/독창성 | 타격감(SFX/파티클/쉐이크)과 HUD 가독성 개선 |
+| Lights Out Rush | 34 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Polish/독창성 | 타격감(SFX/파티클/쉐이크)과 HUD 가독성 개선 |
+| Zigzag Memory Run | 33.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Mine Sweep Sprint | 33 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Neon Snake | 37 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/Replay | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Worm Arena Rush | 38 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Worm Arena LAN | 37 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | 밸런스/Core Loop | 5초 보상 주기와 콤보 보상 빈도 상향 |
+| AirStrikerLite | 40.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | 독창성/Core Loop | 5초 보상 주기와 콤보 보상 빈도 상향 |
+| Neon Sudoku | 35.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Polish/독창성 | 타격감(SFX/파티클/쉐이크)과 HUD 가독성 개선 |
+| Neon Match-3 | 35.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Polish/독창성 | 타격감(SFX/파티클/쉐이크)과 HUD 가독성 개선 |
+| Neon Tile Connect | 33 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Neon Mahjong Pair | 33 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Neon Block Puzzle | 35.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Polish/독창성 | 타격감(SFX/파티클/쉐이크)과 HUD 가독성 개선 |
+| Neon Gravity Drop | 32 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Hook/Progression | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Neon Lights Out | 33 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Neon Jigsaw | 32 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Hook/Progression | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Neon Word Search | 35 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Progression/Polish | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Neon Solitaire Lite | 33 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Hook/Progression | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
+| Neon Escape Room | 30.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Hook/Core Loop | 첫 5초 성공 피드백(즉시 보상/연출) 강화 |
+| Neon Hidden Object | 31.5 | 제거 | 게임성 보정 계수 0.5 적용 시 핵심 재미 루프 재설계 필요 | Hook/Progression | 세션 내/세션 간 성장 루프(업그레이드·해금) 추가 |
 
 ## 상태 집계
-- 히트급(85+): 1개
-- 운영(70~84): 21개
-- 개선(50~69): 14개
-- 제거(<50): 0개
+- 히트급(85+): 0개
+- 운영(70~84): 0개
+- 개선(50~69): 0개
+- 제거(<50): 36개
 
 ## 우선순위 백로그
-1. 히트급 스케일업: TapTap Tetris(86)
-2. 개선 우선군(총점 하위): Neon Escape Room(61), Neon Hidden Object(63), Neon Gravity Drop(64), Neon Jigsaw(64), Helix Fall Mini(66), Cross Road Micro(66), Mine Sweep Sprint(66), Neon Tile Connect(66)
-3. 공통 액션: Growth(Progression) 점수 7 미만 게임에 해금/상점/데일리 우선 적용
-4. 공통 액션: Replay 7 미만 게임에 하이스코어 챌린지/시드 변형/주간 모드 추가
+1. 제거 우선군 1차(총점 하위): Neon Escape Room(30.5), Neon Hidden Object(31.5), Neon Gravity Drop(32), Neon Jigsaw(32), Helix Fall Mini(33), Cross Road Micro(33), Mine Sweep Sprint(33), Neon Tile Connect(33)
+2. 공통 1순위: 5초 Hook/보상 빈도/첫 성공률을 우선 복구
+3. 공통 2순위: Progression(업그레이드/해금/데일리) 루프 추가
+4. 공통 3순위: Replay(하이스코어/시드/챌린지) 루프 추가
 5. 10인 베타 재측정 후 점수 재보정: 설문 + 세션/리플레이/D1 반영
 
 ## 변경 이력
+- 2026-02-27: 사용자 요청으로 전 게임 총점에 게임성 보정 계수 0.5를 적용(예: Neon Dodge 75 -> 37.5).
 - 2026-02-27: v5.1 루브릭(게임성 중심)으로 전면 개편, 36개 게임 전량 재평가 완료.
 - 2026-02-26: 기존 v2 평가표 운영 및 게임별 개별 리워크 반영.
