@@ -1,6 +1,6 @@
 # Hyper-casual Production Checklist
 
-상태 기준: `DONE`, `IN_PROGRESS`, `TODO`
+상태 기준: `DONE`, `IN_PROGRESS`, `TODO`, `REMOVED`
 
 | ID | 게임명 | 코어 루프 | 상태 | 폴더 |
 |---|---|---|---|---|
@@ -11,7 +11,7 @@
 | 05 | Party Roulette | 룰렛 선택 | DONE | webgame-5 |
 | 06 | TapTap Tetris | 블록 배치/삭제 | DONE | webgame-6 |
 | 07 | Lane Dash | 라인 기반 레이싱 | DONE | webgame-7 |
-| 08 | Retro Village 3D | 간단 탐험 | DONE | webgame-8 |
+| 08 | Retro Village 3D | 간단 탐험 | REMOVED | webgame-8 |
 | 09 | Weird Tetris | 변형 퍼즐 | DONE | webgame-9 |
 | 10 | Zigzag Rush | 탭 타이밍 전환 | DONE | webgame-10 |
 | 11 | Stack Tower | 타이밍 적층 | DONE | webgame-11 |
