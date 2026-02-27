@@ -129,6 +129,24 @@
     const SAMPLE_DT = 0.1;
     const MAX_FRAMES = 300;
     const REWIND_SECONDS = 10;
+    const WEAPON_MIN_TIME = 6;
+    const WEAPON_MAX_TIME = 10;
+
+    function loadSprite(src) {
+      const img = new Image();
+      img.src = src;
+      return img;
+    }
+
+    function hasSprite(img) {
+      return !!img && img.complete && img.naturalWidth > 0;
+    }
+
+    const SPRITES = {
+      player: loadSprite('../godot-hyperfold/assets/kenney_alien-ufo-pack/PNG/shipBlue_manned.png'),
+      alien: loadSprite('../godot-hyperfold/assets/kenney_alien-ufo-pack/PNG/shipGreen_manned.png'),
+      weapon: loadSprite('../godot-hyperfold/assets/kenney_alien-ufo-pack/PNG/dome.png'),
+    };
 
     const KEYS = Object.create(null);
     const TOUCH = { up: false, down: false, left: false, right: false };
@@ -152,7 +170,7 @@
           { type: 'chrono', x: 86, y: 148, taken: false },
           { type: 'jump', x: 272, y: 456, taken: false },
         ],
-        weapon: { x: 286, y: 112 },
+        weaponSpawns: [{ x: 286, y: 112 }, { x: 244, y: 144 }, { x: 98, y: 118 }],
         alienSpawns: [{ x: 56, y: 112 }, { x: 300, y: 160 }, { x: 80, y: 430 }],
       },
       {
@@ -166,7 +184,7 @@
           { type: 'chrono', x: 272, y: 146, taken: false },
           { type: 'jump', x: 90, y: 470, taken: false },
         ],
-        weapon: { x: 66, y: 124 },
+        weaponSpawns: [{ x: 66, y: 124 }, { x: 252, y: 132 }, { x: 160, y: 500 }],
         alienSpawns: [{ x: 288, y: 106 }, { x: 244, y: 364 }, { x: 80, y: 230 }],
       },
       {
@@ -180,7 +198,7 @@
           { type: 'chrono', x: 96, y: 436, taken: false },
           { type: 'jump', x: 258, y: 150, taken: false },
         ],
-        weapon: { x: 176, y: 102 },
+        weaponSpawns: [{ x: 176, y: 102 }, { x: 108, y: 462 }, { x: 272, y: 438 }],
         alienSpawns: [{ x: 76, y: 118 }, { x: 278, y: 202 }, { x: 118, y: 300 }],
       },
       {
@@ -194,7 +212,7 @@
           { type: 'chrono', x: 298, y: 470, taken: false },
           { type: 'jump', x: 70, y: 182, taken: false },
         ],
-        weapon: { x: 306, y: 136 },
+        weaponSpawns: [{ x: 306, y: 136 }, { x: 90, y: 154 }, { x: 210, y: 464 }],
         alienSpawns: [{ x: 62, y: 142 }, { x: 258, y: 210 }, { x: 272, y: 418 }],
       },
     ];
@@ -208,6 +226,7 @@
     let player;
     let aliens;
     let weapon;
+    let weaponPlan;
     let currentLayer;
     let timeSec;
     let status;
@@ -250,12 +269,22 @@
         layer: (i + 1) % 4,
       }));
 
+      const planLayer = Math.floor(Math.random() * LAYERS.length);
+      const planSpawns = LAYERS[planLayer].weaponSpawns;
+      const planSpawn = planSpawns[Math.floor(Math.random() * planSpawns.length)];
+      weaponPlan = {
+        spawnTime: WEAPON_MIN_TIME + Math.random() * (WEAPON_MAX_TIME - WEAPON_MIN_TIME),
+        layer: planLayer,
+        x: planSpawn.x,
+        y: planSpawn.y,
+      };
+
       weapon = {
         active: false,
         claimed: false,
-        layer: 2,
-        x: LAYERS[2].weapon.x,
-        y: LAYERS[2].weapon.y,
+        layer: weaponPlan.layer,
+        x: weaponPlan.x,
+        y: weaponPlan.y,
       };
 
       for (const layer of LAYERS) {
@@ -264,7 +293,7 @@
 
       timeSec = 0;
       status = 'running';
-      msg = '골든 웨폰을 먼저 확보하세요';
+      msg = '골든 웨폰 시그널 추적 시작';
       msgLeft = 1.5;
       hitCooldown = 0;
       sampleAcc = 0;
@@ -518,12 +547,12 @@
       if (!rewind.active) {
         timeSec += dt;
 
-        if (timeSec >= 7 && !weapon.active && !weapon.claimed) {
+        if (timeSec >= weaponPlan.spawnTime && !weapon.active && !weapon.claimed) {
           weapon.active = true;
-          weapon.layer = 2;
-          weapon.x = LAYERS[2].weapon.x;
-          weapon.y = LAYERS[2].weapon.y;
-          setMessage('골든 웨폰 등장! W2', 1.6);
+          weapon.layer = weaponPlan.layer;
+          weapon.x = weaponPlan.x;
+          weapon.y = weaponPlan.y;
+          setMessage('골든 웨폰 출현! 레이어를 탐색하세요', 1.6);
         }
 
         updateAliens(dt);
@@ -551,6 +580,12 @@
       ctx.translate(x, y);
       if (ghost) ctx.globalAlpha = 0.5;
 
+      if (hasSprite(SPRITES.player)) {
+        ctx.drawImage(SPRITES.player, -16, -16, 32, 32);
+        ctx.restore();
+        return;
+      }
+
       ctx.fillStyle = colorA;
       ctx.beginPath();
       ctx.moveTo(0, -14);
@@ -575,6 +610,13 @@
       ctx.save();
       ctx.translate(x, y);
       if (ghost) ctx.globalAlpha = 0.45;
+
+      if (hasSprite(SPRITES.alien)) {
+        ctx.drawImage(SPRITES.alien, -15, -15, 30, 30);
+        ctx.restore();
+        return;
+      }
+
       ctx.fillStyle = '#7feaff';
       ctx.beginPath();
       for (let i = 0; i < 5; i++) {
@@ -631,14 +673,21 @@
       }
 
       if (weapon.active && weapon.layer === currentLayer) {
-        ctx.fillStyle = '#ffd558';
-        ctx.beginPath();
-        ctx.ellipse(weapon.x, weapon.y, 13, 7, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#fff6bf';
-        ctx.beginPath();
-        ctx.ellipse(weapon.x, weapon.y, 6, 3, 0, 0, Math.PI * 2);
-        ctx.fill();
+        if (hasSprite(SPRITES.weapon)) {
+          ctx.save();
+          ctx.globalAlpha = 0.95;
+          ctx.drawImage(SPRITES.weapon, weapon.x - 16, weapon.y - 16, 32, 32);
+          ctx.restore();
+        } else {
+          ctx.fillStyle = '#ffd558';
+          ctx.beginPath();
+          ctx.ellipse(weapon.x, weapon.y, 13, 7, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#fff6bf';
+          ctx.beginPath();
+          ctx.ellipse(weapon.x, weapon.y, 6, 3, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
 
       if (rewind.active) {
