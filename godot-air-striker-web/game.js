@@ -7,6 +7,8 @@ const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
 const hpEl = document.getElementById('hp');
 const levelEl = document.getElementById('level');
+const waveEl = document.getElementById('wave');
+const bossesEl = document.getElementById('bosses');
 const comboEl = document.getElementById('combo');
 const btnStart = document.getElementById('btnStart');
 const btnSound = document.getElementById('btnSound');
@@ -43,6 +45,7 @@ const pointer = { x: player.x, y: player.y, active: false };
 let state = 'idle'; // idle | running | gameover
 let score = 0;
 let hp = 3;
+let maxHp = 3;
 let best = Number(localStorage.getItem(STORAGE_KEY) || 0);
 let tick = 0;
 let survivalTime = 0;
@@ -54,9 +57,30 @@ let combo = 0;
 let comboTimer = 0;
 let powerupSpawnCd = 0;
 let level = 1;
+let wave = 1;
 let nextBossScore = 260;
 let bossesDefeated = 0;
 let bossWarning = 0;
+let waveBanner = 0;
+let waveBannerText = '';
+let mission = null;
+let droneFireCd = 0;
+
+const perks = {
+  fireRate: 0,
+  damage: 0,
+  shield: 0,
+  drone: 0,
+  combo: 0,
+  magnet: 0,
+};
+
+const upgradeMenu = {
+  active: false,
+  choices: [],
+  selected: 0,
+  pendingBossKill: false,
+};
 
 let bullets = [];
 let enemies = [];
@@ -209,6 +233,14 @@ function updateLevelUi() {
   levelEl.textContent = String(level);
 }
 
+function updateWaveUi() {
+  waveEl.textContent = String(wave);
+}
+
+function updateBossesUi() {
+  bossesEl.textContent = String(bossesDefeated);
+}
+
 function updateComboUi(multiplier) {
   comboEl.textContent = `x${multiplier.toFixed(1)}`;
 }
@@ -221,11 +253,14 @@ function resetCombo() {
 
 function registerKill(baseScore) {
   combo = comboTimer > 0 ? combo + 1 : 1;
-  comboTimer = 1.45;
-  const multiplier = 1 + Math.min(1.2, Math.floor(combo / 4) * 0.2);
+  comboTimer = 1.45 + perks.combo * 0.22;
+  const multiplier = 1 + Math.min(1.6 + perks.combo * 0.06, Math.floor(combo / 4) * 0.2 + perks.combo * 0.05);
   score += Math.round(baseScore * multiplier);
   updateScoreUi();
   updateComboUi(multiplier);
+  if (mission && mission.type === 'kill') {
+    mission.progress = Math.min(mission.target, mission.progress + 1);
+  }
 }
 
 function pickEnemyType(difficulty) {
@@ -294,7 +329,7 @@ function spawnEnemyBullet(x, y, angle, speed, color = '#ff98a1', radius = 5) {
 
 function spawnBoss() {
   const difficulty = getDifficulty();
-  const hpMax = 420 + bossesDefeated * 170 + difficulty.level * 45;
+  const hpMax = 460 + bossesDefeated * 190 + difficulty.level * 55;
   boss = {
     x: W * 0.5,
     y: 96,
@@ -309,11 +344,13 @@ function spawnBoss() {
     chargeCd: 2.2,
     targetX: W * 0.5,
     time: 0,
+    enraged: bossesDefeated >= 2 || difficulty.level >= 9,
   };
   bossWarning = 2.4;
   shake = 12;
   sfx.bossSpawn();
   addBurst(boss.x, boss.y, '#ffbf7e', 42, 4.5);
+  if (bgmAudio?.setTheme) bgmAudio.setTheme('rush');
 }
 
 function spawnPowerUp(x, y) {
@@ -335,10 +372,131 @@ function spawnPowerUp(x, y) {
   });
 }
 
+const UPGRADE_POOL = [
+  {
+    id: 'fire',
+    title: 'Overclock',
+    desc: 'Fire rate +10%',
+    apply() {
+      perks.fireRate += 1;
+    },
+  },
+  {
+    id: 'damage',
+    title: 'Core Cannon',
+    desc: 'Bullet damage +1',
+    apply() {
+      perks.damage += 1;
+    },
+  },
+  {
+    id: 'shield',
+    title: 'Aegis Cell',
+    desc: 'Max HP +1 and shield +1',
+    apply() {
+      perks.shield += 1;
+      maxHp = Math.min(9, maxHp + 1);
+      hp = Math.min(maxHp, hp + 1);
+      player.shield = Math.min(4, player.shield + 1);
+      updateHpUi();
+    },
+  },
+  {
+    id: 'drone',
+    title: 'Wing Drone',
+    desc: 'Add support drone fire',
+    apply() {
+      perks.drone += 1;
+    },
+  },
+  {
+    id: 'combo',
+    title: 'Combo Drive',
+    desc: 'Combo duration and bonus up',
+    apply() {
+      perks.combo += 1;
+    },
+  },
+  {
+    id: 'magnet',
+    title: 'Magnet Core',
+    desc: 'Power-up pickup range up',
+    apply() {
+      perks.magnet += 1;
+    },
+  },
+];
+
+function missionTarget(type) {
+  if (type === 'kill') return 12 + Math.floor(level * 1.3);
+  if (type === 'survive') return 14 + Math.floor(level * 1.2);
+  return 2 + Math.floor(level / 3);
+}
+
+function missionLabel(type) {
+  if (type === 'kill') return 'Eliminate';
+  if (type === 'survive') return 'Survive';
+  return 'Collect Powerups';
+}
+
+function createMission() {
+  const pick = Math.random();
+  let type = 'kill';
+  if (pick < 0.34) type = 'survive';
+  else if (pick < 0.56) type = 'powerup';
+  mission = {
+    type,
+    target: missionTarget(type),
+    progress: 0,
+    reward: 80 + level * 20,
+    done: false,
+  };
+}
+
+function updateMission(dt) {
+  if (!mission || mission.done) return;
+  if (mission.type === 'survive') {
+    mission.progress = Math.min(mission.target, mission.progress + dt);
+  }
+  if (mission.progress >= mission.target) {
+    mission.done = true;
+    score += mission.reward;
+    hp = Math.min(maxHp, hp + 1);
+    player.shield = Math.min(4, player.shield + 1);
+    updateScoreUi();
+    updateHpUi();
+    addBurst(player.x, player.y, '#c6ff9d', 24, 3.8);
+    sfx.powerUp();
+    createMission();
+  }
+}
+
+function openUpgradeMenu() {
+  const shuffled = [...UPGRADE_POOL];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  upgradeMenu.choices = shuffled.slice(0, 3);
+  upgradeMenu.selected = 0;
+  upgradeMenu.active = true;
+}
+
+function applyUpgrade(index) {
+  if (!upgradeMenu.active) return;
+  const choice = upgradeMenu.choices[index];
+  if (!choice) return;
+  choice.apply();
+  upgradeMenu.active = false;
+  addBurst(player.x, player.y, '#b7efff', 26, 4.2);
+  sfx.powerUp();
+}
+
 function resetGame() {
   state = 'idle';
   score = 0;
   hp = 3;
+  maxHp = 3;
   tick = 0;
   survivalTime = 0;
   spawnTimer = 0;
@@ -347,9 +505,23 @@ function resetGame() {
   shotSfxCd = 0;
   powerupSpawnCd = 0;
   level = 1;
+  wave = 1;
   nextBossScore = 260;
   bossesDefeated = 0;
   bossWarning = 0;
+  waveBanner = 0;
+  waveBannerText = '';
+  droneFireCd = 0;
+
+  perks.fireRate = 0;
+  perks.damage = 0;
+  perks.shield = 0;
+  perks.drone = 0;
+  perks.combo = 0;
+  perks.magnet = 0;
+  upgradeMenu.active = false;
+  upgradeMenu.choices = [];
+  upgradeMenu.selected = 0;
 
   player.x = W * 0.5;
   player.y = H - 94;
@@ -369,7 +541,10 @@ function resetGame() {
   updateScoreUi();
   updateHpUi();
   updateLevelUi();
+  updateWaveUi();
+  updateBossesUi();
   resetCombo();
+  createMission();
 }
 
 function startGame() {
@@ -390,6 +565,7 @@ function currentFireCadence() {
   if (player.rapidTimer > 0) fireCd *= 0.58;
   if (player.weaponTimer > 0) fireCd *= 0.86;
   if (level >= 7) fireCd *= 0.92;
+  fireCd *= Math.max(0.58, 1 - perks.fireRate * 0.1);
   return fireCd;
 }
 
@@ -397,6 +573,7 @@ function shoot() {
   const volley = player.weaponTimer > 0 ? 5 : 3;
   const spread = player.weaponTimer > 0 ? 0.14 : 0.11;
   const speed = 610;
+  const damageBoost = perks.damage;
 
   for (let i = 0; i < volley; i += 1) {
     const offset = i - (volley - 1) / 2;
@@ -407,9 +584,26 @@ function shoot() {
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
       r: 4,
-      damage: player.weaponTimer > 0 ? 2 : 1,
+      damage: (player.weaponTimer > 0 ? 2 : 1) + damageBoost,
       life: 1.8,
     });
+  }
+
+  if (perks.drone > 0 && droneFireCd <= 0) {
+    const drones = Math.min(2, perks.drone);
+    for (let d = 0; d < drones; d += 1) {
+      const side = d === 0 ? -1 : 1;
+      bullets.push({
+        x: player.x + side * 22,
+        y: player.y - 8,
+        vx: side * 60,
+        vy: -540,
+        r: 3,
+        damage: 1 + Math.floor(perks.damage * 0.5),
+        life: 1.4,
+      });
+    }
+    droneFireCd = Math.max(0.1, 0.24 - perks.drone * 0.04);
   }
 
   if (shotSfxCd <= 0) {
@@ -487,18 +681,23 @@ function killBoss() {
   shake = 22;
   registerKill(260 + bossesDefeated * 40);
   bossesDefeated += 1;
+  updateBossesUi();
   nextBossScore += 360 + bossesDefeated * 120;
   enemyBullets = [];
   boss = null;
+  waveBannerText = `Boss Down! Choose Upgrade`;
+  waveBanner = 2.2;
+  openUpgradeMenu();
+  if (bgmAudio?.setTheme) bgmAudio.setTheme('neon');
 }
 
 function applyPowerUp(type) {
   if (type === 'rapid') {
     player.rapidTimer = Math.max(player.rapidTimer, 8);
   } else if (type === 'shield') {
-    player.shield = Math.min(2, player.shield + 1);
+    player.shield = Math.min(2 + perks.shield, player.shield + 1);
   } else if (type === 'repair') {
-    hp = Math.min(6, hp + 1);
+    hp = Math.min(maxHp, hp + 1);
     updateHpUi();
   } else if (type === 'weapon') {
     player.weaponTimer = Math.max(player.weaponTimer, 10);
@@ -521,6 +720,9 @@ function applyPowerUp(type) {
 
   sfx.powerUp();
   addBurst(player.x, player.y, '#ffeb9e', 20, 3.2);
+  if (mission && mission.type === 'powerup') {
+    mission.progress = Math.min(mission.target, mission.progress + 1);
+  }
 }
 
 function updatePlayer(dt) {
@@ -624,12 +826,30 @@ function updateEnemies(dt, difficulty) {
   }
 }
 
+function spawnWavePack(waveNo) {
+  const mod = waveNo % 4;
+  if (mod === 1) {
+    for (let i = 0; i < 3; i += 1) spawnEnemy('heavy');
+  } else if (mod === 2) {
+    for (let i = 0; i < 4; i += 1) spawnEnemy('zigzag');
+  } else if (mod === 3) {
+    for (let i = 0; i < 4; i += 1) spawnEnemy('splitter');
+  } else {
+    for (let i = 0; i < 5; i += 1) spawnEnemy('kamikaze');
+  }
+
+  if (waveNo % 6 === 0) {
+    spawnPowerUp(rand(32, W - 32), rand(90, 180));
+  }
+}
+
 function updateBoss(dt, difficulty) {
   if (!boss) return;
 
   boss.time += dt;
   const hpRatio = boss.hp / boss.maxHp;
-  boss.phase = hpRatio > 0.66 ? 1 : hpRatio > 0.33 ? 2 : 3;
+  if (boss.enraged && hpRatio <= 0.16) boss.phase = 4;
+  else boss.phase = hpRatio > 0.66 ? 1 : hpRatio > 0.33 ? 2 : 3;
 
   if (boss.phase === 1) {
     boss.x += boss.vx * dt;
@@ -639,7 +859,7 @@ function updateBoss(dt, difficulty) {
     boss.x += boss.vx * 1.1 * dt;
     if (boss.x < boss.r || boss.x > W - boss.r) boss.vx *= -1;
     boss.y = 98 + Math.sin(boss.time * 2.6) * 16;
-  } else {
+  } else if (boss.phase === 3) {
     boss.chargeCd -= dt;
     if (boss.chargeCd <= 0) {
       boss.targetX = clamp(player.x + rand(-50, 50), boss.r, W - boss.r);
@@ -647,6 +867,14 @@ function updateBoss(dt, difficulty) {
     }
     boss.x += (boss.targetX - boss.x) * Math.min(1, dt * 3.4);
     boss.y = 95 + Math.sin(boss.time * 3.9) * 18;
+  } else {
+    boss.chargeCd -= dt;
+    if (boss.chargeCd <= 0) {
+      boss.targetX = clamp(player.x + rand(-72, 72), boss.r, W - boss.r);
+      boss.chargeCd = 1.15;
+    }
+    boss.x += (boss.targetX - boss.x) * Math.min(1, dt * 5.2);
+    boss.y = 85 + Math.sin(boss.time * 5.4) * 26;
   }
 
   boss.fireCd -= dt;
@@ -677,10 +905,23 @@ function updateBoss(dt, difficulty) {
     boss.fireCd = 0.42;
   }
 
+  if (boss.phase === 4 && boss.fireCd <= 0) {
+    const aim = Math.atan2(player.y - boss.y, player.x - boss.x);
+    for (let i = -3; i <= 3; i += 1) {
+      spawnEnemyBullet(boss.x, boss.y + 8, aim + i * 0.12, 290 * difficulty.bulletSpeed, '#ff6f7e', 4);
+    }
+    boss.fireCd = 0.3;
+  }
+
   if (boss.phase >= 2 && boss.summonCd <= 0) {
     spawnEnemy('kamikaze');
     if (Math.random() < 0.5) spawnEnemy('zigzag');
-    boss.summonCd = boss.phase === 2 ? 4.3 : 3.4;
+    if (boss.phase >= 4) {
+      spawnEnemy('splitter');
+      boss.summonCd = 2.2;
+    } else {
+      boss.summonCd = boss.phase === 2 ? 4.3 : 3.4;
+    }
   }
 
   if (boss.phase === 3 && boss.patternCd <= 0) {
@@ -690,6 +931,16 @@ function updateBoss(dt, difficulty) {
     }
     boss.patternCd = 2.2;
     shake = 10;
+  }
+
+  if (boss.phase === 4 && boss.patternCd <= 0) {
+    const base = boss.time * 5.2;
+    for (let i = 0; i < 24; i += 1) {
+      const angle = base + (i / 24) * Math.PI * 2;
+      spawnEnemyBullet(boss.x, boss.y, angle, 210 * difficulty.bulletSpeed, '#ff6576', 4);
+    }
+    boss.patternCd = 1.25;
+    shake = 14;
   }
 }
 
@@ -716,6 +967,17 @@ function updateEnemyBullets(dt) {
 function updatePowerUps(dt) {
   for (let i = powerUps.length - 1; i >= 0; i -= 1) {
     const p = powerUps[i];
+    if (perks.magnet > 0) {
+      const dx = player.x - p.x;
+      const dy = player.y - p.y;
+      const d = Math.hypot(dx, dy) || 1;
+      const range = 120 + perks.magnet * 45;
+      if (d < range) {
+        const pull = (95 + perks.magnet * 50) * dt;
+        p.x += (dx / d) * pull;
+        p.y += (dy / d) * pull;
+      }
+    }
     p.y += p.vy * dt;
     p.rot += dt * 2.5;
     p.life -= dt;
@@ -931,7 +1193,7 @@ function drawBoss() {
   ctx.save();
   ctx.translate(boss.x, boss.y);
 
-  const phaseColor = boss.phase === 1 ? '#ffb888' : boss.phase === 2 ? '#ff9f95' : '#ff808d';
+  const phaseColor = boss.phase === 1 ? '#ffb888' : boss.phase === 2 ? '#ff9f95' : boss.phase === 3 ? '#ff808d' : '#ff5f72';
 
   ctx.fillStyle = phaseColor;
   ctx.beginPath();
@@ -1020,7 +1282,7 @@ function drawParticles() {
 
 function drawTopInfo(difficulty) {
   ctx.fillStyle = 'rgba(7, 13, 27, 0.32)';
-  ctx.fillRect(12, 48, 182, 48);
+  ctx.fillRect(12, 48, 260, 76);
   ctx.fillStyle = '#d7e8ff';
   ctx.font = '12px system-ui';
   ctx.textAlign = 'left';
@@ -1031,6 +1293,12 @@ function drawTopInfo(difficulty) {
   if (player.weaponTimer > 0) status.push(`Weapon ${player.weaponTimer.toFixed(0)}s`);
   if (player.shield > 0) status.push(`Shield ${player.shield}`);
   ctx.fillText(status.length ? status.join(' | ') : 'Status: Base Loadout', 18, 86);
+  ctx.fillText(`Perk F${perks.fireRate} D${perks.damage} S${perks.shield} Dr${perks.drone}`, 18, 104);
+  if (mission) {
+    const p = mission.type === 'survive' ? Math.floor(mission.progress) : mission.progress;
+    const t = mission.type === 'survive' ? Math.floor(mission.target) : mission.target;
+    ctx.fillText(`Mission: ${missionLabel(mission.type)} ${p}/${t}`, 18, 122);
+  }
 }
 
 function renderOverlay() {
@@ -1047,6 +1315,16 @@ function renderOverlay() {
     ctx.textAlign = 'center';
     ctx.font = 'bold 24px system-ui';
     ctx.fillText('WARNING: BOSS INCOMING', W / 2, H * 0.38 + 36);
+  }
+
+  if (waveBanner > 0) {
+    const alpha = 0.3 + Math.sin(tick * 0.28) * 0.16;
+    ctx.fillStyle = `rgba(106, 176, 255, ${alpha})`;
+    ctx.fillRect(W * 0.25, 136, W * 0.5, 42);
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 22px system-ui';
+    ctx.fillText(waveBannerText || `Wave ${wave}`, W / 2, 164);
   }
 
   if (state === 'idle' || state === 'gameover') {
@@ -1067,6 +1345,35 @@ function renderOverlay() {
       ctx.font = 'bold 19px system-ui';
       ctx.fillText(`Final Score: ${score}`, W / 2, H / 2 + 56);
     }
+  }
+
+  if (upgradeMenu.active) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.56)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 28px system-ui';
+    ctx.fillText('Choose Upgrade', W / 2, 170);
+    ctx.font = '14px system-ui';
+    ctx.fillText('Press 1 / 2 / 3 or tap an option', W / 2, 194);
+
+    const boxW = W - 56;
+    const boxH = 92;
+    for (let i = 0; i < upgradeMenu.choices.length; i += 1) {
+      const y = 228 + i * 108;
+      const selected = i === upgradeMenu.selected;
+      ctx.fillStyle = selected ? 'rgba(102, 206, 255, 0.34)' : 'rgba(18, 32, 58, 0.82)';
+      ctx.fillRect(28, y, boxW, boxH);
+      ctx.strokeStyle = selected ? '#8ee8ff' : 'rgba(255,255,255,0.25)';
+      ctx.strokeRect(28, y, boxW, boxH);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 20px system-ui';
+      ctx.textAlign = 'left';
+      ctx.fillText(`${i + 1}. ${upgradeMenu.choices[i].title}`, 44, y + 34);
+      ctx.font = '14px system-ui';
+      ctx.fillText(upgradeMenu.choices[i].desc, 44, y + 60);
+    }
+    ctx.textAlign = 'left';
   }
 }
 
@@ -1102,15 +1409,28 @@ function update(dt) {
   if (flash > 0) flash -= 1;
   if (shake > 0) shake = Math.max(0, shake - dt * 34);
   if (shotSfxCd > 0) shotSfxCd -= dt;
+  if (droneFireCd > 0) droneFireCd -= dt;
   if (powerupSpawnCd > 0) powerupSpawnCd -= dt;
   if (bossWarning > 0) bossWarning = Math.max(0, bossWarning - dt);
+  if (waveBanner > 0) waveBanner = Math.max(0, waveBanner - dt);
 
   updateParticles(dt);
 
   if (state !== 'running') return;
+  if (upgradeMenu.active) return;
 
   survivalTime += dt;
   const difficulty = getDifficulty();
+  const nextWave = 1 + Math.floor(survivalTime / 12) + bossesDefeated * 2;
+  if (nextWave > wave) {
+    for (let wv = wave + 1; wv <= nextWave; wv += 1) {
+      spawnWavePack(wv);
+    }
+    wave = nextWave;
+    waveBannerText = `Wave ${wave}`;
+    waveBanner = 1.5;
+    updateWaveUi();
+  }
   updateLevelUi();
 
   if (score >= nextBossScore && !boss && bossWarning <= 0) {
@@ -1124,6 +1444,7 @@ function update(dt) {
   updateEnemyBullets(dt);
   updatePowerUps(dt);
   hitCheck();
+  updateMission(dt);
 
   if (comboTimer > 0) {
     comboTimer -= dt;
@@ -1154,6 +1475,16 @@ function updatePointer(event) {
   pointer.y = (event.clientY - rect.top) * (H / rect.height);
 }
 
+function pickUpgradeIndexAt(x, y) {
+  const boxW = W - 56;
+  const boxH = 92;
+  for (let i = 0; i < upgradeMenu.choices.length; i += 1) {
+    const top = 228 + i * 108;
+    if (x >= 28 && x <= 28 + boxW && y >= top && y <= top + boxH) return i;
+  }
+  return -1;
+}
+
 btnStart.addEventListener('click', () => {
   sfx.ensure();
   startGame();
@@ -1168,6 +1499,11 @@ btnSound.addEventListener('click', () => {
 canvas.addEventListener('pointerdown', (event) => {
   sfx.ensure();
   updatePointer(event);
+  if (upgradeMenu.active) {
+    const idx = pickUpgradeIndexAt(pointer.x, pointer.y);
+    if (idx >= 0) applyUpgrade(idx);
+    return;
+  }
   pointer.active = true;
   if (state !== 'running') startGame();
 });
@@ -1181,6 +1517,25 @@ window.addEventListener('pointerup', () => {
 });
 
 window.addEventListener('keydown', (event) => {
+  if (upgradeMenu.active) {
+    if (event.code === 'Digit1') applyUpgrade(0);
+    if (event.code === 'Digit2') applyUpgrade(1);
+    if (event.code === 'Digit3') applyUpgrade(2);
+    if (event.code === 'ArrowUp') {
+      event.preventDefault();
+      upgradeMenu.selected = (upgradeMenu.selected + 2) % 3;
+    }
+    if (event.code === 'ArrowDown') {
+      event.preventDefault();
+      upgradeMenu.selected = (upgradeMenu.selected + 1) % 3;
+    }
+    if (event.code === 'Enter' || event.code === 'Space') {
+      event.preventDefault();
+      applyUpgrade(upgradeMenu.selected);
+    }
+    return;
+  }
+
   keys[event.code] = true;
   if ((event.code === 'Space' || event.code === 'Enter') && state !== 'running') {
     event.preventDefault();
