@@ -1,40 +1,104 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="Air Striker Lite (Godot) thumbnail">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="Air Striker Lite thumbnail">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#0a1326"/>
-      <stop offset="45%" stop-color="hsl(237 84% 56%)" stop-opacity="0.75"/>
-      <stop offset="100%" stop-color="#121a31"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a427c"/>
+      <stop offset="100%" stop-color="#2f315f"/>
     </linearGradient>
-    <radialGradient id="flare" cx="0.18" cy="0.2" r="0.8">
-      <stop offset="0%" stop-color="hsl(283 82% 50%)" stop-opacity="0.75"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    <linearGradient id="shipBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6e8eb4"/>
+      <stop offset="100%" stop-color="#3d5f87"/>
+    </linearGradient>
+    <radialGradient id="enemyCore" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff7e7a"/>
+      <stop offset="100%" stop-color="#ff4d4d"/>
     </radialGradient>
-    <linearGradient id="strip" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0%" stop-color="hsl(357 86% 58%)" stop-opacity="0.32"/>
-      <stop offset="100%" stop-color="hsl(283 82% 50%)" stop-opacity="0"/>
-    </linearGradient>
   </defs>
 
   <rect width="640" height="360" fill="url(#bg)"/>
-  <rect width="640" height="360" fill="url(#flare)"/>
-  <path d="M-20 286 C145 208, 266 330, 420 272 C512 238, 590 204, 680 256 L680 380 L-20 380 Z" fill="url(#strip)"/>
 
-  <g opacity="0.18" fill="#ffffff">
-    <circle cx="86" cy="74" r="18"/>
-    <circle cx="142" cy="46" r="7"/>
-    <circle cx="204" cy="78" r="12"/>
-    <circle cx="248" cy="42" r="5"/>
+  <g fill="#dfe9f2" opacity="0.38">
+    <circle cx="48" cy="40" r="2"/>
+    <circle cx="94" cy="27" r="1.8"/>
+    <circle cx="135" cy="52" r="2.2"/>
+    <circle cx="178" cy="37" r="1.7"/>
+    <circle cx="236" cy="24" r="2.3"/>
+    <circle cx="295" cy="48" r="2"/>
+    <circle cx="356" cy="31" r="1.6"/>
+    <circle cx="411" cy="54" r="2.1"/>
+    <circle cx="475" cy="28" r="1.9"/>
+    <circle cx="526" cy="45" r="2"/>
+    <circle cx="588" cy="35" r="1.7"/>
+    <circle cx="73" cy="146" r="2"/>
+    <circle cx="117" cy="168" r="1.8"/>
+    <circle cx="196" cy="152" r="2.2"/>
+    <circle cx="256" cy="170" r="1.6"/>
+    <circle cx="339" cy="157" r="2"/>
+    <circle cx="417" cy="166" r="1.8"/>
+    <circle cx="501" cy="151" r="2.3"/>
+    <circle cx="564" cy="170" r="1.7"/>
+    <circle cx="89" cy="286" r="2"/>
+    <circle cx="168" cy="303" r="2.2"/>
+    <circle cx="242" cy="292" r="1.8"/>
+    <circle cx="311" cy="309" r="2.1"/>
+    <circle cx="382" cy="293" r="1.7"/>
+    <circle cx="456" cy="307" r="2"/>
+    <circle cx="528" cy="296" r="1.8"/>
+    <circle cx="596" cy="312" r="2.1"/>
   </g>
 
-  <text x="36" y="126" fill="#ffffff" fill-opacity="0.12" font-size="108" font-family="Arial, sans-serif" font-weight="700">A</text>
-  <g opacity="0.94" stroke="hsl(357 86% 58%)" stroke-width="9" fill="none" stroke-linecap="round">
-    <path d="M452 84 L592 84"/>
-    <path d="M432 126 L572 126"/>
-    <path d="M472 168 L612 168"/>
+  <g fill="#effaff" opacity="0.98">
+    <circle cx="132" cy="68" r="6"/>
+    <circle cx="210" cy="68" r="6"/>
+    <circle cx="288" cy="68" r="6"/>
+    <circle cx="366" cy="68" r="6"/>
+
+    <circle cx="164" cy="126" r="6"/>
+    <circle cx="218" cy="126" r="6"/>
+    <circle cx="280" cy="126" r="6"/>
+    <circle cx="340" cy="126" r="6"/>
+
+    <circle cx="184" cy="184" r="6"/>
+    <circle cx="228" cy="184" r="6"/>
+    <circle cx="272" cy="184" r="6"/>
+    <circle cx="316" cy="184" r="6"/>
+
+    <circle cx="206" cy="242" r="6"/>
+    <circle cx="242" cy="242" r="6"/>
+    <circle cx="278" cy="242" r="6"/>
+    <circle cx="314" cy="242" r="6"/>
+
+    <circle cx="232" cy="304" r="6"/>
+    <circle cx="248" cy="304" r="6"/>
+    <circle cx="264" cy="304" r="6"/>
+    <circle cx="280" cy="304" r="6"/>
   </g>
 
-  <rect x="22" y="258" width="596" height="82" rx="12" fill="#050916" fill-opacity="0.44"/>
-  <text x="40" y="300" fill="#f4f9ff" font-family="Arial, sans-serif" font-weight="700" font-size="34">Air Striker Lite (God...</text>
-  <text x="40" y="328" fill="#d1ddf6" font-family="Arial, sans-serif" font-size="20">Shooter - 2D Web</text>
+  <g transform="translate(502 66)">
+    <polygon points="0,-18 16,-6 10,14 -10,14 -16,-6" fill="#72d8f8"/>
+    <circle cx="0" cy="2" r="5.5" fill="url(#enemyCore)"/>
+  </g>
+  <g transform="translate(516 264)">
+    <polygon points="0,-18 16,-6 10,14 -10,14 -16,-6" fill="#72d8f8"/>
+    <circle cx="0" cy="2" r="5.5" fill="url(#enemyCore)"/>
+  </g>
+
+  <g transform="translate(248 328)">
+    <polygon points="0,-34 18,8 -18,8" fill="url(#shipBody)"/>
+    <polygon points="-30,8 -12,-12 -6,8" fill="#4f7096"/>
+    <polygon points="30,8 12,-12 6,8" fill="#4f7096"/>
+    <polygon points="0,-22 8,-6 0,-4 -8,-6" fill="#78b8df"/>
+    <polygon points="-6,8 0,22 6,8" fill="#f5a06f"/>
+  </g>
+
+  <g fill="#ff8b86" opacity="0.75">
+    <rect x="194" y="314" width="5" height="5"/>
+    <rect x="207" y="321" width="5" height="5"/>
+    <rect x="222" y="329" width="5" height="5"/>
+    <rect x="240" y="333" width="5" height="5"/>
+    <rect x="258" y="334" width="5" height="5"/>
+    <rect x="278" y="332" width="5" height="5"/>
+    <rect x="294" y="326" width="5" height="5"/>
+    <rect x="304" y="318" width="5" height="5"/>
+  </g>
 </svg>
