@@ -55,6 +55,11 @@ button {
   font-weight: 700;
 }
 
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .hud > div {
   min-width: 78px;
 }

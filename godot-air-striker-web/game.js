@@ -8,8 +8,10 @@ const levelEl = document.getElementById('level');
 const waveEl = document.getElementById('wave');
 const bossesEl = document.getElementById('bosses');
 const comboEl = document.getElementById('combo');
+const spEl = document.getElementById('sp');
 const btnStart = document.getElementById('btnStart');
 const btnSound = document.getElementById('btnSound');
+const btnSpecial = document.getElementById('btnSpecial');
 
 const W = canvas.width;
 const H = canvas.height;
@@ -23,6 +25,65 @@ const DIFFICULTY_LABELS = [
   'Veteran',
   'Nightmare',
 ];
+
+const PLANES = [
+  {
+    id: 'falcon',
+    name: 'Falcon',
+    role: 'Balanced',
+    speedMul: 1.0,
+    fireCadenceMul: 1.0,
+    volleyBonus: 0,
+    spreadMul: 1.0,
+    damageBonus: 0,
+    hpBonus: 0,
+    startShield: 0,
+    primary: '#ff9a36',
+    accent: '#ffd372',
+    cockpit: '#d9ecff',
+    specialName: 'Carpet Bomb',
+    specialDesc: '맵 전체 폭격 + 탄막 제거',
+    specialId: 'carpet',
+  },
+  {
+    id: 'viper',
+    name: 'Viper',
+    role: 'Assault',
+    speedMul: 1.12,
+    fireCadenceMul: 0.9,
+    volleyBonus: 1,
+    spreadMul: 1.2,
+    damageBonus: 0,
+    hpBonus: 0,
+    startShield: 0,
+    primary: '#6ce4ff',
+    accent: '#8be8ff',
+    cockpit: '#f0faff',
+    specialName: 'Overdrive',
+    specialDesc: '연사 강화 + 광역 샷',
+    specialId: 'overdrive',
+  },
+  {
+    id: 'guardian',
+    name: 'Guardian',
+    role: 'Tank',
+    speedMul: 0.9,
+    fireCadenceMul: 1.08,
+    volleyBonus: 0,
+    spreadMul: 0.94,
+    damageBonus: 1,
+    hpBonus: 1,
+    startShield: 1,
+    primary: '#9ab7ff',
+    accent: '#ffe08f',
+    cockpit: '#eef5ff',
+    specialName: 'Aegis Burst',
+    specialDesc: '보호막 강화 + 근접 섬멸',
+    specialId: 'aegis',
+  },
+];
+
+const SPECIAL_KEYS = ['KeyX', 'ShiftLeft', 'ShiftRight'];
 
 const player = {
   x: W * 0.5,
@@ -63,6 +124,10 @@ let waveBanner = 0;
 let waveBannerText = '';
 let mission = null;
 let droneFireCd = 0;
+let selectedPlaneIndex = 0;
+let specialCharge = 0;
+let specialCooldown = 0;
+let specialPulse = 0;
 
 const perks = {
   fireRate: 0,
@@ -232,6 +297,52 @@ function updateSoundButton() {
   btnSound.textContent = `Sound: ${enabled ? 'On' : 'Off'}`;
 }
 
+function selectedPlane() {
+  return PLANES[selectedPlaneIndex] || PLANES[0];
+}
+
+function setSelectedPlane(index) {
+  const normalized = (index + PLANES.length) % PLANES.length;
+  selectedPlaneIndex = normalized;
+  updateSpecialUi();
+}
+
+function canUseSpecial() {
+  return state === 'running' && !upgradeMenu.active && specialCharge >= 100 && specialCooldown <= 0;
+}
+
+function updateSpecialUi() {
+  const ready = canUseSpecial();
+  if (spEl) spEl.textContent = `${Math.floor(specialCharge)}%`;
+  if (btnSpecial) {
+    btnSpecial.textContent = ready ? 'Special Ready (X)' : `Special ${Math.floor(specialCharge)}%`;
+    btnSpecial.disabled = !ready;
+  }
+}
+
+function addSpecialCharge(amount) {
+  specialCharge = clamp(specialCharge + amount, 0, 100);
+  updateSpecialUi();
+}
+
+function planeCardRect(index) {
+  const cardW = 118;
+  const cardH = 86;
+  const gap = 12;
+  const totalW = PLANES.length * cardW + (PLANES.length - 1) * gap;
+  const baseX = (W - totalW) * 0.5;
+  const y = H * 0.5 + 58;
+  return { x: baseX + index * (cardW + gap), y, w: cardW, h: cardH };
+}
+
+function pickPlaneIndexAt(x, y) {
+  for (let i = 0; i < PLANES.length; i += 1) {
+    const r = planeCardRect(i);
+    if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) return i;
+  }
+  return -1;
+}
+
 function getDifficulty() {
   const computedLevel = clamp(
     1 + Math.floor(survivalTime / 18) + Math.floor(score / 260),
@@ -297,6 +408,7 @@ function registerKill(baseScore) {
   comboTimer = 1.45 + perks.combo * 0.22;
   const multiplier = 1 + Math.min(1.6 + perks.combo * 0.06, Math.floor(combo / 4) * 0.2 + perks.combo * 0.05);
   score += Math.round(baseScore * multiplier);
+  addSpecialCharge(4 + baseScore * 0.2 + Math.min(4, Math.floor(combo / 3)));
   updateScoreUi();
   updateComboUi(multiplier);
   if (mission && mission.type === 'kill') {
@@ -534,10 +646,11 @@ function applyUpgrade(index) {
 }
 
 function resetGame() {
+  const plane = selectedPlane();
   state = 'idle';
   score = 0;
-  hp = 3;
-  maxHp = 3;
+  maxHp = 3 + plane.hpBonus;
+  hp = maxHp;
   tick = 0;
   survivalTime = 0;
   spawnTimer = 0;
@@ -553,6 +666,9 @@ function resetGame() {
   waveBanner = 0;
   waveBannerText = '';
   droneFireCd = 0;
+  specialCharge = 40;
+  specialCooldown = 0;
+  specialPulse = 0;
 
   perks.fireRate = 0;
   perks.damage = 0;
@@ -566,9 +682,11 @@ function resetGame() {
 
   player.x = W * 0.5;
   player.y = H - 94;
+  player.speed = 345 * plane.speedMul;
+  player.baseFireCd = 0.14 * plane.fireCadenceMul;
   player.fireCd = 0;
   player.invuln = 0;
-  player.shield = 0;
+  player.shield = plane.startShield;
   player.rapidTimer = 0;
   player.weaponTimer = 0;
 
@@ -587,6 +705,7 @@ function resetGame() {
   updateBossesUi();
   resetCombo();
   createMission();
+  updateSpecialUi();
 }
 
 function startGame() {
@@ -594,6 +713,7 @@ function startGame() {
   bgmAudio.ensure();
   resetGame();
   state = 'running';
+  updateSpecialUi();
 }
 
 function endGame() {
@@ -601,6 +721,7 @@ function endGame() {
   best = Math.max(best, score);
   bestEl.textContent = String(best);
   localStorage.setItem(STORAGE_KEY, String(best));
+  updateSpecialUi();
 }
 
 function currentFireCadence() {
@@ -613,10 +734,12 @@ function currentFireCadence() {
 }
 
 function shoot() {
-  const volley = player.weaponTimer > 0 ? 5 : 3;
-  const spread = player.weaponTimer > 0 ? 0.14 : 0.11;
+  const plane = selectedPlane();
+  const baseVolley = player.weaponTimer > 0 ? 5 : 3;
+  const volley = clamp(baseVolley + plane.volleyBonus, 1, 7);
+  const spread = (player.weaponTimer > 0 ? 0.14 : 0.11) * plane.spreadMul;
   const speed = 610;
-  const damageBoost = perks.damage;
+  const damageBoost = perks.damage + plane.damageBonus;
 
   for (let i = 0; i < volley; i += 1) {
     const offset = i - (volley - 1) / 2;
@@ -766,6 +889,95 @@ function applyPowerUp(type) {
   if (mission && mission.type === 'powerup') {
     mission.progress = Math.min(mission.target, mission.progress + 1);
   }
+}
+
+function specialCarpetBomb() {
+  enemyBullets = [];
+  for (let i = enemies.length - 1; i >= 0; i -= 1) {
+    const e = enemies[i];
+    e.hp -= 3 + perks.damage;
+    if (e.hp <= 0) killEnemy(i, e);
+    else addBurst(e.x, e.y, '#ffdc99', 12, 2.7);
+  }
+  if (boss) {
+    boss.hp -= 220 + perks.damage * 22;
+    addBurst(boss.x, boss.y, '#ffca91', 36, 4.2);
+    if (boss.hp <= 0) killBoss();
+  }
+  flash = Math.max(flash, 28);
+  shake = Math.max(shake, 18);
+}
+
+function specialOverdrive() {
+  player.rapidTimer = Math.max(player.rapidTimer, 12);
+  player.weaponTimer = Math.max(player.weaponTimer, 10);
+  player.invuln = Math.max(player.invuln, 1.1);
+  for (let i = 0; i < 16; i += 1) {
+    const a = (i / 16) * Math.PI * 2;
+    bullets.push({
+      x: player.x,
+      y: player.y,
+      vx: Math.cos(a) * 360,
+      vy: Math.sin(a) * 360,
+      r: 3,
+      damage: 2 + perks.damage,
+      life: 0.9,
+    });
+  }
+  for (let i = enemies.length - 1; i >= 0; i -= 1) {
+    const e = enemies[i];
+    if (dist2(player.x, player.y, e.x, e.y) <= 160 * 160) {
+      e.hp -= 2 + Math.floor(perks.damage * 0.5);
+      if (e.hp <= 0) killEnemy(i, e);
+      else addBurst(e.x, e.y, '#b9f1ff', 10, 2.6);
+    }
+  }
+  flash = Math.max(flash, 20);
+  shake = Math.max(shake, 14);
+}
+
+function specialAegisBurst() {
+  enemyBullets = [];
+  player.shield = Math.min(6, player.shield + 3);
+  hp = Math.min(maxHp, hp + 1);
+  updateHpUi();
+
+  for (let i = enemies.length - 1; i >= 0; i -= 1) {
+    const e = enemies[i];
+    if (dist2(player.x, player.y, e.x, e.y) <= 205 * 205) {
+      killEnemy(i, e);
+    } else {
+      e.vy += 45;
+    }
+  }
+
+  if (boss) {
+    boss.hp -= 160 + perks.damage * 18;
+    addBurst(boss.x, boss.y, '#bfe1ff', 30, 3.8);
+    if (boss.hp <= 0) killBoss();
+  }
+
+  addBurst(player.x, player.y, '#9ee2ff', 46, 5);
+  flash = Math.max(flash, 18);
+  shake = Math.max(shake, 16);
+}
+
+function activateSpecial() {
+  if (!canUseSpecial()) return;
+  const plane = selectedPlane();
+
+  specialCharge = 0;
+  specialCooldown = 4.6;
+  specialPulse = 0.9;
+  waveBannerText = `${plane.name} SPECIAL: ${plane.specialName}`;
+  waveBanner = Math.max(waveBanner, 1.2);
+
+  if (plane.specialId === 'carpet') specialCarpetBomb();
+  else if (plane.specialId === 'overdrive') specialOverdrive();
+  else specialAegisBurst();
+
+  sfx.powerUp();
+  updateSpecialUi();
 }
 
 function updatePlayer(dt) {
@@ -1123,6 +1335,10 @@ function renderBackground(difficulty) {
 }
 
 function drawPlayer() {
+  const plane = selectedPlane();
+  const isViper = plane.id === 'viper';
+  const isGuardian = plane.id === 'guardian';
+
   ctx.save();
   ctx.translate(player.x, player.y);
 
@@ -1138,16 +1354,30 @@ function drawPlayer() {
     ctx.stroke();
   }
 
-  ctx.fillStyle = '#ff9a36';
+  const wing = isGuardian ? 17 : isViper ? 12 : 14;
+  const nose = isGuardian ? 20 : isViper ? 22 : 18;
+  const tailY = isGuardian ? 12 : 14;
+
+  ctx.fillStyle = plane.primary;
   ctx.beginPath();
-  ctx.moveTo(0, -18);
-  ctx.lineTo(-14, 14);
+  ctx.moveTo(0, -nose);
+  ctx.lineTo(-wing, tailY);
   ctx.lineTo(0, 8);
-  ctx.lineTo(14, 14);
+  ctx.lineTo(wing, tailY);
   ctx.closePath();
   ctx.fill();
 
-  ctx.fillStyle = '#d9ecff';
+  if (isGuardian) {
+    ctx.fillStyle = plane.primary;
+    ctx.fillRect(-22, -3, 8, 15);
+    ctx.fillRect(14, -3, 8, 15);
+  } else if (isViper) {
+    ctx.fillStyle = plane.accent;
+    ctx.fillRect(-15, -8, 4, 15);
+    ctx.fillRect(11, -8, 4, 15);
+  }
+
+  ctx.fillStyle = plane.cockpit;
   ctx.beginPath();
   ctx.moveTo(0, -12);
   ctx.lineTo(-6, 2);
@@ -1155,10 +1385,10 @@ function drawPlayer() {
   ctx.closePath();
   ctx.fill();
 
-  ctx.fillStyle = '#ffd372';
+  ctx.fillStyle = plane.accent;
   ctx.fillRect(-4, 10, 8, 8);
 
-  const flame = 8 + Math.sin(tick * 0.45) * 2 + (player.rapidTimer > 0 ? 2 : 0);
+  const flame = 8 + Math.sin(tick * 0.45) * 2 + (player.rapidTimer > 0 ? 2.5 : 0);
   ctx.fillStyle = '#ffde8d';
   ctx.beginPath();
   ctx.moveTo(-5, 14);
@@ -1167,13 +1397,23 @@ function drawPlayer() {
   ctx.closePath();
   ctx.fill();
 
+  if (specialPulse > 0) {
+    ctx.strokeStyle = `rgba(255, 240, 145, ${0.3 + specialPulse * 0.6})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, player.r + 8 + Math.sin(tick * 0.4) * 2, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
   ctx.restore();
   ctx.globalAlpha = 1;
 }
 
 function drawBullets() {
+  const plane = selectedPlane();
+  const baseColor = plane.id === 'viper' ? '#dbfcff' : plane.id === 'guardian' ? '#fff0c0' : '#f7fbff';
   for (const b of bullets) {
-    ctx.fillStyle = b.damage > 1 ? '#fff8c2' : '#f7fbff';
+    ctx.fillStyle = b.damage > 1 ? '#fff8c2' : baseColor;
     ctx.beginPath();
     ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
     ctx.fill();
@@ -1324,8 +1564,9 @@ function drawParticles() {
 }
 
 function drawTopInfo(difficulty) {
+  const plane = selectedPlane();
   ctx.fillStyle = 'rgba(7, 13, 27, 0.32)';
-  ctx.fillRect(12, 48, 260, 76);
+  ctx.fillRect(12, 48, 300, 102);
   ctx.fillStyle = '#d7e8ff';
   ctx.font = '12px system-ui';
   ctx.textAlign = 'left';
@@ -1342,6 +1583,9 @@ function drawTopInfo(difficulty) {
     const t = mission.type === 'survive' ? Math.floor(mission.target) : mission.target;
     ctx.fillText(`Mission: ${missionLabel(mission.type)} ${p}/${t}`, 18, 122);
   }
+  const cooldownText = specialCooldown > 0 ? ` (${specialCooldown.toFixed(1)}s)` : '';
+  const readyText = specialCharge >= 100 && specialCooldown <= 0 ? ' READY' : '';
+  ctx.fillText(`Plane: ${plane.name} · SP ${Math.floor(specialCharge)}%${cooldownText}${readyText}`, 18, 140);
 }
 
 function renderOverlay() {
@@ -1371,6 +1615,7 @@ function renderOverlay() {
   }
 
   if (state === 'idle' || state === 'gameover') {
+    const plane = selectedPlane();
     ctx.fillStyle = 'rgba(0,0,0,0.46)';
     ctx.fillRect(0, 0, W, H);
 
@@ -1381,12 +1626,43 @@ function renderOverlay() {
 
     ctx.font = '16px system-ui';
     ctx.fillText('Survive waves, defeat boss phases, stack combo', W / 2, H / 2 + 2);
-    ctx.fillText('WASD/Arrow/Drag · Space to restart', W / 2, H / 2 + 26);
+    ctx.fillText('WASD/Arrow/Drag · X/Shift = Special · Space to restart', W / 2, H / 2 + 26);
 
     if (state === 'gameover') {
       ctx.fillStyle = '#ffe082';
       ctx.font = 'bold 19px system-ui';
       ctx.fillText(`Final Score: ${score}`, W / 2, H / 2 + 56);
+    }
+
+    ctx.fillStyle = '#b7d9ff';
+    ctx.font = '13px system-ui';
+    ctx.fillText(`기체 선택: 1/2/3 또는 ←/→ · 현재 ${plane.name} (${plane.specialName})`, W / 2, H * 0.5 + 46);
+
+    for (let i = 0; i < PLANES.length; i += 1) {
+      const p = PLANES[i];
+      const r = planeCardRect(i);
+      const selected = i === selectedPlaneIndex;
+
+      ctx.fillStyle = selected ? 'rgba(119, 200, 255, 0.35)' : 'rgba(15, 28, 54, 0.8)';
+      ctx.fillRect(r.x, r.y, r.w, r.h);
+      ctx.strokeStyle = selected ? '#8be6ff' : 'rgba(255,255,255,0.3)';
+      ctx.strokeRect(r.x, r.y, r.w, r.h);
+
+      ctx.fillStyle = p.primary;
+      ctx.beginPath();
+      ctx.moveTo(r.x + r.w * 0.5, r.y + 22);
+      ctx.lineTo(r.x + r.w * 0.5 - 14, r.y + 46);
+      ctx.lineTo(r.x + r.w * 0.5, r.y + 38);
+      ctx.lineTo(r.x + r.w * 0.5 + 14, r.y + 46);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#f0f7ff';
+      ctx.font = 'bold 14px system-ui';
+      ctx.fillText(`${i + 1}. ${p.name}`, r.x + r.w * 0.5, r.y + 60);
+      ctx.font = '11px system-ui';
+      ctx.fillStyle = '#bddbff';
+      ctx.fillText(p.specialName, r.x + r.w * 0.5, r.y + 76);
     }
   }
 
@@ -1451,11 +1727,14 @@ function update(dt) {
   tick += 1;
   if (flash > 0) flash -= 1;
   if (shake > 0) shake = Math.max(0, shake - dt * 34);
+  if (specialPulse > 0) specialPulse = Math.max(0, specialPulse - dt);
+  if (specialCooldown > 0) specialCooldown = Math.max(0, specialCooldown - dt);
   if (shotSfxCd > 0) shotSfxCd -= dt;
   if (droneFireCd > 0) droneFireCd -= dt;
   if (powerupSpawnCd > 0) powerupSpawnCd -= dt;
   if (bossWarning > 0) bossWarning = Math.max(0, bossWarning - dt);
   if (waveBanner > 0) waveBanner = Math.max(0, waveBanner - dt);
+  updateSpecialUi();
 
   updateParticles(dt);
 
@@ -1463,6 +1742,7 @@ function update(dt) {
   if (upgradeMenu.active) return;
 
   survivalTime += dt;
+  addSpecialCharge(dt * 2.3);
   const difficulty = getDifficulty();
   const nextWave = 1 + Math.floor(survivalTime / 12) + bossesDefeated * 2;
   if (nextWave > wave) {
@@ -1542,6 +1822,12 @@ btnSound.addEventListener('click', () => {
   updateSoundButton();
 });
 
+btnSpecial.addEventListener('click', () => {
+  sfx.ensure();
+  bgmAudio.ensure();
+  activateSpecial();
+});
+
 canvas.addEventListener('pointerdown', (event) => {
   sfx.ensure();
   bgmAudio.ensure();
@@ -1551,6 +1837,15 @@ canvas.addEventListener('pointerdown', (event) => {
     if (idx >= 0) applyUpgrade(idx);
     return;
   }
+
+  if (state !== 'running') {
+    const planeIdx = pickPlaneIndexAt(pointer.x, pointer.y);
+    if (planeIdx >= 0) {
+      setSelectedPlane(planeIdx);
+      return;
+    }
+  }
+
   pointer.active = true;
   if (state !== 'running') startGame();
 });
@@ -1583,10 +1878,41 @@ window.addEventListener('keydown', (event) => {
     return;
   }
 
+  if (event.code === 'ArrowLeft' && state !== 'running') {
+    event.preventDefault();
+    setSelectedPlane(selectedPlaneIndex - 1);
+    return;
+  }
+  if (event.code === 'ArrowRight' && state !== 'running') {
+    event.preventDefault();
+    setSelectedPlane(selectedPlaneIndex + 1);
+    return;
+  }
+  if (event.code === 'Digit1' && state !== 'running') {
+    setSelectedPlane(0);
+    return;
+  }
+  if (event.code === 'Digit2' && state !== 'running') {
+    setSelectedPlane(1);
+    return;
+  }
+  if (event.code === 'Digit3' && state !== 'running') {
+    setSelectedPlane(2);
+    return;
+  }
+
   keys[event.code] = true;
+
+  if (SPECIAL_KEYS.includes(event.code) && state === 'running') {
+    event.preventDefault();
+    if (!event.repeat) activateSpecial();
+    return;
+  }
+
   if ((event.code === 'Space' || event.code === 'Enter') && state !== 'running') {
     event.preventDefault();
     sfx.ensure();
+    bgmAudio.ensure();
     startGame();
   }
 });
