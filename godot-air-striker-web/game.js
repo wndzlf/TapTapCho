@@ -1,5 +1,3 @@
-const bgmAudio = window.TapTapNeonAudio?.create('godot-air-striker-web', document.querySelector('.hud'), { theme: 'arcade', showSfxToggle: false });
-
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
@@ -109,6 +107,48 @@ function dist2(ax, ay, bx, by) {
   return dx * dx + dy * dy;
 }
 
+function createBgm() {
+  const track = new Audio('../assets/audio/the_dawn_unfolds_v2.m4a');
+  track.preload = 'auto';
+  track.loop = true;
+  track.volume = 0.34;
+  track.playbackRate = 1;
+
+  let enabled = true;
+  let unlocked = false;
+
+  function safePlay() {
+    const p = track.play();
+    if (p && typeof p.catch === 'function') {
+      p.catch(() => {});
+    }
+  }
+
+  return {
+    ensure() {
+      if (!enabled) return;
+      unlocked = true;
+      safePlay();
+    },
+    setEnabled(next) {
+      enabled = !!next;
+      if (!enabled) {
+        track.pause();
+        return;
+      }
+      if (unlocked) safePlay();
+    },
+    isEnabled() {
+      return enabled;
+    },
+    setTheme(themeId) {
+      track.playbackRate = themeId === 'rush' ? 1.07 : 1;
+    },
+  };
+}
+
+const bgmAudio = createBgm();
+
 function createSfx() {
   const Ctx = window.AudioContext || window.webkitAudioContext;
   let audioCtx = null;
@@ -188,7 +228,8 @@ function createSfx() {
 const sfx = createSfx();
 
 function updateSoundButton() {
-  btnSound.textContent = `Sound: ${sfx.isEnabled() ? 'On' : 'Off'}`;
+  const enabled = sfx.isEnabled() && bgmAudio.isEnabled();
+  btnSound.textContent = `Sound: ${enabled ? 'On' : 'Off'}`;
 }
 
 function getDifficulty() {
@@ -350,7 +391,7 @@ function spawnBoss() {
   shake = 12;
   sfx.bossSpawn();
   addBurst(boss.x, boss.y, '#ffbf7e', 42, 4.5);
-  if (bgmAudio?.setTheme) bgmAudio.setTheme('rush');
+  bgmAudio.setTheme('rush');
 }
 
 function spawnPowerUp(x, y) {
@@ -537,6 +578,7 @@ function resetGame() {
   particles = [];
   powerUps = [];
   boss = null;
+  bgmAudio.setTheme('neon');
 
   updateScoreUi();
   updateHpUi();
@@ -549,6 +591,7 @@ function resetGame() {
 
 function startGame() {
   sfx.ensure();
+  bgmAudio.ensure();
   resetGame();
   state = 'running';
 }
@@ -688,7 +731,7 @@ function killBoss() {
   waveBannerText = `Boss Down! Choose Upgrade`;
   waveBanner = 2.2;
   openUpgradeMenu();
-  if (bgmAudio?.setTheme) bgmAudio.setTheme('neon');
+  bgmAudio.setTheme('neon');
 }
 
 function applyPowerUp(type) {
@@ -1486,18 +1529,22 @@ function pickUpgradeIndexAt(x, y) {
 }
 
 btnStart.addEventListener('click', () => {
-  sfx.ensure();
   startGame();
 });
 
 btnSound.addEventListener('click', () => {
-  sfx.ensure();
-  sfx.toggle();
+  const enabled = sfx.toggle();
+  if (enabled) {
+    sfx.ensure();
+    bgmAudio.ensure();
+  }
+  bgmAudio.setEnabled(enabled);
   updateSoundButton();
 });
 
 canvas.addEventListener('pointerdown', (event) => {
   sfx.ensure();
+  bgmAudio.ensure();
   updatePointer(event);
   if (upgradeMenu.active) {
     const idx = pickUpgradeIndexAt(pointer.x, pointer.y);

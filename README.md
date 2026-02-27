@@ -108,3 +108,8 @@ Export 순서:
 - 레퍼런스 저장소: `https://github.com/godotengine/godot-demo-projects`
 - 앞으로 Godot 기반 기능(이동, 카메라, 보스 패턴, HUD, 물리, 입력)은 위 공식 데모 코드 구조를 우선 참고합니다.
 - 특히 2D 액션/슈팅 및 3D 이동 안정화 작업에서 데모 프로젝트의 씬 구성과 스크립트 패턴을 기준으로 적용합니다.
+
+## 9) 외부 에셋 라이선스
+
+- 외부 에셋(오디오/이미지) 라이선스 고지: `THIRD_PARTY_LICENSES.md`
+- AirStrikerLite BGM(`the_dawn_unfolds_v2`)은 CC BY 4.0 표기를 포함해 사용합니다.
