@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scenes/player/Player.gd" id="1_player_script"]
+[ext_resource type="Texture2D" path="res://assets/kenney_alien-ufo-pack/PNG/shipBlue_manned.png" id="2_player_tex"]
+
+[sub_resource type="RectangleShape2D" id="1_ship_hitbox"]
+size = Vector2(28, 28)
+
+[node name="Player" type="CharacterBody2D"]
+script = ExtResource("1_player_script")
+collision_layer = 1
+collision_mask = 1
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_player_tex")
+scale = Vector2(0.52, 0.52)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("1_ship_hitbox")

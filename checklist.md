@@ -29,3 +29,4 @@
 | 37 | Worm Arena Rush | 먹이 성장/회피 | 완료 | webgame-37 |
 | 38 | Worm Arena LAN | 같은 와이파이 룸 대전 | 완료 | webgame-38 |
 | 39 | Air Striker Lite (Godot) | 2D 비행 슈팅 | 완료 | godot-air-striker |
+| 40 | Hyperfold: Golden Hunt (Godot) | 4D 레이어+리와인드 레이스 | 완료 | godot-hyperfold |

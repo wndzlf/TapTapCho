@@ -113,3 +113,14 @@ Export 순서:
 
 - 외부 에셋(오디오/이미지) 라이선스 고지: `THIRD_PARTY_LICENSES.md`
 - AirStrikerLite BGM(`the_dawn_unfolds_v2`)은 CC BY 4.0 표기를 포함해 사용합니다.
+- Hyperfold 외계인 에셋(`kenney_alien-ufo-pack`)은 CC0로 상업적 사용 가능(출처 표기 권장).
+
+## 10) Godot 2D 레이어/리와인드 레이스 (Hyperfold)
+
+- 소스: `godot-hyperfold`
+- 웹 export 결과물 경로: `godot-hyperfold-web`
+
+Export 순서:
+1. Godot 4.3+에서 `/Users/user/TapTapCho/godot-hyperfold/project.godot` 열기
+2. `Project -> Export -> Web`
+3. export path를 `../godot-hyperfold-web/index.html`로 지정 후 Export

@@ -14,3 +14,17 @@
 
 표기 문구:
 - "The Dawn Unfolds Remix by Konijn, licensed under CC BY 4.0"
+
+## 이미지/스프라이트
+
+### Hyperfold 외계인/UFO 에셋
+- 팩명: Alien UFO pack
+- 제작자: Kenney Vleugels (Kenney.nl)
+- 출처: https://kenney.nl/assets/alien-ufo-pack
+- 라이선스: Creative Commons Zero (CC0 1.0)
+- 라이선스 원문: https://creativecommons.org/publicdomain/zero/1.0/
+- 프로젝트 내 경로: `godot-hyperfold/assets/kenney_alien-ufo-pack/`
+
+고지 참고:
+- 해당 팩의 `License.txt`에 따라 개인/상업 프로젝트에서 사용 가능.
+- 크레딧 표기는 의무가 아니지만 권장.

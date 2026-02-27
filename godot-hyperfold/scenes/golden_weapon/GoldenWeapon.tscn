@@ -1,0 +1,20 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scenes/golden_weapon/GoldenWeapon.gd" id="1_weapon_script"]
+[ext_resource type="Texture2D" path="res://assets/kenney_alien-ufo-pack/PNG/dome.png" id="2_weapon_tex"]
+
+[sub_resource type="CircleShape2D" id="1_weapon_area"]
+radius = 14.0
+
+[node name="GoldenWeapon" type="Area2D"]
+script = ExtResource("1_weapon_script")
+collision_layer = 1
+collision_mask = 1
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_weapon_tex")
+modulate = Color(1, 0.86, 0.25, 1)
+scale = Vector2(0.85, 0.85)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("1_weapon_area")

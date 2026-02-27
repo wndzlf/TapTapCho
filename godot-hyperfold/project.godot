@@ -1,0 +1,52 @@
+; Engine configuration file.
+; Godot 4.3+
+
+config_version=5
+
+[application]
+config/name="Hyperfold: Golden Weapon Hunt"
+run/main_scene="res://scenes/main/Main.tscn"
+
+[display]
+window/size/viewport_width=360
+window/size/viewport_height=640
+window/size/window_width=360
+window/size/window_height=640
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+
+[input]
+move_left={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":65), Object(InputEventKey,"physical_keycode":16777231)]
+}
+move_right={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":68), Object(InputEventKey,"physical_keycode":16777233)]
+}
+move_up={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":16777232)]
+}
+move_down={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":83), Object(InputEventKey,"physical_keycode":16777234)]
+}
+switch_layer={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":87)]
+}
+rewind={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":82)]
+}
+restart_round={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":32), Object(InputEventKey,"physical_keycode":16777221)]
+}
+
+[physics]
+common/physics_ticks_per_second=60
+
+[rendering]
+renderer/rendering_method="mobile"

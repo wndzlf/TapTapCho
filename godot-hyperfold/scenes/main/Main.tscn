@@ -1,0 +1,84 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scenes/main/Main.gd" id="1_main_script"]
+[ext_resource type="PackedScene" path="res://scenes/player/Player.tscn" id="2_player_scene"]
+[ext_resource type="PackedScene" path="res://scenes/alien/Alien.tscn" id="3_alien_scene"]
+[ext_resource type="PackedScene" path="res://scenes/golden_weapon/GoldenWeapon.tscn" id="4_weapon_scene"]
+[ext_resource type="PackedScene" path="res://scenes/ui/UI.tscn" id="5_ui_scene"]
+[ext_resource type="Script" path="res://scripts/LayerManager.gd" id="6_layer_manager"]
+[ext_resource type="Script" path="res://scripts/RewindManager.gd" id="7_rewind_manager"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_main_script")
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="Layers" type="Node2D" parent="World"]
+
+[node name="Layer0" type="Node2D" parent="World/Layers"]
+
+[node name="TileMapLayer" type="TileMapLayer" parent="World/Layers/Layer0"]
+
+[node name="Obstacles" type="Node2D" parent="World/Layers/Layer0"]
+
+[node name="Items" type="Node2D" parent="World/Layers/Layer0"]
+
+[node name="Layer1" type="Node2D" parent="World/Layers"]
+
+[node name="TileMapLayer" type="TileMapLayer" parent="World/Layers/Layer1"]
+
+[node name="Obstacles" type="Node2D" parent="World/Layers/Layer1"]
+
+[node name="Items" type="Node2D" parent="World/Layers/Layer1"]
+
+[node name="Layer2" type="Node2D" parent="World/Layers"]
+
+[node name="TileMapLayer" type="TileMapLayer" parent="World/Layers/Layer2"]
+
+[node name="Obstacles" type="Node2D" parent="World/Layers/Layer2"]
+
+[node name="Items" type="Node2D" parent="World/Layers/Layer2"]
+
+[node name="Layer3" type="Node2D" parent="World/Layers"]
+
+[node name="TileMapLayer" type="TileMapLayer" parent="World/Layers/Layer3"]
+
+[node name="Obstacles" type="Node2D" parent="World/Layers/Layer3"]
+
+[node name="Items" type="Node2D" parent="World/Layers/Layer3"]
+
+[node name="Player" parent="World" instance=ExtResource("2_player_scene")]
+position = Vector2(180, 572)
+
+[node name="Aliens" type="Node2D" parent="World"]
+
+[node name="GoldenWeapon" parent="World" instance=ExtResource("4_weapon_scene")]
+position = Vector2(190, 100)
+
+[node name="SwitchFx" type="CPUParticles2D" parent="World"]
+amount = 28
+lifetime = 0.35
+one_shot = true
+explosiveness = 1.0
+local_coords = false
+emitting = false
+speed_scale = 1.3
+color = Color(0.65, 0.9, 1, 0.8)
+
+[node name="GhostPlayerPath" type="Line2D" parent="World"]
+default_color = Color(0.55, 0.85, 1, 0.7)
+width = 2.0
+joint_mode = 1
+
+[node name="GhostAlienPath" type="Line2D" parent="World"]
+default_color = Color(1, 0.56, 0.66, 0.62)
+width = 2.0
+joint_mode = 1
+
+[node name="LayerManager" type="Node" parent="."]
+script = ExtResource("6_layer_manager")
+
+[node name="RewindManager" type="Node" parent="."]
+script = ExtResource("7_rewind_manager")
+
+[node name="UI" parent="." instance=ExtResource("5_ui_scene")]

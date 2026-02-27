@@ -1,0 +1,114 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/UI.gd" id="1_ui_script"]
+
+[node name="UI" type="CanvasLayer"]
+script = ExtResource("1_ui_script")
+
+[node name="TopBar" type="PanelContainer" parent="."]
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 352.0
+offset_bottom = 64.0
+
+[node name="Stats" type="HBoxContainer" parent="TopBar"]
+offset_left = 8.0
+offset_top = 6.0
+offset_right = 334.0
+offset_bottom = 28.0
+theme_override_constants/separation = 10
+
+[node name="LevelTitle" type="Label" parent="TopBar/Stats"]
+text = "LV"
+
+[node name="LevelValue" type="Label" parent="TopBar/Stats"]
+text = "Lv.1"
+
+[node name="LayerTitle" type="Label" parent="TopBar/Stats"]
+text = "Layer"
+
+[node name="LayerValue" type="Label" parent="TopBar/Stats"]
+text = "W0"
+
+[node name="TimerTitle" type="Label" parent="TopBar/Stats"]
+text = "Time"
+
+[node name="TimerValue" type="Label" parent="TopBar/Stats"]
+text = "0.0s"
+
+[node name="RewindTitle" type="Label" parent="TopBar/Stats"]
+text = "Rewind"
+
+[node name="RewindValue" type="Label" parent="TopBar/Stats"]
+text = "READY"
+
+[node name="StatusLabel" type="Label" parent="TopBar"]
+offset_left = 8.0
+offset_top = 30.0
+offset_right = 334.0
+offset_bottom = 54.0
+text = ""
+
+[node name="BottomControls" type="PanelContainer" parent="."]
+offset_left = 8.0
+offset_top = 560.0
+offset_right = 352.0
+offset_bottom = 632.0
+
+[node name="LayerSlider" type="HSlider" parent="BottomControls"]
+offset_left = 12.0
+offset_top = 10.0
+offset_right = 220.0
+offset_bottom = 36.0
+max_value = 3.0
+step = 1.0
+
+[node name="RewindButton" type="Button" parent="BottomControls"]
+offset_left = 230.0
+offset_top = 10.0
+offset_right = 332.0
+offset_bottom = 40.0
+text = "Rewind (R)"
+
+[node name="CenterMessage" type="Label" parent="."]
+offset_left = 18.0
+offset_top = 296.0
+offset_right = 342.0
+offset_bottom = 346.0
+horizontal_alignment = 1
+vertical_alignment = 1
+text = ""
+
+[node name="TouchPad" type="Control" parent="."]
+offset_left = 8.0
+offset_top = 470.0
+offset_right = 174.0
+offset_bottom = 632.0
+
+[node name="BtnLeft" type="Button" parent="TouchPad"]
+offset_left = 0.0
+offset_top = 62.0
+offset_right = 52.0
+offset_bottom = 112.0
+text = "←"
+
+[node name="BtnRight" type="Button" parent="TouchPad"]
+offset_left = 108.0
+offset_top = 62.0
+offset_right = 160.0
+offset_bottom = 112.0
+text = "→"
+
+[node name="BtnUp" type="Button" parent="TouchPad"]
+offset_left = 54.0
+offset_top = 8.0
+offset_right = 106.0
+offset_bottom = 58.0
+text = "↑"
+
+[node name="BtnDown" type="Button" parent="TouchPad"]
+offset_left = 54.0
+offset_top = 116.0
+offset_right = 106.0
+offset_bottom = 166.0
+text = "↓"

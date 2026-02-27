@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scenes/alien/Alien.gd" id="1_alien_script"]
+[ext_resource type="Texture2D" path="res://assets/kenney_alien-ufo-pack/PNG/shipGreen_manned.png" id="2_alien_tex"]
+
+[sub_resource type="RectangleShape2D" id="1_alien_hitbox"]
+size = Vector2(26, 26)
+
+[node name="Alien" type="CharacterBody2D"]
+script = ExtResource("1_alien_script")
+collision_layer = 1
+collision_mask = 1
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_alien_tex")
+scale = Vector2(0.5, 0.5)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("1_alien_hitbox")
