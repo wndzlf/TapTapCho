@@ -5,21 +5,762 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Hyperfold: Golden Weapon Hunt</title>
   <style>
-    body { margin: 0; background: #070d1c; color: #dce9ff; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-    .wrap { max-width: 860px; margin: 40px auto; padding: 22px; border: 1px solid #2b3f70; border-radius: 14px; background: linear-gradient(180deg, #0b1530, #0a1228); }
-    h1 { margin: 0 0 14px; color: #ffd96d; }
-    code { background: #0d1b3b; padding: 2px 8px; border-radius: 8px; }
-    .path { color: #8fd4ff; font-weight: 700; }
+    :root {
+      --bg: #070d1c;
+      --panel: #0c1733;
+      --line: #2d4a82;
+      --text: #dce8ff;
+      --accent: #ffd56d;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    .wrap { width: min(420px, 96vw); margin: 12px auto 18px; }
+    h1 { margin: 0 0 8px; color: var(--accent); font-size: 28px; }
+    .sub { margin: 0 0 10px; opacity: 0.84; font-size: 13px; }
+    .hud {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      padding: 10px;
+      margin-bottom: 10px;
+      display: grid;
+      gap: 8px;
+    }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; font-size: 12px; }
+    .stats div { background: #111f43; border: 1px solid #29406f; border-radius: 8px; padding: 6px 8px; }
+    .controls { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; }
+    input[type='range'] { width: 100%; }
+    button {
+      border: 1px solid #4e73b8;
+      background: #1d3270;
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-weight: 700;
+    }
+    button:disabled { opacity: 0.55; }
+    .game-wrap {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #131f45;
+    }
+    canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+      touch-action: none;
+      user-select: none;
+    }
+    .touch {
+      position: absolute;
+      left: 8px;
+      bottom: 8px;
+      width: 128px;
+      height: 128px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 4px;
+      opacity: 0.9;
+    }
+    .touch button {
+      background: rgba(9, 17, 36, 0.78);
+      border-color: #3f5f9f;
+      padding: 0;
+      font-size: 17px;
+    }
+    .touch .up { grid-column: 2; grid-row: 1; }
+    .touch .left { grid-column: 1; grid-row: 2; }
+    .touch .right { grid-column: 3; grid-row: 2; }
+    .touch .down { grid-column: 2; grid-row: 3; }
+    .legend { margin-top: 8px; font-size: 12px; opacity: 0.82; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Hyperfold: Golden Weapon Hunt</h1>
-    <p>Godot Web export 파일이 아직 생성되지 않았습니다.</p>
-    <p>Godot 4.3+에서 아래 프로젝트를 열고 Web Export를 실행해주세요.</p>
-    <p class="path">/Users/user/TapTapCho/godot-hyperfold/project.godot</p>
-    <p>export path: <code>../godot-hyperfold-web/index.html</code></p>
-    <p>Export 후 이 페이지가 실제 게임 런처 파일로 교체됩니다.</p>
+    <p class="sub">즉시 실행 Web 런타임 (W=레이어, R=리와인드 10초, Slider/버튼 터치 지원)</p>
+
+    <div class="hud">
+      <div class="stats">
+        <div id="sTime">Time: 0.0s</div>
+        <div id="sLayer">Layer: W0</div>
+        <div id="sShield">Shield: 0</div>
+        <div id="sState">State: RUN</div>
+      </div>
+      <div class="controls">
+        <input id="layerSlider" type="range" min="0" max="3" step="1" value="0" />
+        <button id="btnRewind">Rewind (R)</button>
+        <button id="btnRestart">Restart</button>
+      </div>
+    </div>
+
+    <div class="game-wrap">
+      <canvas id="game" width="360" height="640"></canvas>
+      <div class="touch">
+        <button class="up" data-dir="up">▲</button>
+        <button class="left" data-dir="left">◀</button>
+        <button class="right" data-dir="right">▶</button>
+        <button class="down" data-dir="down">▼</button>
+      </div>
+    </div>
+
+    <div class="legend">승리 조건: 골든 웨폰 선점 · 패배 조건: 외계인 선점 또는 충돌(실드 0)</div>
   </div>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    const sTime = document.getElementById('sTime');
+    const sLayer = document.getElementById('sLayer');
+    const sShield = document.getElementById('sShield');
+    const sState = document.getElementById('sState');
+    const layerSlider = document.getElementById('layerSlider');
+    const btnRewind = document.getElementById('btnRewind');
+    const btnRestart = document.getElementById('btnRestart');
+
+    const W = canvas.width;
+    const H = canvas.height;
+    const PLAYER_R = 10;
+    const ALIEN_R = 10;
+    const SAMPLE_DT = 0.1;
+    const MAX_FRAMES = 300;
+    const REWIND_SECONDS = 10;
+
+    const KEYS = Object.create(null);
+    const TOUCH = { up: false, down: false, left: false, right: false };
+
+    const GATES = [
+      { x: 42, y: 102 },
+      { x: 318, y: 102 },
+      { x: 42, y: 548 },
+      { x: 318, y: 548 },
+    ];
+
+    const LAYERS = [
+      {
+        color: '#1d2d61',
+        obstacles: [
+          { x: 54, y: 210, w: 70, h: 16 },
+          { x: 186, y: 172, w: 120, h: 18 },
+          { x: 92, y: 352, w: 180, h: 16 },
+        ],
+        powerups: [
+          { type: 'chrono', x: 86, y: 148, taken: false },
+          { type: 'jump', x: 272, y: 456, taken: false },
+        ],
+        weapon: { x: 286, y: 112 },
+        alienSpawns: [{ x: 56, y: 112 }, { x: 300, y: 160 }, { x: 80, y: 430 }],
+      },
+      {
+        color: '#2c235f',
+        obstacles: [
+          { x: 40, y: 270, w: 150, h: 16 },
+          { x: 214, y: 226, w: 92, h: 16 },
+          { x: 146, y: 420, w: 170, h: 18 },
+        ],
+        powerups: [
+          { type: 'chrono', x: 272, y: 146, taken: false },
+          { type: 'jump', x: 90, y: 470, taken: false },
+        ],
+        weapon: { x: 66, y: 124 },
+        alienSpawns: [{ x: 288, y: 106 }, { x: 244, y: 364 }, { x: 80, y: 230 }],
+      },
+      {
+        color: '#223d65',
+        obstacles: [
+          { x: 52, y: 192, w: 250, h: 16 },
+          { x: 72, y: 318, w: 84, h: 16 },
+          { x: 188, y: 392, w: 128, h: 16 },
+        ],
+        powerups: [
+          { type: 'chrono', x: 96, y: 436, taken: false },
+          { type: 'jump', x: 258, y: 150, taken: false },
+        ],
+        weapon: { x: 176, y: 102 },
+        alienSpawns: [{ x: 76, y: 118 }, { x: 278, y: 202 }, { x: 118, y: 300 }],
+      },
+      {
+        color: '#4a215b',
+        obstacles: [
+          { x: 60, y: 246, w: 102, h: 16 },
+          { x: 190, y: 266, w: 118, h: 16 },
+          { x: 96, y: 396, w: 178, h: 16 },
+        ],
+        powerups: [
+          { type: 'chrono', x: 298, y: 470, taken: false },
+          { type: 'jump', x: 70, y: 182, taken: false },
+        ],
+        weapon: { x: 306, y: 136 },
+        alienSpawns: [{ x: 62, y: 142 }, { x: 258, y: 210 }, { x: 272, y: 418 }],
+      },
+    ];
+
+    const stars = Array.from({ length: 72 }, (_, i) => ({
+      x: (i * 41) % W,
+      y: (i * 73) % H,
+      s: (i % 3) + 1,
+    }));
+
+    let player;
+    let aliens;
+    let weapon;
+    let currentLayer;
+    let timeSec;
+    let status;
+    let msg;
+    let msgLeft;
+    let hitCooldown;
+    let sampleAcc;
+    let flash;
+
+    let rewind = {
+      active: false,
+      timer: 0,
+      target: null,
+      pathPlayer: [],
+      pathAlien: [],
+    };
+    let stateBuffer = [];
+
+    function reset() {
+      currentLayer = 0;
+      layerSlider.value = '0';
+
+      player = {
+        x: 180,
+        y: 572,
+        vx: 0,
+        vy: 0,
+        speed: 210,
+        layer: 0,
+        shield: 0,
+        ghost: false,
+      };
+
+      aliens = [0, 1, 2].map((i) => ({
+        x: LAYERS[(i + 1) % 4].alienSpawns[i].x,
+        y: LAYERS[(i + 1) % 4].alienSpawns[i].y,
+        vx: 0,
+        vy: 0,
+        speed: 140 + i * 6,
+        layer: (i + 1) % 4,
+      }));
+
+      weapon = {
+        active: false,
+        claimed: false,
+        layer: 2,
+        x: LAYERS[2].weapon.x,
+        y: LAYERS[2].weapon.y,
+      };
+
+      for (const layer of LAYERS) {
+        for (const p of layer.powerups) p.taken = false;
+      }
+
+      timeSec = 0;
+      status = 'running';
+      msg = '골든 웨폰을 먼저 확보하세요';
+      msgLeft = 1.5;
+      hitCooldown = 0;
+      sampleAcc = 0;
+      flash = 0;
+      stateBuffer = [];
+      rewind = { active: false, timer: 0, target: null, pathPlayer: [], pathAlien: [] };
+    }
+
+    function setMessage(text, sec = 1.0) {
+      msg = text;
+      msgLeft = sec;
+    }
+
+    function switchLayer(next) {
+      currentLayer = ((next % 4) + 4) % 4;
+      player.layer = currentLayer;
+      layerSlider.value = String(currentLayer);
+      flash = Math.max(flash, 0.18);
+    }
+
+    function nearestGate(x, y) {
+      let best = GATES[0];
+      let bestD = (x - best.x) ** 2 + (y - best.y) ** 2;
+      for (let i = 1; i < GATES.length; i++) {
+        const g = GATES[i];
+        const d = (x - g.x) ** 2 + (y - g.y) ** 2;
+        if (d < bestD) {
+          bestD = d;
+          best = g;
+        }
+      }
+      return best;
+    }
+
+    function collidesCircleRect(cx, cy, r, rect) {
+      const nx = Math.max(rect.x, Math.min(cx, rect.x + rect.w));
+      const ny = Math.max(rect.y, Math.min(cy, rect.y + rect.h));
+      const dx = cx - nx;
+      const dy = cy - ny;
+      return dx * dx + dy * dy <= r * r;
+    }
+
+    function moveWithObstacles(entity, dx, dy, radius, layerId) {
+      const obs = LAYERS[layerId].obstacles;
+
+      let nx = entity.x + dx;
+      for (const o of obs) {
+        if (collidesCircleRect(nx, entity.y, radius, o)) {
+          nx = entity.x;
+          break;
+        }
+      }
+
+      let ny = entity.y + dy;
+      for (const o of obs) {
+        if (collidesCircleRect(nx, ny, radius, o)) {
+          ny = entity.y;
+          break;
+        }
+      }
+
+      entity.x = Math.max(14, Math.min(W - 14, nx));
+      entity.y = Math.max(74, Math.min(H - 14, ny));
+    }
+
+    function inputAxis(posKeyA, negKeyA, posKeyB, negKeyB, posTouch, negTouch) {
+      let v = 0;
+      if (KEYS[posKeyA] || KEYS[posKeyB] || TOUCH[posTouch]) v += 1;
+      if (KEYS[negKeyA] || KEYS[negKeyB] || TOUCH[negTouch]) v -= 1;
+      return v;
+    }
+
+    function updatePlayer(dt) {
+      const ax = inputAxis('KeyD', 'KeyA', 'ArrowRight', 'ArrowLeft', 'right', 'left');
+      const ay = inputAxis('KeyS', 'KeyW', 'ArrowDown', 'ArrowUp', 'down', 'up');
+
+      let mx = ax;
+      let my = ay;
+      const len = Math.hypot(mx, my);
+      if (len > 1) {
+        mx /= len;
+        my /= len;
+      }
+
+      const speedMul = rewind.active ? 1.15 : 1.0;
+      moveWithObstacles(player, mx * player.speed * dt * speedMul, my * player.speed * dt * speedMul, PLAYER_R, player.layer);
+    }
+
+    function updateAliens(dt) {
+      for (const a of aliens) {
+        let tx = player.x;
+        let ty = player.y;
+        let targetLayer = player.layer;
+
+        if (weapon.active && !weapon.claimed) {
+          tx = weapon.x;
+          ty = weapon.y;
+          targetLayer = weapon.layer;
+        }
+
+        if (a.layer !== targetLayer) {
+          const g = nearestGate(a.x, a.y);
+          const dx = g.x - a.x;
+          const dy = g.y - a.y;
+          const d = Math.hypot(dx, dy) || 1;
+          moveWithObstacles(a, (dx / d) * a.speed * dt, (dy / d) * a.speed * dt, ALIEN_R, a.layer);
+          if (d < 10) a.layer = targetLayer;
+          continue;
+        }
+
+        const dx = tx - a.x;
+        const dy = ty - a.y;
+        const d = Math.hypot(dx, dy) || 1;
+        moveWithObstacles(a, (dx / d) * a.speed * dt, (dy / d) * a.speed * dt, ALIEN_R, a.layer);
+
+        if (weapon.active && !weapon.claimed && a.layer === weapon.layer) {
+          if ((a.x - weapon.x) ** 2 + (a.y - weapon.y) ** 2 < (ALIEN_R + 11) ** 2) {
+            weapon.claimed = true;
+            weapon.active = false;
+            status = 'lose';
+            setMessage('패배: 외계인이 골든 웨폰 선점', 2.5);
+          }
+        }
+      }
+    }
+
+    function updatePowerups() {
+      const list = LAYERS[player.layer].powerups;
+      for (const p of list) {
+        if (p.taken) continue;
+        if ((player.x - p.x) ** 2 + (player.y - p.y) ** 2 < (PLAYER_R + 10) ** 2) {
+          p.taken = true;
+          if (p.type === 'chrono') {
+            player.shield += 1;
+            setMessage('크로노 실드 +1', 1.0);
+          } else {
+            switchLayer(currentLayer + 1);
+            setMessage('디멘션 점프', 0.9);
+          }
+        }
+      }
+    }
+
+    function updateCombat(dt) {
+      hitCooldown = Math.max(0, hitCooldown - dt);
+      if (rewind.active || player.ghost || hitCooldown > 0) return;
+
+      for (const a of aliens) {
+        if (a.layer !== player.layer) continue;
+        if ((a.x - player.x) ** 2 + (a.y - player.y) ** 2 < (PLAYER_R + ALIEN_R) ** 2) {
+          hitCooldown = 0.8;
+          if (player.shield > 0) {
+            player.shield -= 1;
+            setMessage('실드로 피해 흡수', 0.9);
+          } else {
+            status = 'lose';
+            setMessage('패배: 플레이어 격추', 2.2);
+          }
+          break;
+        }
+      }
+    }
+
+    function recordState(dt) {
+      if (rewind.active || status !== 'running') return;
+      sampleAcc += dt;
+      if (sampleAcc < SAMPLE_DT) return;
+      sampleAcc = 0;
+
+      const snap = {
+        t: timeSec,
+        layer: currentLayer,
+        player: { x: player.x, y: player.y, layer: player.layer, shield: player.shield },
+        aliens: aliens.map((a) => ({ x: a.x, y: a.y, layer: a.layer })),
+        weapon: { active: weapon.active, claimed: weapon.claimed, layer: weapon.layer, x: weapon.x, y: weapon.y },
+        powerups: LAYERS.map((l) => l.powerups.map((p) => p.taken)),
+      };
+      stateBuffer.push(snap);
+      if (stateBuffer.length > MAX_FRAMES) stateBuffer.shift();
+    }
+
+    function applySnapshot(s) {
+      timeSec = s.t;
+      currentLayer = s.layer;
+      player.x = s.player.x;
+      player.y = s.player.y;
+      player.layer = s.player.layer;
+      player.shield = s.player.shield;
+
+      for (let i = 0; i < aliens.length; i++) {
+        if (!s.aliens[i]) continue;
+        aliens[i].x = s.aliens[i].x;
+        aliens[i].y = s.aliens[i].y;
+        aliens[i].layer = s.aliens[i].layer;
+      }
+
+      weapon.active = s.weapon.active;
+      weapon.claimed = s.weapon.claimed;
+      weapon.layer = s.weapon.layer;
+      weapon.x = s.weapon.x;
+      weapon.y = s.weapon.y;
+
+      for (let li = 0; li < LAYERS.length; li++) {
+        for (let pi = 0; pi < LAYERS[li].powerups.length; pi++) {
+          LAYERS[li].powerups[pi].taken = !!(s.powerups[li] && s.powerups[li][pi]);
+        }
+      }
+
+      layerSlider.value = String(currentLayer);
+    }
+
+    function startRewind() {
+      if (status !== 'running' || rewind.active || stateBuffer.length < 20) {
+        if (status === 'running') setMessage('리와인드 데이터 부족', 0.8);
+        return;
+      }
+
+      const steps = Math.round(REWIND_SECONDS / SAMPLE_DT);
+      const idx = Math.max(0, stateBuffer.length - 1 - steps);
+      rewind.target = stateBuffer[idx];
+      rewind.pathPlayer = stateBuffer.slice(idx).map((s) => ({ x: s.player.x, y: s.player.y }));
+      rewind.pathAlien = stateBuffer.slice(idx).map((s) => {
+        const a = s.aliens[0] || { x: 0, y: 0 };
+        return { x: a.x, y: a.y };
+      });
+      rewind.active = true;
+      rewind.timer = 1.0;
+      player.ghost = true;
+      setMessage('Rewind...', 1.0);
+    }
+
+    function updateRewind(dt) {
+      if (!rewind.active) return;
+      rewind.timer -= dt;
+      if (rewind.timer > 0) return;
+
+      applySnapshot(rewind.target);
+      rewind.active = false;
+      player.ghost = false;
+      rewind.pathPlayer = [];
+      rewind.pathAlien = [];
+      setMessage('리와인드 완료', 0.9);
+    }
+
+    function update(dt) {
+      if (msgLeft > 0) msgLeft -= dt;
+      flash = Math.max(0, flash - dt * 1.6);
+
+      if (status !== 'running') return;
+
+      if (!rewind.active) {
+        timeSec += dt;
+
+        if (timeSec >= 7 && !weapon.active && !weapon.claimed) {
+          weapon.active = true;
+          weapon.layer = 2;
+          weapon.x = LAYERS[2].weapon.x;
+          weapon.y = LAYERS[2].weapon.y;
+          setMessage('골든 웨폰 등장! W2', 1.6);
+        }
+
+        updateAliens(dt);
+      }
+
+      updatePlayer(dt);
+      updatePowerups();
+      updateCombat(dt);
+
+      if (!rewind.active && weapon.active && player.layer === weapon.layer) {
+        if ((player.x - weapon.x) ** 2 + (player.y - weapon.y) ** 2 < (PLAYER_R + 11) ** 2) {
+          weapon.claimed = true;
+          weapon.active = false;
+          status = 'win';
+          setMessage('승리: 골든 웨폰 확보!', 2.4);
+        }
+      }
+
+      recordState(dt);
+      updateRewind(dt);
+    }
+
+    function drawShip(x, y, colorA, colorB, ghost = false) {
+      ctx.save();
+      ctx.translate(x, y);
+      if (ghost) ctx.globalAlpha = 0.5;
+
+      ctx.fillStyle = colorA;
+      ctx.beginPath();
+      ctx.moveTo(0, -14);
+      ctx.lineTo(-10, 10);
+      ctx.lineTo(0, 6);
+      ctx.lineTo(10, 10);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = colorB;
+      ctx.beginPath();
+      ctx.moveTo(0, -9);
+      ctx.lineTo(-4, 1);
+      ctx.lineTo(4, 1);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawAlien(x, y, ghost = false) {
+      ctx.save();
+      ctx.translate(x, y);
+      if (ghost) ctx.globalAlpha = 0.45;
+      ctx.fillStyle = '#7feaff';
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const a = -Math.PI / 2 + i * (Math.PI * 2 / 5);
+        const px = Math.cos(a) * 11;
+        const py = Math.sin(a) * 11;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#ff6f70';
+      ctx.beginPath();
+      ctx.arc(0, 1, 4.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function draw() {
+      const layer = LAYERS[currentLayer];
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, layer.color);
+      g.addColorStop(1, '#1b2454');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+
+      for (const s of stars) {
+        const y = (s.y + timeSec * 12 + s.x * 0.07) % H;
+        ctx.fillStyle = 'rgba(226, 236, 255, 0.3)';
+        ctx.fillRect(s.x, y, s.s, s.s);
+      }
+
+      ctx.strokeStyle = 'rgba(111, 207, 255, 0.32)';
+      ctx.setLineDash([5, 7]);
+      for (const gate of GATES) {
+        ctx.beginPath();
+        ctx.arc(gate.x, gate.y, 10 + Math.sin(timeSec * 4) * 1.2, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+
+      for (const o of layer.obstacles) {
+        ctx.fillStyle = '#2a3c75';
+        ctx.fillRect(o.x, o.y, o.w, o.h);
+        ctx.strokeStyle = '#46639b';
+        ctx.strokeRect(o.x, o.y, o.w, o.h);
+      }
+
+      for (const p of layer.powerups) {
+        if (p.taken) continue;
+        ctx.fillStyle = p.type === 'chrono' ? '#85e8ff' : '#ff9ddd';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 8.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      if (weapon.active && weapon.layer === currentLayer) {
+        ctx.fillStyle = '#ffd558';
+        ctx.beginPath();
+        ctx.ellipse(weapon.x, weapon.y, 13, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fff6bf';
+        ctx.beginPath();
+        ctx.ellipse(weapon.x, weapon.y, 6, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      if (rewind.active) {
+        if (rewind.pathPlayer.length > 1) {
+          ctx.strokeStyle = 'rgba(130,220,255,0.55)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(rewind.pathPlayer[0].x, rewind.pathPlayer[0].y);
+          for (let i = 1; i < rewind.pathPlayer.length; i++) ctx.lineTo(rewind.pathPlayer[i].x, rewind.pathPlayer[i].y);
+          ctx.stroke();
+        }
+        if (rewind.pathAlien.length > 1) {
+          ctx.strokeStyle = 'rgba(255,146,176,0.45)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(rewind.pathAlien[0].x, rewind.pathAlien[0].y);
+          for (let i = 1; i < rewind.pathAlien.length; i++) ctx.lineTo(rewind.pathAlien[i].x, rewind.pathAlien[i].y);
+          ctx.stroke();
+        }
+      }
+
+      for (const a of aliens) {
+        if (a.layer !== currentLayer) continue;
+        drawAlien(a.x, a.y, rewind.active);
+      }
+
+      drawShip(player.x, player.y, '#76a7d4', '#d6ecff', player.ghost);
+
+      if (flash > 0) {
+        ctx.fillStyle = `rgba(152, 222, 255, ${flash * 0.38})`;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      if (msgLeft > 0 && msg) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.46)';
+        ctx.fillRect(34, 282, 292, 42);
+        ctx.fillStyle = '#f6fbff';
+        ctx.font = 'bold 15px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText(msg, W / 2, 308);
+      }
+
+      if (status !== 'running') {
+        ctx.fillStyle = 'rgba(0,0,0,0.42)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 28px system-ui';
+        ctx.fillText(status === 'win' ? 'MISSION COMPLETE' : 'MISSION FAILED', W / 2, H / 2 - 16);
+        ctx.font = '15px system-ui';
+        ctx.fillText('Space / Enter / Restart 버튼으로 재시작', W / 2, H / 2 + 16);
+      }
+
+      ctx.textAlign = 'left';
+    }
+
+    function syncHud() {
+      sTime.textContent = `Time: ${timeSec.toFixed(1)}s`;
+      sLayer.textContent = `Layer: W${currentLayer}`;
+      sShield.textContent = `Shield: ${player.shield}`;
+      if (rewind.active) sState.textContent = 'State: REWIND';
+      else if (status === 'win') sState.textContent = 'State: WIN';
+      else if (status === 'lose') sState.textContent = 'State: LOSE';
+      else sState.textContent = 'State: RUN';
+
+      btnRewind.disabled = !(status === 'running' && !rewind.active && stateBuffer.length >= 20);
+    }
+
+    let last = 0;
+    function loop(ts) {
+      if (!last) last = ts;
+      const dt = Math.min(0.033, (ts - last) / 1000);
+      last = ts;
+
+      update(dt);
+      draw();
+      syncHud();
+      requestAnimationFrame(loop);
+    }
+
+    layerSlider.addEventListener('input', () => {
+      if (status !== 'running' || rewind.active) return;
+      switchLayer(parseInt(layerSlider.value, 10) || 0);
+    });
+
+    btnRewind.addEventListener('click', startRewind);
+    btnRestart.addEventListener('click', reset);
+
+    window.addEventListener('keydown', (e) => {
+      KEYS[e.code] = true;
+
+      if (e.code === 'KeyW' && status === 'running' && !rewind.active) {
+        e.preventDefault();
+        switchLayer(currentLayer + 1);
+      }
+      if (e.code === 'KeyR') {
+        e.preventDefault();
+        startRewind();
+      }
+      if ((e.code === 'Space' || e.code === 'Enter') && status !== 'running') {
+        e.preventDefault();
+        reset();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      KEYS[e.code] = false;
+    });
+
+    document.querySelectorAll('.touch button').forEach((btn) => {
+      const dir = btn.dataset.dir;
+      const onDown = (e) => { e.preventDefault(); TOUCH[dir] = true; };
+      const onUp = (e) => { e.preventDefault(); TOUCH[dir] = false; };
+
+      btn.addEventListener('pointerdown', onDown);
+      btn.addEventListener('pointerup', onUp);
+      btn.addEventListener('pointercancel', onUp);
+      btn.addEventListener('pointerleave', onUp);
+    });
+
+    reset();
+    requestAnimationFrame(loop);
+  </script>
 </body>
 </html>
