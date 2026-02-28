@@ -49,8 +49,6 @@ const PLANES = [
     primary: '#ff9a36',
     accent: '#ffd372',
     cockpit: '#d9ecff',
-    specialName: '카펫 폭격',
-    specialDesc: '광역 타격 + 탄막 제거',
     specialCooldown: 4.8,
     specialId: 'carpet',
   },
@@ -73,8 +71,6 @@ const PLANES = [
     primary: '#ff6f7a',
     accent: '#ffc1c6',
     cockpit: '#fff1f2',
-    specialName: '레일 브레이커',
-    specialDesc: '전방 레일포 강습',
     specialCooldown: 5.4,
     specialId: 'rail',
   },
@@ -97,8 +93,6 @@ const PLANES = [
     primary: '#88f4ff',
     accent: '#d3faff',
     cockpit: '#f4ffff',
-    specialName: '페이즈 시프트',
-    specialDesc: '잠시 모든 탄막 무시',
     specialCooldown: 4.2,
     specialId: 'phase',
   },
@@ -121,8 +115,6 @@ const PLANES = [
     primary: '#9ab7ff',
     accent: '#ffe08f',
     cockpit: '#eef5ff',
-    specialName: '불워크 돔',
-    specialDesc: '탄막 제거 + 실드 회복',
     specialCooldown: 4.6,
     specialId: 'aegis',
   },
@@ -145,8 +137,6 @@ const PLANES = [
     primary: '#b69cff',
     accent: '#f1e4ff',
     cockpit: '#f7f0ff',
-    specialName: 'EMP 스톰',
-    specialDesc: '전탄 소거 + 광역 타격',
     specialCooldown: 5.0,
     specialId: 'storm',
   },
@@ -237,6 +227,13 @@ let specialCharge = 0;
 let specialCooldown = 0;
 let specialPulse = 0;
 let hintTimer = 0;
+let specialFx = {
+  type: null,
+  timer: 0,
+  duration: 0.7,
+  x: W * 0.5,
+  y: H * 0.75,
+};
 
 const perks = {
   fireRate: 0,
@@ -800,6 +797,8 @@ function resetGame() {
   specialCooldown = 0;
   specialPulse = 0;
   hintTimer = 7.5;
+  specialFx.type = null;
+  specialFx.timer = 0;
 
   perks.fireRate = 0;
   perks.damage = 0;
@@ -1184,8 +1183,7 @@ function activateSpecial() {
   specialCharge = 0;
   specialCooldown = plane.specialCooldown || 4.6;
   specialPulse = 0.9;
-  waveBannerText = `${plane.name} SPECIAL: ${plane.specialName}`;
-  waveBanner = Math.max(waveBanner, 1.2);
+  triggerSpecialFx(plane.specialId);
 
   if (plane.specialId === 'carpet') specialCarpetBomb();
   else if (plane.specialId === 'rail') specialRailBreaker();
@@ -1913,6 +1911,129 @@ function drawGhostDemo() {
   drawGhostShip(gx, gy, demoPlane, 0.58);
 }
 
+function drawSpecialGlyph(type, x, y, size = 12, alpha = 1) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(x, y);
+  ctx.strokeStyle = '#e9f5ff';
+  ctx.fillStyle = 'rgba(212, 236, 255, 0.9)';
+  ctx.lineWidth = 2;
+
+  if (type === 'carpet') {
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 0.42, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(0, size * 0.6);
+    ctx.lineTo(-size * 0.46, size * 0.05);
+    ctx.lineTo(size * 0.46, size * 0.05);
+    ctx.closePath();
+    ctx.fill();
+  } else if (type === 'rail') {
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.16, -size * 0.72);
+    ctx.lineTo(size * 0.16, -size * 0.72);
+    ctx.lineTo(size * 0.16, size * 0.72);
+    ctx.lineTo(-size * 0.16, size * 0.72);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeRect(-size * 0.34, -size * 0.72, size * 0.68, size * 1.44);
+  } else if (type === 'phase') {
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 0.54, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 0.28, 0, Math.PI * 2);
+    ctx.stroke();
+  } else if (type === 'aegis') {
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 0.62, Math.PI, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.5, 0);
+    ctx.lineTo(size * 0.5, 0);
+    ctx.stroke();
+  } else {
+    for (let i = 0; i < 8; i += 1) {
+      const a = (i / 8) * Math.PI * 2;
+      const x0 = Math.cos(a) * size * 0.16;
+      const y0 = Math.sin(a) * size * 0.16;
+      const x1 = Math.cos(a) * size * 0.66;
+      const y1 = Math.sin(a) * size * 0.66;
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y1);
+      ctx.stroke();
+    }
+  }
+
+  ctx.restore();
+}
+
+function triggerSpecialFx(type) {
+  specialFx.type = type;
+  specialFx.timer = 0.7;
+  specialFx.duration = 0.7;
+  specialFx.x = player.x;
+  specialFx.y = player.y;
+}
+
+function drawSpecialFx() {
+  if (!specialFx.type || specialFx.timer <= 0) return;
+  const t = 1 - specialFx.timer / specialFx.duration;
+  const alpha = Math.max(0, specialFx.timer / specialFx.duration);
+  const x = specialFx.x;
+  const y = specialFx.y;
+
+  if (specialFx.type === 'rail') {
+    const beamW = 22 + Math.sin(tick * 0.55) * 4;
+    ctx.fillStyle = `rgba(255, 234, 190, ${0.36 * alpha})`;
+    ctx.fillRect(x - beamW, 0, beamW * 2, H);
+    ctx.strokeStyle = `rgba(255, 246, 220, ${0.72 * alpha})`;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x - 10, 0, 20, H);
+  } else if (specialFx.type === 'phase') {
+    for (let i = 0; i < 4; i += 1) {
+      const r = 42 + i * 26 + t * 140;
+      ctx.strokeStyle = `rgba(170, 255, 255, ${(0.42 - i * 0.08) * alpha})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  } else if (specialFx.type === 'aegis') {
+    const r = 62 + t * 96;
+    ctx.fillStyle = `rgba(146, 215, 255, ${0.18 * alpha})`;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = `rgba(196, 236, 255, ${0.55 * alpha})`;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  } else if (specialFx.type === 'storm') {
+    for (let i = 0; i < 5; i += 1) {
+      const rot = t * 4.6 + i * 1.2;
+      const rr = 70 + i * 22;
+      ctx.strokeStyle = `rgba(199, 173, 255, ${(0.42 - i * 0.06) * alpha})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(x, y, rr, rot, rot + Math.PI * 0.8);
+      ctx.stroke();
+    }
+  } else {
+    for (let i = 0; i < 6; i += 1) {
+      const ex = 30 + i * ((W - 60) / 5);
+      const ey = H * 0.22 + Math.sin(t * 8 + i) * 24;
+      const r = 18 + t * 86;
+      ctx.strokeStyle = `rgba(255, 225, 166, ${(0.45 - i * 0.05) * alpha})`;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(ex, ey, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+}
+
 function drawKeyBadge(x, y, label, alpha = 1) {
   ctx.save();
   ctx.globalAlpha = alpha;
@@ -2076,9 +2197,7 @@ function renderOverlay() {
         ctx.fillRect(r.x + 12, by, ((r.w - 24) * statVals[s]) / 5, 5);
       }
       ctx.fillStyle = '#d8ecff';
-      ctx.font = 'bold 10px system-ui';
-      const icon = p.specialId === 'phase' ? 'P' : p.specialId === 'rail' ? 'R' : p.specialId === 'storm' ? 'E' : p.specialId === 'aegis' ? 'A' : 'C';
-      ctx.fillText(icon, r.x + r.w * 0.5, r.y + 100);
+      drawSpecialGlyph(p.specialId, r.x + r.w * 0.5, r.y + 100, 8.5, selected ? 0.95 : 0.65);
     }
   }
 
@@ -2115,6 +2234,10 @@ function renderOverlay() {
   if (state === 'running' && hintTimer > 0) {
     drawControlHints(Math.min(1, hintTimer / 2.4));
   }
+
+  if (state === 'running') {
+    drawSpecialFx();
+  }
 }
 
 function render() {
@@ -2150,6 +2273,10 @@ function update(dt) {
   if (shake > 0) shake = Math.max(0, shake - dt * 34);
   if (specialPulse > 0) specialPulse = Math.max(0, specialPulse - dt);
   if (hintTimer > 0) hintTimer = Math.max(0, hintTimer - dt);
+  if (specialFx.timer > 0) {
+    specialFx.timer = Math.max(0, specialFx.timer - dt);
+    if (specialFx.timer <= 0) specialFx.type = null;
+  }
   if (specialCooldown > 0) specialCooldown = Math.max(0, specialCooldown - dt);
   if (shotSfxCd > 0) shotSfxCd -= dt;
   if (droneFireCd > 0) droneFireCd -= dt;
