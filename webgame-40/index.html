@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sunken Sixway Defense</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Sunken Sixway Defense</h1>
+      <p>성큰 길막으로 뱀파이어 웨이브를 버티고 Stage 10 보스를 막아내세요.</p>
+    </header>
+
+    <div class="hud" id="hud">
+      <div class="stat">Stage <b id="stageText">1</b>/10</div>
+      <div class="stat">Base <b id="baseText">20</b></div>
+      <div class="stat">Gold <b id="goldText">0</b></div>
+      <div class="stat">Alive <b id="aliveText">0</b></div>
+      <div class="stat">Queue <b id="queueText">0</b></div>
+      <div class="stat">Kills <b id="killsText">0</b></div>
+    </div>
+
+    <div class="controls" id="controls">
+      <button class="build-btn" data-kind="sunken" id="btnSunken" type="button">
+        <span class="icon">S</span>
+        <span class="name">Sunken</span>
+        <span class="cost">40</span>
+      </button>
+      <button class="build-btn" data-kind="spine" id="btnSpine" type="button">
+        <span class="icon">P</span>
+        <span class="name">Spine</span>
+        <span class="cost">70</span>
+      </button>
+      <button class="build-btn" data-kind="obelisk" id="btnObelisk" type="button">
+        <span class="icon">O</span>
+        <span class="name">Obelisk</span>
+        <span class="cost">110</span>
+      </button>
+      <div class="hint">좌클릭 배치/업그레이드 · 우클릭 판매 · 1/2/3 선택 · F 가속</div>
+    </div>
+
+    <div class="arena">
+      <canvas id="game" width="960" height="540"></canvas>
+      <div class="overlay" id="overlay"></div>
+    </div>
+
+    <footer>
+      <small>길이 완전히 막히면 자동으로 배치가 취소됩니다.</small>
+    </footer>
+  </div>
+
+  <script src="../assets/js/neon-audio.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

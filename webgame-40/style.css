@@ -1,0 +1,219 @@
+:root {
+  --bg: #070a12;
+  --panel: #111826;
+  --panel-2: #1a2438;
+  --line: #32435f;
+  --text: #edf4ff;
+  --muted: #9fb1cd;
+  --accent: #f0ca77;
+  --warn: #ff8ca3;
+  --good: #8ff8bf;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  font-family: "Pretendard", "Noto Sans KR", system-ui, -apple-system, sans-serif;
+  background:
+    radial-gradient(1200px 600px at 20% -10%, #1d2c47 0%, transparent 72%),
+    radial-gradient(900px 520px at 80% -20%, #31264c 0%, transparent 70%),
+    linear-gradient(180deg, #0f1320, var(--bg));
+}
+
+.wrap {
+  width: min(1100px, 96vw);
+  margin: 14px auto 22px;
+}
+
+header h1 {
+  margin: 0;
+  color: var(--accent);
+  font-size: clamp(28px, 4vw, 46px);
+}
+
+header p {
+  margin: 7px 0 12px;
+  color: var(--muted);
+}
+
+.hud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--panel), #0d1320);
+}
+
+.stat {
+  min-width: 108px;
+  color: var(--muted);
+}
+
+.stat b {
+  color: var(--text);
+  margin-left: 4px;
+}
+
+.controls {
+  margin-top: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #12192b, #0e1524);
+  padding: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.build-btn {
+  display: grid;
+  gap: 3px;
+  border: 1px solid #3f557b;
+  background: linear-gradient(180deg, #1b2640, #151f34);
+  color: var(--text);
+  border-radius: 10px;
+  min-width: 114px;
+  padding: 8px 9px;
+  cursor: pointer;
+}
+
+.build-btn .icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.build-btn .name {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.build-btn .cost {
+  color: #d7e4f8;
+  font-size: 12px;
+}
+
+.build-btn.active {
+  border-color: #f0ca77;
+  box-shadow: 0 0 0 2px rgba(240, 202, 119, 0.24) inset;
+}
+
+.hint {
+  margin-left: auto;
+  color: #9cb0cf;
+  font-size: 13px;
+}
+
+.arena {
+  margin-top: 10px;
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #080f1b;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 70vh;
+  touch-action: manipulation;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, rgba(7, 9, 17, 0.44), rgba(8, 10, 20, 0.58));
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+.modal {
+  width: min(760px, 94%);
+  border: 1px solid #576f97;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(19, 27, 43, 0.96), rgba(12, 19, 33, 0.96));
+  padding: 18px;
+}
+
+.modal h2 {
+  margin: 0;
+  color: var(--accent);
+}
+
+.modal p {
+  margin: 8px 0 12px;
+  color: #b8c8df;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.actions button {
+  border: 1px solid #4a6592;
+  background: linear-gradient(180deg, #1f3354, #152945);
+  color: var(--text);
+  border-radius: 11px;
+  padding: 9px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.banner {
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  transform: translateX(-50%);
+  border: 1px solid #6d8dbb;
+  border-radius: 999px;
+  padding: 6px 14px;
+  background: rgba(12, 17, 30, 0.72);
+  color: #dbe9ff;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.banner.warn {
+  border-color: #d7778f;
+  color: #ffd0db;
+}
+
+footer {
+  margin-top: 8px;
+  text-align: center;
+  color: #95aacb;
+  font-size: 13px;
+}
+
+@media (max-width: 860px) {
+  .hint {
+    width: 100%;
+    margin-left: 0;
+    font-size: 12px;
+  }
+
+  .build-btn {
+    min-width: 98px;
+  }
+}
