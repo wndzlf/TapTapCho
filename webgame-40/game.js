@@ -41,6 +41,7 @@ const TOWER_TYPES = {
     reload: 0.55,
     bulletSpeed: 360,
     pierce: 0,
+    hp: 250,
   },
   spine: {
     id: 'spine',
@@ -52,6 +53,7 @@ const TOWER_TYPES = {
     reload: 0.28,
     bulletSpeed: 420,
     pierce: 0,
+    hp: 190,
   },
   obelisk: {
     id: 'obelisk',
@@ -63,6 +65,7 @@ const TOWER_TYPES = {
     reload: 1.1,
     bulletSpeed: 330,
     pierce: 1,
+    hp: 320,
   },
 };
 
@@ -81,6 +84,7 @@ const state = {
   spawnTimer: 0,
   enemies: [],
   towers: [],
+  nextTowerId: 1,
   bullets: [],
   particles: [],
   blocked: new Set(),
@@ -231,6 +235,7 @@ function makeTower(kind, c, r) {
   const base = TOWER_TYPES[kind];
   const center = cellCenter(c, r);
   return {
+    id: state.nextTowerId++,
     kind,
     c,
     r,
@@ -243,6 +248,8 @@ function makeTower(kind, c, r) {
     reload: base.reload,
     bulletSpeed: base.bulletSpeed,
     pierce: base.pierce,
+    maxHp: base.hp,
+    hp: base.hp,
     cooldown: rand(0.02, base.reload),
     color: base.color,
   };
@@ -268,6 +275,8 @@ function upgradeTower(tower) {
   tower.damage *= 1.34;
   tower.reload *= 0.9;
   tower.pierce = Math.min(3, tower.pierce + (tower.kind === 'obelisk' ? 1 : 0));
+  tower.maxHp *= 1.34;
+  tower.hp = Math.min(tower.maxHp, tower.hp + tower.maxHp * 0.25);
 
   flashBanner(`UPGRADE Lv.${tower.level}`, 0.7);
   sfx(620, 0.07, 'triangle', 0.022);
@@ -317,15 +326,11 @@ function tryPlaceTower(c, r) {
 }
 
 function sellTower(c, r) {
-  const idx = state.towers.findIndex((t) => t.c === c && t.r === r);
-  if (idx < 0) return;
-
-  const tower = state.towers[idx];
+  const tower = getTower(c, r);
+  if (!tower) return;
   const refund = Math.floor(tower.spent * 0.6);
   state.gold += refund;
-  state.towers.splice(idx, 1);
-  state.blocked.delete(keyOf(c, r));
-  buildDistanceMap();
+  removeTower(tower);
   flashBanner(`SELL +${refund}`, 0.8);
   sfx(340, 0.06, 'triangle', 0.018);
 }
@@ -341,6 +346,8 @@ function makeEnemy(type) {
     bat: 0.06,
     brute: 0.12,
     elder: 0.18,
+    raider: 0.26,
+    crusher: 0.32,
     lord: 0.3,
   };
   const defs = {
@@ -348,6 +355,30 @@ function makeEnemy(type) {
     bat: { hp: (36 + s * 8) * stageHpMul * 0.82, speed: (58 + s * 2.4) * stageSpeedMul, reward: 6, leak: 1, r: 8, color: '#d07ab4' },
     brute: { hp: (150 + s * 28) * stageHpMul * 1.18, speed: (29 + s * 1.3) * stageSpeedMul, reward: 12, leak: 2, r: 13, color: '#9e5a9c' },
     elder: { hp: (262 + s * 46) * stageHpMul * 1.32, speed: (37 + s * 1.5) * stageSpeedMul, reward: 25, leak: 3, r: 15, color: '#b86ec8' },
+    raider: {
+      hp: (120 + s * 24) * stageHpMul * 1.05,
+      speed: (42 + s * 1.5) * stageSpeedMul,
+      reward: 17,
+      leak: 2,
+      r: 12,
+      color: '#ff9d7f',
+      breaker: true,
+      towerDamage: 26 + s * 8,
+      attackInterval: 0.95,
+      attackRange: 22,
+    },
+    crusher: {
+      hp: (260 + s * 44) * stageHpMul * 1.28,
+      speed: (30 + s * 1.1) * stageSpeedMul,
+      reward: 28,
+      leak: 3,
+      r: 15,
+      color: '#ffc17c',
+      breaker: true,
+      towerDamage: 48 + s * 12,
+      attackInterval: 1.28,
+      attackRange: 26,
+    },
     lord: { hp: (700 + s * 140) * stageHpMul * 1.65, speed: (27 + s) * stageSpeedMul, reward: 58, leak: 5, r: 18, color: '#f26a84', boss: true },
   };
   const d = defs[type];
@@ -377,6 +408,12 @@ function makeEnemy(type) {
     vy: 0,
     threat,
     morph: rand(0, TAU),
+    breaker: Boolean(d.breaker),
+    towerDamage: d.towerDamage || 0,
+    attackInterval: d.attackInterval || 1,
+    attackRange: d.attackRange || 0,
+    attackCd: rand(0.1, 0.6),
+    targetTowerId: 0,
   };
 }
 
@@ -390,6 +427,8 @@ function makeStageQueue(stage) {
     if (stage >= 3 && roll < 0.32) type = 'bat';
     if (stage >= 4 && roll < 0.24) type = 'brute';
     if (stage >= 7 && roll < 0.16) type = 'elder';
+    if (stage >= 5 && roll < 0.12) type = 'raider';
+    if (stage >= 8 && roll < 0.09) type = 'crusher';
     queue.push(type);
   }
 
@@ -408,6 +447,14 @@ function makeStageQueue(stage) {
   if (stage >= 8) {
     const surgePos = Math.floor(queue.length * 0.72);
     queue.splice(surgePos, 0, 'elder', 'elder');
+  }
+
+  if (stage >= 6) {
+    const breakerCount = 1 + Math.floor(stage * 0.55);
+    for (let i = 0; i < breakerCount; i += 1) {
+      const pos = Math.floor(queue.length * (0.28 + Math.random() * 0.5));
+      queue.splice(pos, 0, stage >= 8 && Math.random() < 0.45 ? 'crusher' : 'raider');
+    }
   }
 
   queue.push('lord');
@@ -434,6 +481,7 @@ function startRun() {
   state.spawnQueue = [];
   state.enemies = [];
   state.towers = [];
+  state.nextTowerId = 1;
   state.bullets = [];
   state.particles = [];
   state.blocked.clear();
@@ -510,6 +558,56 @@ function nearestEnemy(x, y, range) {
     }
   }
   return found;
+}
+
+function nearestTower(x, y) {
+  let found = null;
+  let best = Infinity;
+  for (const tower of state.towers) {
+    const dx = tower.x - x;
+    const dy = tower.y - y;
+    const d = dx * dx + dy * dy;
+    if (d < best) {
+      best = d;
+      found = tower;
+    }
+  }
+  return found;
+}
+
+function removeTower(tower) {
+  const idx = state.towers.indexOf(tower);
+  if (idx < 0) return false;
+  state.towers.splice(idx, 1);
+  state.blocked.delete(keyOf(tower.c, tower.r));
+  buildDistanceMap();
+  for (const enemy of state.enemies) {
+    enemy.repath = 0;
+    if (enemy.targetTowerId === tower.id) enemy.targetTowerId = 0;
+  }
+  return true;
+}
+
+function damageTower(tower, amount, sourceEnemy = null) {
+  if (!tower) return;
+  tower.hp -= amount;
+  for (let i = 0; i < 8; i += 1) {
+    state.particles.push({
+      x: tower.x + rand(-6, 6),
+      y: tower.y + rand(-6, 6),
+      vx: rand(-120, 120),
+      vy: rand(-130, 60),
+      life: rand(0.08, 0.22),
+      size: rand(1.7, 3.2),
+      color: sourceEnemy?.color || '#ffb3c1',
+    });
+  }
+  if (Math.random() < 0.35) sfx(220 + rand(-30, 20), 0.05, 'square', 0.018);
+  if (tower.hp > 0) return;
+
+  removeTower(tower);
+  flashBanner(`${tower.kind.toUpperCase()} DESTROYED`, 0.9, true);
+  sfx(170, 0.12, 'sawtooth', 0.04);
 }
 
 function emitBullet(tower, target) {
@@ -627,6 +725,43 @@ function updateBullets(dt) {
 
 function updateEnemy(enemy, dt) {
   enemy.repath -= dt;
+  enemy.attackCd = Math.max(0, enemy.attackCd - dt);
+
+  if (enemy.breaker && state.towers.length > 0) {
+    let targetTower = state.towers.find((t) => t.id === enemy.targetTowerId);
+    if (!targetTower) {
+      targetTower = nearestTower(enemy.x, enemy.y);
+      enemy.targetTowerId = targetTower ? targetTower.id : 0;
+    }
+
+    if (targetTower) {
+      const tdx = targetTower.x - enemy.x;
+      const tdy = targetTower.y - enemy.y;
+      const td = Math.hypot(tdx, tdy) || 1;
+      const tx = tdx / td;
+      const ty = tdy / td;
+
+      if (td <= enemy.attackRange + GRID.cell * 0.28) {
+        enemy.vx *= 0.72;
+        enemy.vy *= 0.72;
+        enemy.x += enemy.vx * dt;
+        enemy.y += enemy.vy * dt;
+        if (enemy.attackCd <= 0) {
+          damageTower(targetTower, enemy.towerDamage, enemy);
+          enemy.attackCd = enemy.attackInterval;
+          if (Math.random() < 0.5) flashBanner('공성 몹이 건물 공격 중', 0.32, true);
+        }
+      } else {
+        enemy.vx += tx * enemy.speed * dt * 3.3;
+        enemy.vy += ty * enemy.speed * dt * 3.3;
+        enemy.vx *= 0.89;
+        enemy.vy *= 0.89;
+        enemy.x += enemy.vx * dt;
+        enemy.y += enemy.vy * dt;
+      }
+      return;
+    }
+  }
 
   if (enemy.repath <= 0) {
     const cell = worldToCell(enemy.x, enemy.y);
@@ -998,6 +1133,14 @@ function drawTowers() {
       drawTowerObelisk(tower, now);
     }
 
+    const hpRatio = clamp(tower.hp / tower.maxHp, 0, 1);
+    if (hpRatio < 0.999) {
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(tower.x - 11, tower.y - 18, 22, 4);
+      ctx.fillStyle = hpRatio > 0.4 ? '#92f0b3' : '#ff8aa5';
+      ctx.fillRect(tower.x - 11, tower.y - 18, 22 * hpRatio, 4);
+    }
+
     if (tower.level > 1) {
       ctx.fillStyle = '#e8f2ff';
       ctx.font = '12px sans-serif';
@@ -1048,6 +1191,17 @@ function drawEnemies() {
     ctx.beginPath();
     ctx.arc(enemy.x, enemy.y, enemy.r, 0, TAU);
     ctx.fill();
+
+    if (enemy.breaker) {
+      ctx.strokeStyle = 'rgba(255, 230, 180, 0.86)';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(enemy.x - enemy.r * 0.55, enemy.y - enemy.r * 0.1);
+      ctx.lineTo(enemy.x + enemy.r * 0.55, enemy.y + enemy.r * 0.1);
+      ctx.moveTo(enemy.x + enemy.r * 0.28, enemy.y - enemy.r * 0.56);
+      ctx.lineTo(enemy.x - enemy.r * 0.2, enemy.y + enemy.r * 0.5);
+      ctx.stroke();
+    }
 
     ctx.fillStyle = 'rgba(255, 235, 245, 0.72)';
     ctx.beginPath();
