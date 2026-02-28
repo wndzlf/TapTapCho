@@ -236,6 +236,7 @@ let selectedPlaneIndex = 0;
 let specialCharge = 0;
 let specialCooldown = 0;
 let specialPulse = 0;
+let hintTimer = 0;
 
 const perks = {
   fireRate: 0,
@@ -431,7 +432,7 @@ function updateSpecialUi() {
   const ready = canUseSpecial();
   if (spEl) spEl.textContent = `${Math.floor(specialCharge)}%`;
   if (btnSpecial) {
-    btnSpecial.textContent = ready ? 'Special Ready (X)' : `Special ${Math.floor(specialCharge)}%`;
+    btnSpecial.textContent = ready ? 'SP!' : `SP ${Math.floor(specialCharge)}`;
     btnSpecial.disabled = !ready;
   }
   if (touchSpecialBtn) {
@@ -798,6 +799,7 @@ function resetGame() {
   specialCharge = 55;
   specialCooldown = 0;
   specialPulse = 0;
+  hintTimer = 7.5;
 
   perks.fireRate = 0;
   perks.damage = 0;
@@ -1800,30 +1802,87 @@ function drawParticles() {
   ctx.globalAlpha = 1;
 }
 
+function drawKeyBadge(x, y, label, alpha = 1) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = 'rgba(10, 20, 44, 0.78)';
+  ctx.strokeStyle = 'rgba(166, 205, 255, 0.72)';
+  ctx.lineWidth = 1.5;
+  ctx.fillRect(x, y, 28, 26);
+  ctx.strokeRect(x, y, 28, 26);
+  ctx.fillStyle = '#eaf3ff';
+  ctx.font = 'bold 14px system-ui';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, x + 14, y + 13);
+  ctx.restore();
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'left';
+}
+
+function drawControlHints(alpha = 0.92) {
+  const baseX = W - 146;
+  const baseY = H - 104;
+  drawKeyBadge(baseX + 30, baseY, '▲', alpha);
+  drawKeyBadge(baseX, baseY + 28, '◀', alpha);
+  drawKeyBadge(baseX + 60, baseY + 28, '▶', alpha);
+  drawKeyBadge(baseX + 30, baseY + 56, '▼', alpha);
+  drawKeyBadge(baseX + 98, baseY + 24, 'X', alpha);
+}
+
 function drawTopInfo(difficulty) {
   const plane = selectedPlane();
   const stageCfg = currentStageConfig();
-  ctx.fillStyle = 'rgba(7, 13, 27, 0.32)';
-  ctx.fillRect(12, 48, 324, 108);
-  ctx.fillStyle = '#d7e8ff';
-  ctx.font = '12px system-ui';
-  ctx.textAlign = 'left';
-  ctx.fillText(`Stage ${stage}: ${stageCfg.name} · Wave ${wave}/${stageCfg.wavesToBoss}`, 18, 67);
+  ctx.fillStyle = 'rgba(7, 13, 27, 0.34)';
+  ctx.fillRect(12, 48, 276, 72);
+  ctx.strokeStyle = 'rgba(145, 186, 245, 0.32)';
+  ctx.strokeRect(12, 48, 276, 72);
 
-  const status = [];
-  if (player.rapidTimer > 0) status.push(`Rapid ${player.rapidTimer.toFixed(0)}s`);
-  if (player.weaponTimer > 0) status.push(`Weapon ${player.weaponTimer.toFixed(0)}s`);
-  if (player.shield > 0) status.push(`Shield ${player.shield}`);
-  ctx.fillText(status.length ? status.join(' | ') : 'Status: Base Loadout', 18, 86);
-  ctx.fillText(`Difficulty: ${difficulty.label} (Lv.${difficulty.level})`, 18, 104);
-  if (mission) {
-    const p = mission.type === 'survive' ? Math.floor(mission.progress) : mission.progress;
-    const t = mission.type === 'survive' ? Math.floor(mission.target) : mission.target;
-    ctx.fillText(`Mission: ${missionLabel(mission.type)} ${p}/${t}`, 18, 122);
+  ctx.fillStyle = '#d7e8ff';
+  ctx.font = 'bold 12px system-ui';
+  ctx.textAlign = 'left';
+  ctx.fillText(`S${stage}  W${wave}/${stageCfg.wavesToBoss}  B${bossesDefeated}`, 20, 67);
+  ctx.fillStyle = 'rgba(205, 230, 255, 0.82)';
+  ctx.font = '11px system-ui';
+  ctx.fillText(`Lv${difficulty.level}`, 212, 67);
+
+  const hpCap = Math.max(3, maxHp);
+  for (let i = 0; i < hpCap; i += 1) {
+    const x = 20 + i * 12;
+    const y = 82;
+    ctx.fillStyle = i < hp ? '#ff9a96' : 'rgba(255, 154, 150, 0.22)';
+    ctx.fillRect(x, y, 8, 8);
   }
-  const cooldownText = specialCooldown > 0 ? ` (${specialCooldown.toFixed(1)}s)` : '';
-  const readyText = specialCharge >= 100 && specialCooldown <= 0 ? ' READY' : '';
-  ctx.fillText(`Plane: ${plane.name} · SP ${Math.floor(specialCharge)}%${cooldownText}${readyText}`, 18, 140);
+
+  for (let i = 0; i < 6; i += 1) {
+    const x = 20 + i * 10;
+    const y = 96;
+    ctx.fillStyle = i < player.shield ? '#8deeff' : 'rgba(141, 238, 255, 0.2)';
+    ctx.fillRect(x, y, 7, 5);
+  }
+
+  const spRatio = clamp(specialCharge / 100, 0, 1);
+  ctx.fillStyle = 'rgba(40, 58, 96, 0.78)';
+  ctx.fillRect(126, 90, 154, 12);
+  ctx.fillStyle = specialCharge >= 100 && specialCooldown <= 0 ? '#ffe690' : '#9ed3ff';
+  ctx.fillRect(126, 90, 154 * spRatio, 12);
+  ctx.strokeStyle = 'rgba(190, 220, 255, 0.5)';
+  ctx.strokeRect(126, 90, 154, 12);
+  ctx.fillStyle = '#eff7ff';
+  ctx.font = 'bold 10px system-ui';
+  ctx.fillText('SP', 130, 100);
+
+  ctx.save();
+  ctx.translate(252, 78);
+  ctx.fillStyle = plane.primary;
+  ctx.beginPath();
+  ctx.moveTo(0, -10);
+  ctx.lineTo(-8, 7);
+  ctx.lineTo(0, 3);
+  ctx.lineTo(8, 7);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
 }
 
 function renderOverlay() {
@@ -1835,11 +1894,11 @@ function renderOverlay() {
   if (bossWarning > 0) {
     const alpha = 0.45 + Math.sin(tick * 0.34) * 0.25;
     ctx.fillStyle = `rgba(255, 124, 124, ${alpha})`;
-    ctx.fillRect(0, H * 0.38, W, 56);
+    ctx.fillRect(W * 0.36, H * 0.06, W * 0.28, 44);
     ctx.fillStyle = '#fff';
     ctx.textAlign = 'center';
-    ctx.font = 'bold 24px system-ui';
-    ctx.fillText('WARNING: BOSS INCOMING', W / 2, H * 0.38 + 36);
+    ctx.font = 'bold 28px system-ui';
+    ctx.fillText('!!!', W / 2, H * 0.06 + 31);
   }
 
   if (waveBanner > 0) {
@@ -1853,7 +1912,6 @@ function renderOverlay() {
   }
 
   if (state === 'idle' || state === 'gameover' || state === 'clear') {
-    const plane = selectedPlane();
     ctx.fillStyle = 'rgba(0,0,0,0.46)';
     ctx.fillRect(0, 0, W, H);
 
@@ -1863,19 +1921,13 @@ function renderOverlay() {
     const title = state === 'idle' ? 'Tap to Start' : state === 'clear' ? 'STAGE CLEAR!' : 'Game Over';
     ctx.fillText(title, W / 2, H / 2 - 26);
 
-    ctx.font = '16px system-ui';
-    ctx.fillText('Stage 1→2→3 보스를 격파하면 클리어', W / 2, H / 2 + 2);
-    ctx.fillText('WASD/Arrow/Drag/터치패드 · X/Shift/SP 버튼', W / 2, H / 2 + 26);
-
     if (state !== 'idle') {
       ctx.fillStyle = '#ffe082';
       ctx.font = 'bold 19px system-ui';
       ctx.fillText(`Final Score: ${score}`, W / 2, H / 2 + 56);
     }
 
-    ctx.fillStyle = '#b7d9ff';
-    ctx.font = '12px system-ui';
-    ctx.fillText(`기체 선택: 1~5 또는 ←/→ · 현재 ${plane.name} (${plane.specialName})`, W / 2, H * 0.5 + 42);
+    drawControlHints(0.95);
 
     for (let i = 0; i < PLANES.length; i += 1) {
       const p = PLANES[i];
@@ -1898,14 +1950,20 @@ function renderOverlay() {
 
       ctx.fillStyle = '#f0f7ff';
       ctx.font = 'bold 11px system-ui';
-      ctx.fillText(`${i + 1}. ${p.name}`, r.x + r.w * 0.5, r.y + 48);
-      ctx.font = '10px system-ui';
-      ctx.fillStyle = '#bddbff';
-      ctx.fillText(p.role, r.x + r.w * 0.5, r.y + 62);
-      ctx.fillText(p.specialName, r.x + r.w * 0.5, r.y + 74);
-      ctx.fillStyle = '#93bce8';
-      ctx.fillText(`+ ${p.pros}`, r.x + r.w * 0.5, r.y + 87);
-      ctx.fillText(`- ${p.cons}`, r.x + r.w * 0.5, r.y + 98);
+      ctx.fillText(String(i + 1), r.x + r.w * 0.5, r.y + 48);
+      const statColors = ['#ffa7a1', '#9ee8ff', '#c7ff9e'];
+      const statVals = [p.atk, p.spd, p.hp];
+      for (let s = 0; s < 3; s += 1) {
+        const by = r.y + 58 + s * 13;
+        ctx.fillStyle = 'rgba(255,255,255,0.16)';
+        ctx.fillRect(r.x + 12, by, r.w - 24, 5);
+        ctx.fillStyle = statColors[s];
+        ctx.fillRect(r.x + 12, by, ((r.w - 24) * statVals[s]) / 5, 5);
+      }
+      ctx.fillStyle = '#d8ecff';
+      ctx.font = 'bold 10px system-ui';
+      const icon = p.specialId === 'phase' ? 'P' : p.specialId === 'rail' ? 'R' : p.specialId === 'storm' ? 'E' : p.specialId === 'aegis' ? 'A' : 'C';
+      ctx.fillText(icon, r.x + r.w * 0.5, r.y + 100);
     }
   }
 
@@ -1915,9 +1973,7 @@ function renderOverlay() {
     ctx.fillStyle = '#fff';
     ctx.textAlign = 'center';
     ctx.font = 'bold 28px system-ui';
-    ctx.fillText('Choose Upgrade', W / 2, 170);
-    ctx.font = '14px system-ui';
-    ctx.fillText('Press 1 / 2 / 3 or tap an option', W / 2, 194);
+    ctx.fillText('UPGRADE', W / 2, 182);
 
     const boxW = W - 56;
     const boxH = 92;
@@ -1932,10 +1988,17 @@ function renderOverlay() {
       ctx.font = 'bold 20px system-ui';
       ctx.textAlign = 'left';
       ctx.fillText(`${i + 1}. ${upgradeMenu.choices[i].title}`, 44, y + 34);
-      ctx.font = '14px system-ui';
-      ctx.fillText(upgradeMenu.choices[i].desc, 44, y + 60);
+      const mini = Math.min(100, Math.max(30, score % 100));
+      ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      ctx.fillRect(44, y + 50, boxW - 40, 10);
+      ctx.fillStyle = selected ? '#95ecff' : '#86b7ff';
+      ctx.fillRect(44, y + 50, ((boxW - 40) * mini) / 100, 10);
     }
     ctx.textAlign = 'left';
+  }
+
+  if (state === 'running' && hintTimer > 0) {
+    drawControlHints(Math.min(1, hintTimer / 2.4));
   }
 }
 
@@ -1971,6 +2034,7 @@ function update(dt) {
   if (flash > 0) flash -= 1;
   if (shake > 0) shake = Math.max(0, shake - dt * 34);
   if (specialPulse > 0) specialPulse = Math.max(0, specialPulse - dt);
+  if (hintTimer > 0) hintTimer = Math.max(0, hintTimer - dt);
   if (specialCooldown > 0) specialCooldown = Math.max(0, specialCooldown - dt);
   if (shotSfxCd > 0) shotSfxCd -= dt;
   if (droneFireCd > 0) droneFireCd -= dt;
