@@ -332,8 +332,9 @@ function sellTower(c, r) {
 
 function makeEnemy(type) {
   const s = state.stage;
-  const stageSpeedMul = 1 + (s - 1) * 0.11;
-  const radiusMul = 1 + (s - 1) * 0.015;
+  const stageSpeedMul = 1 + (s - 1) * 0.14 + Math.max(0, s - 5) * 0.07;
+  const stageHpMul = 1 + (s - 1) * 0.18 + ((s - 1) * (s - 1)) * 0.011;
+  const radiusMul = 1 + (s - 1) * 0.02;
   const threatBase = clamp(0.18 + s * 0.07, 0.2, 0.92);
   const typeThreat = {
     ghoul: 0.02,
@@ -343,26 +344,28 @@ function makeEnemy(type) {
     lord: 0.3,
   };
   const defs = {
-    ghoul: { hp: 58 + s * 12, speed: (38 + s * 1.5) * stageSpeedMul, reward: 7, leak: 1, r: 10, color: '#c54f72' },
-    bat: { hp: 36 + s * 8, speed: (62 + s * 2.1) * stageSpeedMul, reward: 6, leak: 1, r: 8, color: '#d07ab4' },
-    brute: { hp: 150 + s * 28, speed: (30 + s * 1.2) * stageSpeedMul, reward: 12, leak: 2, r: 13, color: '#9e5a9c' },
-    elder: { hp: 262 + s * 46, speed: (40 + s * 1.4) * stageSpeedMul, reward: 25, leak: 3, r: 15, color: '#b86ec8' },
-    lord: { hp: 700 + s * 140, speed: (28 + s * 0.9) * stageSpeedMul, reward: 58, leak: 5, r: 18, color: '#f26a84', boss: true },
+    ghoul: { hp: (58 + s * 12) * stageHpMul * 1.0, speed: (36 + s * 1.6) * stageSpeedMul, reward: 7, leak: 1, r: 10, color: '#c54f72' },
+    bat: { hp: (36 + s * 8) * stageHpMul * 0.82, speed: (58 + s * 2.4) * stageSpeedMul, reward: 6, leak: 1, r: 8, color: '#d07ab4' },
+    brute: { hp: (150 + s * 28) * stageHpMul * 1.18, speed: (29 + s * 1.3) * stageSpeedMul, reward: 12, leak: 2, r: 13, color: '#9e5a9c' },
+    elder: { hp: (262 + s * 46) * stageHpMul * 1.32, speed: (37 + s * 1.5) * stageSpeedMul, reward: 25, leak: 3, r: 15, color: '#b86ec8' },
+    lord: { hp: (700 + s * 140) * stageHpMul * 1.65, speed: (27 + s) * stageSpeedMul, reward: 58, leak: 5, r: 18, color: '#f26a84', boss: true },
   };
   const d = defs[type];
   const spawn = cellCenter(SPAWN.c, SPAWN.r);
   const threat = clamp(threatBase + (typeThreat[type] || 0), 0.2, 1.2);
+  const leakBonus = s >= 9 ? 2 : s >= 6 ? 1 : 0;
+  const leak = d.leak + (d.boss ? leakBonus : Math.floor(leakBonus * 0.5));
 
   return {
     type,
     x: spawn.x + rand(-7, 7),
     y: spawn.y + rand(-7, 7),
     r: d.r * radiusMul,
-    hp: d.hp,
-    maxHp: d.hp,
+    hp: Math.floor(d.hp),
+    maxHp: Math.floor(d.hp),
     speed: d.speed,
-    reward: d.reward,
-    leak: d.leak,
+    reward: d.reward + Math.floor(s * 0.9),
+    leak,
     color: d.color,
     boss: Boolean(d.boss),
     targetC: SPAWN.c,
@@ -379,21 +382,32 @@ function makeEnemy(type) {
 
 function makeStageQueue(stage) {
   const queue = [];
-  const baseCount = 18 + stage * 8;
+  const baseCount = 20 + stage * 10 + Math.floor(Math.pow(stage - 1, 1.25) * 2);
 
   for (let i = 0; i < baseCount; i += 1) {
     const roll = Math.random();
     let type = 'ghoul';
-    if (stage >= 3 && roll < 0.28) type = 'bat';
-    if (stage >= 4 && roll < 0.2) type = 'brute';
-    if (stage >= 7 && roll < 0.12) type = 'elder';
+    if (stage >= 3 && roll < 0.32) type = 'bat';
+    if (stage >= 4 && roll < 0.24) type = 'brute';
+    if (stage >= 7 && roll < 0.16) type = 'elder';
     queue.push(type);
   }
 
-  const elderCount = 1 + Math.floor(stage / 2);
+  const elderCount = 1 + Math.floor(stage * 0.9);
   for (let i = 0; i < elderCount; i += 1) {
     const pos = Math.floor(queue.length * (0.25 + Math.random() * 0.55));
     queue.splice(pos, 0, 'elder');
+  }
+
+  const bruteCount = Math.max(0, stage - 3);
+  for (let i = 0; i < bruteCount; i += 1) {
+    const pos = Math.floor(queue.length * (0.2 + Math.random() * 0.6));
+    queue.splice(pos, 0, 'brute');
+  }
+
+  if (stage >= 8) {
+    const surgePos = Math.floor(queue.length * 0.72);
+    queue.splice(surgePos, 0, 'elder', 'elder');
   }
 
   queue.push('lord');
@@ -402,7 +416,7 @@ function makeStageQueue(stage) {
 
 function startStage(stage) {
   state.stage = stage;
-  state.stageTimer = 1.3;
+  state.stageTimer = Math.max(0.45, 1.25 - stage * 0.06);
   state.spawnQueue = makeStageQueue(stage);
   state.spawnTimer = 0.45;
   flashBanner(`STAGE ${stage}`, 1.4);
@@ -699,7 +713,7 @@ function updateSpawning(dt) {
 
   if (state.spawnQueue.length > 0) {
     state.spawnTimer -= dt;
-    const spawnDelay = Math.max(0.12, 0.45 - state.stage * 0.022);
+    const spawnDelay = Math.max(0.07, 0.42 - state.stage * 0.03 - Math.max(0, state.stage - 6) * 0.015);
     while (state.spawnTimer <= 0 && state.spawnQueue.length > 0) {
       spawnOne();
       state.spawnTimer += spawnDelay;
