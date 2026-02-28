@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Crimson Hunter Trials</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Crimson Hunter Trials</h1>
+      <p>인간 뱀파이어 헌터가 밤의 시련을 돌파하는 탑다운 로그라이트 액션.</p>
+    </header>
+
+    <div class="hud" id="hud">
+      <div class="hp-wrap">
+        <span>HP</span>
+        <div class="hp-bar"><span id="hpFill"></span></div>
+        <b id="hpText">100 / 100</b>
+      </div>
+      <div class="stat">Trial <b id="trialText">1</b></div>
+      <div class="stat">Wave <b id="waveText">1</b></div>
+      <div class="stat">Essence <b id="essenceText">0</b></div>
+      <div class="stat">Kill <b id="killText">0</b></div>
+    </div>
+
+    <div class="arena" id="arena">
+      <canvas id="game" width="960" height="540"></canvas>
+
+      <div class="panel" id="panel"></div>
+
+      <div class="mobile-ui" id="mobileUi">
+        <div class="stick-zone" id="stickZone">
+          <div class="stick-base"></div>
+          <div class="stick-knob" id="stickKnob"></div>
+        </div>
+        <button class="skill-btn dash" id="btnDash" type="button" aria-label="Dash"></button>
+        <button class="skill-btn sig" id="btnSig" type="button" aria-label="Signature"></button>
+      </div>
+    </div>
+
+    <footer>
+      <small>WASD/방향키 이동 · Shift/Space 대시 · Q 시그니처 · 모바일은 좌측 스틱 + 우측 스킬 버튼</small>
+    </footer>
+  </div>
+
+  <script src="../assets/js/neon-audio.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
