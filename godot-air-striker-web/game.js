@@ -5,6 +5,7 @@ const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
 const hpEl = document.getElementById('hp');
 const levelEl = document.getElementById('level');
+const stageEl = document.getElementById('stage');
 const waveEl = document.getElementById('wave');
 const bossesEl = document.getElementById('bosses');
 const comboEl = document.getElementById('combo');
@@ -12,6 +13,8 @@ const spEl = document.getElementById('sp');
 const btnStart = document.getElementById('btnStart');
 const btnSound = document.getElementById('btnSound');
 const btnSpecial = document.getElementById('btnSpecial');
+const touchSpecialBtn = document.getElementById('touchSpecial');
+const touchButtons = document.querySelectorAll('[data-touch]');
 
 const W = canvas.width;
 const H = canvas.height;
@@ -29,8 +32,13 @@ const DIFFICULTY_LABELS = [
 const PLANES = [
   {
     id: 'falcon',
-    name: 'Falcon',
-    role: 'Balanced',
+    name: 'Falcon Mk-I',
+    role: '표준형',
+    pros: '조작 쉬움',
+    cons: '폭딜 낮음',
+    atk: 3,
+    spd: 3,
+    hp: 3,
     speedMul: 1.0,
     fireCadenceMul: 1.0,
     volleyBonus: 0,
@@ -41,45 +49,142 @@ const PLANES = [
     primary: '#ff9a36',
     accent: '#ffd372',
     cockpit: '#d9ecff',
-    specialName: 'Carpet Bomb',
-    specialDesc: '맵 전체 폭격 + 탄막 제거',
+    specialName: '카펫 폭격',
+    specialDesc: '광역 타격 + 탄막 제거',
+    specialCooldown: 4.8,
     specialId: 'carpet',
   },
   {
-    id: 'viper',
-    name: 'Viper',
-    role: 'Assault',
-    speedMul: 1.12,
-    fireCadenceMul: 0.9,
-    volleyBonus: 1,
-    spreadMul: 1.2,
-    damageBonus: 0,
-    hpBonus: 0,
+    id: 'raptor',
+    name: 'Raptor-X',
+    role: '화력형',
+    pros: '보스 딜 강함',
+    cons: 'HP 낮음',
+    atk: 5,
+    spd: 3,
+    hp: 2,
+    speedMul: 1.08,
+    fireCadenceMul: 0.88,
+    volleyBonus: 2,
+    spreadMul: 1.24,
+    damageBonus: 1,
+    hpBonus: -1,
     startShield: 0,
-    primary: '#6ce4ff',
-    accent: '#8be8ff',
-    cockpit: '#f0faff',
-    specialName: 'Overdrive',
-    specialDesc: '연사 강화 + 광역 샷',
-    specialId: 'overdrive',
+    primary: '#ff6f7a',
+    accent: '#ffc1c6',
+    cockpit: '#fff1f2',
+    specialName: '레일 브레이커',
+    specialDesc: '전방 레일포 강습',
+    specialCooldown: 5.4,
+    specialId: 'rail',
+  },
+  {
+    id: 'phantom',
+    name: 'Phantom-Z',
+    role: '회피형',
+    pros: '속도/무적',
+    cons: '화력 약함',
+    atk: 2,
+    spd: 5,
+    hp: 2,
+    speedMul: 1.25,
+    fireCadenceMul: 1.06,
+    volleyBonus: 0,
+    spreadMul: 0.95,
+    damageBonus: -1,
+    hpBonus: -1,
+    startShield: 0,
+    primary: '#88f4ff',
+    accent: '#d3faff',
+    cockpit: '#f4ffff',
+    specialName: '페이즈 시프트',
+    specialDesc: '잠시 모든 탄막 무시',
+    specialCooldown: 4.2,
+    specialId: 'phase',
   },
   {
     id: 'guardian',
-    name: 'Guardian',
-    role: 'Tank',
-    speedMul: 0.9,
-    fireCadenceMul: 1.08,
+    name: 'Guardian-G',
+    role: '방어형',
+    pros: '생존 최고',
+    cons: '느림',
+    atk: 3,
+    spd: 2,
+    hp: 5,
+    speedMul: 0.84,
+    fireCadenceMul: 1.05,
     volleyBonus: 0,
     spreadMul: 0.94,
     damageBonus: 1,
-    hpBonus: 1,
+    hpBonus: 2,
     startShield: 1,
     primary: '#9ab7ff',
     accent: '#ffe08f',
     cockpit: '#eef5ff',
-    specialName: 'Aegis Burst',
-    specialDesc: '보호막 강화 + 근접 섬멸',
+    specialName: '불워크 돔',
+    specialDesc: '탄막 제거 + 실드 회복',
+    specialCooldown: 4.6,
     specialId: 'aegis',
+  },
+  {
+    id: 'tempest',
+    name: 'Tempest-A',
+    role: '제압형',
+    pros: '광역 제압',
+    cons: '보스 약함',
+    atk: 4,
+    spd: 3,
+    hp: 3,
+    speedMul: 0.96,
+    fireCadenceMul: 0.94,
+    volleyBonus: 1,
+    spreadMul: 1.45,
+    damageBonus: 0,
+    hpBonus: 0,
+    startShield: 0,
+    primary: '#b69cff',
+    accent: '#f1e4ff',
+    cockpit: '#f7f0ff',
+    specialName: 'EMP 스톰',
+    specialDesc: '전탄 소거 + 광역 타격',
+    specialCooldown: 5.0,
+    specialId: 'storm',
+  },
+];
+
+const STAGES = [
+  {
+    id: 1,
+    name: 'Aegean Front',
+    wavesToBoss: 3,
+    bgTop: '#2b57a8',
+    bgBottom: '#14294f',
+    starA: 'rgba(190, 224, 255, 0.36)',
+    starB: 'rgba(255, 238, 176, 0.24)',
+    bossHpMul: 0.95,
+    enemySpeedMul: 1.0,
+  },
+  {
+    id: 2,
+    name: 'Crimson Canyon',
+    wavesToBoss: 4,
+    bgTop: '#69456f',
+    bgBottom: '#3a2248',
+    starA: 'rgba(255, 206, 170, 0.36)',
+    starB: 'rgba(255, 150, 150, 0.28)',
+    bossHpMul: 1.16,
+    enemySpeedMul: 1.09,
+  },
+  {
+    id: 3,
+    name: 'Void Fortress',
+    wavesToBoss: 5,
+    bgTop: '#24245c',
+    bgBottom: '#111133',
+    starA: 'rgba(170, 208, 255, 0.34)',
+    starB: 'rgba(185, 155, 255, 0.3)',
+    bossHpMul: 1.34,
+    enemySpeedMul: 1.16,
   },
 ];
 
@@ -100,8 +205,9 @@ const player = {
 
 const keys = Object.create(null);
 const pointer = { x: player.x, y: player.y, active: false };
+const touchInput = { up: false, down: false, left: false, right: false };
 
-let state = 'idle'; // idle | running | gameover
+let state = 'idle'; // idle | running | gameover | clear
 let score = 0;
 let hp = 3;
 let maxHp = 3;
@@ -116,8 +222,10 @@ let combo = 0;
 let comboTimer = 0;
 let powerupSpawnCd = 0;
 let level = 1;
+let stage = 1;
 let wave = 1;
-let nextBossScore = 260;
+let stageTimer = 0;
+let stageBossSpawned = false;
 let bossesDefeated = 0;
 let bossWarning = 0;
 let waveBanner = 0;
@@ -207,7 +315,11 @@ function createBgm() {
       return enabled;
     },
     setTheme(themeId) {
-      track.playbackRate = themeId === 'rush' ? 1.07 : 1;
+      if (themeId === 'stage1') track.playbackRate = 0.98;
+      else if (themeId === 'stage2') track.playbackRate = 1.03;
+      else if (themeId === 'stage3') track.playbackRate = 1.09;
+      else if (themeId === 'rush') track.playbackRate = 1.12;
+      else track.playbackRate = 1;
     },
   };
 }
@@ -301,6 +413,10 @@ function selectedPlane() {
   return PLANES[selectedPlaneIndex] || PLANES[0];
 }
 
+function currentStageConfig() {
+  return STAGES[clamp(stage - 1, 0, STAGES.length - 1)];
+}
+
 function setSelectedPlane(index) {
   const normalized = (index + PLANES.length) % PLANES.length;
   selectedPlaneIndex = normalized;
@@ -318,6 +434,10 @@ function updateSpecialUi() {
     btnSpecial.textContent = ready ? 'Special Ready (X)' : `Special ${Math.floor(specialCharge)}%`;
     btnSpecial.disabled = !ready;
   }
+  if (touchSpecialBtn) {
+    touchSpecialBtn.textContent = ready ? 'SP!' : 'SP';
+    touchSpecialBtn.disabled = !ready;
+  }
 }
 
 function addSpecialCharge(amount) {
@@ -326,12 +446,12 @@ function addSpecialCharge(amount) {
 }
 
 function planeCardRect(index) {
-  const cardW = 118;
-  const cardH = 86;
-  const gap = 12;
+  const cardW = PLANES.length >= 5 ? 76 : 118;
+  const cardH = 104;
+  const gap = PLANES.length >= 5 ? 6 : 12;
   const totalW = PLANES.length * cardW + (PLANES.length - 1) * gap;
   const baseX = (W - totalW) * 0.5;
-  const y = H * 0.5 + 58;
+  const y = H * 0.5 + 52;
   return { x: baseX + index * (cardW + gap), y, w: cardW, h: cardH };
 }
 
@@ -344,8 +464,9 @@ function pickPlaneIndexAt(x, y) {
 }
 
 function getDifficulty() {
+  const stageCfg = currentStageConfig();
   const computedLevel = clamp(
-    1 + Math.floor(survivalTime / 18) + Math.floor(score / 260),
+    1 + (stage - 1) * 3 + Math.floor(survivalTime / 22) + Math.floor(score / 380),
     1,
     14,
   );
@@ -353,8 +474,8 @@ function getDifficulty() {
   return {
     level: computedLevel,
     label: DIFFICULTY_LABELS[clamp(Math.floor((computedLevel - 1) / 2), 0, DIFFICULTY_LABELS.length - 1)],
-    enemySpeed: 1 + computedLevel * 0.075,
-    spawnInterval: Math.max(0.17, 0.76 - computedLevel * 0.05),
+    enemySpeed: (1 + computedLevel * 0.075) * stageCfg.enemySpeedMul,
+    spawnInterval: Math.max(0.2, 0.82 - computedLevel * 0.045),
     bulletSpeed: 1 + computedLevel * 0.06,
   };
 }
@@ -383,6 +504,10 @@ function updateScoreUi() {
 
 function updateLevelUi() {
   levelEl.textContent = String(level);
+}
+
+function updateStageUi() {
+  if (stageEl) stageEl.textContent = String(stage);
 }
 
 function updateWaveUi() {
@@ -482,7 +607,8 @@ function spawnEnemyBullet(x, y, angle, speed, color = '#ff98a1', radius = 5) {
 
 function spawnBoss() {
   const difficulty = getDifficulty();
-  const hpMax = 460 + bossesDefeated * 190 + difficulty.level * 55;
+  const stageCfg = currentStageConfig();
+  const hpMax = Math.round((430 + bossesDefeated * 120 + difficulty.level * 52) * stageCfg.bossHpMul);
   boss = {
     x: W * 0.5,
     y: 96,
@@ -497,6 +623,7 @@ function spawnBoss() {
     chargeCd: 2.2,
     targetX: W * 0.5,
     time: 0,
+    stageId: stageCfg.id,
     enraged: bossesDefeated >= 2 || difficulty.level >= 9,
   };
   bossWarning = 2.4;
@@ -659,14 +786,16 @@ function resetGame() {
   shotSfxCd = 0;
   powerupSpawnCd = 0;
   level = 1;
+  stage = 1;
   wave = 1;
-  nextBossScore = 260;
+  stageTimer = 0;
+  stageBossSpawned = false;
   bossesDefeated = 0;
   bossWarning = 0;
   waveBanner = 0;
   waveBannerText = '';
   droneFireCd = 0;
-  specialCharge = 40;
+  specialCharge = 55;
   specialCooldown = 0;
   specialPulse = 0;
 
@@ -696,11 +825,12 @@ function resetGame() {
   particles = [];
   powerUps = [];
   boss = null;
-  bgmAudio.setTheme('neon');
+  bgmAudio.setTheme('stage1');
 
   updateScoreUi();
   updateHpUi();
   updateLevelUi();
+  updateStageUi();
   updateWaveUi();
   updateBossesUi();
   resetCombo();
@@ -718,6 +848,14 @@ function startGame() {
 
 function endGame() {
   state = 'gameover';
+  best = Math.max(best, score);
+  bestEl.textContent = String(best);
+  localStorage.setItem(STORAGE_KEY, String(best));
+  updateSpecialUi();
+}
+
+function clearGame() {
+  state = 'clear';
   best = Math.max(best, score);
   bestEl.textContent = String(best);
   localStorage.setItem(STORAGE_KEY, String(best));
@@ -750,7 +888,7 @@ function shoot() {
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
       r: 4,
-      damage: (player.weaponTimer > 0 ? 2 : 1) + damageBoost,
+      damage: Math.max(1, (player.weaponTimer > 0 ? 2 : 1) + damageBoost),
       life: 1.8,
     });
   }
@@ -841,6 +979,8 @@ function killEnemy(index, enemy, options = {}) {
 
 function killBoss() {
   if (!boss) return;
+  const wasFinalStage = stage >= STAGES.length;
+
   addBurst(boss.x, boss.y, '#ffd18d', 72, 5.6);
   addBurst(boss.x, boss.y, '#8feeff', 58, 4.8);
   sfx.bossDown();
@@ -848,13 +988,34 @@ function killBoss() {
   registerKill(260 + bossesDefeated * 40);
   bossesDefeated += 1;
   updateBossesUi();
-  nextBossScore += 360 + bossesDefeated * 120;
+
   enemyBullets = [];
   boss = null;
-  waveBannerText = `Boss Down! Choose Upgrade`;
-  waveBanner = 2.2;
-  openUpgradeMenu();
-  bgmAudio.setTheme('neon');
+
+  if (wasFinalStage) {
+    waveBannerText = 'FINAL BOSS DOWN';
+    waveBanner = 2.6;
+    clearGame();
+    return;
+  }
+
+  stage += 1;
+  wave = 1;
+  stageTimer = 0;
+  stageBossSpawned = false;
+  enemies = [];
+  bullets = [];
+  powerUps = [];
+  player.shield = Math.min(6, player.shield + 1);
+  hp = Math.min(maxHp, hp + 1);
+  addSpecialCharge(35);
+  updateHpUi();
+  updateStageUi();
+  updateWaveUi();
+  const nextStage = currentStageConfig();
+  waveBannerText = `STAGE ${stage}: ${nextStage.name}`;
+  waveBanner = 2.6;
+  bgmAudio.setTheme(`stage${stage}`);
 }
 
 function applyPowerUp(type) {
@@ -908,10 +1069,9 @@ function specialCarpetBomb() {
   shake = Math.max(shake, 18);
 }
 
-function specialOverdrive() {
+function specialEmpStorm() {
   player.rapidTimer = Math.max(player.rapidTimer, 12);
-  player.weaponTimer = Math.max(player.weaponTimer, 10);
-  player.invuln = Math.max(player.invuln, 1.1);
+  player.weaponTimer = Math.max(player.weaponTimer, 8);
   for (let i = 0; i < 16; i += 1) {
     const a = (i / 16) * Math.PI * 2;
     bullets.push({
@@ -926,12 +1086,13 @@ function specialOverdrive() {
   }
   for (let i = enemies.length - 1; i >= 0; i -= 1) {
     const e = enemies[i];
-    if (dist2(player.x, player.y, e.x, e.y) <= 160 * 160) {
+    if (dist2(player.x, player.y, e.x, e.y) <= 220 * 220) {
       e.hp -= 2 + Math.floor(perks.damage * 0.5);
       if (e.hp <= 0) killEnemy(i, e);
       else addBurst(e.x, e.y, '#b9f1ff', 10, 2.6);
     }
   }
+  enemyBullets = [];
   flash = Math.max(flash, 20);
   shake = Math.max(shake, 14);
 }
@@ -962,18 +1123,72 @@ function specialAegisBurst() {
   shake = Math.max(shake, 16);
 }
 
+function specialPhaseShift() {
+  player.invuln = Math.max(player.invuln, 2.3);
+  player.rapidTimer = Math.max(player.rapidTimer, 4.5);
+  player.weaponTimer = Math.max(player.weaponTimer, 4.5);
+
+  const kept = [];
+  for (const b of enemyBullets) {
+    if (dist2(player.x, player.y, b.x, b.y) > 240 * 240) kept.push(b);
+  }
+  enemyBullets = kept;
+
+  addBurst(player.x, player.y, '#bbffff', 52, 5.8);
+  flash = Math.max(flash, 14);
+  shake = Math.max(shake, 12);
+}
+
+function specialRailBreaker() {
+  const laneX = player.x;
+  for (let i = enemies.length - 1; i >= 0; i -= 1) {
+    const e = enemies[i];
+    if (Math.abs(e.x - laneX) <= 34) {
+      e.hp -= 7 + perks.damage * 2;
+      if (e.hp <= 0) killEnemy(i, e);
+      else addBurst(e.x, e.y, '#ffd7ce', 18, 3.1);
+    }
+  }
+
+  if (boss) {
+    boss.hp -= 420 + perks.damage * 30;
+    addBurst(laneX, boss.y + 10, '#ffe3ca', 44, 4.5);
+    if (boss.hp <= 0) killBoss();
+  }
+
+  const laneBullets = [];
+  for (const b of enemyBullets) {
+    if (Math.abs(b.x - laneX) > 30) laneBullets.push(b);
+  }
+  enemyBullets = laneBullets;
+
+  particles.push({
+    x: laneX - 4,
+    y: 72,
+    vx: 0,
+    vy: 0,
+    life: 16,
+    color: '#fff3d3',
+    size: 8,
+  });
+  flash = Math.max(flash, 22);
+  shake = Math.max(shake, 18);
+}
+
 function activateSpecial() {
   if (!canUseSpecial()) return;
   const plane = selectedPlane();
 
   specialCharge = 0;
-  specialCooldown = 4.6;
+  specialCooldown = plane.specialCooldown || 4.6;
   specialPulse = 0.9;
   waveBannerText = `${plane.name} SPECIAL: ${plane.specialName}`;
   waveBanner = Math.max(waveBanner, 1.2);
 
   if (plane.specialId === 'carpet') specialCarpetBomb();
-  else if (plane.specialId === 'overdrive') specialOverdrive();
+  else if (plane.specialId === 'rail') specialRailBreaker();
+  else if (plane.specialId === 'phase') specialPhaseShift();
+  else if (plane.specialId === 'storm') specialEmpStorm();
   else specialAegisBurst();
 
   sfx.powerUp();
@@ -984,15 +1199,16 @@ function updatePlayer(dt) {
   let mx = 0;
   let my = 0;
 
-  if (keys.ArrowLeft || keys.KeyA) mx -= 1;
-  if (keys.ArrowRight || keys.KeyD) mx += 1;
-  if (keys.ArrowUp || keys.KeyW) my -= 1;
-  if (keys.ArrowDown || keys.KeyS) my += 1;
+  if (keys.ArrowLeft || keys.KeyA || touchInput.left) mx -= 1;
+  if (keys.ArrowRight || keys.KeyD || touchInput.right) mx += 1;
+  if (keys.ArrowUp || keys.KeyW || touchInput.up) my -= 1;
+  if (keys.ArrowDown || keys.KeyS || touchInput.down) my += 1;
 
   if (mx !== 0 || my !== 0) {
     const len = Math.hypot(mx, my) || 1;
-    player.x += (mx / len) * player.speed * dt;
-    player.y += (my / len) * player.speed * dt;
+    const moveSpeed = player.speed * (player.invuln > 1.8 ? 1.16 : 1);
+    player.x += (mx / len) * moveSpeed * dt;
+    player.y += (my / len) * moveSpeed * dt;
   } else if (pointer.active) {
     const dx = pointer.x - player.x;
     const dy = pointer.y - player.y;
@@ -1030,7 +1246,7 @@ function updateBullets(dt) {
 
 function updateEnemies(dt, difficulty) {
   spawnTimer -= dt;
-  if (spawnTimer <= 0 && !bossWarning && !boss) {
+  if (spawnTimer <= 0 && !bossWarning && !boss && !stageBossSpawned) {
     spawnEnemy();
     spawnTimer = difficulty.spawnInterval * rand(0.85, 1.15);
   }
@@ -1095,6 +1311,13 @@ function spawnWavePack(waveNo) {
 
   if (waveNo % 6 === 0) {
     spawnPowerUp(rand(32, W - 32), rand(90, 180));
+  }
+
+  if (stage >= 2) {
+    spawnEnemy('zigzag');
+  }
+  if (stage >= 3 && waveNo % 2 === 0) {
+    spawnEnemy('kamikaze');
   }
 }
 
@@ -1318,9 +1541,10 @@ function updateParticles(dt) {
 }
 
 function renderBackground(difficulty) {
+  const stageCfg = currentStageConfig();
   const grd = ctx.createLinearGradient(0, 0, 0, H);
-  grd.addColorStop(0, '#192e6b');
-  grd.addColorStop(1, '#111e43');
+  grd.addColorStop(0, stageCfg.bgTop);
+  grd.addColorStop(1, stageCfg.bgBottom);
   ctx.fillStyle = grd;
   ctx.fillRect(0, 0, W, H);
 
@@ -1329,15 +1553,24 @@ function renderBackground(difficulty) {
     const x = (i * 67 + Math.sin(i * 9.7) * 8) % W;
     const y = (i * 41 + tick * starSpeed + i * 3) % H;
     const size = (i % 3) + 1;
-    ctx.fillStyle = i % 5 === 0 ? 'rgba(255, 220, 150, 0.32)' : 'rgba(190, 218, 255, 0.28)';
+    ctx.fillStyle = i % 5 === 0 ? stageCfg.starB : stageCfg.starA;
     ctx.fillRect(x, y, size, size);
+  }
+
+  const stripeAlpha = 0.12 + stage * 0.02;
+  ctx.fillStyle = `rgba(10, 20, 40, ${stripeAlpha})`;
+  for (let i = 0; i < 7; i += 1) {
+    const bandY = ((i * 120 + tick * (6 + stage * 1.5)) % (H + 120)) - 120;
+    ctx.fillRect(0, bandY, W, 24 + stage * 3);
   }
 }
 
 function drawPlayer() {
   const plane = selectedPlane();
-  const isViper = plane.id === 'viper';
+  const isRaptor = plane.id === 'raptor';
   const isGuardian = plane.id === 'guardian';
+  const isPhantom = plane.id === 'phantom';
+  const isTempest = plane.id === 'tempest';
 
   ctx.save();
   ctx.translate(player.x, player.y);
@@ -1354,8 +1587,8 @@ function drawPlayer() {
     ctx.stroke();
   }
 
-  const wing = isGuardian ? 17 : isViper ? 12 : 14;
-  const nose = isGuardian ? 20 : isViper ? 22 : 18;
+  const wing = isGuardian ? 17 : isRaptor ? 12 : isTempest ? 16 : 14;
+  const nose = isGuardian ? 20 : isRaptor ? 22 : isPhantom ? 21 : 18;
   const tailY = isGuardian ? 12 : 14;
 
   ctx.fillStyle = plane.primary;
@@ -1371,10 +1604,14 @@ function drawPlayer() {
     ctx.fillStyle = plane.primary;
     ctx.fillRect(-22, -3, 8, 15);
     ctx.fillRect(14, -3, 8, 15);
-  } else if (isViper) {
+  } else if (isRaptor) {
     ctx.fillStyle = plane.accent;
     ctx.fillRect(-15, -8, 4, 15);
     ctx.fillRect(11, -8, 4, 15);
+  } else if (isTempest) {
+    ctx.fillStyle = plane.accent;
+    ctx.fillRect(-18, -2, 6, 14);
+    ctx.fillRect(12, -2, 6, 14);
   }
 
   ctx.fillStyle = plane.cockpit;
@@ -1388,7 +1625,7 @@ function drawPlayer() {
   ctx.fillStyle = plane.accent;
   ctx.fillRect(-4, 10, 8, 8);
 
-  const flame = 8 + Math.sin(tick * 0.45) * 2 + (player.rapidTimer > 0 ? 2.5 : 0);
+  const flame = 8 + Math.sin(tick * 0.45) * 2 + (player.rapidTimer > 0 ? 2.5 : 0) + (isPhantom ? 1.2 : 0);
   ctx.fillStyle = '#ffde8d';
   ctx.beginPath();
   ctx.moveTo(-5, 14);
@@ -1411,7 +1648,7 @@ function drawPlayer() {
 
 function drawBullets() {
   const plane = selectedPlane();
-  const baseColor = plane.id === 'viper' ? '#dbfcff' : plane.id === 'guardian' ? '#fff0c0' : '#f7fbff';
+  const baseColor = plane.id === 'raptor' ? '#ffe2e5' : plane.id === 'guardian' ? '#fff0c0' : plane.id === 'tempest' ? '#ece0ff' : '#f7fbff';
   for (const b of bullets) {
     ctx.fillStyle = b.damage > 1 ? '#fff8c2' : baseColor;
     ctx.beginPath();
@@ -1512,7 +1749,7 @@ function drawBoss() {
   ctx.fillStyle = '#ffe3bd';
   ctx.font = 'bold 12px system-ui';
   ctx.textAlign = 'left';
-  ctx.fillText(`BOSS PHASE ${boss.phase}`, 32, 22);
+  ctx.fillText(`STAGE ${boss.stageId} · BOSS PHASE ${boss.phase}`, 32, 22);
 }
 
 function drawPowerUps() {
@@ -1565,19 +1802,20 @@ function drawParticles() {
 
 function drawTopInfo(difficulty) {
   const plane = selectedPlane();
+  const stageCfg = currentStageConfig();
   ctx.fillStyle = 'rgba(7, 13, 27, 0.32)';
-  ctx.fillRect(12, 48, 300, 102);
+  ctx.fillRect(12, 48, 324, 108);
   ctx.fillStyle = '#d7e8ff';
   ctx.font = '12px system-ui';
   ctx.textAlign = 'left';
-  ctx.fillText(`Difficulty: ${difficulty.label} (Lv.${difficulty.level})`, 18, 67);
+  ctx.fillText(`Stage ${stage}: ${stageCfg.name} · Wave ${wave}/${stageCfg.wavesToBoss}`, 18, 67);
 
   const status = [];
   if (player.rapidTimer > 0) status.push(`Rapid ${player.rapidTimer.toFixed(0)}s`);
   if (player.weaponTimer > 0) status.push(`Weapon ${player.weaponTimer.toFixed(0)}s`);
   if (player.shield > 0) status.push(`Shield ${player.shield}`);
   ctx.fillText(status.length ? status.join(' | ') : 'Status: Base Loadout', 18, 86);
-  ctx.fillText(`Perk F${perks.fireRate} D${perks.damage} S${perks.shield} Dr${perks.drone}`, 18, 104);
+  ctx.fillText(`Difficulty: ${difficulty.label} (Lv.${difficulty.level})`, 18, 104);
   if (mission) {
     const p = mission.type === 'survive' ? Math.floor(mission.progress) : mission.progress;
     const t = mission.type === 'survive' ? Math.floor(mission.target) : mission.target;
@@ -1614,7 +1852,7 @@ function renderOverlay() {
     ctx.fillText(waveBannerText || `Wave ${wave}`, W / 2, 164);
   }
 
-  if (state === 'idle' || state === 'gameover') {
+  if (state === 'idle' || state === 'gameover' || state === 'clear') {
     const plane = selectedPlane();
     ctx.fillStyle = 'rgba(0,0,0,0.46)';
     ctx.fillRect(0, 0, W, H);
@@ -1622,21 +1860,22 @@ function renderOverlay() {
     ctx.fillStyle = '#fff';
     ctx.textAlign = 'center';
     ctx.font = 'bold 34px system-ui';
-    ctx.fillText(state === 'idle' ? 'Tap to Start' : 'Game Over', W / 2, H / 2 - 26);
+    const title = state === 'idle' ? 'Tap to Start' : state === 'clear' ? 'STAGE CLEAR!' : 'Game Over';
+    ctx.fillText(title, W / 2, H / 2 - 26);
 
     ctx.font = '16px system-ui';
-    ctx.fillText('Survive waves, defeat boss phases, stack combo', W / 2, H / 2 + 2);
-    ctx.fillText('WASD/Arrow/Drag · X/Shift = Special · Space to restart', W / 2, H / 2 + 26);
+    ctx.fillText('Stage 1→2→3 보스를 격파하면 클리어', W / 2, H / 2 + 2);
+    ctx.fillText('WASD/Arrow/Drag/터치패드 · X/Shift/SP 버튼', W / 2, H / 2 + 26);
 
-    if (state === 'gameover') {
+    if (state !== 'idle') {
       ctx.fillStyle = '#ffe082';
       ctx.font = 'bold 19px system-ui';
       ctx.fillText(`Final Score: ${score}`, W / 2, H / 2 + 56);
     }
 
     ctx.fillStyle = '#b7d9ff';
-    ctx.font = '13px system-ui';
-    ctx.fillText(`기체 선택: 1/2/3 또는 ←/→ · 현재 ${plane.name} (${plane.specialName})`, W / 2, H * 0.5 + 46);
+    ctx.font = '12px system-ui';
+    ctx.fillText(`기체 선택: 1~5 또는 ←/→ · 현재 ${plane.name} (${plane.specialName})`, W / 2, H * 0.5 + 42);
 
     for (let i = 0; i < PLANES.length; i += 1) {
       const p = PLANES[i];
@@ -1650,19 +1889,23 @@ function renderOverlay() {
 
       ctx.fillStyle = p.primary;
       ctx.beginPath();
-      ctx.moveTo(r.x + r.w * 0.5, r.y + 22);
-      ctx.lineTo(r.x + r.w * 0.5 - 14, r.y + 46);
-      ctx.lineTo(r.x + r.w * 0.5, r.y + 38);
-      ctx.lineTo(r.x + r.w * 0.5 + 14, r.y + 46);
+      ctx.moveTo(r.x + r.w * 0.5, r.y + 18);
+      ctx.lineTo(r.x + r.w * 0.5 - 10, r.y + 34);
+      ctx.lineTo(r.x + r.w * 0.5, r.y + 30);
+      ctx.lineTo(r.x + r.w * 0.5 + 10, r.y + 34);
       ctx.closePath();
       ctx.fill();
 
       ctx.fillStyle = '#f0f7ff';
-      ctx.font = 'bold 14px system-ui';
-      ctx.fillText(`${i + 1}. ${p.name}`, r.x + r.w * 0.5, r.y + 60);
-      ctx.font = '11px system-ui';
+      ctx.font = 'bold 11px system-ui';
+      ctx.fillText(`${i + 1}. ${p.name}`, r.x + r.w * 0.5, r.y + 48);
+      ctx.font = '10px system-ui';
       ctx.fillStyle = '#bddbff';
-      ctx.fillText(p.specialName, r.x + r.w * 0.5, r.y + 76);
+      ctx.fillText(p.role, r.x + r.w * 0.5, r.y + 62);
+      ctx.fillText(p.specialName, r.x + r.w * 0.5, r.y + 74);
+      ctx.fillStyle = '#93bce8';
+      ctx.fillText(`+ ${p.pros}`, r.x + r.w * 0.5, r.y + 87);
+      ctx.fillText(`- ${p.cons}`, r.x + r.w * 0.5, r.y + 98);
     }
   }
 
@@ -1744,21 +1987,27 @@ function update(dt) {
   survivalTime += dt;
   addSpecialCharge(dt * 2.3);
   const difficulty = getDifficulty();
-  const nextWave = 1 + Math.floor(survivalTime / 12) + bossesDefeated * 2;
-  if (nextWave > wave) {
-    for (let wv = wave + 1; wv <= nextWave; wv += 1) {
-      spawnWavePack(wv);
+  const stageCfg = currentStageConfig();
+  stageTimer += dt;
+
+  const cappedWave = Math.min(stageCfg.wavesToBoss, 1 + Math.floor(stageTimer / 11));
+  if (cappedWave > wave) {
+    for (let wv = wave + 1; wv <= cappedWave; wv += 1) {
+      spawnWavePack(wv + (stage - 1) * 4);
     }
-    wave = nextWave;
+    wave = cappedWave;
     waveBannerText = `Wave ${wave}`;
     waveBanner = 1.5;
     updateWaveUi();
   }
-  updateLevelUi();
 
-  if (score >= nextBossScore && !boss && bossWarning <= 0) {
+  const stageReadyForBoss = wave >= stageCfg.wavesToBoss && !stageBossSpawned;
+  if (stageReadyForBoss && !boss && bossWarning <= 0 && enemies.length <= 2) {
+    stageBossSpawned = true;
     spawnBoss();
   }
+
+  updateLevelUi();
 
   updatePlayer(dt);
   updateBullets(dt);
@@ -1806,6 +2055,13 @@ function pickUpgradeIndexAt(x, y) {
     if (x >= 28 && x <= 28 + boxW && y >= top && y <= top + boxH) return i;
   }
   return -1;
+}
+
+function releaseTouchInput() {
+  touchInput.up = false;
+  touchInput.down = false;
+  touchInput.left = false;
+  touchInput.right = false;
 }
 
 btnStart.addEventListener('click', () => {
@@ -1856,7 +2112,34 @@ canvas.addEventListener('pointermove', (event) => {
 
 window.addEventListener('pointerup', () => {
   pointer.active = false;
+  releaseTouchInput();
 });
+
+touchButtons.forEach((btn) => {
+  const dir = btn.getAttribute('data-touch');
+  if (!dir) return;
+  const down = (event) => {
+    event.preventDefault();
+    touchInput[dir] = true;
+  };
+  const up = (event) => {
+    event.preventDefault();
+    touchInput[dir] = false;
+  };
+  btn.addEventListener('pointerdown', down);
+  btn.addEventListener('pointerup', up);
+  btn.addEventListener('pointercancel', up);
+  btn.addEventListener('pointerleave', up);
+});
+
+if (touchSpecialBtn) {
+  touchSpecialBtn.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    sfx.ensure();
+    bgmAudio.ensure();
+    activateSpecial();
+  });
+}
 
 window.addEventListener('keydown', (event) => {
   if (upgradeMenu.active) {
@@ -1898,6 +2181,14 @@ window.addEventListener('keydown', (event) => {
   }
   if (event.code === 'Digit3' && state !== 'running') {
     setSelectedPlane(2);
+    return;
+  }
+  if (event.code === 'Digit4' && state !== 'running') {
+    setSelectedPlane(3);
+    return;
+  }
+  if (event.code === 'Digit5' && state !== 'running') {
+    setSelectedPlane(4);
     return;
   }
 
