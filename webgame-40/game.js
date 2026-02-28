@@ -332,21 +332,32 @@ function sellTower(c, r) {
 
 function makeEnemy(type) {
   const s = state.stage;
+  const stageSpeedMul = 1 + (s - 1) * 0.11;
+  const radiusMul = 1 + (s - 1) * 0.015;
+  const threatBase = clamp(0.18 + s * 0.07, 0.2, 0.92);
+  const typeThreat = {
+    ghoul: 0.02,
+    bat: 0.06,
+    brute: 0.12,
+    elder: 0.18,
+    lord: 0.3,
+  };
   const defs = {
-    ghoul: { hp: 58 + s * 12, speed: 44 + s * 1.8, reward: 7, leak: 1, r: 10, color: '#c54f72' },
-    bat: { hp: 36 + s * 8, speed: 70 + s * 2.2, reward: 6, leak: 1, r: 8, color: '#d07ab4' },
-    brute: { hp: 150 + s * 28, speed: 34 + s * 1.4, reward: 12, leak: 2, r: 13, color: '#9e5a9c' },
-    elder: { hp: 262 + s * 46, speed: 46 + s * 1.6, reward: 25, leak: 3, r: 15, color: '#b86ec8' },
-    lord: { hp: 700 + s * 140, speed: 32 + s, reward: 58, leak: 5, r: 18, color: '#f26a84', boss: true },
+    ghoul: { hp: 58 + s * 12, speed: (38 + s * 1.5) * stageSpeedMul, reward: 7, leak: 1, r: 10, color: '#c54f72' },
+    bat: { hp: 36 + s * 8, speed: (62 + s * 2.1) * stageSpeedMul, reward: 6, leak: 1, r: 8, color: '#d07ab4' },
+    brute: { hp: 150 + s * 28, speed: (30 + s * 1.2) * stageSpeedMul, reward: 12, leak: 2, r: 13, color: '#9e5a9c' },
+    elder: { hp: 262 + s * 46, speed: (40 + s * 1.4) * stageSpeedMul, reward: 25, leak: 3, r: 15, color: '#b86ec8' },
+    lord: { hp: 700 + s * 140, speed: (28 + s * 0.9) * stageSpeedMul, reward: 58, leak: 5, r: 18, color: '#f26a84', boss: true },
   };
   const d = defs[type];
   const spawn = cellCenter(SPAWN.c, SPAWN.r);
+  const threat = clamp(threatBase + (typeThreat[type] || 0), 0.2, 1.2);
 
   return {
     type,
     x: spawn.x + rand(-7, 7),
     y: spawn.y + rand(-7, 7),
-    r: d.r,
+    r: d.r * radiusMul,
     hp: d.hp,
     maxHp: d.hp,
     speed: d.speed,
@@ -361,6 +372,8 @@ function makeEnemy(type) {
     repath: 0,
     vx: 0,
     vy: 0,
+    threat,
+    morph: rand(0, TAU),
   };
 }
 
@@ -807,7 +820,38 @@ function drawTowers() {
 }
 
 function drawEnemies() {
+  const now = performance.now() * 0.001;
   for (const enemy of state.enemies) {
+    const pulse = 0.5 + 0.5 * Math.sin(now * 5 + enemy.morph);
+    const auraRadius = enemy.r + 4 + enemy.threat * 6 + pulse * 2.6;
+    const spikeCount = 6 + Math.floor(enemy.threat * 8);
+
+    if (enemy.threat >= 0.35) {
+      ctx.strokeStyle = enemy.boss
+        ? `rgba(255, 154, 178, ${0.25 + pulse * 0.2})`
+        : `rgba(195, 140, 255, ${0.2 + pulse * 0.16})`;
+      ctx.lineWidth = 2 + enemy.threat;
+      ctx.beginPath();
+      ctx.arc(enemy.x, enemy.y, auraRadius, 0, TAU);
+      ctx.stroke();
+    }
+
+    if (enemy.threat >= 0.55) {
+      ctx.strokeStyle = enemy.boss ? 'rgba(255, 193, 143, 0.38)' : 'rgba(197, 150, 255, 0.32)';
+      ctx.lineWidth = 1.8;
+      for (let i = 0; i < spikeCount; i += 1) {
+        const ang = (i / spikeCount) * TAU + now * (enemy.boss ? 0.8 : 1.3);
+        const sx = enemy.x + Math.cos(ang) * (enemy.r + 1);
+        const sy = enemy.y + Math.sin(ang) * (enemy.r + 1);
+        const ex = enemy.x + Math.cos(ang) * (enemy.r + 4 + enemy.threat * 4);
+        const ey = enemy.y + Math.sin(ang) * (enemy.r + 4 + enemy.threat * 4);
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(ex, ey);
+        ctx.stroke();
+      }
+    }
+
     ctx.fillStyle = '#100f19';
     ctx.beginPath();
     ctx.arc(enemy.x, enemy.y, enemy.r + 3, 0, TAU);
@@ -817,6 +861,36 @@ function drawEnemies() {
     ctx.beginPath();
     ctx.arc(enemy.x, enemy.y, enemy.r, 0, TAU);
     ctx.fill();
+
+    ctx.fillStyle = 'rgba(255, 235, 245, 0.72)';
+    ctx.beginPath();
+    ctx.arc(enemy.x - enemy.r * 0.24, enemy.y - enemy.r * 0.22, 1.4 + enemy.threat * 0.6, 0, TAU);
+    ctx.arc(enemy.x + enemy.r * 0.24, enemy.y - enemy.r * 0.22, 1.4 + enemy.threat * 0.6, 0, TAU);
+    ctx.fill();
+
+    if (enemy.threat >= 0.74 || enemy.boss) {
+      const horn = enemy.r * (enemy.boss ? 0.92 : 0.72);
+      ctx.fillStyle = enemy.boss ? 'rgba(255, 208, 145, 0.8)' : 'rgba(228, 187, 255, 0.68)';
+      ctx.beginPath();
+      ctx.moveTo(enemy.x - enemy.r * 0.44, enemy.y - enemy.r * 0.55);
+      ctx.lineTo(enemy.x - enemy.r * 0.14, enemy.y - horn);
+      ctx.lineTo(enemy.x + enemy.r * 0.04, enemy.y - enemy.r * 0.42);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(enemy.x + enemy.r * 0.44, enemy.y - enemy.r * 0.55);
+      ctx.lineTo(enemy.x + enemy.r * 0.14, enemy.y - horn);
+      ctx.lineTo(enemy.x - enemy.r * 0.04, enemy.y - enemy.r * 0.42);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    if (state.stage >= 6) {
+      ctx.fillStyle = enemy.boss ? 'rgba(255, 150, 174, 0.15)' : 'rgba(215, 136, 255, 0.12)';
+      ctx.beginPath();
+      ctx.arc(enemy.x - enemy.vx * 0.028, enemy.y - enemy.vy * 0.028, enemy.r * 0.85, 0, TAU);
+      ctx.fill();
+    }
 
     const barW = enemy.r * 2;
     const ratio = clamp(enemy.hp / enemy.maxHp, 0, 1);
