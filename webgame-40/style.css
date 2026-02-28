@@ -180,6 +180,40 @@ canvas {
   cursor: pointer;
 }
 
+.reward-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.reward-btn {
+  border: 1px solid #4a6592;
+  background: linear-gradient(180deg, #1f3354, #152945);
+  color: var(--text);
+  border-radius: 11px;
+  padding: 10px;
+  display: grid;
+  gap: 5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.reward-btn strong {
+  font-size: 15px;
+  color: #f7fbff;
+}
+
+.reward-btn span {
+  color: #b9cbe4;
+  font-size: 12px;
+}
+
+.reward-btn:hover {
+  border-color: #f0ca77;
+  box-shadow: 0 0 0 1px rgba(240, 202, 119, 0.3) inset;
+}
+
 .banner {
   position: absolute;
   left: 50%;
@@ -215,5 +249,9 @@ footer {
 
   .build-btn {
     min-width: 98px;
+  }
+
+  .reward-grid {
+    grid-template-columns: 1fr;
   }
 }

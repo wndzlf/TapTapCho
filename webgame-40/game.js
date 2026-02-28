@@ -14,6 +14,7 @@ const killsTextEl = document.getElementById('killsText');
 const btnSunken = document.getElementById('btnSunken');
 const btnSpine = document.getElementById('btnSpine');
 const btnObelisk = document.getElementById('btnObelisk');
+const btnSnare = document.getElementById('btnSnare');
 
 const bgmAudio = window.TapTapNeonAudio?.create('webgame-40', hudEl, { theme: 'rush' });
 
@@ -67,6 +68,21 @@ const TOWER_TYPES = {
     pierce: 1,
     hp: 320,
   },
+  snare: {
+    id: 'snare',
+    name: 'Snare',
+    cost: 90,
+    color: '#9ae8ff',
+    range: 132,
+    damage: 12,
+    reload: 0.72,
+    bulletSpeed: 340,
+    pierce: 0,
+    hp: 210,
+    snareDuration: 2.4,
+    snareSlow: 0.48,
+    weakenMul: 1.42,
+  },
 };
 
 const state = {
@@ -89,6 +105,10 @@ const state = {
   particles: [],
   blocked: new Set(),
   dist: [],
+  towerHpBonus: 0,
+  siegeDamageBonus: 0,
+  pendingStage: 0,
+  pendingStageBonusGold: 0,
   banner: { text: '', ttl: 0, warn: false },
 };
 
@@ -234,6 +254,7 @@ function flashBanner(text, ttl = 1.2, warn = false) {
 function makeTower(kind, c, r) {
   const base = TOWER_TYPES[kind];
   const center = cellCenter(c, r);
+  const hpMul = 1 + state.towerHpBonus;
   return {
     id: state.nextTowerId++,
     kind,
@@ -248,10 +269,14 @@ function makeTower(kind, c, r) {
     reload: base.reload,
     bulletSpeed: base.bulletSpeed,
     pierce: base.pierce,
-    maxHp: base.hp,
-    hp: base.hp,
+    maxHp: base.hp * hpMul,
+    hp: base.hp * hpMul,
     cooldown: rand(0.02, base.reload),
     color: base.color,
+    sealTimer: 0,
+    snareDuration: base.snareDuration || 0,
+    snareSlow: base.snareSlow || 1,
+    weakenMul: base.weakenMul || 1,
   };
 }
 
@@ -275,6 +300,12 @@ function upgradeTower(tower) {
   tower.damage *= 1.34;
   tower.reload *= 0.9;
   tower.pierce = Math.min(3, tower.pierce + (tower.kind === 'obelisk' ? 1 : 0));
+  if (tower.kind === 'snare') {
+    tower.snareDuration *= 1.13;
+    tower.snareSlow = Math.max(0.32, tower.snareSlow * 0.93);
+    tower.weakenMul += 0.09;
+    tower.pierce = 0;
+  }
   tower.maxHp *= 1.34;
   tower.hp = Math.min(tower.maxHp, tower.hp + tower.maxHp * 0.25);
 
@@ -416,6 +447,14 @@ function makeEnemy(type) {
     attackRange: d.attackRange || 0,
     attackCd: rand(0.1, 0.6),
     targetTowerId: 0,
+    snareTimer: 0,
+    snareSlowMul: 1,
+    weakenTimer: 0,
+    weakenMul: 1,
+    sealCd: d.boss ? Math.max(2.8, 6.4 - s * 0.14) : 0,
+    sealInterval: d.boss ? Math.max(3.2, 7.1 - s * 0.16) : 0,
+    sealDuration: d.boss ? Math.min(6.2, 2.1 + s * 0.14) : 0,
+    sealCount: d.boss ? (s >= 15 ? 3 : s >= 8 ? 2 : 1) : 0,
   };
 }
 
@@ -506,6 +545,10 @@ function startRun() {
   state.blocked.clear();
   state.fastForward = false;
   state.selectedTower = 'sunken';
+  state.towerHpBonus = 0;
+  state.siegeDamageBonus = 0;
+  state.pendingStage = 0;
+  state.pendingStageBonusGold = 0;
   setSelectedButton();
 
   buildDistanceMap();
@@ -549,6 +592,72 @@ function setVictory() {
   sfx(520, 0.16, 'triangle', 0.04);
 }
 
+function showStageReward() {
+  const clearGold = 70 + state.stage * 14;
+  state.pendingStage = state.stage + 1;
+  state.pendingStageBonusGold = clearGold;
+  state.gold += clearGold;
+  state.mode = 'reward';
+
+  overlayEl.classList.remove('hidden');
+  overlayEl.innerHTML = `
+    <div class="modal">
+      <h2>Stage ${state.stage} 클리어</h2>
+      <p>보상 +${clearGold} Gold · 다음 Stage 시작 전 강화 1개 선택</p>
+      <div class="reward-grid">
+        <button type="button" class="reward-btn" data-action="reward:towerhp">
+          <strong>타워 내구 +15%</strong>
+          <span>현재 배치 + 이후 배치 모두 내구 증가</span>
+        </button>
+        <button type="button" class="reward-btn" data-action="reward:siege">
+          <strong>공성 대응 +25%</strong>
+          <span>공성몹(raider/crusher) 대상 피해 증가</span>
+        </button>
+        <button type="button" class="reward-btn" data-action="reward:repair">
+          <strong>리페어 즉시 복구</strong>
+          <span>모든 타워 체력 60% 복구 + Base 2 회복</span>
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function applyStageReward(kind) {
+  if (state.mode !== 'reward') return;
+
+  if (kind === 'towerhp') {
+    state.towerHpBonus += 0.15;
+    for (const tower of state.towers) {
+      tower.maxHp *= 1.15;
+      tower.hp = Math.min(tower.maxHp, tower.hp * 1.15);
+    }
+    flashBanner('타워 내구 +15%', 0.9);
+    sfx(520, 0.07, 'triangle', 0.028);
+  } else if (kind === 'siege') {
+    state.siegeDamageBonus += 0.25;
+    flashBanner('공성 대응 +25%', 0.9);
+    sfx(620, 0.07, 'triangle', 0.028);
+  } else if (kind === 'repair') {
+    for (const tower of state.towers) {
+      tower.hp = Math.min(tower.maxHp, tower.hp + tower.maxHp * 0.6);
+    }
+    state.baseHp = Math.min(20, state.baseHp + 2);
+    flashBanner('리페어 완료', 0.9);
+    sfx(420, 0.08, 'triangle', 0.03);
+  } else {
+    return;
+  }
+
+  state.mode = 'playing';
+  overlayEl.classList.add('hidden');
+  overlayEl.innerHTML = '';
+
+  const nextStage = state.pendingStage || state.stage + 1;
+  state.pendingStage = 0;
+  state.pendingStageBonusGold = 0;
+  startStage(nextStage);
+}
+
 function refreshHud() {
   stageTextEl.textContent = String(state.stage);
   baseTextEl.textContent = String(Math.max(0, state.baseHp));
@@ -579,6 +688,36 @@ function nearestEnemy(x, y, range) {
   return found;
 }
 
+function nearestEnemyFiltered(x, y, range, predicate) {
+  let found = null;
+  let best = range * range;
+  for (const enemy of state.enemies) {
+    if (!predicate(enemy)) continue;
+    const dx = enemy.x - x;
+    const dy = enemy.y - y;
+    const d = dx * dx + dy * dy;
+    if (d <= best) {
+      best = d;
+      found = enemy;
+    }
+  }
+  return found;
+}
+
+function pickTowerTarget(tower) {
+  if (tower.kind === 'snare') {
+    const unsnared = nearestEnemyFiltered(
+      tower.x,
+      tower.y,
+      tower.range,
+      (enemy) => enemy.breaker && enemy.snareTimer <= 0.35
+    );
+    if (unsnared) return unsnared;
+    return nearestEnemyFiltered(tower.x, tower.y, tower.range, (enemy) => enemy.breaker);
+  }
+  return nearestEnemy(tower.x, tower.y, tower.range);
+}
+
 function nearestTower(x, y) {
   let found = null;
   let best = Infinity;
@@ -592,6 +731,43 @@ function nearestTower(x, y) {
     }
   }
   return found;
+}
+
+function castBossSeal(enemy) {
+  const candidates = state.towers.filter((tower) => tower.sealTimer <= 0.22);
+  if (candidates.length === 0) return false;
+
+  candidates.sort((a, b) => (b.level - a.level) || (b.spent - a.spent));
+  const count = Math.min(candidates.length, enemy.sealCount || 1);
+  const picked = [];
+  const offset = Math.floor(rand(0, candidates.length));
+
+  for (let i = 0; i < count; i += 1) {
+    const tower = candidates[(offset + i) % candidates.length];
+    if (!tower) continue;
+    picked.push(tower);
+  }
+
+  for (const tower of picked) {
+    tower.sealTimer = Math.max(tower.sealTimer, enemy.sealDuration);
+    tower.cooldown = Math.max(tower.cooldown, 0.25);
+
+    for (let i = 0; i < 9; i += 1) {
+      state.particles.push({
+        x: tower.x + rand(-8, 8),
+        y: tower.y + rand(-8, 8),
+        vx: rand(-95, 95),
+        vy: rand(-120, 40),
+        life: rand(0.16, 0.36),
+        size: rand(1.8, 3.6),
+        color: '#ff92b2',
+      });
+    }
+  }
+
+  flashBanner(`BOSS 봉인 시전 x${picked.length}`, 0.9, true);
+  sfx(140, 0.12, 'sawtooth', 0.035);
+  return true;
 }
 
 function removeTower(tower) {
@@ -633,17 +809,22 @@ function emitBullet(tower, target) {
   const dx = target.x - tower.x;
   const dy = target.y - tower.y;
   const d = Math.hypot(dx, dy) || 1;
+  const isSnare = tower.kind === 'snare';
 
   state.bullets.push({
     x: tower.x,
     y: tower.y,
     vx: (dx / d) * tower.bulletSpeed,
     vy: (dy / d) * tower.bulletSpeed,
-    r: tower.kind === 'obelisk' ? 5 : 4,
+    r: tower.kind === 'obelisk' ? 5 : isSnare ? 4.5 : 4,
     damage: tower.damage,
     life: 2,
     color: tower.color,
-    pierce: tower.pierce,
+    pierce: isSnare ? 0 : tower.pierce,
+    towerKind: tower.kind,
+    snareDuration: tower.snareDuration,
+    snareSlow: tower.snareSlow,
+    weakenMul: tower.weakenMul,
   });
 
   for (let i = 0; i < 3; i += 1) {
@@ -662,7 +843,9 @@ function emitBullet(tower, target) {
 }
 
 function hurtEnemy(enemy, damage) {
-  enemy.hp -= damage;
+  const weakenDamage = enemy.weakenTimer > 0 ? enemy.weakenMul : 1;
+  const siegeDamage = enemy.breaker ? 1 + state.siegeDamageBonus : 1;
+  enemy.hp -= damage * weakenDamage * siegeDamage;
   enemy.vx += rand(-16, 16);
   enemy.vy += rand(-16, 16);
 
@@ -697,10 +880,13 @@ function hurtEnemy(enemy, damage) {
 
 function updateTowers(dt) {
   for (const tower of state.towers) {
+    tower.sealTimer = Math.max(0, tower.sealTimer - dt);
+    if (tower.sealTimer > 0) continue;
+
     tower.cooldown -= dt;
     if (tower.cooldown > 0) continue;
 
-    const target = nearestEnemy(tower.x, tower.y, tower.range);
+    const target = pickTowerTarget(tower);
     if (!target) continue;
 
     emitBullet(tower, target);
@@ -727,13 +913,26 @@ function updateBullets(dt) {
       const rr = enemy.r + b.r;
       if (dx * dx + dy * dy > rr * rr) continue;
 
-      hurtEnemy(enemy, b.damage);
-      if (b.pierce > 0) {
-        b.pierce -= 1;
-        b.damage *= 0.78;
-      } else {
+      if (b.towerKind === 'snare') {
+        if (enemy.breaker) {
+          enemy.snareTimer = Math.max(enemy.snareTimer, b.snareDuration || 2);
+          enemy.snareSlowMul = Math.min(enemy.snareSlowMul, b.snareSlow || 0.55);
+          enemy.weakenTimer = Math.max(enemy.weakenTimer, (b.snareDuration || 2) + 0.6);
+          enemy.weakenMul = Math.max(enemy.weakenMul, b.weakenMul || 1.25);
+          hurtEnemy(enemy, b.damage * 0.55);
+          if (Math.random() < 0.28) flashBanner('Snare: 공성몹 둔화/약화', 0.45);
+        }
         state.bullets.splice(i, 1);
         removed = true;
+      } else {
+        hurtEnemy(enemy, b.damage);
+        if (b.pierce > 0) {
+          b.pierce -= 1;
+          b.damage *= 0.78;
+        } else {
+          state.bullets.splice(i, 1);
+          removed = true;
+        }
       }
       break;
     }
@@ -745,6 +944,20 @@ function updateBullets(dt) {
 function updateEnemy(enemy, dt) {
   enemy.repath -= dt;
   enemy.attackCd = Math.max(0, enemy.attackCd - dt);
+  enemy.snareTimer = Math.max(0, enemy.snareTimer - dt);
+  enemy.weakenTimer = Math.max(0, enemy.weakenTimer - dt);
+  enemy.sealCd = Math.max(0, enemy.sealCd - dt);
+  if (enemy.snareTimer <= 0) enemy.snareSlowMul = 1;
+  if (enemy.weakenTimer <= 0) enemy.weakenMul = 1;
+
+  if (enemy.boss && enemy.sealCd <= 0 && state.towers.length > 0) {
+    const casted = castBossSeal(enemy);
+    enemy.sealCd = casted
+      ? enemy.sealInterval + rand(-0.35, 0.45)
+      : 1.2;
+  }
+
+  const speed = enemy.speed * (enemy.snareTimer > 0 ? enemy.snareSlowMul : 1);
 
   if (enemy.breaker && state.towers.length > 0) {
     let targetTower = state.towers.find((t) => t.id === enemy.targetTowerId);
@@ -771,8 +984,8 @@ function updateEnemy(enemy, dt) {
           if (Math.random() < 0.5) flashBanner('공성 몹이 건물 공격 중', 0.32, true);
         }
       } else {
-        enemy.vx += tx * enemy.speed * dt * 3.3;
-        enemy.vy += ty * enemy.speed * dt * 3.3;
+        enemy.vx += tx * speed * dt * 3.3;
+        enemy.vy += ty * speed * dt * 3.3;
         enemy.vx *= 0.89;
         enemy.vy *= 0.89;
         enemy.x += enemy.vx * dt;
@@ -805,8 +1018,8 @@ function updateEnemy(enemy, dt) {
   const nx = dx / d;
   const ny = dy / d;
 
-  enemy.vx += nx * enemy.speed * dt * 3.2;
-  enemy.vy += ny * enemy.speed * dt * 3.2;
+  enemy.vx += nx * speed * dt * 3.2;
+  enemy.vy += ny * speed * dt * 3.2;
   enemy.vx *= 0.9;
   enemy.vy *= 0.9;
   enemy.x += enemy.vx * dt;
@@ -881,8 +1094,7 @@ function updateSpawning(dt) {
       return;
     }
 
-    state.gold += 70 + state.stage * 14;
-    startStage(state.stage + 1);
+    showStageReward();
   }
 }
 
@@ -1124,6 +1336,40 @@ function drawTowerObelisk(tower, now) {
   ctx.restore();
 }
 
+function drawTowerSnare(tower, now) {
+  const pulse = 0.5 + 0.5 * Math.sin(now * 6.2 + tower.c * 0.21);
+  const ringR = 8 + tower.level * 1.1;
+
+  ctx.save();
+  ctx.translate(tower.x, tower.y);
+
+  ctx.fillStyle = '#132538';
+  ctx.beginPath();
+  ctx.arc(0, 0, ringR + 2.2, 0, TAU);
+  ctx.fill();
+
+  ctx.strokeStyle = `rgba(154, 232, 255, ${0.46 + pulse * 0.3})`;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(0, 0, ringR + pulse * 1.8, 0, TAU);
+  ctx.stroke();
+
+  const bands = 4 + tower.level;
+  ctx.strokeStyle = 'rgba(176, 242, 255, 0.8)';
+  ctx.lineWidth = 1.4;
+  for (let i = 0; i < bands; i += 1) {
+    const a = (i / bands) * TAU + now * 0.45;
+    const inner = ringR * 0.28;
+    const outer = ringR + 4.4;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * inner, Math.sin(a) * inner);
+    ctx.lineTo(Math.cos(a + 0.34) * outer, Math.sin(a + 0.34) * outer);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
 function drawTowers() {
   const now = performance.now() * 0.001;
 
@@ -1140,7 +1386,9 @@ function drawTowers() {
       ? 'rgba(141, 217, 255, 0.8)'
       : tower.kind === 'spine'
         ? 'rgba(185, 232, 172, 0.8)'
-        : 'rgba(226, 177, 255, 0.85)';
+        : tower.kind === 'obelisk'
+          ? 'rgba(226, 177, 255, 0.85)'
+          : 'rgba(154, 232, 255, 0.88)';
     ctx.strokeStyle = border;
     ctx.lineWidth = 2;
     ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
@@ -1149,8 +1397,10 @@ function drawTowers() {
       drawTowerSunken(tower, now);
     } else if (tower.kind === 'spine') {
       drawTowerSpine(tower, now);
-    } else {
+    } else if (tower.kind === 'obelisk') {
       drawTowerObelisk(tower, now);
+    } else {
+      drawTowerSnare(tower, now);
     }
 
     const hpRatio = clamp(tower.hp / tower.maxHp, 0, 1);
@@ -1165,6 +1415,23 @@ function drawTowers() {
       ctx.fillStyle = '#e8f2ff';
       ctx.font = '12px sans-serif';
       ctx.fillText(`L${tower.level}`, tower.x - 7, tower.y + 18);
+    }
+
+    if (tower.sealTimer > 0) {
+      const alpha = 0.2 + Math.min(0.5, tower.sealTimer / 5) * 0.7;
+      ctx.fillStyle = `rgba(255, 90, 134, ${alpha})`;
+      ctx.beginPath();
+      ctx.arc(tower.x, tower.y, 11, 0, TAU);
+      ctx.fill();
+
+      ctx.strokeStyle = `rgba(255, 190, 208, ${0.5 + alpha * 0.5})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(tower.x - 7, tower.y - 7);
+      ctx.lineTo(tower.x + 7, tower.y + 7);
+      ctx.moveTo(tower.x + 7, tower.y - 7);
+      ctx.lineTo(tower.x - 7, tower.y + 7);
+      ctx.stroke();
     }
   }
 }
@@ -1220,6 +1487,24 @@ function drawEnemies() {
       ctx.lineTo(enemy.x + enemy.r * 0.55, enemy.y + enemy.r * 0.1);
       ctx.moveTo(enemy.x + enemy.r * 0.28, enemy.y - enemy.r * 0.56);
       ctx.lineTo(enemy.x - enemy.r * 0.2, enemy.y + enemy.r * 0.5);
+      ctx.stroke();
+    }
+
+    if (enemy.snareTimer > 0) {
+      ctx.strokeStyle = 'rgba(155, 241, 255, 0.85)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(enemy.x, enemy.y, enemy.r + 6, 0, TAU);
+      ctx.stroke();
+    }
+
+    if (enemy.weakenTimer > 0) {
+      ctx.strokeStyle = 'rgba(255, 237, 170, 0.82)';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(enemy.x - enemy.r * 0.34, enemy.y + enemy.r * 0.24);
+      ctx.lineTo(enemy.x, enemy.y + enemy.r * 0.62);
+      ctx.lineTo(enemy.x + enemy.r * 0.36, enemy.y + enemy.r * 0.24);
       ctx.stroke();
     }
 
@@ -1378,6 +1663,7 @@ window.addEventListener('keydown', (event) => {
   if (event.code === 'Digit1') chooseTower('sunken');
   if (event.code === 'Digit2') chooseTower('spine');
   if (event.code === 'Digit3') chooseTower('obelisk');
+  if (event.code === 'Digit4') chooseTower('snare');
 
   if (event.code === 'KeyF') {
     state.fastForward = !state.fastForward;
@@ -1388,6 +1674,10 @@ window.addEventListener('keydown', (event) => {
 overlayEl.addEventListener('click', (event) => {
   const action = event.target.closest('[data-action]')?.dataset.action;
   if (!action) return;
+  if (action.startsWith('reward:')) {
+    applyStageReward(action.split(':')[1]);
+    return;
+  }
   if (action === 'start' || action === 'restart') startRun();
 });
 
