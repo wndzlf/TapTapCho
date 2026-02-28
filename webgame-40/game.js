@@ -795,26 +795,199 @@ function drawEndpoints() {
   ctx.fill();
 }
 
-function drawTowers() {
-  for (const tower of state.towers) {
-    ctx.fillStyle = '#0f1727';
-    ctx.fillRect(tower.c * GRID.cell + 2, tower.r * GRID.cell + 2, GRID.cell - 4, GRID.cell - 4);
+function drawTowerSunken(tower, now) {
+  const pulse = 0.5 + 0.5 * Math.sin(now * 4 + tower.c * 0.31 + tower.r * 0.17);
+  const ringR = 8.4 + tower.level * 1.3;
 
-    ctx.strokeStyle = tower.color;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(tower.c * GRID.cell + 3, tower.r * GRID.cell + 3, GRID.cell - 6, GRID.cell - 6);
+  ctx.save();
+  ctx.translate(tower.x, tower.y);
 
-    ctx.fillStyle = tower.color;
-    ctx.globalAlpha = 0.9;
+  ctx.fillStyle = '#131f2d';
+  ctx.beginPath();
+  ctx.arc(0, 0, ringR + 2.8, 0, TAU);
+  ctx.fill();
+
+  ctx.strokeStyle = `rgba(147, 225, 255, ${0.34 + pulse * 0.24})`;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(0, 0, ringR + 1.3, 0, TAU);
+  ctx.stroke();
+
+  const vortex = ctx.createRadialGradient(0, 0, 1, 0, 0, ringR);
+  vortex.addColorStop(0, '#7ee8ff');
+  vortex.addColorStop(0.65, '#3e8ab5');
+  vortex.addColorStop(1, '#11273a');
+  ctx.fillStyle = vortex;
+  ctx.beginPath();
+  ctx.arc(0, 0, ringR, 0, TAU);
+  ctx.fill();
+
+  ctx.strokeStyle = 'rgba(196, 242, 255, 0.62)';
+  ctx.lineWidth = 1.6;
+  for (let i = 0; i < 2 + tower.level; i += 1) {
+    const rot = now * (0.8 + i * 0.22) + i * 1.2;
     ctx.beginPath();
-    ctx.arc(tower.x, tower.y, 6 + tower.level * 1.4, 0, TAU);
+    ctx.arc(0, 0, 3.1 + i * 1.6, rot, rot + Math.PI * 0.95);
+    ctx.stroke();
+  }
+
+  const teeth = 5 + tower.level * 2;
+  ctx.fillStyle = 'rgba(198, 246, 255, 0.78)';
+  for (let i = 0; i < teeth; i += 1) {
+    const a = (i / teeth) * TAU + now * 0.3;
+    const inner = ringR + 0.4;
+    const outer = ringR + 4.2 + tower.level * 0.7;
+    const spread = 0.09;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a - spread) * inner, Math.sin(a - spread) * inner);
+    ctx.lineTo(Math.cos(a) * outer, Math.sin(a) * outer);
+    ctx.lineTo(Math.cos(a + spread) * inner, Math.sin(a + spread) * inner);
+    ctx.closePath();
     ctx.fill();
-    ctx.globalAlpha = 1;
+  }
+
+  ctx.restore();
+}
+
+function drawTowerSpine(tower, now) {
+  const pulse = 0.5 + 0.5 * Math.sin(now * 5 + tower.c * 0.27);
+  const coreR = 5.8 + tower.level * 0.9;
+  const spikes = 4 + tower.level * 2;
+
+  ctx.save();
+  ctx.translate(tower.x, tower.y);
+
+  ctx.fillStyle = '#152632';
+  ctx.beginPath();
+  ctx.arc(0, 0, coreR + 3.1, 0, TAU);
+  ctx.fill();
+
+  ctx.fillStyle = '#a6eac3';
+  for (let i = 0; i < spikes; i += 1) {
+    const a = (i / spikes) * TAU + now * 0.2;
+    const inner = coreR - 1.2;
+    const outer = coreR + 8 + tower.level * 1.2 + pulse * 1.5;
+    const spread = 0.12;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a - spread) * inner, Math.sin(a - spread) * inner);
+    ctx.lineTo(Math.cos(a) * outer, Math.sin(a) * outer);
+    ctx.lineTo(Math.cos(a + spread) * inner, Math.sin(a + spread) * inner);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  ctx.fillStyle = '#6fbe8b';
+  ctx.beginPath();
+  ctx.arc(0, 0, coreR, 0, TAU);
+  ctx.fill();
+
+  if (tower.level >= 3) {
+    ctx.strokeStyle = 'rgba(198, 255, 221, 0.88)';
+    ctx.lineWidth = 1.8;
+    for (let i = 0; i < 3; i += 1) {
+      const a = now * 0.9 + i * (TAU / 3);
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * 2.5, Math.sin(a) * 2.5);
+      ctx.lineTo(Math.cos(a) * (coreR + 7), Math.sin(a) * (coreR + 7));
+      ctx.stroke();
+    }
+  }
+
+  ctx.restore();
+}
+
+function drawTowerObelisk(tower, now) {
+  const pulse = 0.5 + 0.5 * Math.sin(now * 3.2 + tower.r * 0.29);
+  const bodyH = 8.5 + tower.level * 1.8;
+  const bodyW = 5.2 + tower.level * 0.9;
+  const ringR = 9 + tower.level * 1.1;
+
+  ctx.save();
+  ctx.translate(tower.x, tower.y);
+
+  ctx.fillStyle = '#1e1a32';
+  ctx.fillRect(-7, 5, 14, 6);
+
+  ctx.fillStyle = '#d9b5ff';
+  ctx.beginPath();
+  ctx.moveTo(0, -bodyH - 2.4);
+  ctx.lineTo(bodyW, -2);
+  ctx.lineTo(0, bodyH * 0.38);
+  ctx.lineTo(-bodyW, -2);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = `rgba(241, 216, 255, ${0.5 + pulse * 0.34})`;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, -bodyH - 1.6);
+  ctx.lineTo(bodyW - 0.8, -2);
+  ctx.lineTo(0, bodyH * 0.32);
+  ctx.lineTo(-bodyW + 0.8, -2);
+  ctx.closePath();
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(206, 164, 255, 0.7)';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.arc(0, -1, ringR + pulse * 1.3, 0, TAU);
+  ctx.stroke();
+
+  if (tower.level >= 2) {
+    const angA = now * 0.85;
+    const angB = angA + Math.PI;
+    ctx.fillStyle = 'rgba(224, 190, 255, 0.8)';
+    ctx.beginPath();
+    ctx.arc(Math.cos(angA) * ringR, -1 + Math.sin(angA) * ringR, 2.3, 0, TAU);
+    ctx.arc(Math.cos(angB) * ringR, -1 + Math.sin(angB) * ringR, 2.3, 0, TAU);
+    ctx.fill();
+  }
+
+  if (tower.level >= 3) {
+    ctx.strokeStyle = `rgba(236, 208, 255, ${0.6 + pulse * 0.34})`;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(0, -bodyH - 8);
+    ctx.lineTo(0, -bodyH - 22 - pulse * 4);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function drawTowers() {
+  const now = performance.now() * 0.001;
+
+  for (const tower of state.towers) {
+    const x = tower.c * GRID.cell + 2;
+    const y = tower.r * GRID.cell + 2;
+    const w = GRID.cell - 4;
+    const h = GRID.cell - 4;
+
+    ctx.fillStyle = '#0f1727';
+    ctx.fillRect(x, y, w, h);
+
+    const border = tower.kind === 'sunken'
+      ? 'rgba(141, 217, 255, 0.8)'
+      : tower.kind === 'spine'
+        ? 'rgba(185, 232, 172, 0.8)'
+        : 'rgba(226, 177, 255, 0.85)';
+    ctx.strokeStyle = border;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+
+    if (tower.kind === 'sunken') {
+      drawTowerSunken(tower, now);
+    } else if (tower.kind === 'spine') {
+      drawTowerSpine(tower, now);
+    } else {
+      drawTowerObelisk(tower, now);
+    }
 
     if (tower.level > 1) {
       ctx.fillStyle = '#e8f2ff';
       ctx.font = '12px sans-serif';
-      ctx.fillText(String(tower.level), tower.x - 4, tower.y + 4);
+      ctx.fillText(`L${tower.level}`, tower.x - 7, tower.y + 18);
     }
   }
 }
