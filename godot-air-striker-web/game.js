@@ -1802,6 +1802,117 @@ function drawParticles() {
   ctx.globalAlpha = 1;
 }
 
+function drawGhostShip(x, y, plane, alpha = 0.45) {
+  const isRaptor = plane.id === 'raptor';
+  const isGuardian = plane.id === 'guardian';
+  const isPhantom = plane.id === 'phantom';
+  const isTempest = plane.id === 'tempest';
+  const wing = isGuardian ? 17 : isRaptor ? 12 : isTempest ? 16 : 14;
+  const nose = isGuardian ? 20 : isRaptor ? 22 : isPhantom ? 21 : 18;
+  const tailY = isGuardian ? 12 : 14;
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.globalAlpha = alpha;
+
+  ctx.fillStyle = plane.primary;
+  ctx.beginPath();
+  ctx.moveTo(0, -nose);
+  ctx.lineTo(-wing, tailY);
+  ctx.lineTo(0, 8);
+  ctx.lineTo(wing, tailY);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = plane.cockpit;
+  ctx.beginPath();
+  ctx.moveTo(0, -12);
+  ctx.lineTo(-6, 2);
+  ctx.lineTo(6, 2);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawStartGlyph() {
+  const cx = W * 0.5;
+  const cy = H * 0.39;
+  const pulse = 0.72 + Math.sin(tick * 0.18) * 0.22;
+
+  ctx.save();
+  ctx.globalAlpha = pulse;
+  ctx.fillStyle = 'rgba(221, 237, 255, 0.16)';
+  ctx.beginPath();
+  ctx.arc(cx, cy, 34, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(182, 219, 255, 0.78)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(238, 247, 255, 0.9)';
+  ctx.beginPath();
+  ctx.moveTo(cx - 8, cy - 12);
+  ctx.lineTo(cx + 13, cy);
+  ctx.lineTo(cx - 8, cy + 12);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawGhostDemo() {
+  const demoT = tick / 60;
+  const demoPlane = PLANES[Math.floor(demoT / 6) % PLANES.length];
+  const gx = W * 0.5 + Math.sin(demoT * 1.2) * 124;
+  const gy = H * 0.72 + Math.sin(demoT * 2.1) * 38;
+
+  for (let i = 0; i < 30; i += 1) {
+    const lane = i % 6;
+    const speed = 130 + (i % 5) * 18;
+    const y = ((demoT * speed + i * 34) % (H + 48)) - 24;
+    const laneW = (W - 104) / 5;
+    const x = 52 + lane * laneW + Math.sin(demoT * 2 + i) * 16;
+    ctx.fillStyle = 'rgba(255, 140, 156, 0.36)';
+    ctx.beginPath();
+    ctx.arc(x, y, 3 + (i % 2), 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  for (let i = 1; i <= 6; i += 1) {
+    const t = demoT - i * 0.11;
+    const tx = W * 0.5 + Math.sin(t * 1.2) * 124;
+    const ty = H * 0.72 + Math.sin(t * 2.1) * 38;
+    ctx.fillStyle = `rgba(191, 237, 255, ${0.18 + (6 - i) * 0.05})`;
+    ctx.beginPath();
+    ctx.arc(tx, ty, 2 + (6 - i) * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const specialPhase = demoT % 4.2;
+  if (specialPhase < 0.85) {
+    const r = 32 + specialPhase * 190;
+    ctx.strokeStyle = `rgba(255, 233, 157, ${0.52 - specialPhase * 0.45})`;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(gx, gy, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  const pointerX = gx + Math.sin(demoT * 3.4) * 30;
+  const pointerY = gy + 62 + Math.cos(demoT * 2.8) * 12;
+  ctx.strokeStyle = 'rgba(220, 239, 255, 0.46)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(pointerX, pointerY);
+  ctx.lineTo(gx, gy + 4);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(228, 243, 255, 0.65)';
+  ctx.beginPath();
+  ctx.arc(pointerX, pointerY, 9, 0, Math.PI * 2);
+  ctx.fill();
+
+  drawGhostShip(gx, gy, demoPlane, 0.58);
+}
+
 function drawKeyBadge(x, y, label, alpha = 1) {
   ctx.save();
   ctx.globalAlpha = alpha;
@@ -1915,13 +2026,17 @@ function renderOverlay() {
     ctx.fillStyle = 'rgba(0,0,0,0.46)';
     ctx.fillRect(0, 0, W, H);
 
-    ctx.fillStyle = '#fff';
-    ctx.textAlign = 'center';
-    ctx.font = 'bold 34px system-ui';
-    const title = state === 'idle' ? 'Tap to Start' : state === 'clear' ? 'STAGE CLEAR!' : 'Game Over';
-    ctx.fillText(title, W / 2, H / 2 - 26);
+    if (state === 'idle') {
+      drawGhostDemo();
+      drawStartGlyph();
+    }
 
     if (state !== 'idle') {
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 34px system-ui';
+      const title = state === 'clear' ? 'STAGE CLEAR!' : 'Game Over';
+      ctx.fillText(title, W / 2, H / 2 - 26);
       ctx.fillStyle = '#ffe082';
       ctx.font = 'bold 19px system-ui';
       ctx.fillText(`Final Score: ${score}`, W / 2, H / 2 + 56);
