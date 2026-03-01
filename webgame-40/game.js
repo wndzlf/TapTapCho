@@ -191,6 +191,20 @@ const TOWER_TYPES = {
     pierce: 0,
     hp: 250,
   },
+  sunkenSplash: {
+    id: 'sunkenSplash',
+    name: 'Splash Sunken',
+    cost: 130,
+    color: '#ffc184',
+    range: 114 * BALANCE_SCALE,
+    damage: 36,
+    reload: 0.9,
+    bulletSpeed: 320 * BALANCE_SCALE,
+    pierce: 0,
+    hp: 290,
+    splashRadius: 66 * BALANCE_SCALE,
+    splashFalloff: 0.42,
+  },
   spine: {
     id: 'spine',
     name: 'Spine',
@@ -345,6 +359,8 @@ function getPlacementSpec(kind) {
       pierce: 3,
       hp: base.hp * 4.6,
       color: '#ffd77a',
+      splashRadius: 0,
+      splashFalloff: 0,
       ultimate: true,
     };
   }
@@ -361,6 +377,8 @@ function getPlacementSpec(kind) {
       pierce: base.pierce,
       hp: base.hp * 2.45,
       color: base.color,
+      splashRadius: base.splashRadius || 0,
+      splashFalloff: base.splashFalloff || 0,
       ultimate: false,
     };
   }
@@ -376,6 +394,8 @@ function getPlacementSpec(kind) {
     pierce: base.pierce,
     hp: base.hp,
     color: base.color,
+    splashRadius: base.splashRadius || 0,
+    splashFalloff: base.splashFalloff || 0,
     ultimate: false,
   };
 }
@@ -512,6 +532,8 @@ function makeTower(kind, c, r, spec = null) {
     reload: placement.reload,
     bulletSpeed: placement.bulletSpeed,
     pierce: placement.pierce,
+    splashRadius: placement.splashRadius || 0,
+    splashFalloff: placement.splashFalloff || 0,
     maxHp: placement.hp * hpMul,
     hp: placement.hp * hpMul,
     cooldown: rand(0.02, placement.reload),
@@ -539,14 +561,24 @@ function upgradeTower(tower) {
 
   const rangeMul = tower.kind === 'sunken'
     ? 1.24
+    : tower.kind === 'sunkenSplash'
+      ? 1.18
     : tower.kind === 'spine'
       ? 1.16
       : tower.kind === 'obelisk'
         ? 1.15
         : 1.2;
 
-  const damageMul = tower.kind === 'snare' ? 1.26 : 1.34;
-  const reloadMul = tower.kind === 'sunken' ? 0.88 : 0.9;
+  const damageMul = tower.kind === 'snare'
+    ? 1.26
+    : tower.kind === 'sunkenSplash'
+      ? 1.3
+      : 1.34;
+  const reloadMul = tower.kind === 'sunken'
+    ? 0.88
+    : tower.kind === 'sunkenSplash'
+      ? 0.92
+      : 0.9;
 
   state.gold -= cost;
   tower.level += 1;
@@ -560,6 +592,9 @@ function upgradeTower(tower) {
     tower.snareSlow = Math.max(0.32, tower.snareSlow * 0.93);
     tower.weakenMul += 0.09;
     tower.pierce = 0;
+  } else if (tower.kind === 'sunkenSplash') {
+    tower.splashRadius *= 1.15;
+    tower.splashFalloff = clamp(tower.splashFalloff + 0.05, 0.3, 0.68);
   }
   tower.maxHp *= 1.34;
   tower.hp = Math.min(tower.maxHp, tower.hp + tower.maxHp * 0.25);
@@ -1017,7 +1052,7 @@ function refreshBuildHint() {
   const ultState = state.ultSunkenArmed && state.ultSunkenCharges > 0 ? 'ON' : 'OFF';
   const sellState = state.sellMode ? 'ON' : 'OFF';
   const mobileTag = isMobileView ? '모바일 큰칸' : '일반';
-  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4 선택 · Q 성큰크기(${footprint}) · R 필살성큰(${ultState}/${state.ultSunkenCharges}) · ${mobileTag} · F +0.25x · G -0.25x`;
+  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4/5 선택 · Q 성큰크기(${footprint}) · R 필살성큰(${ultState}/${state.ultSunkenCharges}) · ${mobileTag} · F +0.25x · G -0.25x`;
 }
 
 function nearestEnemy(x, y, range) {
@@ -1170,19 +1205,22 @@ function emitBullet(tower, target) {
   const d = Math.hypot(dx, dy) || 1;
   const isSnare = tower.kind === 'snare';
   const isUltSunken = tower.kind === 'sunken' && tower.ultimate;
+  const isSplashSunken = tower.kind === 'sunkenSplash';
 
   state.bullets.push({
     x: tower.x,
     y: tower.y,
     vx: (dx / d) * tower.bulletSpeed,
     vy: (dy / d) * tower.bulletSpeed,
-    r: isUltSunken ? 6.5 : tower.kind === 'obelisk' ? 5 : isSnare ? 4.5 : 4,
+    r: isUltSunken ? 6.5 : isSplashSunken ? 5.6 : tower.kind === 'obelisk' ? 5 : isSnare ? 4.5 : 4,
     damage: isUltSunken ? tower.damage * 1.12 : tower.damage,
     life: 2,
     color: tower.color,
     pierce: isSnare ? 0 : tower.pierce + (isUltSunken ? 1 : 0),
     towerKind: tower.kind,
     ult: isUltSunken,
+    splashRadius: isSplashSunken ? tower.splashRadius : 0,
+    splashFalloff: isSplashSunken ? tower.splashFalloff : 0,
     snareDuration: tower.snareDuration,
     snareSlow: tower.snareSlow,
     weakenMul: tower.weakenMul,
@@ -1205,12 +1243,15 @@ function emitBullet(tower, target) {
       impactSfx.play('ultShot', { volume: 0.42, minGap: 0.08, rateMin: 0.9, rateMax: 0.98 });
     }
     if (Math.random() < 0.4) sfx(330 + rand(-24, 18), 0.03, 'triangle', 0.011);
+  } else if (tower.kind === 'sunkenSplash') {
+    impactSfx.play('enemyHitHeavy', { volume: 0.26, minGap: 0.08, rateMin: 0.95, rateMax: 1.03 });
+    if (Math.random() < 0.6) sfx(290 + rand(-18, 14), 0.04, 'square', 0.012);
   } else if (Math.random() < 0.35) {
     sfx(430 + rand(-26, 28), 0.03, 'square', 0.01);
   }
 }
 
-function hurtEnemy(enemy, damage, sourceKind = '', sourceUlt = false) {
+function hurtEnemy(enemy, damage, sourceKind = '', sourceUlt = false, secondary = false) {
   const weakenDamage = enemy.weakenTimer > 0 ? enemy.weakenMul : 1;
   const siegeDamage = enemy.breaker ? 1 + state.siegeDamageBonus : 1;
   enemy.hp -= damage * weakenDamage * siegeDamage;
@@ -1236,10 +1277,18 @@ function hurtEnemy(enemy, damage, sourceKind = '', sourceUlt = false) {
       rateMin: sourceUlt ? 0.9 : 0.95,
       rateMax: sourceUlt ? 0.99 : 1.06,
     });
-    if (Math.random() < 0.35) sfx(286 + rand(-22, 18), 0.04, 'triangle', 0.011);
+    if (!secondary && Math.random() < 0.35) sfx(286 + rand(-22, 18), 0.04, 'triangle', 0.011);
+  } else if (sourceKind === 'sunkenSplash') {
+    impactSfx.play(sourceUlt ? 'enemyHitHeavy' : 'enemyHit', {
+      volume: sourceUlt ? 0.42 : 0.3,
+      minGap: sourceUlt ? 0.09 : 0.05,
+      rateMin: sourceUlt ? 0.88 : 0.93,
+      rateMax: sourceUlt ? 0.97 : 1.02,
+    });
+    if (!secondary && Math.random() < 0.5) sfx(270 + rand(-16, 14), 0.04, 'square', 0.012);
   } else if (sourceKind === 'snare') {
     impactSfx.play('enemyHit', { volume: 0.24, minGap: 0.05, rateMin: 0.96, rateMax: 1.05 });
-    if (Math.random() < 0.28) sfx(248 + rand(-18, 16), 0.04, 'sine', 0.01);
+    if (!secondary && Math.random() < 0.28) sfx(248 + rand(-18, 16), 0.04, 'sine', 0.01);
   } else if (sourceKind) {
     impactSfx.play('enemyHit', { volume: 0.26, minGap: 0.045, rateMin: 0.95, rateMax: 1.04 });
   }
@@ -1310,13 +1359,46 @@ function updateBullets(dt) {
           enemy.snareSlowMul = Math.min(enemy.snareSlowMul, b.snareSlow || 0.55);
           enemy.weakenTimer = Math.max(enemy.weakenTimer, (b.snareDuration || 2) + 0.6);
           enemy.weakenMul = Math.max(enemy.weakenMul, b.weakenMul || 1.25);
-          hurtEnemy(enemy, b.damage * 0.55, b.towerKind, Boolean(b.ult));
+          hurtEnemy(enemy, b.damage * 0.55, b.towerKind, Boolean(b.ult), false);
           if (Math.random() < 0.28) flashBanner('Snare: 공성몹 둔화/약화', 0.45);
         }
         state.bullets.splice(i, 1);
         removed = true;
       } else {
-        hurtEnemy(enemy, b.damage, b.towerKind, Boolean(b.ult));
+        hurtEnemy(enemy, b.damage, b.towerKind, Boolean(b.ult), false);
+
+        if (b.splashRadius > 0) {
+          const splashRadius = b.splashRadius;
+          const splashSq = splashRadius * splashRadius;
+          for (const other of [...state.enemies]) {
+            if (other === enemy) continue;
+            const sdx = other.x - enemy.x;
+            const sdy = other.y - enemy.y;
+            const sDistSq = sdx * sdx + sdy * sdy;
+            if (sDistSq > splashSq) continue;
+
+            const sDist = Math.sqrt(sDistSq);
+            const rawRate = 1 - (sDist / Math.max(1, splashRadius));
+            const rate = clamp(rawRate, b.splashFalloff || 0.35, 1);
+            const splashDamage = b.damage * rate * 0.72;
+            hurtEnemy(other, splashDamage, b.towerKind, Boolean(b.ult), true);
+          }
+
+          for (let p = 0; p < 8; p += 1) {
+            const ang = rand(0, TAU);
+            const dist = rand(4, splashRadius * 0.45);
+            state.particles.push({
+              x: enemy.x + Math.cos(ang) * dist,
+              y: enemy.y + Math.sin(ang) * dist,
+              vx: Math.cos(ang) * rand(40, 140),
+              vy: Math.sin(ang) * rand(40, 140),
+              life: rand(0.12, 0.24),
+              size: rand(2.2, 4.1),
+              color: '#ffc48d',
+            });
+          }
+        }
+
         if (b.pierce > 0) {
           b.pierce -= 1;
           b.damage *= 0.78;
@@ -1581,6 +1663,7 @@ function drawEndpoints() {
 }
 
 function drawTowerSunken(tower, now) {
+  const isSplash = tower.kind === 'sunkenSplash';
   const scale = 1 + ((tower.footprint || 1) - 1) * 0.86;
   const pulse = 0.5 + 0.5 * Math.sin(now * 4 + tower.c * 0.31 + tower.r * 0.17);
   const ringR = (8.4 + tower.level * 1.3) * scale;
@@ -1593,22 +1676,30 @@ function drawTowerSunken(tower, now) {
   ctx.arc(0, 0, ringR + 2.8, 0, TAU);
   ctx.fill();
 
-  ctx.strokeStyle = `rgba(147, 225, 255, ${0.34 + pulse * 0.24})`;
+  ctx.strokeStyle = isSplash
+    ? `rgba(255, 201, 143, ${0.34 + pulse * 0.24})`
+    : `rgba(147, 225, 255, ${0.34 + pulse * 0.24})`;
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.arc(0, 0, ringR + 1.3, 0, TAU);
   ctx.stroke();
 
   const vortex = ctx.createRadialGradient(0, 0, 1, 0, 0, ringR);
-  vortex.addColorStop(0, '#7ee8ff');
-  vortex.addColorStop(0.65, '#3e8ab5');
-  vortex.addColorStop(1, '#11273a');
+  if (isSplash) {
+    vortex.addColorStop(0, '#ffd27e');
+    vortex.addColorStop(0.65, '#b0763f');
+    vortex.addColorStop(1, '#2e1e12');
+  } else {
+    vortex.addColorStop(0, '#7ee8ff');
+    vortex.addColorStop(0.65, '#3e8ab5');
+    vortex.addColorStop(1, '#11273a');
+  }
   ctx.fillStyle = vortex;
   ctx.beginPath();
   ctx.arc(0, 0, ringR, 0, TAU);
   ctx.fill();
 
-  ctx.strokeStyle = 'rgba(196, 242, 255, 0.62)';
+  ctx.strokeStyle = isSplash ? 'rgba(255, 232, 171, 0.62)' : 'rgba(196, 242, 255, 0.62)';
   ctx.lineWidth = 1.6;
   for (let i = 0; i < 2 + tower.level; i += 1) {
     const rot = now * (0.8 + i * 0.22) + i * 1.2;
@@ -1618,7 +1709,7 @@ function drawTowerSunken(tower, now) {
   }
 
   const teeth = 5 + tower.level * 2;
-  ctx.fillStyle = 'rgba(198, 246, 255, 0.78)';
+  ctx.fillStyle = isSplash ? 'rgba(255, 215, 142, 0.78)' : 'rgba(198, 246, 255, 0.78)';
   for (let i = 0; i < teeth; i += 1) {
     const a = (i / teeth) * TAU + now * 0.3;
     const inner = ringR + 0.4;
@@ -1643,6 +1734,14 @@ function drawTowerSunken(tower, now) {
     ctx.beginPath();
     ctx.arc(0, 0, 2.8 + pulse * 1.3, 0, TAU);
     ctx.fill();
+  }
+
+  if (isSplash) {
+    ctx.strokeStyle = `rgba(255, 169, 86, ${0.52 + pulse * 0.24})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, ringR + 6 + pulse * 1.5, 0, TAU);
+    ctx.stroke();
   }
 
   ctx.restore();
@@ -1804,16 +1903,18 @@ function drawTowers() {
 
     const border = tower.kind === 'sunken'
       ? 'rgba(141, 217, 255, 0.8)'
-      : tower.kind === 'spine'
-        ? 'rgba(185, 232, 172, 0.8)'
-        : tower.kind === 'obelisk'
-          ? 'rgba(226, 177, 255, 0.85)'
-          : 'rgba(154, 232, 255, 0.88)';
+      : tower.kind === 'sunkenSplash'
+        ? 'rgba(255, 193, 132, 0.86)'
+        : tower.kind === 'spine'
+          ? 'rgba(185, 232, 172, 0.8)'
+          : tower.kind === 'obelisk'
+            ? 'rgba(226, 177, 255, 0.85)'
+            : 'rgba(154, 232, 255, 0.88)';
     ctx.strokeStyle = border;
     ctx.lineWidth = 2;
     ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
 
-    if (tower.kind === 'sunken') {
+    if (tower.kind === 'sunken' || tower.kind === 'sunkenSplash') {
       drawTowerSunken(tower, now);
     } else if (tower.kind === 'spine') {
       drawTowerSpine(tower, now);
@@ -2158,9 +2259,10 @@ canvas.addEventListener('pointerdown', (event) => {
 
 window.addEventListener('keydown', (event) => {
   if (event.code === 'Digit1') chooseTower('sunken');
-  if (event.code === 'Digit2') chooseTower('spine');
-  if (event.code === 'Digit3') chooseTower('obelisk');
-  if (event.code === 'Digit4') chooseTower('snare');
+  if (event.code === 'Digit2') chooseTower('sunkenSplash');
+  if (event.code === 'Digit3') chooseTower('spine');
+  if (event.code === 'Digit4') chooseTower('obelisk');
+  if (event.code === 'Digit5') chooseTower('snare');
 
   if (event.code === 'KeyQ') {
     state.sunkenFootprint = state.sunkenFootprint === 1 ? 2 : 1;
