@@ -1327,6 +1327,8 @@ function makeEnemy(type) {
     jumper: Boolean(d.jumper),
     snareTimer: 0,
     snareSlowMul: 1,
+    slowSource: '',
+    slowHitFx: 0,
     weakenTimer: 0,
     weakenMul: 1,
   };
@@ -2208,6 +2210,10 @@ function updateBullets(dt) {
         const snareSlow = b.snareSlow || (b.towerKind === 'sunkenSlow' ? 0.66 : 0.55);
         enemy.snareTimer = Math.max(enemy.snareTimer, snareDuration);
         enemy.snareSlowMul = Math.min(enemy.snareSlowMul, snareSlow);
+        enemy.slowSource = b.towerKind;
+        if (b.towerKind === 'sunkenSlow') {
+          enemy.slowHitFx = Math.max(enemy.slowHitFx, 0.45);
+        }
         if (b.towerKind === 'snare') {
           enemy.weakenTimer = Math.max(enemy.weakenTimer, snareDuration + 0.6);
           enemy.weakenMul = Math.max(enemy.weakenMul, b.weakenMul || 1.25);
@@ -2281,8 +2287,12 @@ function stageMoveSpeedMultiplier(stage = state.stage) {
 function updateEnemy(enemy, dt) {
   enemy.repath -= dt;
   enemy.snareTimer = Math.max(0, enemy.snareTimer - dt);
+  enemy.slowHitFx = Math.max(0, (enemy.slowHitFx || 0) - dt);
   enemy.weakenTimer = Math.max(0, enemy.weakenTimer - dt);
-  if (enemy.snareTimer <= 0) enemy.snareSlowMul = 1;
+  if (enemy.snareTimer <= 0) {
+    enemy.snareSlowMul = 1;
+    enemy.slowSource = '';
+  }
   if (enemy.weakenTimer <= 0) enemy.weakenMul = 1;
 
   const speed = enemy.speed * stageMoveSpeedMultiplier(state.stage) * (enemy.snareTimer > 0 ? enemy.snareSlowMul : 1);
@@ -3019,7 +3029,9 @@ function drawEnemyTankSprite(enemy) {
   ctx.save();
   ctx.translate(enemy.x, enemy.y);
   ctx.rotate(ang);
-  if (enemy.snareTimer > 0) ctx.globalAlpha = 0.84;
+  if (enemy.snareTimer > 0) {
+    ctx.globalAlpha = enemy.slowSource === 'sunkenSlow' ? 0.76 : 0.84;
+  }
   ctx.drawImage(img, -size * 0.5, -size * 0.5, size, size);
   ctx.globalAlpha = 1;
   ctx.restore();
@@ -3077,7 +3089,8 @@ function drawEnemies() {
     }
 
     if (enemy.fast) {
-      ctx.strokeStyle = 'rgba(255, 230, 180, 0.86)';
+      const fastMarkAlpha = enemy.snareTimer > 0 ? 0.42 : 0.86;
+      ctx.strokeStyle = `rgba(255, 230, 180, ${fastMarkAlpha})`;
       ctx.lineWidth = 1.8;
       ctx.beginPath();
       ctx.moveTo(enemy.x - enemy.r * 0.55, enemy.y - enemy.r * 0.1);
@@ -3097,11 +3110,57 @@ function drawEnemies() {
     }
 
     if (enemy.snareTimer > 0) {
-      ctx.strokeStyle = 'rgba(155, 241, 255, 0.85)';
-      ctx.lineWidth = 2;
+      const slowIntensity = clamp(1 - enemy.snareSlowMul, 0, 0.8);
+      const isSlowSunken = enemy.slowSource === 'sunkenSlow';
+      ctx.strokeStyle = isSlowSunken
+        ? `rgba(141, 255, 221, ${0.72 + slowIntensity * 0.35})`
+        : 'rgba(155, 241, 255, 0.85)';
+      ctx.lineWidth = isSlowSunken ? 2.2 : 2;
       ctx.beginPath();
       ctx.arc(enemy.x, enemy.y, enemy.r + 6, 0, TAU);
       ctx.stroke();
+
+      if (isSlowSunken) {
+        const velLen = Math.hypot(enemy.vx, enemy.vy) || 1;
+        const nx = enemy.vx / velLen;
+        const ny = enemy.vy / velLen;
+        const trailLen = 8 + slowIntensity * 18;
+        ctx.strokeStyle = `rgba(171, 255, 230, ${0.32 + slowIntensity * 0.45})`;
+        ctx.lineWidth = 1.6;
+        for (let i = 0; i < 3; i += 1) {
+          const sideJitter = Math.sin(now * 8.5 + enemy.morph + i * 1.3) * (1.1 + i * 0.4);
+          const ox = -ny * sideJitter;
+          const oy = nx * sideJitter;
+          const back = enemy.r * 0.25 + i * 4.2;
+          const sx = enemy.x - nx * back + ox;
+          const sy = enemy.y - ny * back + oy;
+          const ex = sx - nx * (trailLen + i * 2.8);
+          const ey = sy - ny * (trailLen + i * 2.8);
+          ctx.beginPath();
+          ctx.moveTo(sx, sy);
+          ctx.lineTo(ex, ey);
+          ctx.stroke();
+        }
+
+        ctx.save();
+        ctx.setLineDash([4, 5]);
+        ctx.lineDashOffset = -(now * 26 + enemy.morph * 5);
+        ctx.strokeStyle = `rgba(132, 248, 211, ${0.4 + slowIntensity * 0.42})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, enemy.r + 9 + Math.sin(now * 5 + enemy.morph) * 1.4, 0, TAU);
+        ctx.stroke();
+        ctx.restore();
+
+        if (enemy.slowHitFx > 0.001) {
+          const hitRatio = clamp(enemy.slowHitFx / 0.45, 0, 1);
+          ctx.strokeStyle = `rgba(201, 255, 236, ${0.24 + hitRatio * 0.5})`;
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          ctx.arc(enemy.x, enemy.y, enemy.r + 10 + (1 - hitRatio) * 6, 0, TAU);
+          ctx.stroke();
+        }
+      }
     }
 
     if (enemy.weakenTimer > 0) {
