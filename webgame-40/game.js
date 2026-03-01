@@ -337,6 +337,18 @@ function neighborStep(c, r) {
 }
 
 function flashBanner(text, ttl = 1.2, warn = false) {
+  if (isMobileView && state.mode === 'playing') {
+    const noisyCombatBanner = (
+      text.startsWith('BASE -')
+      || text.includes('공성 몹이 건물 공격 중')
+      || text.includes('DESTROYED')
+      || text.includes('봉인 시전')
+      || text.includes('Snare:')
+    );
+    if (noisyCombatBanner) return;
+    ttl = Math.min(ttl, 0.58);
+  }
+
   state.banner.text = text;
   state.banner.ttl = ttl;
   state.banner.warn = warn;
