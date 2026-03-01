@@ -705,9 +705,11 @@ function sellTower(c, r) {
 function makeEnemy(type) {
   const s = state.stage;
   const stageIndex = s - 1;
+  const earlyStageIndex = Math.min(stageIndex, 9);
   const lateIndex = Math.max(0, s - 10);
-  const stageSpeedMul = 1 + stageIndex * 0.12 + lateIndex * 0.09 + lateIndex * lateIndex * 0.004;
-  const stageHpMul = 1 + stageIndex * 0.2 + stageIndex * stageIndex * 0.013 + lateIndex * 0.12;
+  // Stage 11~20 구간에서 폭증하던 배율을 완만하게 눌러 난이도 붕괴를 줄인다.
+  const stageSpeedMul = 1 + earlyStageIndex * 0.12 + lateIndex * 0.07 + lateIndex * lateIndex * 0.0025;
+  const stageHpMul = 1 + earlyStageIndex * 0.2 + earlyStageIndex * earlyStageIndex * 0.013 + lateIndex * 0.13 + lateIndex * lateIndex * 0.006;
   const radiusMul = 1 + stageIndex * 0.022;
   const threatBase = clamp(0.18 + s * 0.07, 0.2, 0.92);
   const typeThreat = {
@@ -732,7 +734,7 @@ function makeEnemy(type) {
       r: 12,
       color: '#ff9d7f',
       breaker: true,
-      towerDamage: 24 + s * 7 + lateIndex * 5,
+      towerDamage: 24 + s * 6 + lateIndex * 3,
       attackInterval: 0.95,
       attackRange: 22,
     },
@@ -744,7 +746,7 @@ function makeEnemy(type) {
       r: 15,
       color: '#ffc17c',
       breaker: true,
-      towerDamage: 46 + s * 11 + lateIndex * 8,
+      towerDamage: 46 + s * 9 + lateIndex * 5,
       attackInterval: 1.28,
       attackRange: 26,
     },
@@ -753,7 +755,7 @@ function makeEnemy(type) {
   const d = defs[type];
   const spawn = cellCenter(SPAWN.c, SPAWN.r);
   const threat = clamp(threatBase + (typeThreat[type] || 0), 0.2, 1.2);
-  const leakBonus = s >= 17 ? 4 : s >= 13 ? 3 : s >= 9 ? 2 : s >= 6 ? 1 : 0;
+  const leakBonus = s >= 18 ? 3 : s >= 14 ? 2 : s >= 10 ? 1 : s >= 6 ? 1 : 0;
   const leak = d.leak + (d.boss ? leakBonus : Math.floor(leakBonus * 0.5));
 
   return {
@@ -779,7 +781,7 @@ function makeEnemy(type) {
     morph: rand(0, TAU),
     breaker: Boolean(d.breaker),
     towerDamage: d.towerDamage || 0,
-    attackInterval: Math.max(0.45, (d.attackInterval || 1) - s * 0.008 - lateIndex * 0.012),
+    attackInterval: Math.max(0.52, (d.attackInterval || 1) - s * 0.006 - lateIndex * 0.007),
     attackRange: (d.attackRange || 0) * BALANCE_SCALE,
     attackCd: rand(0.1, 0.6),
     targetTowerId: 0,
@@ -787,17 +789,18 @@ function makeEnemy(type) {
     snareSlowMul: 1,
     weakenTimer: 0,
     weakenMul: 1,
-    sealCd: d.boss ? Math.max(2.8, 6.4 - s * 0.14) : 0,
-    sealInterval: d.boss ? Math.max(3.2, 7.1 - s * 0.16) : 0,
-    sealDuration: d.boss ? Math.min(6.2, 2.1 + s * 0.14) : 0,
-    sealCount: d.boss ? (s >= 15 ? 3 : s >= 8 ? 2 : 1) : 0,
+    sealCd: d.boss ? Math.max(3.4, 6.8 - s * 0.11) : 0,
+    sealInterval: d.boss ? Math.max(3.8, 7.5 - s * 0.12) : 0,
+    sealDuration: d.boss ? Math.min(5.4, 1.8 + s * 0.11) : 0,
+    sealCount: d.boss ? (s >= 18 ? 3 : s >= 12 ? 2 : 1) : 0,
   };
 }
 
 function makeStageQueue(stage) {
   const queue = [];
+  const earlyStage = Math.min(stage, 10);
   const lateIndex = Math.max(0, stage - 10);
-  const baseCount = 22 + stage * 9 + Math.floor(Math.pow(stage, 1.35) * 3) + lateIndex * 10;
+  const baseCount = 22 + earlyStage * 9 + Math.floor(Math.pow(earlyStage, 1.35) * 3) + lateIndex * 4 + Math.floor(lateIndex * lateIndex * 0.8);
 
   for (let i = 0; i < baseCount; i += 1) {
     const roll = Math.random();
@@ -826,13 +829,13 @@ function makeStageQueue(stage) {
     queue.push(type);
   }
 
-  const elderCount = 1 + Math.floor(stage * 1.0) + Math.floor(lateIndex * 0.8);
+  const elderCount = 1 + Math.floor(stage * 0.75) + Math.floor(lateIndex * 0.4);
   for (let i = 0; i < elderCount; i += 1) {
     const pos = Math.floor(queue.length * (0.25 + Math.random() * 0.55));
     queue.splice(pos, 0, 'elder');
   }
 
-  const bruteCount = Math.max(0, stage - 3) + Math.floor(lateIndex * 1.1);
+  const bruteCount = Math.max(0, stage - 4) + Math.floor(lateIndex * 0.6);
   for (let i = 0; i < bruteCount; i += 1) {
     const pos = Math.floor(queue.length * (0.2 + Math.random() * 0.6));
     queue.splice(pos, 0, 'brute');
@@ -840,14 +843,19 @@ function makeStageQueue(stage) {
 
   if (stage >= 8) {
     const surgePos = Math.floor(queue.length * 0.72);
-    queue.splice(surgePos, 0, 'elder', 'elder', 'crusher');
+    if (stage <= 12) {
+      queue.splice(surgePos, 0, 'elder', 'elder', 'crusher');
+    } else {
+      queue.splice(surgePos, 0, 'elder', 'brute', Math.random() < 0.55 ? 'crusher' : 'raider');
+    }
   }
 
   if (stage >= 6) {
-    const breakerCount = 1 + Math.floor(stage * 0.62) + Math.floor(lateIndex * 0.7);
+    const breakerCount = 1 + Math.floor(stage * 0.46) + Math.floor(lateIndex * 0.38);
+    const crusherPickChance = clamp(0.32 + lateIndex * 0.01, 0.32, 0.44);
     for (let i = 0; i < breakerCount; i += 1) {
       const pos = Math.floor(queue.length * (0.28 + Math.random() * 0.5));
-      queue.splice(pos, 0, stage >= 8 && Math.random() < (0.45 + lateIndex * 0.015) ? 'crusher' : 'raider');
+      queue.splice(pos, 0, stage >= 8 && Math.random() < crusherPickChance ? 'crusher' : 'raider');
     }
   }
 
@@ -1634,8 +1642,9 @@ function updateSpawning(dt) {
 
   if (state.spawnQueue.length > 0) {
     state.spawnTimer -= dt;
+    const earlyStage = Math.min(state.stage, 10);
     const lateIndex = Math.max(0, state.stage - 10);
-    const spawnDelay = Math.max(0.035, 0.4 - state.stage * 0.02 - lateIndex * 0.012);
+    const spawnDelay = Math.max(0.055, 0.4 - earlyStage * 0.02 - lateIndex * 0.011);
     while (state.spawnTimer <= 0 && state.spawnQueue.length > 0) {
       spawnOne();
       state.spawnTimer += spawnDelay;
