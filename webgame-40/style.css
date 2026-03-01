@@ -176,6 +176,50 @@ header p {
   font-size: 13px;
 }
 
+.tower-guide {
+  width: 100%;
+  border: 1px solid #354a6d;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: linear-gradient(180deg, rgba(14, 24, 41, 0.82), rgba(11, 18, 33, 0.82));
+  display: grid;
+  gap: 4px;
+}
+
+.tower-guide .line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.tower-guide .name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #f4f9ff;
+}
+
+.tower-guide .badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(155, 193, 237, 0.4);
+  background: rgba(41, 66, 103, 0.32);
+  color: #cfe2ff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tower-guide .meta {
+  color: #b7c7de;
+  font-size: 12px;
+}
+
+.tower-guide .desc {
+  color: #d6e2f3;
+  font-size: 12px;
+  line-height: 1.36;
+}
+
 .arena {
   margin-top: 10px;
   position: relative;
@@ -353,6 +397,21 @@ footer {
     margin-left: 0;
     font-size: 11px;
     line-height: 1.25;
+  }
+
+  .tower-guide {
+    padding: 7px 8px;
+    gap: 3px;
+  }
+
+  .tower-guide .name {
+    font-size: 13px;
+  }
+
+  .tower-guide .badge,
+  .tower-guide .meta,
+  .tower-guide .desc {
+    font-size: 11px;
   }
 
   .build-btn {

@@ -12,6 +12,7 @@ const queueTextEl = document.getElementById('queueText');
 const killsTextEl = document.getElementById('killsText');
 const speedTextEl = document.getElementById('speedText');
 const buildHintEl = document.getElementById('buildHint');
+const towerGuideEl = document.getElementById('towerGuide');
 
 const btnSunken = document.getElementById('btnSunken');
 const btnSpine = document.getElementById('btnSpine');
@@ -243,6 +244,34 @@ const TOWER_TYPES = {
     snareDuration: 2.4,
     snareSlow: 0.48,
     weakenMul: 1.42,
+  },
+};
+
+const TOWER_GUIDE_DETAILS = {
+  sunken: {
+    role: '기본 라인 딜러',
+    summary: '저비용/고연사 단일 공격. 초반 길목을 빠르게 채우는 핵심 타워.',
+    tips: '다수 배치에 강하지만, 후반 고체력 적은 단독 처리력이 낮음.',
+  },
+  spine: {
+    role: '지속 화력 특화',
+    summary: '중거리에서 빠른 탄막으로 잔몹과 러시 웨이브를 쓸어내는 타워.',
+    tips: '한 방이 약해 보스는 Obelisk 계열과 조합해야 안정적.',
+  },
+  obelisk: {
+    role: '장거리 중장갑 포격',
+    summary: '긴 사거리와 높은 일격 대미지, 관통으로 탱커/보스 대응에 특화.',
+    tips: '비용이 높고 연사력이 낮아 초반 과투자 시 라인이 무너질 수 있음.',
+  },
+  sunkenSplash: {
+    role: '광역 압축 화력',
+    summary: '피격 지점 주변에 스플래시 대미지를 주는 중후반 핵심 광역 타워.',
+    tips: '좁은 길목, 몹이 뭉치는 구간에 배치하면 효율이 크게 상승.',
+  },
+  snare: {
+    role: '디버프/제어',
+    summary: '공성몹 둔화와 약화 디버프를 걸어 다른 타워 딜을 증폭.',
+    tips: 'Snare 단독 화력은 낮으므로 딜 타워와 반드시 함께 운용.',
   },
 };
 
@@ -1053,6 +1082,45 @@ function refreshBuildHint() {
   const sellState = state.sellMode ? 'ON' : 'OFF';
   const mobileTag = isMobileView ? '모바일 큰칸' : '일반';
   buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4/5 선택 · Q 성큰크기(${footprint}) · R 필살성큰(${ultState}/${state.ultSunkenCharges}) · ${mobileTag} · F +0.25x · G -0.25x`;
+  refreshTowerGuide();
+}
+
+function refreshTowerGuide() {
+  if (!towerGuideEl) return;
+
+  const tower = TOWER_TYPES[state.selectedTower];
+  if (!tower) {
+    towerGuideEl.textContent = '';
+    return;
+  }
+
+  const guide = TOWER_GUIDE_DETAILS[state.selectedTower] || {
+    role: '전술 타워',
+    summary: '현재 상황에 맞게 운용하세요.',
+    tips: '',
+  };
+
+  const attacksPerSec = tower.reload > 0 ? (1 / tower.reload) : 0;
+  const dps = tower.reload > 0 ? tower.damage / tower.reload : tower.damage;
+  const badges = [
+    `비용 ${tower.cost}`,
+    `사거리 ${Math.round(tower.range / BALANCE_SCALE)}`,
+    `초당 ${attacksPerSec.toFixed(2)}발`,
+    `기본 DPS ${Math.round(dps)}`,
+  ];
+
+  if (tower.pierce > 0) badges.push(`관통 ${tower.pierce}`);
+  if (tower.splashRadius > 0) badges.push(`스플래시 ${Math.round(tower.splashRadius / BALANCE_SCALE)}`);
+  if (tower.snareDuration && tower.snareSlow) badges.push(`둔화 ${Math.round((1 - tower.snareSlow) * 100)}%`);
+
+  towerGuideEl.innerHTML = `
+    <div class="line">
+      <span class="name">${tower.name}</span>
+      ${badges.map((label) => `<span class="badge">${label}</span>`).join('')}
+    </div>
+    <div class="meta">${guide.role}</div>
+    <div class="desc">${guide.summary} ${guide.tips}</div>
+  `;
 }
 
 function nearestEnemy(x, y, range) {
