@@ -50,7 +50,16 @@
       let beatStep = 0;
       const settings = loadSettings();
       const showSfxToggle = options.showSfxToggle !== false;
-      const showThemeToggle = options.showThemeToggle !== false;
+      const mediaSrc = typeof options.mediaSrc === 'string' ? options.mediaSrc.trim() : '';
+      const useMediaBgm = Boolean(mediaSrc);
+      const showThemeToggle = !useMediaBgm && options.showThemeToggle !== false;
+      const mediaBgm = useMediaBgm ? new Audio(mediaSrc) : null;
+      if (mediaBgm) {
+        mediaBgm.loop = true;
+        mediaBgm.preload = 'auto';
+        mediaBgm.volume = settings.volume;
+        mediaBgm.setAttribute('playsinline', '');
+      }
 
       function pickDefaultTheme() {
         if (options.theme && THEME_BY_ID[options.theme]) return options.theme;
@@ -105,13 +114,26 @@
       }
 
       function startBgm() {
-        if (!settings.bgm || beatTimer) return;
+        if (!settings.bgm) return;
+        if (mediaBgm) {
+          mediaBgm.volume = settings.volume;
+          if (!mediaBgm.paused) return;
+          const played = mediaBgm.play();
+          if (played && typeof played.catch === 'function') {
+            played.catch(() => {});
+          }
+          return;
+        }
+        if (beatTimer) return;
         ensureCtx();
         const theme = THEME_BY_ID[themeId] || THEMES[0];
         beatTimer = setInterval(bgmTick, theme.stepMs || 320);
       }
 
       function stopBgm() {
+        if (mediaBgm && !mediaBgm.paused) {
+          mediaBgm.pause();
+        }
         if (!beatTimer) return;
         clearInterval(beatTimer);
         beatTimer = null;
@@ -130,6 +152,7 @@
         settings.themes = settings.themes || {};
         settings.themes[gameId] = themeId;
         saveSettings(settings);
+        if (mediaBgm) mediaBgm.volume = settings.volume;
         updateButtons();
       }
 
@@ -208,6 +231,7 @@
         unlock,
         fx,
         setTheme(nextThemeId) {
+          if (useMediaBgm) return;
           if (!THEME_BY_ID[nextThemeId]) return;
           themeId = nextThemeId;
           stopBgm();
@@ -220,6 +244,11 @@
         },
         destroy() {
           stopBgm();
+          if (mediaBgm) {
+            mediaBgm.pause();
+            mediaBgm.removeAttribute('src');
+            mediaBgm.load();
+          }
         }
       };
     }

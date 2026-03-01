@@ -16,7 +16,11 @@ const btnSpine = document.getElementById('btnSpine');
 const btnObelisk = document.getElementById('btnObelisk');
 const btnSnare = document.getElementById('btnSnare');
 
-const bgmAudio = window.TapTapNeonAudio?.create('webgame-40', hudEl, { theme: 'rush' });
+const bgmAudio = window.TapTapNeonAudio?.create('webgame-40', hudEl, {
+  theme: 'rush',
+  mediaSrc: '../assets/audio/battleThemeA.mp3',
+  showThemeToggle: false,
+});
 
 const W = canvas.width;
 const H = canvas.height;

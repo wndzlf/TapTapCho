@@ -15,6 +15,17 @@
 표기 문구:
 - "The Dawn Unfolds Remix by Konijn, licensed under CC BY 4.0"
 
+### Sunken Sixway Defense BGM
+- 트랙명: Battle Theme A
+- 제작자: cynicmusic.com / pixelsphere.org
+- 출처: https://opengameart.org/content/battle-theme-a
+- 라이선스: Creative Commons Zero (CC0 1.0)
+- 라이선스 원문: https://creativecommons.org/publicdomain/zero/1.0/
+- 프로젝트 내 파일: `assets/audio/battleThemeA.mp3`
+
+고지 참고:
+- CC0는 저작권 표기 의무가 없으나, 출처/제작자 표기를 권장함.
+
 ## 이미지/스프라이트
 
 ### Hyperfold 외계인/UFO 에셋
