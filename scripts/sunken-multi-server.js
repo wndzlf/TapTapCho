@@ -17,6 +17,9 @@ const SINGLE_RANK_MAX = 300;
 const SINGLE_RANK_FILE = path.join(__dirname, '..', 'data', 'sunken-single-ranks.json');
 const SINGLE_PLAYER_MAX = 2000;
 const SINGLE_PLAYER_FILE = path.join(__dirname, '..', 'data', 'sunken-single-players.json');
+const MULTI_STATE_MAX_ROOMS = 120;
+const MULTI_STATE_FILE = path.join(__dirname, '..', 'data', 'sunken-multi-state.json');
+const MULTI_STATE_SAVE_MS = 2000;
 
 const LANES = ['north', 'east', 'south', 'west'];
 const LANE_PRESETS = {
@@ -73,6 +76,11 @@ const TOWER_TYPES = {
 };
 
 const rooms = new Map();
+let multiStateDirty = false;
+
+function markMultiStateDirty() {
+  multiStateDirty = true;
+}
 
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
@@ -198,11 +206,14 @@ function createRoom(name, maxPlayers = MAX_PLAYERS) {
 
   startWave(room, 1);
   rooms.set(room.id, room);
+  markMultiStateDirty();
   return room;
 }
 
 function removeRoom(roomId) {
-  rooms.delete(roomId);
+  if (rooms.delete(roomId)) {
+    markMultiStateDirty();
+  }
 }
 
 function roomSummary(room) {
@@ -395,6 +406,343 @@ function registerSinglePlayer(raw) {
 }
 
 let singlePlayerRows = loadSinglePlayerRows();
+
+function toFiniteInt(raw, fallback = 0) {
+  const v = Math.floor(Number(raw));
+  return Number.isFinite(v) ? v : fallback;
+}
+
+function toFiniteNumber(raw, fallback = 0) {
+  const v = Number(raw);
+  return Number.isFinite(v) ? v : fallback;
+}
+
+function normalizeTowerState(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const type = TOWER_TYPES[String(raw.type || '')] ? String(raw.type) : 'sunken';
+  const spec = TOWER_TYPES[type] || TOWER_TYPES.sunken;
+  const maxHp = clamp(toFiniteInt(raw.maxHp, spec.hp), 1, 999999);
+  const hp = clamp(Number(raw.hp), 0, maxHp);
+  const cooldown = clamp(Number(raw.cooldown), 0, 20);
+  return {
+    type,
+    owner: safePlayerId(raw.owner),
+    hp: Number.isFinite(hp) ? hp : maxHp,
+    maxHp,
+    cooldown: Number.isFinite(cooldown) ? cooldown : 0,
+  };
+}
+
+function normalizeEnemyState(raw, activeLanes) {
+  if (!raw || typeof raw !== 'object') return null;
+  const lane = String(raw.lane || '');
+  if (!activeLanes.includes(lane)) return null;
+  const id = clamp(toFiniteInt(raw.id, 0), 1, 1_000_000_000);
+  const kind = String(raw.kind || 'ghoul').slice(0, 20) || 'ghoul';
+  const maxHp = clamp(toFiniteInt(raw.maxHp, 1), 1, 9999999);
+  const hp = clamp(Number(raw.hp), 0, maxHp);
+  return {
+    id,
+    lane,
+    kind,
+    progress: clamp(toFiniteNumber(raw.progress, 0), 0, 1.5),
+    hp: Number.isFinite(hp) ? hp : maxHp,
+    maxHp,
+    speed: clamp(toFiniteNumber(raw.speed, 0.08), 0.01, 5),
+    reward: clamp(toFiniteInt(raw.reward, 0), 0, 1000000),
+    coreDamage: clamp(toFiniteInt(raw.coreDamage, 1), 1, 1000),
+    siegeDamage: clamp(toFiniteInt(raw.siegeDamage, 0), 0, 1000),
+    siegeRate: clamp(toFiniteNumber(raw.siegeRate, 1), 0.1, 30),
+    siegeCooldown: clamp(toFiniteNumber(raw.siegeCooldown, 0), 0, 30),
+    slowTimer: clamp(toFiniteNumber(raw.slowTimer, 0), 0, 30),
+    slowMul: clamp(toFiniteNumber(raw.slowMul, 1), 0.05, 1),
+    weakTimer: clamp(toFiniteNumber(raw.weakTimer, 0), 0, 30),
+    weakMul: clamp(toFiniteNumber(raw.weakMul, 1), 1, 5),
+  };
+}
+
+function normalizePlayerState(raw, activeLanes, now) {
+  if (!raw || typeof raw !== 'object') return null;
+  const id = safePlayerId(raw.id || raw.playerId);
+  const name = safePlayerName(raw.name || raw.playerName);
+  const laneRaw = String(raw.lane || '');
+  const lane = activeLanes.includes(laneRaw) ? laneRaw : '';
+  const actionQueueRaw = Array.isArray(raw.actionQueue) ? raw.actionQueue : [];
+  const actionQueue = actionQueueRaw
+    .map((v) => String(v || '').slice(0, 40))
+    .filter(Boolean)
+    .slice(-ACTION_MEMORY);
+  return {
+    id,
+    name,
+    lane,
+    online: false,
+    joinedAt: toFiniteInt(raw.joinedAt, now),
+    lastSeenAt: toFiniteInt(raw.lastSeenAt, now),
+    offlineSince: toFiniteInt(raw.offlineSince, now),
+    ws: null,
+    kills: clamp(toFiniteInt(raw.kills, 0), 0, 999999),
+    builds: clamp(toFiniteInt(raw.builds, 0), 0, 999999),
+    actionSet: new Set(actionQueue),
+    actionQueue,
+  };
+}
+
+function assignRecoveredPlayers(room, playerRows) {
+  const lanes = roomLanes(room);
+  const laneOwners = {
+    north: null,
+    east: null,
+    south: null,
+    west: null,
+  };
+  const players = new Map();
+
+  for (const row of playerRows.slice(0, room.maxPlayers || MAX_PLAYERS)) {
+    if (!row) continue;
+    if (players.has(row.id)) continue;
+
+    let lane = row.lane;
+    if (!lane || laneOwners[lane]) {
+      lane = lanes.find((it) => !laneOwners[it]) || '';
+    }
+    if (!lane) continue;
+
+    const player = {
+      ...row,
+      lane,
+      online: false,
+      ws: null,
+      offlineSince: row.offlineSince > 0 ? row.offlineSince : Date.now(),
+    };
+    players.set(player.id, player);
+    laneOwners[lane] = player.id;
+  }
+
+  room.players = players;
+  room.laneOwners = laneOwners;
+}
+
+function hydrateRoomState(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const now = Date.now();
+  let id = String(raw.id || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+  if (!id) id = shortRoomId();
+
+  const maxPlayers = normalizeRoomMaxPlayers(raw.maxPlayers);
+  const activeLanes = getActiveLanes(maxPlayers);
+  const coreHpMax = clamp(toFiniteInt(raw.coreHpMax, 240), 60, 1000000);
+  const coreHp = clamp(toFiniteInt(raw.coreHp, coreHpMax), 0, coreHpMax);
+
+  const room = {
+    id,
+    name: safeRoomName(raw.name),
+    maxPlayers,
+    activeLanes,
+    createdAt: toFiniteInt(raw.createdAt, now),
+    lastActiveAt: toFiniteInt(raw.lastActiveAt, now),
+    players: new Map(),
+    laneOwners: {
+      north: null,
+      east: null,
+      south: null,
+      west: null,
+    },
+    coreHp,
+    coreHpMax,
+    teamGold: clamp(toFiniteInt(raw.teamGold, 320), 0, 1000000),
+    kills: clamp(toFiniteInt(raw.kills, 0), 0, 100000000),
+    wave: clamp(toFiniteInt(raw.wave, 1), 1, 9999),
+    phase: raw.phase === 'defeat' ? 'defeat' : 'running',
+    waveState: String(raw.waveState || 'spawning'),
+    waveCooldown: clamp(toFiniteNumber(raw.waveCooldown, 0), 0, 60),
+    spawnTimer: clamp(toFiniteNumber(raw.spawnTimer, 0), 0, 10),
+    spawnInterval: clamp(toFiniteNumber(raw.spawnInterval, 1.05), 0.2, 2),
+    laneSpawnRemain: {
+      north: 0,
+      east: 0,
+      south: 0,
+      west: 0,
+    },
+    enemies: [],
+    nextEnemyId: 1,
+    laneTowers: createLaneBoard(),
+    lastSnapshotAt: 0,
+  };
+
+  for (const lane of LANES) {
+    room.laneSpawnRemain[lane] = activeLanes.includes(lane)
+      ? clamp(toFiniteInt(raw?.laneSpawnRemain?.[lane], 0), 0, 500000)
+      : 0;
+  }
+
+  for (const lane of activeLanes) {
+    const src = Array.isArray(raw?.laneTowers?.[lane]) ? raw.laneTowers[lane] : [];
+    for (let i = 0; i < SLOT_COUNT; i += 1) {
+      room.laneTowers[lane][i] = normalizeTowerState(src[i]);
+    }
+  }
+
+  const parsedPlayers = Array.isArray(raw.players)
+    ? raw.players.map((it) => normalizePlayerState(it, activeLanes, now)).filter(Boolean)
+    : [];
+  assignRecoveredPlayers(room, parsedPlayers);
+
+  const parsedEnemies = Array.isArray(raw.enemies)
+    ? raw.enemies.map((it) => normalizeEnemyState(it, activeLanes)).filter(Boolean)
+    : [];
+  room.enemies = parsedEnemies;
+  const maxEnemyId = parsedEnemies.reduce((acc, enemy) => Math.max(acc, enemy.id), 0);
+  room.nextEnemyId = Math.max(maxEnemyId + 1, clamp(toFiniteInt(raw.nextEnemyId, maxEnemyId + 1), 1, 1_000_000_000));
+
+  if (room.waveState !== 'spawning' && room.waveState !== 'cooldown' && room.waveState !== 'ended') {
+    room.waveState = room.phase === 'defeat' ? 'ended' : 'spawning';
+  }
+  if (room.phase === 'defeat') {
+    room.waveState = 'ended';
+    room.waveCooldown = 0;
+  }
+
+  return room;
+}
+
+function serializeTowerState(tower) {
+  if (!tower) return null;
+  return {
+    type: tower.type,
+    owner: tower.owner,
+    hp: Number(tower.hp),
+    maxHp: Number(tower.maxHp),
+    cooldown: Number(tower.cooldown),
+  };
+}
+
+function serializeEnemyState(enemy) {
+  return {
+    id: enemy.id,
+    lane: enemy.lane,
+    kind: enemy.kind,
+    progress: Number(enemy.progress),
+    hp: Number(enemy.hp),
+    maxHp: Number(enemy.maxHp),
+    speed: Number(enemy.speed),
+    reward: enemy.reward,
+    coreDamage: enemy.coreDamage,
+    siegeDamage: enemy.siegeDamage,
+    siegeRate: Number(enemy.siegeRate),
+    siegeCooldown: Number(enemy.siegeCooldown),
+    slowTimer: Number(enemy.slowTimer),
+    slowMul: Number(enemy.slowMul),
+    weakTimer: Number(enemy.weakTimer),
+    weakMul: Number(enemy.weakMul),
+  };
+}
+
+function serializePlayerState(player) {
+  return {
+    id: player.id,
+    name: player.name,
+    lane: player.lane,
+    joinedAt: player.joinedAt,
+    lastSeenAt: player.lastSeenAt,
+    offlineSince: player.offlineSince,
+    kills: player.kills,
+    builds: player.builds,
+    actionQueue: Array.isArray(player.actionQueue)
+      ? player.actionQueue.slice(-ACTION_MEMORY)
+      : [],
+  };
+}
+
+function serializeRoomState(room) {
+  const laneTowers = {};
+  for (const lane of LANES) {
+    laneTowers[lane] = (room.laneTowers[lane] || Array.from({ length: SLOT_COUNT }, () => null))
+      .slice(0, SLOT_COUNT)
+      .map(serializeTowerState);
+  }
+
+  return {
+    id: room.id,
+    name: room.name,
+    maxPlayers: room.maxPlayers || MAX_PLAYERS,
+    activeLanes: roomLanes(room),
+    createdAt: room.createdAt,
+    lastActiveAt: room.lastActiveAt,
+    coreHp: room.coreHp,
+    coreHpMax: room.coreHpMax,
+    teamGold: room.teamGold,
+    kills: room.kills,
+    wave: room.wave,
+    phase: room.phase,
+    waveState: room.waveState,
+    waveCooldown: room.waveCooldown,
+    spawnTimer: room.spawnTimer,
+    spawnInterval: room.spawnInterval,
+    laneSpawnRemain: { ...room.laneSpawnRemain },
+    nextEnemyId: room.nextEnemyId,
+    enemies: room.enemies.map(serializeEnemyState),
+    players: Array.from(room.players.values()).map(serializePlayerState),
+    laneTowers,
+  };
+}
+
+function loadMultiStateRows() {
+  try {
+    if (!fs.existsSync(MULTI_STATE_FILE)) return [];
+    const parsed = JSON.parse(fs.readFileSync(MULTI_STATE_FILE, 'utf8'));
+    const rows = Array.isArray(parsed) ? parsed : (Array.isArray(parsed?.rooms) ? parsed.rooms : []);
+    if (!Array.isArray(rows)) return [];
+
+    const recovered = [];
+    const usedIds = new Set();
+    for (const row of rows) {
+      const room = hydrateRoomState(row);
+      if (!room) continue;
+
+      let roomId = room.id;
+      if (!roomId || usedIds.has(roomId) || rooms.has(roomId)) {
+        do {
+          roomId = shortRoomId();
+        } while (usedIds.has(roomId) || rooms.has(roomId));
+      }
+      room.id = roomId;
+      usedIds.add(roomId);
+      recovered.push(room);
+      if (recovered.length >= MULTI_STATE_MAX_ROOMS) break;
+    }
+    return recovered;
+  } catch (error) {
+    console.warn('[sunken-multi-server] multi state load failed:', error?.message || error);
+    return [];
+  }
+}
+
+function saveMultiStateRows(force = false) {
+  if (!force && !multiStateDirty) return;
+  try {
+    const payload = {
+      version: 1,
+      savedAt: Date.now(),
+      rooms: Array.from(rooms.values()).map(serializeRoomState).slice(0, MULTI_STATE_MAX_ROOMS),
+    };
+    fs.mkdirSync(path.dirname(MULTI_STATE_FILE), { recursive: true });
+    fs.writeFileSync(MULTI_STATE_FILE, JSON.stringify(payload, null, 2));
+    multiStateDirty = false;
+  } catch (error) {
+    console.warn('[sunken-multi-server] multi state save failed:', error?.message || error);
+  }
+}
+
+function restoreMultiStateToRooms() {
+  const loaded = loadMultiStateRows();
+  for (const room of loaded) {
+    rooms.set(room.id, room);
+  }
+  if (loaded.length) {
+    console.log(`[sunken-multi-server] restored rooms: ${loaded.length}`);
+  }
+}
 
 function getLaneSlotProgress(slot) {
   const base = (slot + 1) / (SLOT_COUNT + 1);
@@ -685,6 +1033,7 @@ function applyAction(room, player, action) {
     slots[slot] = tower;
     player.builds += 1;
     room.lastActiveAt = Date.now();
+    markMultiStateDirty();
     return { ok: true, actionId };
   }
 
@@ -696,6 +1045,7 @@ function applyAction(room, player, action) {
     room.teamGold += Math.round(spec.cost * spec.refund);
     slots[slot] = null;
     room.lastActiveAt = Date.now();
+    markMultiStateDirty();
     return { ok: true, actionId };
   }
 
@@ -915,6 +1265,7 @@ function updateWave(room, dt) {
 }
 
 function cleanupOfflinePlayers(room, now) {
+  let removed = false;
   for (const player of room.players.values()) {
     if (player.online || player.offlineSince <= 0) continue;
 
@@ -924,6 +1275,10 @@ function cleanupOfflinePlayers(room, now) {
     if (room.laneOwners[player.lane] === player.id) {
       room.laneOwners[player.lane] = null;
     }
+    removed = true;
+  }
+  if (removed) {
+    markMultiStateDirty();
   }
 }
 
@@ -952,6 +1307,14 @@ function updateRoom(room, now, dt) {
   if (now - room.lastSnapshotAt >= SNAPSHOT_MS) {
     broadcastSnapshot(room);
   }
+
+  // 진행 중인 라운드 상태는 끊김 복구를 위해 주기적으로 스냅샷 저장 대상에 포함한다.
+  if (
+    room.phase === 'running'
+    && (room.players.size > 0 || room.enemies.length > 0 || hasRemainingSpawn(room) || room.waveState === 'cooldown')
+  ) {
+    markMultiStateDirty();
+  }
 }
 
 function leaveRoom(ws, shouldDestroyPlayer = false) {
@@ -975,6 +1338,7 @@ function leaveRoom(ws, shouldDestroyPlayer = false) {
       detachPlayerSocket(player);
     }
     room.lastActiveAt = Date.now();
+    markMultiStateDirty();
   }
 
   broadcastRoom(room, {
@@ -1029,6 +1393,7 @@ function joinRoom(ws, roomId, playerId, playerName) {
   ws.playerId = player.id;
 
   room.lastActiveAt = Date.now();
+  markMultiStateDirty();
   send(ws, {
     type: 'joined',
     roomId: room.id,
@@ -1263,6 +1628,8 @@ wss.on('connection', (ws) => {
   });
 });
 
+restoreMultiStateToRooms();
+
 setInterval(() => {
   const now = Date.now();
   const dt = TICK_MS / 1000;
@@ -1274,6 +1641,40 @@ setInterval(() => {
 setInterval(() => {
   broadcastRoomsToAll();
 }, ROOMS_BROADCAST_MS);
+
+setInterval(() => {
+  saveMultiStateRows(false);
+}, MULTI_STATE_SAVE_MS);
+
+let shuttingDown = false;
+function shutdownWithFlush(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`[sunken-multi-server] ${signal} received, flushing state...`);
+  saveMultiStateRows(true);
+  saveSingleRankRows(singleRankRows);
+  saveSinglePlayerRows(singlePlayerRows);
+  for (const client of wss.clients) {
+    try {
+      client.close();
+    } catch (error) {
+      // ignore
+    }
+  }
+  server.close(() => process.exit(0));
+  setTimeout(() => process.exit(0), 450).unref();
+}
+
+process.on('SIGINT', () => shutdownWithFlush('SIGINT'));
+process.on('SIGTERM', () => shutdownWithFlush('SIGTERM'));
+process.on('beforeExit', () => {
+  saveMultiStateRows(true);
+});
+process.on('uncaughtException', (error) => {
+  console.error('[sunken-multi-server] uncaughtException:', error);
+  saveMultiStateRows(true);
+  process.exit(1);
+});
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`[sunken-multi-server] listening on 0.0.0.0:${PORT}`);
