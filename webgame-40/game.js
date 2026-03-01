@@ -10,6 +10,7 @@ const goldTextEl = document.getElementById('goldText');
 const aliveTextEl = document.getElementById('aliveText');
 const queueTextEl = document.getElementById('queueText');
 const killsTextEl = document.getElementById('killsText');
+const speedTextEl = document.getElementById('speedText');
 const buildHintEl = document.getElementById('buildHint');
 
 const btnSunken = document.getElementById('btnSunken');
@@ -17,6 +18,8 @@ const btnSpine = document.getElementById('btnSpine');
 const btnObelisk = document.getElementById('btnObelisk');
 const btnSnare = document.getElementById('btnSnare');
 const btnSellMode = document.getElementById('btnSellMode');
+const btnSpeedDown = document.getElementById('btnSpeedDown');
+const btnSpeedUp = document.getElementById('btnSpeedUp');
 
 const bgmAudio = window.TapTapNeonAudio?.create('webgame-40', hudEl, {
   theme: 'rush',
@@ -117,7 +120,7 @@ const state = {
   selectedTower: 'sunken',
   sunkenFootprint: 1,
   sellMode: false,
-  fastForward: false,
+  simSpeed: 1,
   stageTimer: 0,
   spawnQueue: [],
   spawnTimer: 0,
@@ -633,7 +636,7 @@ function startRun() {
   state.bullets = [];
   state.particles = [];
   state.blocked.clear();
-  state.fastForward = false;
+  state.simSpeed = 1;
   state.selectedTower = 'sunken';
   state.sunkenFootprint = 1;
   state.sellMode = false;
@@ -759,6 +762,7 @@ function refreshHud() {
   aliveTextEl.textContent = String(state.enemies.length);
   queueTextEl.textContent = String(state.spawnQueue.length);
   killsTextEl.textContent = String(state.kills);
+  if (speedTextEl) speedTextEl.textContent = `${state.simSpeed.toFixed(2)}x`;
 }
 
 function setSelectedButton() {
@@ -775,12 +779,27 @@ function setSellMode(enabled) {
   if (nameEl) nameEl.textContent = state.sellMode ? 'SELL ON' : 'SELL OFF';
 }
 
+function setSimSpeed(nextSpeed) {
+  state.simSpeed = clamp(Math.round(nextSpeed * 100) / 100, 0.25, 3);
+  refreshBuildHint();
+  refreshHud();
+}
+
+function changeSimSpeed(delta) {
+  const before = state.simSpeed;
+  setSimSpeed(state.simSpeed + delta);
+  if (Math.abs(state.simSpeed - before) > 0.001) {
+    flashBanner(`Speed ${state.simSpeed.toFixed(2)}x`, 0.55);
+    sfx(430 + state.simSpeed * 40, 0.05, 'triangle', 0.013);
+  }
+}
+
 function refreshBuildHint() {
   if (!buildHintEl) return;
   const footprint = state.sunkenFootprint === 2 ? '2x2' : '1x1';
   const sellState = state.sellMode ? 'ON' : 'OFF';
   const mobileTag = isMobileView ? '모바일 큰칸' : '일반';
-  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4 선택 · Q 성큰크기(${footprint}) · ${mobileTag} · F 가속`;
+  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4 선택 · Q 성큰크기(${footprint}) · ${mobileTag} · F +0.25x · G -0.25x`;
 }
 
 function nearestEnemy(x, y, range) {
@@ -1793,7 +1812,7 @@ function step(dt) {
     return;
   }
 
-  const simDt = dt * (state.fastForward ? 1.75 : 1);
+  const simDt = dt * state.simSpeed;
 
   state.banner.ttl = Math.max(0, state.banner.ttl - dt);
   if (state.banner.ttl <= 0 && overlayEl.querySelector('.banner')) {
@@ -1834,6 +1853,16 @@ controlsEl.addEventListener('click', (event) => {
     setSellMode(!state.sellMode);
     refreshBuildHint();
     sfx(state.sellMode ? 310 : 390, 0.05, 'triangle', 0.013);
+    return;
+  }
+
+  if (event.target.closest('[data-action="speed-down"]')) {
+    changeSimSpeed(-0.25);
+    return;
+  }
+
+  if (event.target.closest('[data-action="speed-up"]')) {
+    changeSimSpeed(0.25);
     return;
   }
 
@@ -1880,8 +1909,11 @@ window.addEventListener('keydown', (event) => {
   }
 
   if (event.code === 'KeyF') {
-    state.fastForward = !state.fastForward;
-    flashBanner(state.fastForward ? 'x1.75' : 'x1.0', 0.6);
+    changeSimSpeed(0.25);
+  }
+
+  if (event.code === 'KeyG') {
+    changeSimSpeed(-0.25);
   }
 });
 

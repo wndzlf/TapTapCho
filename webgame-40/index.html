@@ -20,6 +20,7 @@
       <div class="stat">Alive <b id="aliveText">0</b></div>
       <div class="stat">Queue <b id="queueText">0</b></div>
       <div class="stat">Kills <b id="killsText">0</b></div>
+      <div class="stat">Speed <b id="speedText">1.00x</b></div>
     </div>
 
     <div class="controls" id="controls">
@@ -48,7 +49,17 @@
         <span class="name">SELL OFF</span>
         <span class="cost">판매 모드</span>
       </button>
-      <div class="hint" id="buildHint">좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(OFF) · 1/2/3/4 선택 · Q 성큰크기(1x1) · F 가속</div>
+      <button class="build-btn mode-btn" id="btnSpeedDown" data-action="speed-down" type="button">
+        <span class="icon">-</span>
+        <span class="name">Speed -</span>
+        <span class="cost">0.25x 감소</span>
+      </button>
+      <button class="build-btn mode-btn" id="btnSpeedUp" data-action="speed-up" type="button">
+        <span class="icon">+</span>
+        <span class="name">Speed +</span>
+        <span class="cost">0.25x 증가</span>
+      </button>
+      <div class="hint" id="buildHint">좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(OFF) · 1/2/3/4 선택 · Q 성큰크기(1x1) · F +0.25x · G -0.25x</div>
     </div>
 
     <div class="arena">
