@@ -12,6 +12,7 @@ const queueTextEl = document.getElementById('queueText');
 const killsTextEl = document.getElementById('killsText');
 const speedTextEl = document.getElementById('speedText');
 const buildHintEl = document.getElementById('buildHint');
+const modeHelpEl = document.getElementById('modeHelp');
 const towerGuideEl = document.getElementById('towerGuide');
 const rankNameEl = document.getElementById('rankName');
 const rankRefreshEl = document.getElementById('rankRefresh');
@@ -103,6 +104,20 @@ function isSfxEnabled() {
     return parsed?.sfx !== false;
   } catch (_) {
     return true;
+  }
+}
+
+function readAudioFlags() {
+  try {
+    const raw = localStorage.getItem('taptapcho_neon_audio_v1');
+    if (!raw) return { bgm: true, sfx: true };
+    const parsed = JSON.parse(raw);
+    return {
+      bgm: parsed?.bgm !== false,
+      sfx: parsed?.sfx !== false,
+    };
+  } catch (_) {
+    return { bgm: true, sfx: true };
   }
 }
 
@@ -1466,7 +1481,34 @@ function refreshBuildHint() {
   const sellState = state.sellMode ? 'ON' : 'OFF';
   const mobileTag = isMobileView ? '모바일 큰칸' : '일반';
   buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4/5 선택 · Q 성큰크기(${footprint}) · R 필살성큰(${ultState}/${state.ultSunkenCharges}) · ${mobileTag} · F +0.25x · G -0.25x`;
+  refreshModeHelp();
   refreshTowerGuide();
+}
+
+function refreshModeHelp() {
+  if (!modeHelpEl) return;
+  const ultOn = state.ultSunkenArmed && state.ultSunkenCharges > 0;
+  const ultTag = ultOn ? 'ULT ON' : 'ULT OFF';
+  const audio = readAudioFlags();
+  const sfxTag = audio.sfx ? 'SFX ON' : 'SFX OFF';
+
+  let ultDesc = '';
+  if (ultOn) {
+    ultDesc = `다음 Sunken 1회가 필살 성큰으로 배치됩니다. 배치 즉시 충전 1개 소모 (${state.ultSunkenCharges}개 보유).`;
+  } else if (state.ultSunkenCharges > 0) {
+    ultDesc = `일반 성큰 모드입니다. R 키 또는 ULT 버튼으로 ON하면 다음 Sunken 1회가 필살 성큰이 됩니다 (${state.ultSunkenCharges}개 보유).`;
+  } else {
+    ultDesc = '일반 성큰 모드입니다. 보스/공성몹 처치로 ULT 충전을 얻을 수 있습니다.';
+  }
+
+  const sfxDesc = audio.sfx
+    ? '타격/피격/건설 효과음이 재생됩니다. 상단 HUD의 SFX 버튼으로 끌 수 있습니다.'
+    : '효과음이 음소거 상태입니다. 상단 HUD의 SFX 버튼으로 다시 켤 수 있습니다. (BGM은 별도)';
+
+  modeHelpEl.innerHTML = `
+    <div class="row"><span class="tag">${ultTag}</span>${ultDesc}</div>
+    <div class="row"><span class="tag">${sfxTag}</span>${sfxDesc}</div>
+  `;
 }
 
 function refreshTowerGuide() {
@@ -3043,6 +3085,19 @@ controlsEl.addEventListener('click', (event) => {
   const btn = event.target.closest('.build-btn[data-kind]');
   if (!btn) return;
   chooseTower(btn.dataset.kind);
+});
+
+hudEl?.addEventListener('click', () => {
+  // HUD 내부 SFX/BGM 토글 클릭 후 상태 문구를 즉시 동기화한다.
+  window.setTimeout(() => {
+    refreshModeHelp();
+  }, 0);
+});
+
+window.addEventListener('storage', (event) => {
+  if (event.key === 'taptapcho_neon_audio_v1') {
+    refreshModeHelp();
+  }
 });
 
 canvas.addEventListener('contextmenu', (event) => {
