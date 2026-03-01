@@ -405,11 +405,13 @@ const state = {
   emperorShieldTimer: 0,
   emperorShieldFx: 0,
   emperorShieldHitCooldown: 0,
+  emperorShieldUses: 0,
   banner: { text: '', ttl: 0, warn: false },
 };
 
 const EMPEROR_SHIELD_COST = 1000;
 const EMPEROR_SHIELD_DURATION = 10;
+const EMPEROR_SHIELD_MAX_USES = 5;
 
 const sfxCtx = window.AudioContext ? new AudioContext() : null;
 
@@ -1524,6 +1526,7 @@ function startRun() {
   state.emperorShieldTimer = 0;
   state.emperorShieldFx = 0;
   state.emperorShieldHitCooldown = 0;
+  state.emperorShieldUses = 0;
   setSelectedButton();
   setSellMode(false);
   refreshBuildHint();
@@ -1674,23 +1677,35 @@ function refreshEmperorShieldButton() {
   if (!btnEmperorShield) return;
   const nameEl = btnEmperorShield.querySelector('.name');
   const costEl = btnEmperorShield.querySelector('.cost');
+  const usesLeft = Math.max(0, EMPEROR_SHIELD_MAX_USES - state.emperorShieldUses);
   const active = state.emperorShieldTimer > 0.001;
   if (active) {
     btnEmperorShield.classList.add('active');
     btnEmperorShield.classList.remove('locked');
     if (nameEl) nameEl.textContent = 'SHIELD ON';
-    if (costEl) costEl.textContent = `${state.emperorShieldTimer.toFixed(1)}s`;
+    if (costEl) costEl.textContent = `${state.emperorShieldTimer.toFixed(1)}s · 남은 ${usesLeft}/${EMPEROR_SHIELD_MAX_USES}`;
     return;
   }
   btnEmperorShield.classList.remove('active');
+  if (usesLeft <= 0) {
+    btnEmperorShield.classList.add('locked');
+    if (nameEl) nameEl.textContent = 'SHIELD END';
+    if (costEl) costEl.textContent = `사용 완료 (${EMPEROR_SHIELD_MAX_USES}/${EMPEROR_SHIELD_MAX_USES})`;
+    return;
+  }
   const notEnoughGold = state.gold < EMPEROR_SHIELD_COST;
   btnEmperorShield.classList.toggle('locked', notEnoughGold);
   if (nameEl) nameEl.textContent = 'EMPEROR SHIELD';
-  if (costEl) costEl.textContent = `${EMPEROR_SHIELD_COST} Gold / 10s`;
+  if (costEl) costEl.textContent = `${EMPEROR_SHIELD_COST} Gold / 10s · 남은 ${usesLeft}/${EMPEROR_SHIELD_MAX_USES}`;
 }
 
 function castEmperorShield() {
   if (state.mode !== 'playing') return;
+  if (state.emperorShieldUses >= EMPEROR_SHIELD_MAX_USES) {
+    flashBanner(`황제 보호막 사용 한도 도달 (${EMPEROR_SHIELD_MAX_USES}/${EMPEROR_SHIELD_MAX_USES})`, 0.75, true);
+    sfx(160, 0.09, 'sawtooth', 0.022);
+    return;
+  }
   if (state.emperorShieldTimer > 0.001) {
     flashBanner('황제 보호막 활성 중', 0.45);
     sfx(500, 0.04, 'triangle', 0.013);
@@ -1703,10 +1718,11 @@ function castEmperorShield() {
   }
 
   state.gold -= EMPEROR_SHIELD_COST;
+  state.emperorShieldUses += 1;
   state.emperorShieldTimer = EMPEROR_SHIELD_DURATION;
   state.emperorShieldFx = Math.max(state.emperorShieldFx, 0.8);
   state.emperorShieldHitCooldown = 0;
-  flashBanner('황제 보호막 전개 · 10초 무적', 0.95);
+  flashBanner(`황제 보호막 전개 · 10초 무적 (${state.emperorShieldUses}/${EMPEROR_SHIELD_MAX_USES})`, 0.95);
   impactSfx.play('build', { volume: 0.42, minGap: 0.08, rateMin: 0.88, rateMax: 0.95 });
   sfx(860, 0.12, 'triangle', 0.03);
   refreshHud();
@@ -1717,7 +1733,7 @@ function refreshBuildHint() {
   const footprint = state.sunkenFootprint === 2 ? '2x2' : '1x1';
   const sellState = state.sellMode ? 'ON' : 'OFF';
   const mobileTag = isMobileView ? '모바일 큰칸' : '일반';
-  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4/5/6/7/8/9 선택 · Q 성큰크기(${footprint}) · R 황제보호막(1000/10초) · ${mobileTag} · F +0.25x · G -0.25x`;
+  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4/5/6/7/8/9 선택 · Q 성큰크기(${footprint}) · R 황제보호막(1000/10초·최대5회) · ${mobileTag} · F +0.25x · G -0.25x`;
   refreshModeHelp();
   refreshTowerGuide();
 }
@@ -1726,7 +1742,7 @@ function refreshModeHelp() {
   if (!modeHelpEl) return;
   modeHelpEl.innerHTML = `
     <div class="row"><span class="tag">AUDIO</span>BGM/SFX는 항상 ON으로 고정됩니다.</div>
-    <div class="row"><span class="tag">SHIELD</span>R(또는 SHIELD 버튼)로 1000 Gold를 소모해 마지막 황제 보호막을 10초 전개합니다.</div>
+    <div class="row"><span class="tag">SHIELD</span>R(또는 SHIELD 버튼)로 1000 Gold를 소모해 마지막 황제 보호막을 10초 전개합니다. (한 판 최대 5회)</div>
     <div class="row"><span class="tag">SPEED</span>F(+0.25x), G(-0.25x)로 웨이브 진행 속도를 조절할 수 있습니다.</div>
   `;
 }
