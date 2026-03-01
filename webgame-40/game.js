@@ -1584,7 +1584,7 @@ function refreshBuildHint() {
   const ultState = state.ultSunkenArmed && state.ultSunkenCharges > 0 ? 'ON' : 'OFF';
   const sellState = state.sellMode ? 'ON' : 'OFF';
   const mobileTag = isMobileView ? '모바일 큰칸' : '일반';
-  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4/5 선택 · Q 성큰크기(${footprint}) · R 필살성큰(${ultState}/${state.ultSunkenCharges}) · ${mobileTag} · F +0.25x`;
+  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4/5 선택 · Q 성큰크기(${footprint}) · R 필살성큰(${ultState}/${state.ultSunkenCharges}) · ${mobileTag} · F +0.25x · G -0.25x`;
   refreshModeHelp();
   refreshTowerGuide();
 }
@@ -3182,6 +3182,11 @@ controlsEl.addEventListener('click', (event) => {
     return;
   }
 
+  if (event.target.closest('[data-action="speed-down"]')) {
+    changeSimSpeed(-0.25);
+    return;
+  }
+
   const btn = event.target.closest('.build-btn[data-kind]');
   if (!btn) return;
   chooseTower(btn.dataset.kind);
@@ -3322,6 +3327,10 @@ window.addEventListener('keydown', (event) => {
 
   if (event.code === 'KeyF') {
     changeSimSpeed(0.25);
+  }
+
+  if (event.code === 'KeyG') {
+    changeSimSpeed(-0.25);
   }
 
 });
