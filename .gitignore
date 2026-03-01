@@ -9,3 +9,9 @@
 
 # Node
 node_modules/
+
+# Runtime data
+data/
+
+# Editor swap
+*.swp
