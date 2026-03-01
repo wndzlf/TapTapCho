@@ -4,6 +4,7 @@ const ctx = canvas.getContext('2d');
 const serverUrlEl = document.getElementById('serverUrl');
 const playerNameEl = document.getElementById('playerName');
 const roomNameEl = document.getElementById('roomName');
+const roomSizeEl = document.getElementById('roomSize');
 const roomListEl = document.getElementById('roomList');
 const statusTextEl = document.getElementById('statusText');
 const overlayEl = document.getElementById('overlay');
@@ -54,6 +55,7 @@ const STORAGE = {
   server: 'sunken-multi-server-url',
   playerId: 'sunken-multi-player-id',
   playerName: 'sunken-multi-player-name',
+  roomSize: 'sunken-multi-room-size',
   roomId: 'sunken-multi-room-id',
   pending: 'sunken-multi-pending-actions',
 };
@@ -97,6 +99,7 @@ const client = {
   shouldAutoReconnect: false,
   joining: false,
   createAfterConnect: '',
+  createMaxPlayers: 4,
 
   serverUrl: '',
   playerId: '',
@@ -154,6 +157,24 @@ function normalizeRoomName(value) {
   return v || 'Sunken Team Room';
 }
 
+function normalizeRoomSize(value) {
+  const v = Math.floor(Number(value) || 4);
+  if (v <= 2) return 2;
+  if (v === 3) return 3;
+  return 4;
+}
+
+function roomActiveLanes(room) {
+  const lanes = Array.isArray(room?.activeLanes) ? room.activeLanes.filter((lane) => LANES.includes(lane)) : [];
+  return lanes.length ? lanes : [...LANES];
+}
+
+function laneGroupText(room) {
+  return roomActiveLanes(room)
+    .map((lane) => LANE_LABEL[lane] || lane)
+    .join('/');
+}
+
 function lanePoint(lane, progress) {
   const t = clamp(progress, 0, 1);
 
@@ -194,6 +215,7 @@ function saveInputs() {
   localStorage.setItem(STORAGE.server, client.serverUrl);
   localStorage.setItem(STORAGE.playerId, client.playerId);
   localStorage.setItem(STORAGE.playerName, client.playerName);
+  localStorage.setItem(STORAGE.roomSize, String(client.createMaxPlayers || 4));
   if (client.roomId) {
     localStorage.setItem(STORAGE.roomId, client.roomId);
   } else {
@@ -221,6 +243,7 @@ function loadStorage() {
   }
 
   client.playerName = normalizeName(localStorage.getItem(STORAGE.playerName) || '');
+  client.createMaxPlayers = normalizeRoomSize(localStorage.getItem(STORAGE.roomSize) || '4');
   client.roomId = String(localStorage.getItem(STORAGE.roomId) || '').trim().toUpperCase();
 
   let pending = [];
@@ -243,6 +266,7 @@ function loadStorage() {
   serverUrlEl.value = client.serverUrl;
   playerNameEl.value = client.playerName;
   roomNameEl.value = 'Sunken Team Room';
+  if (roomSizeEl) roomSizeEl.value = String(client.createMaxPlayers);
 
   saveInputs();
   savePending();
@@ -302,6 +326,7 @@ function connect(silent = false) {
       ws.send(JSON.stringify({
         type: 'create_room',
         roomName: client.createAfterConnect,
+        maxPlayers: client.createMaxPlayers,
       }));
       client.createAfterConnect = '';
       return;
@@ -442,6 +467,8 @@ function requestRooms() {
 function createRoom() {
   const roomName = normalizeRoomName(roomNameEl.value);
   roomNameEl.value = roomName;
+  client.createMaxPlayers = normalizeRoomSize(roomSizeEl ? roomSizeEl.value : client.createMaxPlayers);
+  if (roomSizeEl) roomSizeEl.value = String(client.createMaxPlayers);
 
   client.shouldAutoReconnect = true;
   client.roomId = '';
@@ -457,7 +484,11 @@ function createRoom() {
     return;
   }
 
-  client.ws.send(JSON.stringify({ type: 'create_room', roomName: client.createAfterConnect }));
+  client.ws.send(JSON.stringify({
+    type: 'create_room',
+    roomName: client.createAfterConnect,
+    maxPlayers: client.createMaxPlayers,
+  }));
   client.createAfterConnect = '';
 }
 
@@ -523,6 +554,7 @@ function renderRooms() {
     item.innerHTML = `
       <h3>${room.name}</h3>
       <div class="meta">ID ${room.id} · 인원 ${room.online}/${room.cap}</div>
+      <div class="meta">라인 ${laneGroupText(room)}</div>
       <div class="meta">Wave ${room.wave} · Core ${room.coreHp}/${room.coreHpMax}</div>
       <div class="meta">상태 ${room.phase === 'defeat' ? '패배' : '진행중'}</div>
     `;
@@ -568,11 +600,12 @@ function cloneLanesFromSnapshot() {
 
 function mergedLanesWithPending() {
   const lanes = cloneLanesFromSnapshot();
+  const active = roomActiveLanes(client.snapshot);
 
   const pending = client.pending.filter((it) => it.roomId === client.roomId);
   for (const item of pending) {
     const action = item.action;
-    if (!action || !LANES.includes(action.lane)) continue;
+    if (!action || !active.includes(action.lane)) continue;
     const slot = Number(action.slot);
     if (!Number.isInteger(slot) || slot < 0 || slot >= SLOT_COUNT) continue;
 
@@ -734,8 +767,9 @@ function drawBackgroundGrid() {
 
 function drawLanes() {
   ctx.lineCap = 'round';
+  const active = roomActiveLanes(client.snapshot);
 
-  for (const lane of LANES) {
+  for (const lane of active) {
     const start = lanePoint(lane, 0);
     const end = lanePoint(lane, 1);
 
@@ -782,7 +816,8 @@ function drawLanes() {
 }
 
 function drawSlots(lanes) {
-  for (const lane of LANES) {
+  const active = roomActiveLanes(client.snapshot);
+  for (const lane of active) {
     const slots = lanes[lane] || [];
 
     for (let i = 0; i < SLOT_COUNT; i += 1) {
@@ -974,6 +1009,12 @@ function setupEvents() {
     client.shouldAutoReconnect = true;
     connect();
     updateReconnectVisibility();
+  });
+
+  roomSizeEl?.addEventListener('change', () => {
+    client.createMaxPlayers = normalizeRoomSize(roomSizeEl.value);
+    roomSizeEl.value = String(client.createMaxPlayers);
+    saveInputs();
   });
 
   btnCreateRoom.addEventListener('click', createRoom);

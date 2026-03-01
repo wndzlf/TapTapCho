@@ -86,7 +86,8 @@ header p {
   font-size: 12px;
 }
 
-.net input {
+.net input,
+.net select {
   border: 1px solid #3e557a;
   border-radius: 8px;
   background: #0c1424;

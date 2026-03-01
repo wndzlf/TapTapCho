@@ -19,6 +19,11 @@ const SINGLE_PLAYER_MAX = 2000;
 const SINGLE_PLAYER_FILE = path.join(__dirname, '..', 'data', 'sunken-single-players.json');
 
 const LANES = ['north', 'east', 'south', 'west'];
+const LANE_PRESETS = {
+  2: ['east', 'west'],
+  3: ['north', 'east', 'west'],
+  4: [...LANES],
+};
 
 const TOWER_TYPES = {
   sunken: {
@@ -110,6 +115,18 @@ function laneLabel(lane) {
   return '9시';
 }
 
+function normalizeRoomMaxPlayers(raw) {
+  const v = Math.floor(Number(raw) || MAX_PLAYERS);
+  if (v <= 2) return 2;
+  if (v === 3) return 3;
+  return 4;
+}
+
+function getActiveLanes(maxPlayers) {
+  const key = normalizeRoomMaxPlayers(maxPlayers);
+  return [...(LANE_PRESETS[key] || LANE_PRESETS[4])];
+}
+
 function createLaneBoard() {
   const laneTowers = {};
   for (const lane of LANES) {
@@ -131,14 +148,23 @@ function cloneLaneSlots(slots) {
   });
 }
 
-function createRoom(name) {
+function roomLanes(room) {
+  const lanes = Array.isArray(room?.activeLanes) ? room.activeLanes.filter((lane) => LANES.includes(lane)) : [];
+  return lanes.length ? lanes : [...LANES];
+}
+
+function createRoom(name, maxPlayers = MAX_PLAYERS) {
   let id = shortRoomId();
   while (rooms.has(id)) id = shortRoomId();
 
+  const cap = normalizeRoomMaxPlayers(maxPlayers);
+  const activeLanes = getActiveLanes(cap);
   const now = Date.now();
   const room = {
     id,
     name: safeRoomName(name),
+    maxPlayers: cap,
+    activeLanes,
     createdAt: now,
     lastActiveAt: now,
     players: new Map(),
@@ -187,7 +213,10 @@ function roomSummary(room) {
     name: room.name,
     online,
     total,
-    cap: MAX_PLAYERS,
+    cap: room.maxPlayers || MAX_PLAYERS,
+    activeLanes: Array.isArray(room.activeLanes) && room.activeLanes.length
+      ? room.activeLanes
+      : [...LANES],
     wave: room.wave,
     phase: room.phase,
     coreHp: room.coreHp,
@@ -435,14 +464,15 @@ function startWave(room, wave) {
   room.waveCooldown = 0;
   room.spawnTimer = 0;
   room.spawnInterval = clamp(1.05 - (wave - 1) * 0.032, 0.32, 1.05);
+  const lanes = roomLanes(room);
 
   const perLane = 5 + Math.floor(wave * 1.9);
   for (const lane of LANES) {
-    room.laneSpawnRemain[lane] = perLane;
+    room.laneSpawnRemain[lane] = lanes.includes(lane) ? perLane : 0;
   }
 
   if (wave % 5 === 0) {
-    for (const lane of LANES) {
+    for (const lane of lanes) {
       room.enemies.push(makeEnemy(room, lane, 'boss'));
     }
   }
@@ -480,7 +510,7 @@ function detachPlayerSocket(player) {
 }
 
 function pickOpenLane(room) {
-  for (const lane of LANES) {
+  for (const lane of roomLanes(room)) {
     const ownerId = room.laneOwners[lane];
     if (!ownerId) return lane;
 
@@ -542,11 +572,14 @@ function serializeRoom(room) {
     lanes[lane] = cloneLaneSlots(room.laneTowers[lane]);
   }
 
-  const queue = LANES.reduce((acc, lane) => acc + room.laneSpawnRemain[lane], 0);
+  const activeLanes = roomLanes(room);
+  const queue = activeLanes.reduce((acc, lane) => acc + room.laneSpawnRemain[lane], 0);
 
   return {
     id: room.id,
     name: room.name,
+    maxPlayers: room.maxPlayers || MAX_PLAYERS,
+    activeLanes,
     phase: room.phase,
     wave: room.wave,
     waveState: room.waveState,
@@ -624,7 +657,8 @@ function applyAction(room, player, action) {
   const lane = String(action.lane || '');
   const slot = Number(action.slot);
 
-  if (!LANES.includes(lane)) {
+  const activeLanes = roomLanes(room);
+  if (!activeLanes.includes(lane)) {
     return { ok: false, reason: 'lane 오류', actionId };
   }
   if (!Number.isInteger(slot) || slot < 0 || slot >= SLOT_COUNT) {
@@ -718,7 +752,7 @@ function cleanupDeadEnemies(room) {
 }
 
 function updateTowers(room, dt) {
-  for (const lane of LANES) {
+  for (const lane of roomLanes(room)) {
     const slots = room.laneTowers[lane];
     const enemies = room.enemies.filter((enemy) => enemy.lane === lane);
 
@@ -832,8 +866,9 @@ function updateEnemies(room, dt) {
 
 function spawnStep(room) {
   let spawned = false;
+  const lanes = roomLanes(room);
 
-  for (const lane of LANES) {
+  for (const lane of lanes) {
     if (room.laneSpawnRemain[lane] <= 0) continue;
 
     room.laneSpawnRemain[lane] -= 1;
@@ -843,14 +878,14 @@ function spawnStep(room) {
 
   if (!spawned) return;
 
-  if (room.wave >= 8 && Math.random() < 0.34) {
-    const lane = LANES[Math.floor(Math.random() * LANES.length)];
+  if (room.wave >= 8 && Math.random() < 0.34 && lanes.length) {
+    const lane = lanes[Math.floor(Math.random() * lanes.length)];
     room.enemies.push(makeEnemy(room, lane, 'siege'));
   }
 }
 
 function hasRemainingSpawn(room) {
-  return LANES.some((lane) => room.laneSpawnRemain[lane] > 0);
+  return roomLanes(room).some((lane) => room.laneSpawnRemain[lane] > 0);
 }
 
 function updateWave(room, dt) {
@@ -961,7 +996,7 @@ function joinRoom(ws, roomId, playerId, playerName) {
   let player = room.players.get(playerId);
 
   if (!player) {
-    if (room.players.size >= MAX_PLAYERS) {
+    if (room.players.size >= (room.maxPlayers || MAX_PLAYERS)) {
       send(ws, { type: 'error', message: '방이 가득 찼습니다.' });
       return;
     }
@@ -1161,7 +1196,7 @@ wss.on('connection', (ws) => {
     }
 
     if (msg.type === 'create_room') {
-      const room = createRoom(msg.roomName);
+      const room = createRoom(msg.roomName, msg.maxPlayers);
       joinRoom(ws, room.id, ws.identity.playerId, ws.identity.name);
       broadcastRoomsToAll();
       return;

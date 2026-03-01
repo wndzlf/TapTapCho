@@ -13,8 +13,8 @@
         <a class="mode-tab" href="./index.html">싱글 모드</a>
         <a class="mode-tab active" href="./multi.html">멀티 모드</a>
       </div>
-      <h1>Sunken Sixway Defense: 4P Multi</h1>
-      <p>12시·3시·6시·9시 라인에서 몹이 몰려옵니다. 중앙 코어를 팀으로 지키세요.</p>
+      <h1>Sunken Sixway Defense: Multi</h1>
+      <p>방 인원수(2~4)에 맞는 레인이 자동 활성화됩니다. 중앙 코어를 팀으로 지키세요.</p>
     </header>
 
     <section class="net" id="netPanel">
@@ -26,6 +26,13 @@
       </label>
       <label>방 이름
         <input id="roomName" type="text" maxlength="22" placeholder="예: 성큰 팀전" />
+      </label>
+      <label>인원수
+        <select id="roomSize">
+          <option value="2">2명 (3시/9시)</option>
+          <option value="3">3명 (12시/3시/9시)</option>
+          <option value="4" selected>4명 (12시/3시/6시/9시)</option>
+        </select>
       </label>
       <button id="btnConnect" type="button">연결</button>
       <button id="btnCreateRoom" type="button">방 만들기</button>

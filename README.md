@@ -33,7 +33,7 @@ python3 -m http.server 8080
 - Server 입력값: `ws://<호스트PC-IP>:9090`
 - 같은 Room 코드로 `Host` 또는 `Join`
 
-### 같은 와이파이 멀티(Sunken Sixway 4P)
+### 같은 와이파이 멀티(Sunken Sixway 2~4P)
 
 1. 멀티 서버 실행 (호스트 PC 1대):
 
@@ -53,6 +53,8 @@ python3 -m http.server 8080
 3. 같은 와이파이 기기에서 접속:
 - 게임 페이지: `http://<호스트PC-IP>:8080/webgame-40/multi.html`
 - Server 입력값: `ws://<호스트PC-IP>:9091`
+- 방 만들기에서 인원수(2/3/4명) 선택 가능
+- 2명 선택 시 활성 라인: `3시/9시`
 - 방 만들기 후 방 목록에서 클릭 참여(방 번호 수동 입력 없이 참여 가능)
 
 4. 오프라인 복구:
