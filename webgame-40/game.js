@@ -1368,6 +1368,22 @@ function hurtEnemy(enemy, damage, sourceKind = '', sourceUlt = false, secondary 
       rateMax: sourceUlt ? 0.97 : 1.02,
     });
     if (!secondary && Math.random() < 0.5) sfx(270 + rand(-16, 14), 0.04, 'square', 0.012);
+  } else if (sourceKind === 'spine') {
+    impactSfx.play('enemyHit', {
+      volume: 0.24,
+      minGap: 0.03,
+      rateMin: 1.02,
+      rateMax: 1.16,
+    });
+    if (!secondary && Math.random() < 0.55) sfx(468 + rand(-34, 30), 0.03, 'triangle', 0.009);
+  } else if (sourceKind === 'obelisk') {
+    impactSfx.play('enemyHitHeavy', {
+      volume: 0.34,
+      minGap: 0.055,
+      rateMin: 0.86,
+      rateMax: 0.95,
+    });
+    if (!secondary && Math.random() < 0.42) sfx(206 + rand(-18, 14), 0.05, 'sawtooth', 0.012);
   } else if (sourceKind === 'snare') {
     impactSfx.play('enemyHit', { volume: 0.24, minGap: 0.05, rateMin: 0.96, rateMax: 1.05 });
     if (!secondary && Math.random() < 0.28) sfx(248 + rand(-18, 16), 0.04, 'sine', 0.01);
@@ -1397,6 +1413,128 @@ function hurtEnemy(enemy, damage, sourceKind = '', sourceUlt = false, secondary 
         sfx(560, 0.04, 'triangle', 0.013);
       }
     }
+  }
+}
+
+function spawnTowerHitVfx(x, y, towerKind, isUlt = false, secondary = false) {
+  const push = (p) => {
+    const life = p.life ?? 0.18;
+    state.particles.push({
+      ...p,
+      life,
+      ttl: p.ttl || life,
+    });
+  };
+
+  if (towerKind === 'sunken') {
+    const burstCount = secondary ? 2 : (isUlt ? 7 : 5);
+    for (let i = 0; i < burstCount; i += 1) {
+      const ang = rand(0, TAU);
+      const speed = rand(60, isUlt ? 220 : 170);
+      push({
+        x,
+        y,
+        vx: Math.cos(ang) * speed,
+        vy: Math.sin(ang) * speed,
+        life: rand(0.12, 0.26),
+        size: rand(1.8, 3.8),
+        color: isUlt ? '#ffe7a8' : '#9fe9ff',
+      });
+    }
+    push({
+      x,
+      y,
+      vx: 0,
+      vy: 0,
+      life: secondary ? 0.14 : (isUlt ? 0.3 : 0.22),
+      size: isUlt ? 8 : 6,
+      expand: isUlt ? 26 : 18,
+      lineWidth: isUlt ? 2.5 : 1.8,
+      color: isUlt ? '#ffd681' : '#90e9ff',
+      render: 'ring',
+    });
+    return;
+  }
+
+  if (towerKind === 'spine') {
+    const shardCount = secondary ? 3 : 8;
+    for (let i = 0; i < shardCount; i += 1) {
+      const ang = rand(0, TAU);
+      const speed = rand(180, 330);
+      push({
+        x,
+        y,
+        vx: Math.cos(ang) * speed,
+        vy: Math.sin(ang) * speed,
+        life: rand(0.08, 0.18),
+        size: rand(2.1, 3.4),
+        length: rand(8, 14),
+        lineWidth: rand(1.2, 2),
+        color: '#c9ffd2',
+        render: 'shard',
+      });
+    }
+    push({
+      x,
+      y,
+      vx: 0,
+      vy: 0,
+      life: secondary ? 0.1 : 0.15,
+      size: secondary ? 4 : 6,
+      expand: secondary ? 8 : 12,
+      lineWidth: 1.4,
+      color: '#b7ffcb',
+      render: 'ring',
+    });
+    return;
+  }
+
+  if (towerKind === 'obelisk') {
+    push({
+      x,
+      y,
+      vx: 0,
+      vy: 0,
+      life: secondary ? 0.12 : 0.22,
+      size: secondary ? 5.5 : 8,
+      expand: secondary ? 10 : 18,
+      lineWidth: 2.1,
+      color: '#e9c4ff',
+      render: 'ring',
+    });
+
+    const rayCount = secondary ? 3 : 5;
+    for (let i = 0; i < rayCount; i += 1) {
+      push({
+        x,
+        y,
+        vx: 0,
+        vy: 0,
+        life: rand(0.12, 0.24),
+        length: rand(11, 18),
+        lineWidth: rand(1.4, 2.3),
+        rot: (i / rayCount) * TAU + rand(-0.2, 0.2),
+        rotSpeed: rand(-5.5, 5.5),
+        color: '#dcb0ff',
+        render: 'ray',
+      });
+    }
+    return;
+  }
+
+  if (towerKind === 'sunkenSplash') {
+    push({
+      x,
+      y,
+      vx: 0,
+      vy: 0,
+      life: secondary ? 0.12 : 0.2,
+      size: secondary ? 5 : 7.5,
+      expand: secondary ? 9 : 16,
+      lineWidth: 1.8,
+      color: '#ffc48d',
+      render: 'ring',
+    });
   }
 }
 
@@ -1441,12 +1579,14 @@ function updateBullets(dt) {
           enemy.snareSlowMul = Math.min(enemy.snareSlowMul, b.snareSlow || 0.55);
           enemy.weakenTimer = Math.max(enemy.weakenTimer, (b.snareDuration || 2) + 0.6);
           enemy.weakenMul = Math.max(enemy.weakenMul, b.weakenMul || 1.25);
+          spawnTowerHitVfx(enemy.x, enemy.y, b.towerKind, Boolean(b.ult), false);
           hurtEnemy(enemy, b.damage * 0.55, b.towerKind, Boolean(b.ult), false);
           if (Math.random() < 0.28) flashBanner('Snare: 공성몹 둔화/약화', 0.45);
         }
         state.bullets.splice(i, 1);
         removed = true;
       } else {
+        spawnTowerHitVfx(enemy.x, enemy.y, b.towerKind, Boolean(b.ult), false);
         hurtEnemy(enemy, b.damage, b.towerKind, Boolean(b.ult), false);
 
         if (b.splashRadius > 0) {
@@ -1463,6 +1603,7 @@ function updateBullets(dt) {
             const rawRate = 1 - (sDist / Math.max(1, splashRadius));
             const rate = clamp(rawRate, b.splashFalloff || 0.35, 1);
             const splashDamage = b.damage * rate * 0.72;
+            spawnTowerHitVfx(other.x, other.y, b.towerKind, Boolean(b.ult), true);
             hurtEnemy(other, splashDamage, b.towerKind, Boolean(b.ult), true);
           }
 
@@ -1613,8 +1754,9 @@ function updateParticles(dt) {
     }
     p.x += p.vx * dt;
     p.y += p.vy * dt;
-    p.vx *= 0.9;
-    p.vy *= 0.9;
+    p.vx *= p.drag || 0.9;
+    p.vy *= p.drag || 0.9;
+    if (p.rotSpeed) p.rot = (p.rot || 0) + p.rotSpeed * dt;
   }
 }
 
@@ -2250,14 +2392,60 @@ function drawBullets() {
 }
 
 function drawParticles() {
+  ctx.lineCap = 'butt';
   for (const p of state.particles) {
-    ctx.globalAlpha = clamp(p.life * 3, 0, 1);
+    const ratio = p.ttl ? clamp(p.life / p.ttl, 0, 1) : clamp(p.life * 3, 0, 1);
+    ctx.globalAlpha = clamp(ratio * (p.alphaMul || 1.15), 0, 1);
+
+    if (p.render === 'ring') {
+      const r = (p.size || 5) + (1 - ratio) * (p.expand || 12);
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = (p.lineWidth || 1.6) * (0.85 + ratio * 0.45);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, TAU);
+      ctx.stroke();
+      continue;
+    }
+
+    if (p.render === 'shard') {
+      const len = (p.length || 9) * (0.55 + ratio * 0.95);
+      const ang = Math.atan2(p.vy || 0, p.vx || 1);
+      const tx = p.x - Math.cos(ang) * len;
+      const ty = p.y - Math.sin(ang) * len;
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = p.lineWidth || 1.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(tx, ty);
+      ctx.stroke();
+      continue;
+    }
+
+    if (p.render === 'ray') {
+      const ang = p.rot || 0;
+      const len = (p.length || 12) * (0.58 + (1 - ratio) * 0.8);
+      const sx = p.x - Math.cos(ang) * len * 0.22;
+      const sy = p.y - Math.sin(ang) * len * 0.22;
+      const ex = p.x + Math.cos(ang) * len;
+      const ey = p.y + Math.sin(ang) * len;
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = p.lineWidth || 1.7;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+      continue;
+    }
+
     ctx.fillStyle = p.color;
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.size, 0, TAU);
     ctx.fill();
   }
   ctx.globalAlpha = 1;
+  ctx.lineCap = 'butt';
 }
 
 function drawBanner() {
