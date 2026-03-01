@@ -124,6 +124,7 @@ const state = {
   enemies: [],
   towers: [],
   nextTowerId: 1,
+  spawnSerial: 0,
   bullets: [],
   particles: [],
   blocked: new Set(),
@@ -510,8 +511,8 @@ function makeEnemy(type) {
 
   return {
     type,
-    x: spawn.x + rand(-7, 7),
-    y: spawn.y + rand(-7, 7),
+    x: spawn.x,
+    y: spawn.y,
     r: d.r * radiusMul * BALANCE_SCALE,
     hp: Math.floor(d.hp),
     maxHp: Math.floor(d.hp),
@@ -628,6 +629,7 @@ function startRun() {
   state.enemies = [];
   state.towers = [];
   state.nextTowerId = 1;
+  state.spawnSerial = 0;
   state.bullets = [];
   state.particles = [];
   state.blocked.clear();
@@ -1194,7 +1196,19 @@ function updateParticles(dt) {
 function spawnOne() {
   const type = state.spawnQueue.shift();
   if (!type) return;
-  state.enemies.push(makeEnemy(type));
+  const enemy = makeEnemy(type);
+  const spawn = cellCenter(SPAWN.c, SPAWN.r);
+  const aroundSpawn = state.enemies.filter((e) => (
+    Math.abs(e.x - spawn.x) < GRID.cell * 2.7
+    && Math.abs(e.y - spawn.y) < GRID.cell * 1.8
+  )).length;
+  const lane = state.spawnSerial % 5;
+  const yBands = [-0.95, -0.45, 0, 0.45, 0.95];
+  const spacing = enemy.r * 2.3 + 6;
+  enemy.x = spawn.x - aroundSpawn * spacing;
+  enemy.y = spawn.y + yBands[lane] * (enemy.r * 1.1 + 2);
+  state.spawnSerial += 1;
+  state.enemies.push(enemy);
   if (type === 'lord') {
     flashBanner(`STAGE ${state.stage} BOSS`, 1.2, true);
     bgmAudio?.fx('fail');
@@ -1581,7 +1595,19 @@ function drawEnemyTankSprite(enemy) {
   const img = ENEMY_TANK_IMAGES[enemy.type];
   if (!img || !img.complete || !img.naturalWidth) return false;
 
-  const ang = Math.atan2(enemy.vy, enemy.vx) + Math.PI * 0.5;
+  const velLen = Math.hypot(enemy.vx, enemy.vy);
+  let dx = enemy.vx;
+  let dy = enemy.vy;
+  if (velLen < 6) {
+    dx = enemy.targetX - enemy.x;
+    dy = enemy.targetY - enemy.y;
+    if (Math.hypot(dx, dy) < 1) {
+      const goal = cellCenter(GOAL.c, GOAL.r);
+      dx = goal.x - enemy.x;
+      dy = goal.y - enemy.y;
+    }
+  }
+  const ang = Math.atan2(dy, dx);
   const sizeMul = enemy.boss ? 3.0 : 2.65;
   const size = enemy.r * sizeMul;
 
