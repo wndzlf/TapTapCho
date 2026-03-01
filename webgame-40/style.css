@@ -256,6 +256,16 @@ header p {
   color: #ffd9c5;
 }
 
+.build-btn[data-kind="sunkenNova"] {
+  border-color: #7b58af;
+  background: linear-gradient(180deg, #2b1f3f, #221933);
+}
+
+.build-btn[data-kind="sunkenNova"] .icon {
+  background: rgba(198, 155, 255, 0.24);
+  color: #ebdbff;
+}
+
 .build-btn.active {
   border-color: #f0ca77;
   box-shadow: 0 0 0 2px rgba(240, 202, 119, 0.24) inset;

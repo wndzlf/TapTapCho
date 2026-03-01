@@ -256,6 +256,18 @@ const TOWER_TYPES = {
     splashRadius: 66 * BALANCE_SCALE,
     splashFalloff: 0.42,
   },
+  sunkenNova: {
+    id: 'sunkenNova',
+    name: 'Nova Sunken',
+    cost: 145,
+    color: '#c69bff',
+    range: 124 * BALANCE_SCALE,
+    damage: 15,
+    reload: 1.05,
+    bulletSpeed: 330 * BALANCE_SCALE,
+    pierce: 0,
+    hp: 275,
+  },
   spine: {
     id: 'spine',
     name: 'Spine',
@@ -327,6 +339,11 @@ const TOWER_GUIDE_DETAILS = {
     role: '광역 압축 화력',
     summary: '피격 지점 주변에 스플래시 대미지를 주는 중후반 핵심 광역 타워.',
     tips: '좁은 길목, 몹이 뭉치는 구간에 배치하면 효율이 크게 상승.',
+  },
+  sunkenNova: {
+    role: '360도 방사 화력',
+    summary: '발사 시 전 방향으로 탄막을 뿌려 측면/후방 새는 몹까지 동시에 커버.',
+    tips: '단일 대상 화력은 낮으므로 Long/Obelisk와 함께 보스 처리 라인을 구성해야 효율적.',
   },
   snare: {
     role: '디버프/제어',
@@ -1081,6 +1098,8 @@ function upgradeTower(tower) {
       ? 1.19
     : tower.kind === 'longSunken'
       ? 1.12
+    : tower.kind === 'sunkenNova'
+      ? 1.15
     : tower.kind === 'sunkenSplash'
       ? 1.18
     : tower.kind === 'spine'
@@ -1093,6 +1112,8 @@ function upgradeTower(tower) {
     ? 1.26
     : tower.kind === 'longSunken'
       ? 1.32
+    : tower.kind === 'sunkenNova'
+      ? 1.24
     : tower.kind === 'sunkenSlow'
       ? 1.28
     : tower.kind === 'sunkenSplash'
@@ -1102,6 +1123,8 @@ function upgradeTower(tower) {
     ? 0.88
     : tower.kind === 'longSunken'
       ? 0.93
+    : tower.kind === 'sunkenNova'
+      ? 0.9
     : tower.kind === 'sunkenSlow'
       ? 0.9
     : tower.kind === 'sunkenSplash'
@@ -1583,7 +1606,7 @@ function refreshBuildHint() {
   const footprint = state.sunkenFootprint === 2 ? '2x2' : '1x1';
   const sellState = state.sellMode ? 'ON' : 'OFF';
   const mobileTag = isMobileView ? '모바일 큰칸' : '일반';
-  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4/5/6/7 선택 · Q 성큰크기(${footprint}) · ${mobileTag} · F +0.25x · G -0.25x`;
+  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4/5/6/7/8 선택 · Q 성큰크기(${footprint}) · ${mobileTag} · F +0.25x · G -0.25x`;
   refreshModeHelp();
   refreshTowerGuide();
 }
@@ -1709,7 +1732,56 @@ function removeTower(tower) {
   return true;
 }
 
+function emitNovaBurst(tower) {
+  const burstCount = 8 + Math.floor((tower.level - 1) / 2) * 2;
+  const spinOffset = performance.now() * 0.0018 + tower.id * 0.37;
+  const perShotDamage = tower.damage * 0.55;
+
+  for (let i = 0; i < burstCount; i += 1) {
+    const ang = spinOffset + (i / burstCount) * TAU;
+    state.bullets.push({
+      x: tower.x,
+      y: tower.y,
+      vx: Math.cos(ang) * tower.bulletSpeed,
+      vy: Math.sin(ang) * tower.bulletSpeed,
+      r: 4.9,
+      damage: perShotDamage,
+      life: 1.6,
+      color: tower.color,
+      pierce: 0,
+      towerKind: tower.kind,
+      splashRadius: 0,
+      splashFalloff: 0,
+      snareDuration: 0,
+      snareSlow: 1,
+      weakenMul: 1,
+    });
+  }
+
+  for (let i = 0; i < 10; i += 1) {
+    const ang = rand(0, TAU);
+    const speed = rand(90, 180);
+    state.particles.push({
+      x: tower.x,
+      y: tower.y,
+      vx: Math.cos(ang) * speed,
+      vy: Math.sin(ang) * speed,
+      life: rand(0.1, 0.24),
+      size: rand(1.8, 3.2),
+      color: '#d8bcff',
+    });
+  }
+
+  impactSfx.play('enemyHitHeavy', { volume: 0.3, minGap: 0.06, rateMin: 0.9, rateMax: 1.01 });
+  if (Math.random() < 0.65) sfx(346 + rand(-24, 22), 0.045, 'square', 0.012);
+}
+
 function emitBullet(tower, target) {
+  if (tower.kind === 'sunkenNova') {
+    emitNovaBurst(tower);
+    return;
+  }
+
   const dx = target.x - tower.x;
   const dy = target.y - tower.y;
   const d = Math.hypot(dx, dy) || 1;
@@ -1717,17 +1789,18 @@ function emitBullet(tower, target) {
   const isSlowSunken = tower.kind === 'sunkenSlow';
   const isSplashSunken = tower.kind === 'sunkenSplash';
   const isLongSunken = tower.kind === 'longSunken';
+  const isNovaSunken = tower.kind === 'sunkenNova';
 
   state.bullets.push({
     x: tower.x,
     y: tower.y,
     vx: (dx / d) * tower.bulletSpeed,
     vy: (dy / d) * tower.bulletSpeed,
-    r: isSplashSunken ? 5.6 : (tower.kind === 'obelisk' || isLongSunken) ? 5.2 : (isSnare || isSlowSunken) ? 4.5 : 4,
+    r: isSplashSunken ? 5.6 : (tower.kind === 'obelisk' || isLongSunken) ? 5.2 : (isSnare || isSlowSunken || isNovaSunken) ? 4.8 : 4,
     damage: tower.damage,
     life: 2,
     color: tower.color,
-    pierce: (isSnare || isSlowSunken) ? 0 : tower.pierce,
+    pierce: (isSnare || isSlowSunken || isNovaSunken) ? 0 : tower.pierce,
     towerKind: tower.kind,
     splashRadius: isSplashSunken ? tower.splashRadius : 0,
     splashFalloff: isSplashSunken ? tower.splashFalloff : 0,
@@ -1759,6 +1832,9 @@ function emitBullet(tower, target) {
   } else if (tower.kind === 'sunkenSlow') {
     impactSfx.play('enemyHit', { volume: 0.23, minGap: 0.045, rateMin: 0.92, rateMax: 1.02 });
     if (Math.random() < 0.55) sfx(258 + rand(-14, 14), 0.035, 'sine', 0.011);
+  } else if (tower.kind === 'sunkenNova') {
+    impactSfx.play('enemyHit', { volume: 0.26, minGap: 0.05, rateMin: 1.0, rateMax: 1.11 });
+    if (Math.random() < 0.52) sfx(352 + rand(-20, 20), 0.04, 'square', 0.012);
   } else if (Math.random() < 0.35) {
     sfx(430 + rand(-26, 28), 0.03, 'square', 0.01);
   }
@@ -1834,6 +1910,14 @@ function hurtEnemy(enemy, damage, sourceKind = '', secondary = false) {
       rateMax: 1.01,
     });
     if (!secondary && Math.random() < 0.35) sfx(232 + rand(-16, 12), 0.04, 'triangle', 0.011);
+  } else if (sourceKind === 'sunkenNova') {
+    impactSfx.play('enemyHit', {
+      volume: 0.25,
+      minGap: 0.035,
+      rateMin: 1.01,
+      rateMax: 1.14,
+    });
+    if (!secondary && Math.random() < 0.36) sfx(356 + rand(-24, 20), 0.032, 'square', 0.01);
   } else if (sourceKind) {
     impactSfx.play('enemyHit', { volume: 0.26, minGap: 0.045, rateMin: 0.95, rateMax: 1.04 });
   }
@@ -1893,6 +1977,36 @@ function spawnTowerHitVfx(x, y, towerKind, isUlt = false, secondary = false) {
       expand: isUlt ? 26 : 18,
       lineWidth: isUlt ? 2.5 : 1.8,
       color: isUlt ? '#ffd681' : '#90e9ff',
+      render: 'ring',
+    });
+    return;
+  }
+
+  if (towerKind === 'sunkenNova') {
+    const rayCount = secondary ? 4 : 7;
+    for (let i = 0; i < rayCount; i += 1) {
+      const ang = rand(0, TAU);
+      const speed = rand(90, 210);
+      push({
+        x,
+        y,
+        vx: Math.cos(ang) * speed,
+        vy: Math.sin(ang) * speed,
+        life: rand(0.1, 0.22),
+        size: rand(1.9, 3.2),
+        color: '#d6b7ff',
+      });
+    }
+    push({
+      x,
+      y,
+      vx: 0,
+      vy: 0,
+      life: secondary ? 0.11 : 0.2,
+      size: secondary ? 5.2 : 7.2,
+      expand: secondary ? 9 : 15,
+      lineWidth: 1.9,
+      color: '#b88bff',
       render: 'ring',
     });
     return;
@@ -2516,6 +2630,7 @@ function drawTowerSunken(tower, now) {
   const isSplash = tower.kind === 'sunkenSplash';
   const isSlow = tower.kind === 'sunkenSlow';
   const isLong = tower.kind === 'longSunken';
+  const isNova = tower.kind === 'sunkenNova';
   const scale = 1 + ((tower.footprint || 1) - 1) * 0.86;
   const pulse = 0.5 + 0.5 * Math.sin(now * 4 + tower.c * 0.31 + tower.r * 0.17);
   const ringR = (8.4 + tower.level * 1.3) * scale;
@@ -2533,6 +2648,8 @@ function drawTowerSunken(tower, now) {
     ? `rgba(255, 201, 143, ${0.34 + pulse * 0.24})`
     : isLong
       ? `rgba(152, 194, 255, ${0.34 + pulse * 0.24})`
+    : isNova
+      ? `rgba(204, 163, 255, ${0.34 + pulse * 0.24})`
     : isSlow
       ? `rgba(145, 244, 214, ${0.34 + pulse * 0.24})`
     : `rgba(147, 225, 255, ${0.34 + pulse * 0.24})`;
@@ -2550,6 +2667,10 @@ function drawTowerSunken(tower, now) {
     aura.addColorStop(0, 'rgba(206, 226, 255, 0.48)');
     aura.addColorStop(0.58, 'rgba(123, 171, 255, 0.27)');
     aura.addColorStop(1, 'rgba(56, 88, 156, 0)');
+  } else if (isNova) {
+    aura.addColorStop(0, 'rgba(229, 204, 255, 0.46)');
+    aura.addColorStop(0.58, 'rgba(182, 129, 255, 0.26)');
+    aura.addColorStop(1, 'rgba(85, 45, 138, 0)');
   } else if (isSlow) {
     aura.addColorStop(0, 'rgba(203, 255, 239, 0.44)');
     aura.addColorStop(0.58, 'rgba(130, 234, 199, 0.24)');
@@ -2575,6 +2696,10 @@ function drawTowerSunken(tower, now) {
     vortex.addColorStop(0, '#d5e4ff');
     vortex.addColorStop(0.65, '#5e89d5');
     vortex.addColorStop(1, '#15203a');
+  } else if (isNova) {
+    vortex.addColorStop(0, '#e0c6ff');
+    vortex.addColorStop(0.65, '#8962c5');
+    vortex.addColorStop(1, '#28163d');
   } else if (isSlow) {
     vortex.addColorStop(0, '#c9ffe9');
     vortex.addColorStop(0.65, '#4fba95');
@@ -2593,6 +2718,8 @@ function drawTowerSunken(tower, now) {
     ? 'rgba(255, 232, 171, 0.62)'
     : isLong
       ? 'rgba(216, 232, 255, 0.68)'
+    : isNova
+      ? 'rgba(225, 208, 255, 0.68)'
     : isSlow
       ? 'rgba(201, 255, 238, 0.65)'
       : 'rgba(196, 242, 255, 0.62)';
@@ -2610,6 +2737,8 @@ function drawTowerSunken(tower, now) {
       ? 'rgba(255, 216, 143, 0.84)'
       : isLong
         ? 'rgba(196, 221, 255, 0.86)'
+      : isNova
+        ? 'rgba(222, 204, 255, 0.86)'
       : isSlow
         ? 'rgba(194, 255, 236, 0.84)'
         : 'rgba(197, 242, 255, 0.84)';
@@ -2628,6 +2757,8 @@ function drawTowerSunken(tower, now) {
     ? 'rgba(255, 215, 142, 0.78)'
     : isLong
       ? 'rgba(172, 206, 255, 0.82)'
+    : isNova
+      ? 'rgba(205, 179, 255, 0.82)'
     : isSlow
       ? 'rgba(191, 255, 229, 0.78)'
       : 'rgba(198, 246, 255, 0.78)';
@@ -2649,6 +2780,8 @@ function drawTowerSunken(tower, now) {
       ? `rgba(255, 190, 115, ${0.66 + pulse * 0.2})`
       : isLong
         ? `rgba(133, 182, 255, ${0.66 + pulse * 0.2})`
+      : isNova
+        ? `rgba(188, 146, 255, ${0.66 + pulse * 0.2})`
       : isSlow
         ? `rgba(135, 248, 209, ${0.66 + pulse * 0.2})`
         : `rgba(162, 236, 255, ${0.66 + pulse * 0.2})`;
@@ -2662,11 +2795,13 @@ function drawTowerSunken(tower, now) {
     }
   }
 
-  if (isSplash || isSlow || isLong) {
+  if (isSplash || isSlow || isLong || isNova) {
     ctx.strokeStyle = isSplash
       ? `rgba(255, 169, 86, ${0.52 + pulse * 0.24})`
       : isLong
         ? `rgba(118, 170, 255, ${0.52 + pulse * 0.24})`
+      : isNova
+        ? `rgba(169, 117, 255, ${0.52 + pulse * 0.24})`
       : `rgba(92, 246, 208, ${0.52 + pulse * 0.24})`;
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -2835,6 +2970,8 @@ function drawTowers() {
       ? 'rgba(141, 217, 255, 0.8)'
       : tower.kind === 'longSunken'
         ? 'rgba(143, 185, 255, 0.92)'
+      : tower.kind === 'sunkenNova'
+        ? 'rgba(198, 155, 255, 0.9)'
       : tower.kind === 'sunkenSlow'
         ? 'rgba(145, 244, 214, 0.88)'
       : tower.kind === 'sunkenSplash'
@@ -2853,6 +2990,7 @@ function drawTowers() {
       || tower.kind === 'sunkenSplash'
       || tower.kind === 'sunkenSlow'
       || tower.kind === 'longSunken'
+      || tower.kind === 'sunkenNova'
     ) {
       drawTowerSunken(tower, now);
     } else if (tower.kind === 'spine') {
@@ -3363,6 +3501,7 @@ window.addEventListener('keydown', (event) => {
   if (event.code === 'Digit5') chooseTower('spine');
   if (event.code === 'Digit6') chooseTower('obelisk');
   if (event.code === 'Digit7') chooseTower('snare');
+  if (event.code === 'Digit8') chooseTower('sunkenNova');
 
   if (event.code === 'KeyQ') {
     state.sunkenFootprint = state.sunkenFootprint === 1 ? 2 : 1;
