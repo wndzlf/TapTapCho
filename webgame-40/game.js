@@ -1122,66 +1122,63 @@ function upgradeCost(tower) {
   ));
 }
 
-function upgradeTower(tower) {
-  if (tower.level >= MAX_TOWER_LEVEL) return false;
-  const cost = upgradeCost(tower);
-  if (state.gold < cost) {
-    flashBanner('Gold 부족', 0.9, true);
-    return false;
-  }
-
-  const rangeMul = tower.kind === 'sunken'
+function getTowerUpgradeFactors(kind) {
+  const rangeMul = kind === 'sunken'
     ? 1.24
-    : tower.kind === 'sunkenSlow'
+    : kind === 'sunkenSlow'
       ? 1.19
-    : tower.kind === 'longSunken'
+    : kind === 'longSunken'
       ? 1.12
-    : tower.kind === 'sunkenNova'
+    : kind === 'sunkenNova'
       ? 1.15
-    : tower.kind === 'sunkenStun'
+    : kind === 'sunkenStun'
       ? 1.14
-    : tower.kind === 'sunkenSplash'
+    : kind === 'sunkenSplash'
       ? 1.18
-    : tower.kind === 'spine'
+    : kind === 'spine'
       ? 1.16
-      : tower.kind === 'obelisk'
+      : kind === 'obelisk'
         ? 1.15
         : 1.2;
 
-  const damageMul = tower.kind === 'snare'
+  const damageMul = kind === 'snare'
     ? 1.26
-    : tower.kind === 'longSunken'
+    : kind === 'longSunken'
       ? 1.32
-    : tower.kind === 'sunkenNova'
+    : kind === 'sunkenNova'
       ? 1.24
-    : tower.kind === 'sunkenStun'
+    : kind === 'sunkenStun'
       ? 1.22
-    : tower.kind === 'sunkenSlow'
+    : kind === 'sunkenSlow'
       ? 1.28
-    : tower.kind === 'sunkenSplash'
+    : kind === 'sunkenSplash'
       ? 1.3
       : 1.34;
-  const reloadMul = tower.kind === 'sunken'
+
+  const reloadMul = kind === 'sunken'
     ? 0.88
-    : tower.kind === 'longSunken'
+    : kind === 'longSunken'
       ? 0.93
-    : tower.kind === 'sunkenNova'
+    : kind === 'sunkenNova'
       ? 0.9
-    : tower.kind === 'sunkenStun'
+    : kind === 'sunkenStun'
       ? 0.92
-    : tower.kind === 'sunkenSlow'
+    : kind === 'sunkenSlow'
       ? 0.9
-    : tower.kind === 'sunkenSplash'
+    : kind === 'sunkenSplash'
       ? 0.92
       : 0.9;
 
-  state.gold -= cost;
-  tower.level += 1;
-  tower.spent += cost;
-  tower.range *= rangeMul;
-  tower.damage *= damageMul;
-  tower.reload *= reloadMul;
+  return { rangeMul, damageMul, reloadMul };
+}
+
+function applyTowerUpgradeScaling(tower, factors = null) {
+  const stats = factors || getTowerUpgradeFactors(tower.kind);
+  tower.range *= stats.rangeMul;
+  tower.damage *= stats.damageMul;
+  tower.reload *= stats.reloadMul;
   tower.pierce = Math.min(3, tower.pierce + (tower.kind === 'obelisk' ? 1 : 0));
+
   if (tower.kind === 'snare') {
     tower.snareDuration *= 1.13;
     tower.snareSlow = Math.max(0.32, tower.snareSlow * 0.93);
@@ -1196,11 +1193,30 @@ function upgradeTower(tower) {
   } else if (tower.kind === 'sunkenStun') {
     tower.stunDuration = Math.min(2.1, tower.stunDuration * 1.1);
     tower.stunRadius *= 1.06;
+    if (tower.level === 3 || tower.level === 5 || tower.level === 7) {
+      tower.stunChain = Math.min(6, (tower.stunChain || 3) + 1);
+    }
   }
+}
+
+function upgradeTower(tower) {
+  if (tower.level >= MAX_TOWER_LEVEL) return false;
+  const cost = upgradeCost(tower);
+  if (state.gold < cost) {
+    flashBanner('Gold 부족', 0.9, true);
+    return false;
+  }
+
+  const factors = getTowerUpgradeFactors(tower.kind);
+
+  state.gold -= cost;
+  tower.level += 1;
+  tower.spent += cost;
+  applyTowerUpgradeScaling(tower, factors);
   tower.maxHp *= 1.34;
   tower.hp = Math.min(tower.maxHp, tower.hp + tower.maxHp * 0.25);
 
-  const rangePercent = Math.round((rangeMul - 1) * 100);
+  const rangePercent = Math.round((factors.rangeMul - 1) * 100);
   flashBanner(`UPGRADE Lv.${tower.level} · RANGE +${rangePercent}%`, 0.75);
   sfx(620, 0.07, 'triangle', 0.022);
   return true;
@@ -1715,11 +1731,82 @@ function refreshModeHelp() {
   `;
 }
 
+function buildTowerLevelCurve(kind) {
+  const placement = getPlacementSpec(kind);
+  const base = TOWER_TYPES[kind];
+  if (!placement || !base) return [];
+
+  const sim = {
+    kind,
+    level: 1,
+    range: placement.range,
+    damage: placement.damage,
+    reload: placement.reload,
+    pierce: placement.pierce || 0,
+    splashRadius: placement.splashRadius || 0,
+    splashFalloff: placement.splashFalloff || 0,
+    snareDuration: base.snareDuration || 0,
+    snareSlow: base.snareSlow || 1,
+    weakenMul: base.weakenMul || 1,
+    stunDuration: base.stunDuration || 0,
+    stunChain: base.stunChain || 0,
+    stunRadius: base.stunRadius || 0,
+  };
+
+  const rows = [];
+  const snapshot = () => rows.push({
+    level: sim.level,
+    range: sim.range,
+    damage: sim.damage,
+    reload: sim.reload,
+    aps: sim.reload > 0 ? (1 / sim.reload) : 0,
+    dps: sim.reload > 0 ? (sim.damage / sim.reload) : sim.damage,
+    pierce: sim.pierce,
+    splashRadius: sim.splashRadius,
+    snareDuration: sim.snareDuration,
+    snareSlow: sim.snareSlow,
+    weakenMul: sim.weakenMul,
+    stunDuration: sim.stunDuration,
+    stunChain: sim.stunChain,
+    stunRadius: sim.stunRadius,
+  });
+
+  snapshot();
+  while (sim.level < MAX_TOWER_LEVEL) {
+    sim.level += 1;
+    applyTowerUpgradeScaling(sim);
+    snapshot();
+  }
+  return rows;
+}
+
+function buildTowerProgressText(kind, row) {
+  const parts = [
+    `피해 ${Math.round(row.damage)}`,
+    `연사 ${row.aps.toFixed(2)}/s`,
+    `DPS ${Math.round(row.dps)}`,
+    `사거리 ${Math.round(row.range / BALANCE_SCALE)}`,
+  ];
+
+  if (kind === 'obelisk' && row.pierce > 0) parts.push(`관통 ${row.pierce}`);
+  if (kind === 'sunkenSplash' && row.splashRadius > 0) parts.push(`스플래시 ${Math.round(row.splashRadius / BALANCE_SCALE)}`);
+  if ((kind === 'snare' || kind === 'sunkenSlow') && row.snareDuration > 0) {
+    parts.push(`둔화 ${(Math.round((1 - row.snareSlow) * 100))}%/${row.snareDuration.toFixed(2)}s`);
+  }
+  if (kind === 'snare' && row.weakenMul > 1) parts.push(`약화 +${Math.round((row.weakenMul - 1) * 100)}%`);
+  if (kind === 'sunkenStun' && row.stunDuration > 0) {
+    parts.push(`스턴 ${row.stunChain}명/${row.stunDuration.toFixed(2)}s`);
+  }
+
+  return parts.join(' · ');
+}
+
 function refreshTowerGuide() {
   if (!towerGuideEl) return;
 
   const tower = TOWER_TYPES[state.selectedTower];
-  if (!tower) {
+  const placement = getPlacementSpec(state.selectedTower);
+  if (!tower || !placement) {
     towerGuideEl.textContent = '';
     return;
   }
@@ -1730,20 +1817,31 @@ function refreshTowerGuide() {
     tips: '',
   };
 
-  const attacksPerSec = tower.reload > 0 ? (1 / tower.reload) : 0;
-  const damagePerSec = tower.reload > 0 ? tower.damage / tower.reload : tower.damage;
+  const attacksPerSec = placement.reload > 0 ? (1 / placement.reload) : 0;
+  const damagePerSec = placement.reload > 0 ? placement.damage / placement.reload : placement.damage;
+  const curve = buildTowerLevelCurve(state.selectedTower);
+  const maxRow = curve[curve.length - 1] || null;
   const badges = [
-    `비용 ${tower.cost}`,
-    `사거리 ${Math.round(tower.range / BALANCE_SCALE)}`,
+    `비용 ${placement.cost}`,
+    `1발 피해 ${Math.round(placement.damage)}`,
     `초당 ${attacksPerSec.toFixed(2)}발`,
     `초당 피해 ${Math.round(damagePerSec)}`,
-    `내구 HP ${Math.round(tower.hp)}`,
+    `사거리 ${Math.round(placement.range / BALANCE_SCALE)}`,
     `최대 Lv${MAX_TOWER_LEVEL}`,
   ];
 
-  if (tower.pierce > 0) badges.push(`관통 ${tower.pierce}`);
-  if (tower.splashRadius > 0) badges.push(`스플래시 ${Math.round(tower.splashRadius / BALANCE_SCALE)}`);
+  if (placement.pierce > 0) badges.push(`관통 ${placement.pierce}`);
+  if (placement.splashRadius > 0) badges.push(`스플래시 ${Math.round(placement.splashRadius / BALANCE_SCALE)}`);
   if (tower.snareDuration && tower.snareSlow) badges.push(`둔화 ${Math.round((1 - tower.snareSlow) * 100)}%`);
+  if (tower.stunDuration && tower.stunChain) badges.push(`스턴 ${tower.stunChain}명`);
+
+  const growthSummary = maxRow
+    ? `Lv1 → Lv${MAX_TOWER_LEVEL}: 피해 ${Math.round(placement.damage)}→${Math.round(maxRow.damage)} · 연사 ${attacksPerSec.toFixed(2)}→${maxRow.aps.toFixed(2)}/s · DPS ${Math.round(damagePerSec)}→${Math.round(maxRow.dps)}`
+    : '';
+
+  const levelRows = curve
+    .map((row) => `<div class="curve-item"><span class="lv">Lv${row.level}</span><span class="vals">${buildTowerProgressText(state.selectedTower, row)}</span></div>`)
+    .join('');
 
   towerGuideEl.innerHTML = `
     <div class="line">
@@ -1752,6 +1850,9 @@ function refreshTowerGuide() {
     </div>
     <div class="meta">${guide.role}</div>
     <div class="desc">${guide.summary} ${guide.tips}</div>
+    <div class="growth">${growthSummary}</div>
+    <div class="curve-title">레벨 성장 상세</div>
+    <div class="curve-list">${levelRows}</div>
   `;
 }
 

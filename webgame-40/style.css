@@ -394,6 +394,48 @@ header p {
   line-height: 1.36;
 }
 
+.tower-guide .growth {
+  color: #f0d89f;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tower-guide .curve-title {
+  color: #a9c5ea;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tower-guide .curve-list {
+  display: grid;
+  gap: 4px;
+}
+
+.tower-guide .curve-item {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid rgba(90, 120, 166, 0.28);
+  background: rgba(22, 34, 56, 0.36);
+  border-radius: 7px;
+  padding: 4px 6px;
+}
+
+.tower-guide .curve-item .lv {
+  color: #ffe4aa;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.tower-guide .curve-item .vals {
+  color: #c8d9f2;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
 .arena {
   margin-top: 10px;
   position: relative;
