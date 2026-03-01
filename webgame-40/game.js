@@ -320,8 +320,8 @@ const TOWER_GUIDE_DETAILS = {
   },
   snare: {
     role: '디버프/제어',
-    summary: '공성몹 둔화와 약화 디버프를 걸어 다른 타워 딜을 증폭.',
-    tips: 'Snare 단독 화력은 낮으므로 딜 타워와 반드시 함께 운용.',
+    summary: '러시몹 포함 전체 적에게 둔화/약화 디버프를 걸어 화력을 증폭.',
+    tips: '단독 화력은 낮으므로 딜 타워와 반드시 함께 운용.',
   },
 };
 
@@ -351,7 +351,7 @@ const state = {
   blocked: new Set(),
   dist: [],
   towerHpBonus: 0,
-  siegeDamageBonus: 0,
+  rushDamageBonus: 0,
   pendingStage: 0,
   pendingStageBonusGold: 0,
   banner: { text: '', ttl: 0, warn: false },
@@ -1014,9 +1014,7 @@ function flashBanner(text, ttl = 1.2, warn = false) {
   if (isMobileView && state.mode === 'playing') {
     const noisyCombatBanner = (
       text.startsWith('BASE -')
-      || text.includes('공성 몹이 건물 공격 중')
       || text.includes('DESTROYED')
-      || text.includes('봉인 시전')
       || text.includes('Snare:')
     );
     if (noisyCombatBanner) return;
@@ -1057,7 +1055,6 @@ function makeTower(kind, c, r, spec = null) {
     cooldown: rand(0.02, placement.reload),
     color: placement.color || base.color,
     ultimate: Boolean(placement.ultimate),
-    sealTimer: 0,
     snareDuration: base.snareDuration || 0,
     snareSlow: base.snareSlow || 1,
     weakenMul: base.weakenMul || 1,
@@ -1230,32 +1227,26 @@ function makeEnemy(type) {
   };
   const defs = {
     ghoul: { hp: (58 + s * 12) * stageHpMul * 1.0, speed: (36 + s * 1.6) * stageSpeedMul, reward: 7, leak: 1, r: 10, color: '#c54f72' },
-    bat: { hp: (36 + s * 8) * stageHpMul * 0.82, speed: (58 + s * 2.4) * stageSpeedMul, reward: 6, leak: 1, r: 8, color: '#d07ab4' },
+    bat: { hp: (34 + s * 7) * stageHpMul * 0.8, speed: (64 + s * 2.9) * stageSpeedMul, reward: 7, leak: 1, r: 8, color: '#d07ab4', fast: true },
     brute: { hp: (150 + s * 28) * stageHpMul * 1.18, speed: (29 + s * 1.3) * stageSpeedMul, reward: 12, leak: 2, r: 13, color: '#9e5a9c' },
     elder: { hp: (262 + s * 46) * stageHpMul * 1.32, speed: (37 + s * 1.5) * stageSpeedMul, reward: 25, leak: 3, r: 15, color: '#b86ec8' },
     raider: {
-      hp: (120 + s * 24) * stageHpMul * 1.05,
-      speed: (42 + s * 1.5) * stageSpeedMul,
-      reward: 17,
+      hp: (98 + s * 21) * stageHpMul * 0.98,
+      speed: (56 + s * 2.2) * stageSpeedMul,
+      reward: 18,
       leak: 2,
       r: 12,
       color: '#ff9d7f',
-      breaker: true,
-      towerDamage: 24 + s * 6 + lateIndex * 3,
-      attackInterval: 0.95,
-      attackRange: 22,
+      fast: true,
     },
     crusher: {
-      hp: (260 + s * 44) * stageHpMul * 1.28,
-      speed: (30 + s * 1.1) * stageSpeedMul,
-      reward: 28,
+      hp: (212 + s * 38) * stageHpMul * 1.1,
+      speed: (44 + s * 1.9) * stageSpeedMul,
+      reward: 30,
       leak: 3,
       r: 15,
       color: '#ffc17c',
-      breaker: true,
-      towerDamage: 46 + s * 9 + lateIndex * 5,
-      attackInterval: 1.28,
-      attackRange: 26,
+      fast: true,
     },
     lord: { hp: (700 + s * 140) * stageHpMul * 1.65, speed: (27 + s) * stageSpeedMul, reward: 58, leak: 5, r: 18, color: '#f26a84', boss: true },
   };
@@ -1286,20 +1277,11 @@ function makeEnemy(type) {
     vy: 0,
     threat,
     morph: rand(0, TAU),
-    breaker: Boolean(d.breaker),
-    towerDamage: d.towerDamage || 0,
-    attackInterval: Math.max(0.42, (d.attackInterval || 1) - s * 0.006 - lateIndex * 0.007 - nightmareIndex * 0.01),
-    attackRange: (d.attackRange || 0) * BALANCE_SCALE,
-    attackCd: rand(0.1, 0.6),
-    targetTowerId: 0,
+    fast: Boolean(d.fast),
     snareTimer: 0,
     snareSlowMul: 1,
     weakenTimer: 0,
     weakenMul: 1,
-    sealCd: d.boss ? Math.max(2.7, 6.8 - s * 0.11 - nightmareIndex * 0.08) : 0,
-    sealInterval: d.boss ? Math.max(3.1, 7.5 - s * 0.12 - nightmareIndex * 0.1) : 0,
-    sealDuration: d.boss ? Math.min(6.8, 1.8 + s * 0.11 + nightmareIndex * 0.14) : 0,
-    sealCount: d.boss ? (s >= 28 ? 5 : s >= 24 ? 4 : s >= 18 ? 3 : s >= 12 ? 2 : 1) : 0,
   };
 }
 
@@ -1382,9 +1364,9 @@ function makeStageQueue(stage) {
   }
 
   if (stage >= 6) {
-    const breakerCount = 1 + Math.floor(stage * 0.46) + Math.floor(lateIndex * 0.38) + Math.floor(nightmareIndex * 1.6);
+    const rushCount = 1 + Math.floor(stage * 0.46) + Math.floor(lateIndex * 0.38) + Math.floor(nightmareIndex * 1.6);
     const crusherPickChance = clamp(0.32 + lateIndex * 0.01, 0.32, 0.44);
-    for (let i = 0; i < breakerCount; i += 1) {
+    for (let i = 0; i < rushCount; i += 1) {
       const pos = Math.floor(queue.length * (0.28 + Math.random() * 0.5));
       queue.splice(pos, 0, stage >= 8 && Math.random() < crusherPickChance ? 'crusher' : 'raider');
     }
@@ -1428,7 +1410,7 @@ function startRun() {
   state.ultSunkenArmed = false;
   state.sellMode = false;
   state.towerHpBonus = 0;
-  state.siegeDamageBonus = 0;
+  state.rushDamageBonus = 0;
   state.pendingStage = 0;
   state.pendingStageBonusGold = 0;
   setSelectedButton();
@@ -1503,8 +1485,8 @@ function showStageReward() {
           <span>현재 배치 + 이후 배치 모두 내구 증가</span>
         </button>
         <button type="button" class="reward-btn" data-action="reward:siege">
-          <strong>공성 대응 +25%</strong>
-          <span>공성몹(raider/crusher) 대상 피해 증가</span>
+          <strong>러시 대응 +25%</strong>
+          <span>빠른 몹(bat/raider/crusher) 대상 피해 증가</span>
         </button>
         <button type="button" class="reward-btn" data-action="reward:repair">
           <strong>리페어 즉시 복구</strong>
@@ -1527,8 +1509,8 @@ function applyStageReward(kind) {
     flashBanner('타워 내구 +15%', 0.9);
     sfx(520, 0.07, 'triangle', 0.028);
   } else if (kind === 'siege') {
-    state.siegeDamageBonus += 0.25;
-    flashBanner('공성 대응 +25%', 0.9);
+    state.rushDamageBonus += 0.25;
+    flashBanner('러시 대응 +25%', 0.9);
     sfx(620, 0.07, 'triangle', 0.028);
   } else if (kind === 'repair') {
     for (const tower of state.towers) {
@@ -1649,7 +1631,7 @@ function refreshModeHelp() {
   } else if (state.ultSunkenCharges > 0) {
     ultDesc = `일반 성큰 모드입니다. R 키 또는 ULT 버튼으로 ON하면 다음 Sunken 1회가 필살 성큰이 됩니다 (${state.ultSunkenCharges}개 보유).`;
   } else {
-    ultDesc = '일반 성큰 모드입니다. 보스/공성몹 처치로 ULT 충전을 얻을 수 있습니다.';
+    ultDesc = '일반 성큰 모드입니다. 보스/러시몹 처치로 ULT 충전을 얻을 수 있습니다.';
   }
 
   const sfxDesc = audio.sfx
@@ -1716,16 +1698,19 @@ function nearestEnemy(x, y, range) {
   return found;
 }
 
-function nearestEnemyFiltered(x, y, range, predicate) {
+function fastestEnemyFiltered(x, y, range, predicate) {
   let found = null;
-  let best = range * range;
+  let bestSpeed = -1;
+  let bestDist = range * range;
   for (const enemy of state.enemies) {
     if (!predicate(enemy)) continue;
     const dx = enemy.x - x;
     const dy = enemy.y - y;
     const d = dx * dx + dy * dy;
-    if (d <= best) {
-      best = d;
+    if (d > bestDist) continue;
+    if (enemy.speed > bestSpeed || (Math.abs(enemy.speed - bestSpeed) < 0.0001 && d < bestDist)) {
+      bestSpeed = enemy.speed;
+      bestDist = d;
       found = enemy;
     }
   }
@@ -1734,68 +1719,23 @@ function nearestEnemyFiltered(x, y, range, predicate) {
 
 function pickTowerTarget(tower) {
   if (tower.kind === 'snare') {
-    const unsnared = nearestEnemyFiltered(
+    const unsnaredFast = fastestEnemyFiltered(
       tower.x,
       tower.y,
       tower.range,
-      (enemy) => enemy.breaker && enemy.snareTimer <= 0.35
+      (enemy) => enemy.fast && enemy.snareTimer <= 0.35
     );
-    if (unsnared) return unsnared;
-    return nearestEnemyFiltered(tower.x, tower.y, tower.range, (enemy) => enemy.breaker);
+    if (unsnaredFast) return unsnaredFast;
+    const unsnaredAny = fastestEnemyFiltered(
+      tower.x,
+      tower.y,
+      tower.range,
+      (enemy) => enemy.snareTimer <= 0.35
+    );
+    if (unsnaredAny) return unsnaredAny;
+    return nearestEnemy(tower.x, tower.y, tower.range);
   }
   return nearestEnemy(tower.x, tower.y, tower.range);
-}
-
-function nearestTower(x, y) {
-  let found = null;
-  let best = Infinity;
-  for (const tower of state.towers) {
-    const dx = tower.x - x;
-    const dy = tower.y - y;
-    const d = dx * dx + dy * dy;
-    if (d < best) {
-      best = d;
-      found = tower;
-    }
-  }
-  return found;
-}
-
-function castBossSeal(enemy) {
-  const candidates = state.towers.filter((tower) => tower.sealTimer <= 0.22);
-  if (candidates.length === 0) return false;
-
-  candidates.sort((a, b) => (b.level - a.level) || (b.spent - a.spent));
-  const count = Math.min(candidates.length, enemy.sealCount || 1);
-  const picked = [];
-  const offset = Math.floor(rand(0, candidates.length));
-
-  for (let i = 0; i < count; i += 1) {
-    const tower = candidates[(offset + i) % candidates.length];
-    if (!tower) continue;
-    picked.push(tower);
-  }
-
-  for (const tower of picked) {
-    tower.sealTimer = Math.max(tower.sealTimer, enemy.sealDuration);
-    tower.cooldown = Math.max(tower.cooldown, 0.25);
-
-    for (let i = 0; i < 9; i += 1) {
-      state.particles.push({
-        x: tower.x + rand(-8, 8),
-        y: tower.y + rand(-8, 8),
-        vx: rand(-95, 95),
-        vy: rand(-120, 40),
-        life: rand(0.16, 0.36),
-        size: rand(1.8, 3.6),
-        color: '#ff92b2',
-      });
-    }
-  }
-
-  flashBanner(`BOSS 봉인 시전 x${picked.length}`, 0.9, true);
-  sfx(140, 0.12, 'sawtooth', 0.035);
-  return true;
 }
 
 function removeTower(tower) {
@@ -1811,39 +1751,8 @@ function removeTower(tower) {
   buildDistanceMap();
   for (const enemy of state.enemies) {
     enemy.repath = 0;
-    if (enemy.targetTowerId === tower.id) enemy.targetTowerId = 0;
   }
   return true;
-}
-
-function damageTower(tower, amount, sourceEnemy = null) {
-  if (!tower) return;
-  tower.hp -= amount;
-  for (let i = 0; i < 8; i += 1) {
-    state.particles.push({
-      x: tower.x + rand(-6, 6),
-      y: tower.y + rand(-6, 6),
-      vx: rand(-120, 120),
-      vy: rand(-130, 60),
-      life: rand(0.08, 0.22),
-      size: rand(1.7, 3.2),
-      color: sourceEnemy?.color || '#ffb3c1',
-    });
-  }
-  if (sourceEnemy) {
-    impactSfx.play('towerHit', { volume: 0.36, minGap: 0.05, rateMin: 0.92, rateMax: 1.03 });
-    const base = sourceEnemy.type === 'crusher' ? 128 : 164;
-    const gain = sourceEnemy.type === 'crusher' ? 0.024 : 0.018;
-    sfx(base + rand(-18, 14), 0.06, 'square', gain);
-  } else if (Math.random() < 0.2) {
-    sfx(220 + rand(-24, 16), 0.05, 'square', 0.016);
-  }
-  if (tower.hp > 0) return;
-
-  removeTower(tower);
-  impactSfx.play('towerBreak', { volume: 0.22, minGap: 0.08, rateMin: 0.86, rateMax: 0.95 });
-  flashBanner(`${tower.kind.toUpperCase()} DESTROYED`, 0.9, true);
-  sfx(170, 0.12, 'sawtooth', 0.04);
 }
 
 function emitBullet(tower, target) {
@@ -1900,8 +1809,8 @@ function emitBullet(tower, target) {
 
 function hurtEnemy(enemy, damage, sourceKind = '', sourceUlt = false, secondary = false) {
   const weakenDamage = enemy.weakenTimer > 0 ? enemy.weakenMul : 1;
-  const siegeDamage = enemy.breaker ? 1 + state.siegeDamageBonus : 1;
-  enemy.hp -= damage * weakenDamage * siegeDamage;
+  const rushDamage = enemy.fast ? 1 + state.rushDamageBonus : 1;
+  enemy.hp -= damage * weakenDamage * rushDamage;
   enemy.vx += rand(-16, 16);
   enemy.vy += rand(-16, 16);
 
@@ -1970,9 +1879,9 @@ function hurtEnemy(enemy, damage, sourceKind = '', sourceUlt = false, secondary 
       sfx(280, 0.2, 'sawtooth', 0.04);
       flashBanner('BOSS DOWN', 0.9);
     } else {
-      const dropChance = enemy.breaker ? 0.11 : 0.035;
+      const dropChance = enemy.fast ? 0.08 : 0.035;
       if (Math.random() < dropChance) {
-        grantUltSunkenCharge(1, enemy.breaker ? '공성 처치' : '럭키');
+        grantUltSunkenCharge(1, enemy.fast ? '러시 처치' : '럭키');
       }
       if (Math.random() < 0.35) {
         sfx(560, 0.04, 'triangle', 0.013);
@@ -2105,9 +2014,6 @@ function spawnTowerHitVfx(x, y, towerKind, isUlt = false, secondary = false) {
 
 function updateTowers(dt) {
   for (const tower of state.towers) {
-    tower.sealTimer = Math.max(0, tower.sealTimer - dt);
-    if (tower.sealTimer > 0) continue;
-
     tower.cooldown -= dt;
     if (tower.cooldown > 0) continue;
 
@@ -2139,15 +2045,13 @@ function updateBullets(dt) {
       if (dx * dx + dy * dy > rr * rr) continue;
 
       if (b.towerKind === 'snare') {
-        if (enemy.breaker) {
-          enemy.snareTimer = Math.max(enemy.snareTimer, b.snareDuration || 2);
-          enemy.snareSlowMul = Math.min(enemy.snareSlowMul, b.snareSlow || 0.55);
-          enemy.weakenTimer = Math.max(enemy.weakenTimer, (b.snareDuration || 2) + 0.6);
-          enemy.weakenMul = Math.max(enemy.weakenMul, b.weakenMul || 1.25);
-          spawnTowerHitVfx(enemy.x, enemy.y, b.towerKind, Boolean(b.ult), false);
-          hurtEnemy(enemy, b.damage * 0.55, b.towerKind, Boolean(b.ult), false);
-          if (Math.random() < 0.28) flashBanner('Snare: 공성몹 둔화/약화', 0.45);
-        }
+        enemy.snareTimer = Math.max(enemy.snareTimer, b.snareDuration || 2);
+        enemy.snareSlowMul = Math.min(enemy.snareSlowMul, b.snareSlow || 0.55);
+        enemy.weakenTimer = Math.max(enemy.weakenTimer, (b.snareDuration || 2) + 0.6);
+        enemy.weakenMul = Math.max(enemy.weakenMul, b.weakenMul || 1.25);
+        spawnTowerHitVfx(enemy.x, enemy.y, b.towerKind, Boolean(b.ult), false);
+        hurtEnemy(enemy, b.damage * 0.55, b.towerKind, Boolean(b.ult), false);
+        if (Math.random() < 0.28) flashBanner('Snare: 둔화/약화', 0.45);
         state.bullets.splice(i, 1);
         removed = true;
       } else {
@@ -2204,19 +2108,10 @@ function updateBullets(dt) {
 
 function updateEnemy(enemy, dt) {
   enemy.repath -= dt;
-  enemy.attackCd = Math.max(0, enemy.attackCd - dt);
   enemy.snareTimer = Math.max(0, enemy.snareTimer - dt);
   enemy.weakenTimer = Math.max(0, enemy.weakenTimer - dt);
-  enemy.sealCd = Math.max(0, enemy.sealCd - dt);
   if (enemy.snareTimer <= 0) enemy.snareSlowMul = 1;
   if (enemy.weakenTimer <= 0) enemy.weakenMul = 1;
-
-  if (enemy.boss && enemy.sealCd <= 0 && state.towers.length > 0) {
-    const casted = castBossSeal(enemy);
-    enemy.sealCd = casted
-      ? enemy.sealInterval + rand(-0.35, 0.45)
-      : 1.2;
-  }
 
   const speed = enemy.speed * (enemy.snareTimer > 0 ? enemy.snareSlowMul : 1);
 
@@ -2240,49 +2135,7 @@ function updateEnemy(enemy, dt) {
     enemy.repath = 0;
   }
 
-  if (enemy.breaker && state.towers.length > 0) {
-    let targetTower = state.towers.find((t) => t.id === enemy.targetTowerId);
-    if (!targetTower) {
-      targetTower = nearestTower(enemy.x, enemy.y);
-      enemy.targetTowerId = targetTower ? targetTower.id : 0;
-    }
-
-    if (targetTower) {
-      const tdx = targetTower.x - enemy.x;
-      const tdy = targetTower.y - enemy.y;
-      const td = Math.hypot(tdx, tdy) || 1;
-      const tx = tdx / td;
-      const ty = tdy / td;
-
-      if (td <= enemy.attackRange + GRID.cell * 0.28) {
-        enemy.vx *= 0.72;
-        enemy.vy *= 0.72;
-        const prevX = enemy.x;
-        const prevY = enemy.y;
-        enemy.x += enemy.vx * dt;
-        enemy.y += enemy.vy * dt;
-        keepEnemyInPassableCell(prevX, prevY);
-        if (enemy.attackCd <= 0) {
-          damageTower(targetTower, enemy.towerDamage, enemy);
-          enemy.attackCd = enemy.attackInterval;
-          if (Math.random() < 0.5) flashBanner('공성 몹이 건물 공격 중', 0.32, true);
-        }
-      } else {
-        const prevX = enemy.x;
-        const prevY = enemy.y;
-        enemy.vx += tx * speed * dt * 3.3;
-        enemy.vy += ty * speed * dt * 3.3;
-        enemy.vx *= 0.89;
-        enemy.vy *= 0.89;
-        enemy.x += enemy.vx * dt;
-        enemy.y += enemy.vy * dt;
-        keepEnemyInPassableCell(prevX, prevY);
-      }
-      return;
-    }
-  }
-
-  if (enemy.repath <= 0) {
+  if (enemy.repath <= 0 || Math.hypot(enemy.targetX - enemy.x, enemy.targetY - enemy.y) <= GRID.cell * 0.12) {
     const cell = worldToCell(enemy.x, enemy.y);
     enemy.targetC = clamp(cell.c, 0, GRID.cols - 1);
     enemy.targetR = clamp(cell.r, 0, GRID.rows - 1);
@@ -2296,23 +2149,30 @@ function updateEnemy(enemy, dt) {
     const center = cellCenter(enemy.targetC, enemy.targetR);
     enemy.targetX = center.x;
     enemy.targetY = center.y;
-    enemy.repath = enemy.boss ? 0.14 : 0.2;
+    enemy.repath = enemy.fast ? 0.08 : enemy.boss ? 0.12 : 0.16;
   }
 
   const dx = enemy.targetX - enemy.x;
   const dy = enemy.targetY - enemy.y;
   const d = Math.hypot(dx, dy) || 1;
-  const nx = dx / d;
-  const ny = dy / d;
-
   const prevX = enemy.x;
   const prevY = enemy.y;
-  enemy.vx += nx * speed * dt * 3.2;
-  enemy.vy += ny * speed * dt * 3.2;
-  enemy.vx *= 0.9;
-  enemy.vy *= 0.9;
-  enemy.x += enemy.vx * dt;
-  enemy.y += enemy.vy * dt;
+  const nx = dx / d;
+  const ny = dy / d;
+  const travel = speed * dt;
+
+  if (travel >= d) {
+    enemy.x = enemy.targetX;
+    enemy.y = enemy.targetY;
+    enemy.vx = nx * speed;
+    enemy.vy = ny * speed;
+    enemy.repath = 0;
+  } else {
+    enemy.x += nx * travel;
+    enemy.y += ny * travel;
+    enemy.vx = nx * speed;
+    enemy.vy = ny * speed;
+  }
   keepEnemyInPassableCell(prevX, prevY);
 
   const goalCenter = cellCenter(GOAL.c, GOAL.r);
@@ -2364,7 +2224,7 @@ function spawnOne() {
     && Math.abs(e.y - spawn.y) < GRID.cell * 1.8
   )).length;
   const lane = state.spawnSerial % 5;
-  const yBands = [-0.95, -0.45, 0, 0.45, 0.95];
+  const yBands = [0, 0, 0, 0, 0];
   const spacing = enemy.r * 2.3 + 6;
   enemy.x = spawn.x - aroundSpawn * spacing;
   enemy.y = spawn.y + yBands[lane] * (enemy.r * 1.1 + 2);
@@ -2922,23 +2782,6 @@ function drawTowers() {
       ctx.font = '12px sans-serif';
       ctx.fillText(`L${tower.level}`, tower.x - 7, tower.y + 18 + (footprint - 1) * 4);
     }
-
-    if (tower.sealTimer > 0) {
-      const alpha = 0.2 + Math.min(0.5, tower.sealTimer / 5) * 0.7;
-      ctx.fillStyle = `rgba(255, 90, 134, ${alpha})`;
-      ctx.beginPath();
-      ctx.arc(tower.x, tower.y, 11, 0, TAU);
-      ctx.fill();
-
-      ctx.strokeStyle = `rgba(255, 190, 208, ${0.5 + alpha * 0.5})`;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(tower.x - 7, tower.y - 7);
-      ctx.lineTo(tower.x + 7, tower.y + 7);
-      ctx.moveTo(tower.x + 7, tower.y - 7);
-      ctx.lineTo(tower.x - 7, tower.y + 7);
-      ctx.stroke();
-    }
   }
 }
 
@@ -3030,7 +2873,7 @@ function drawEnemies() {
       ctx.fill();
     }
 
-    if (enemy.breaker) {
+    if (enemy.fast) {
       ctx.strokeStyle = 'rgba(255, 230, 180, 0.86)';
       ctx.lineWidth = 1.8;
       ctx.beginPath();
