@@ -226,6 +226,7 @@ const GRID = {
 
 const SPAWN = { c: 0, r: Math.floor(GRID.rows / 2) };
 const GOAL = { c: GRID.cols - 1, r: Math.floor(GRID.rows / 2) };
+const MAX_TOWER_LEVEL = 5;
 
 const TOWER_TYPES = {
   sunken: {
@@ -326,7 +327,7 @@ const TOWER_GUIDE_DETAILS = {
 const state = {
   mode: 'menu',
   stage: 1,
-  maxStage: 20,
+  maxStage: 30,
   baseHp: 20,
   gold: 160,
   kills: 0,
@@ -1064,11 +1065,13 @@ function makeTower(kind, c, r, spec = null) {
 
 function upgradeCost(tower) {
   const base = tower.baseCost || TOWER_TYPES[tower.kind].cost;
-  return Math.floor(base * (0.85 + tower.level * 0.75));
+  // 레벨이 오를수록 비용이 급격히 증가하도록 곡선 가중치를 적용한다.
+  const lv = Math.max(1, tower.level);
+  return Math.floor(base * (0.95 + lv * 0.82 + lv * lv * 0.16));
 }
 
 function upgradeTower(tower) {
-  if (tower.level >= 3) return false;
+  if (tower.level >= MAX_TOWER_LEVEL) return false;
   const cost = upgradeCost(tower);
   if (state.gold < cost) {
     flashBanner('Gold 부족', 0.9, true);
@@ -1194,11 +1197,27 @@ function makeEnemy(type) {
   const stageIndex = s - 1;
   const earlyStageIndex = Math.min(stageIndex, 9);
   const lateIndex = Math.max(0, s - 10);
-  // Stage 11~20 구간에서 폭증하던 배율을 완만하게 눌러 난이도 붕괴를 줄인다.
-  const stageSpeedMul = 1 + earlyStageIndex * 0.12 + lateIndex * 0.07 + lateIndex * lateIndex * 0.0025;
-  const stageHpMul = 1 + earlyStageIndex * 0.2 + earlyStageIndex * earlyStageIndex * 0.013 + lateIndex * 0.13 + lateIndex * lateIndex * 0.006;
+  const nightmareIndex = Math.max(0, s - 20);
+  // Stage 21+ 구간은 별도 가중치를 더해 체감 난이도를 확실히 끌어올린다.
+  const stageSpeedMul = (
+    1
+    + earlyStageIndex * 0.12
+    + lateIndex * 0.07
+    + lateIndex * lateIndex * 0.0025
+    + nightmareIndex * 0.18
+    + nightmareIndex * nightmareIndex * 0.016
+  );
+  const stageHpMul = (
+    1
+    + earlyStageIndex * 0.2
+    + earlyStageIndex * earlyStageIndex * 0.013
+    + lateIndex * 0.13
+    + lateIndex * lateIndex * 0.006
+    + nightmareIndex * 0.52
+    + nightmareIndex * nightmareIndex * 0.044
+  );
   const radiusMul = 1 + stageIndex * 0.022;
-  const threatBase = clamp(0.18 + s * 0.07, 0.2, 0.92);
+  const threatBase = clamp(0.18 + s * 0.07 + nightmareIndex * 0.04, 0.2, 1.28);
   const typeThreat = {
     ghoul: 0.02,
     bat: 0.06,
@@ -1242,7 +1261,7 @@ function makeEnemy(type) {
   const d = defs[type];
   const spawn = cellCenter(SPAWN.c, SPAWN.r);
   const threat = clamp(threatBase + (typeThreat[type] || 0), 0.2, 1.2);
-  const leakBonus = s >= 18 ? 3 : s >= 14 ? 2 : s >= 10 ? 1 : s >= 6 ? 1 : 0;
+  const leakBonus = s >= 28 ? 6 : s >= 24 ? 5 : s >= 21 ? 4 : s >= 18 ? 3 : s >= 14 ? 2 : s >= 10 ? 1 : s >= 6 ? 1 : 0;
   const leak = d.leak + (d.boss ? leakBonus : Math.floor(leakBonus * 0.5));
 
   return {
@@ -1253,7 +1272,7 @@ function makeEnemy(type) {
     hp: Math.floor(d.hp),
     maxHp: Math.floor(d.hp),
     speed: d.speed * BALANCE_SCALE,
-    reward: d.reward + Math.floor(s * 1.3),
+    reward: d.reward + Math.floor(s * 1.3 + nightmareIndex * 3.2),
     leak,
     color: d.color,
     boss: Boolean(d.boss),
@@ -1268,7 +1287,7 @@ function makeEnemy(type) {
     morph: rand(0, TAU),
     breaker: Boolean(d.breaker),
     towerDamage: d.towerDamage || 0,
-    attackInterval: Math.max(0.52, (d.attackInterval || 1) - s * 0.006 - lateIndex * 0.007),
+    attackInterval: Math.max(0.42, (d.attackInterval || 1) - s * 0.006 - lateIndex * 0.007 - nightmareIndex * 0.01),
     attackRange: (d.attackRange || 0) * BALANCE_SCALE,
     attackCd: rand(0.1, 0.6),
     targetTowerId: 0,
@@ -1276,10 +1295,10 @@ function makeEnemy(type) {
     snareSlowMul: 1,
     weakenTimer: 0,
     weakenMul: 1,
-    sealCd: d.boss ? Math.max(3.4, 6.8 - s * 0.11) : 0,
-    sealInterval: d.boss ? Math.max(3.8, 7.5 - s * 0.12) : 0,
-    sealDuration: d.boss ? Math.min(5.4, 1.8 + s * 0.11) : 0,
-    sealCount: d.boss ? (s >= 18 ? 3 : s >= 12 ? 2 : 1) : 0,
+    sealCd: d.boss ? Math.max(2.7, 6.8 - s * 0.11 - nightmareIndex * 0.08) : 0,
+    sealInterval: d.boss ? Math.max(3.1, 7.5 - s * 0.12 - nightmareIndex * 0.1) : 0,
+    sealDuration: d.boss ? Math.min(6.8, 1.8 + s * 0.11 + nightmareIndex * 0.14) : 0,
+    sealCount: d.boss ? (s >= 28 ? 5 : s >= 24 ? 4 : s >= 18 ? 3 : s >= 12 ? 2 : 1) : 0,
   };
 }
 
@@ -1287,16 +1306,35 @@ function makeStageQueue(stage) {
   const queue = [];
   const earlyStage = Math.min(stage, 10);
   const lateIndex = Math.max(0, stage - 10);
-  const baseCount = 22 + earlyStage * 9 + Math.floor(Math.pow(earlyStage, 1.35) * 3) + lateIndex * 4 + Math.floor(lateIndex * lateIndex * 0.8);
+  const nightmareIndex = Math.max(0, stage - 20);
+  const baseCount = (
+    22
+    + earlyStage * 9
+    + Math.floor(Math.pow(earlyStage, 1.35) * 3)
+    + lateIndex * 4
+    + Math.floor(lateIndex * lateIndex * 0.8)
+    + nightmareIndex * 4
+    + Math.floor(nightmareIndex * nightmareIndex * 0.55)
+  );
 
   for (let i = 0; i < baseCount; i += 1) {
     const roll = Math.random();
     let type = 'ghoul';
-    const batChance = stage >= 3 ? clamp(0.22 + stage * 0.004, 0.22, 0.34) : 0;
-    const bruteChance = stage >= 4 ? clamp(0.14 + stage * 0.01, 0.14, 0.34) : 0;
-    const elderChance = stage >= 7 ? clamp(0.08 + (stage - 7) * 0.014, 0.08, 0.32) : 0;
-    const raiderChance = stage >= 5 ? clamp(0.1 + (stage - 5) * 0.012, 0.1, 0.3) : 0;
-    const crusherChance = stage >= 8 ? clamp(0.06 + (stage - 8) * 0.011, 0.06, 0.24) : 0;
+    const batChance = stage >= 3
+      ? clamp(0.22 + stage * 0.004 - nightmareIndex * 0.006, 0.1, 0.34)
+      : 0;
+    const bruteChance = stage >= 4
+      ? clamp(0.14 + stage * 0.01 + nightmareIndex * 0.012, 0.14, 0.45)
+      : 0;
+    const elderChance = stage >= 7
+      ? clamp(0.08 + (stage - 7) * 0.014 + nightmareIndex * 0.018, 0.08, 0.42)
+      : 0;
+    const raiderChance = stage >= 5
+      ? clamp(0.1 + (stage - 5) * 0.012 + nightmareIndex * 0.022, 0.1, 0.42)
+      : 0;
+    const crusherChance = stage >= 8
+      ? clamp(0.06 + (stage - 8) * 0.011 + nightmareIndex * 0.024, 0.06, 0.38)
+      : 0;
 
     let threshold = crusherChance;
     if (roll < threshold) type = 'crusher';
@@ -1316,13 +1354,13 @@ function makeStageQueue(stage) {
     queue.push(type);
   }
 
-  const elderCount = 1 + Math.floor(stage * 0.75) + Math.floor(lateIndex * 0.4);
+  const elderCount = 1 + Math.floor(stage * 0.75) + Math.floor(lateIndex * 0.4) + Math.floor(nightmareIndex * 1.1);
   for (let i = 0; i < elderCount; i += 1) {
     const pos = Math.floor(queue.length * (0.25 + Math.random() * 0.55));
     queue.splice(pos, 0, 'elder');
   }
 
-  const bruteCount = Math.max(0, stage - 4) + Math.floor(lateIndex * 0.6);
+  const bruteCount = Math.max(0, stage - 4) + Math.floor(lateIndex * 0.6) + Math.floor(nightmareIndex * 1.4);
   for (let i = 0; i < bruteCount; i += 1) {
     const pos = Math.floor(queue.length * (0.2 + Math.random() * 0.6));
     queue.splice(pos, 0, 'brute');
@@ -1337,8 +1375,13 @@ function makeStageQueue(stage) {
     }
   }
 
+  if (stage >= 21) {
+    const surgePos = Math.floor(queue.length * 0.56);
+    queue.splice(surgePos, 0, 'crusher', 'raider', 'elder', 'brute', 'crusher', 'raider');
+  }
+
   if (stage >= 6) {
-    const breakerCount = 1 + Math.floor(stage * 0.46) + Math.floor(lateIndex * 0.38);
+    const breakerCount = 1 + Math.floor(stage * 0.46) + Math.floor(lateIndex * 0.38) + Math.floor(nightmareIndex * 1.6);
     const crusherPickChance = clamp(0.32 + lateIndex * 0.01, 0.32, 0.44);
     for (let i = 0; i < breakerCount; i += 1) {
       const pos = Math.floor(queue.length * (0.28 + Math.random() * 0.5));
@@ -1346,6 +1389,8 @@ function makeStageQueue(stage) {
     }
   }
 
+  if (stage >= 21) queue.push('lord');
+  if (stage >= 27) queue.push('lord');
   queue.push('lord');
   return queue;
 }
@@ -1438,7 +1483,8 @@ function setVictory() {
 }
 
 function showStageReward() {
-  const clearGold = 70 + state.stage * 14;
+  const nightmareIndex = Math.max(0, state.stage - 20);
+  const clearGold = 70 + state.stage * 14 + nightmareIndex * 28 + Math.floor(nightmareIndex * nightmareIndex * 3);
   state.pendingStage = state.stage + 1;
   state.pendingStageBonusGold = clearGold;
   state.gold += clearGold;
@@ -1637,6 +1683,7 @@ function refreshTowerGuide() {
     `사거리 ${Math.round(tower.range / BALANCE_SCALE)}`,
     `초당 ${attacksPerSec.toFixed(2)}발`,
     `기본 DPS ${Math.round(dps)}`,
+    `최대 Lv${MAX_TOWER_LEVEL}`,
   ];
 
   if (tower.pierce > 0) badges.push(`관통 ${tower.pierce}`);
@@ -2309,7 +2356,8 @@ function updateSpawning(dt) {
     state.spawnTimer -= dt;
     const earlyStage = Math.min(state.stage, 10);
     const lateIndex = Math.max(0, state.stage - 10);
-    const spawnDelay = Math.max(0.055, 0.4 - earlyStage * 0.02 - lateIndex * 0.011);
+    const nightmareIndex = Math.max(0, state.stage - 20);
+    const spawnDelay = Math.max(0.038, 0.4 - earlyStage * 0.02 - lateIndex * 0.011 - nightmareIndex * 0.006);
     while (state.spawnTimer <= 0 && state.spawnQueue.length > 0) {
       spawnOne();
       state.spawnTimer += spawnDelay;
