@@ -190,7 +190,8 @@ if (isMobileView) {
   canvas.height = 960;
 } else {
   canvas.width = 960;
-  canvas.height = 500;
+  // 데스크톱은 그리드 셀(30) 배수 높이로 맞춰야 하단 배치 불가 영역이 생기지 않는다.
+  canvas.height = 510;
 }
 const GRID_CELL = isMobileView ? 48 : 30;
 const BALANCE_SCALE = GRID_CELL / 30;
