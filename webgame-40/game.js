@@ -22,19 +22,23 @@ const rankListEl = document.getElementById('rankList');
 const rankScopeEl = document.getElementById('rankScope');
 const rankStatusEl = document.getElementById('rankStatus');
 
-const btnSunken = document.getElementById('btnSunken');
-const btnSpine = document.getElementById('btnSpine');
-const btnObelisk = document.getElementById('btnObelisk');
-const btnSnare = document.getElementById('btnSnare');
 const btnSellMode = document.getElementById('btnSellMode');
-const btnPause = document.getElementById('btnPause');
 const btnSpeedUp = document.getElementById('btnSpeedUp');
-const btnUltSunken = document.getElementById('btnUltSunken');
+try {
+  const audioKey = 'taptapcho_neon_audio_v1';
+  const raw = localStorage.getItem(audioKey);
+  const parsed = raw ? JSON.parse(raw) : {};
+  parsed.bgm = true;
+  parsed.sfx = true;
+  if (typeof parsed.volume !== 'number') parsed.volume = 0.32;
+  localStorage.setItem(audioKey, JSON.stringify(parsed));
+} catch (_) {}
 
-const bgmAudio = window.TapTapNeonAudio?.create('webgame-40', hudEl, {
+const bgmAudio = window.TapTapNeonAudio?.create('webgame-40', null, {
   theme: 'rush',
   mediaSrc: '../assets/audio/battleThemeA.mp3',
   showThemeToggle: false,
+  showSfxToggle: false,
 });
 
 const ENEMY_TANK_SOURCES = {
@@ -92,43 +96,10 @@ const IMPACT_SFX_SOURCES = {
     '../assets/audio/kenney_impact/impactPlate_heavy_003.ogg',
     '../assets/audio/kenney_impact/impactPlate_heavy_004.ogg',
   ],
-  ultReady: [
-    '../assets/audio/kenney_impact/impactBell_heavy_001.ogg',
-    '../assets/audio/kenney_impact/impactBell_heavy_002.ogg',
-  ],
-  ultPlace: [
-    '../assets/audio/kenney_impact/impactBell_heavy_003.ogg',
-    '../assets/audio/kenney_impact/impactBell_heavy_004.ogg',
-  ],
-  ultShot: [
-    '../assets/audio/kenney_impact/impactBell_heavy_000.ogg',
-    '../assets/audio/kenney_impact/impactBell_heavy_002.ogg',
-  ],
 };
 
 function isSfxEnabled() {
-  try {
-    const raw = localStorage.getItem('taptapcho_neon_audio_v1');
-    if (!raw) return true;
-    const parsed = JSON.parse(raw);
-    return parsed?.sfx !== false;
-  } catch (_) {
-    return true;
-  }
-}
-
-function readAudioFlags() {
-  try {
-    const raw = localStorage.getItem('taptapcho_neon_audio_v1');
-    if (!raw) return { bgm: true, sfx: true };
-    const parsed = JSON.parse(raw);
-    return {
-      bgm: parsed?.bgm !== false,
-      sfx: parsed?.sfx !== false,
-    };
-  } catch (_) {
-    return { bgm: true, sfx: true };
-  }
+  return true;
 }
 
 const impactSfx = (() => {
@@ -259,6 +230,18 @@ const TOWER_TYPES = {
     snareDuration: 1.45,
     snareSlow: 0.62,
   },
+  longSunken: {
+    id: 'longSunken',
+    name: 'Long Sunken',
+    cost: 220,
+    color: '#ffd08f',
+    range: Math.hypot(W, H) * 1.2,
+    damage: 58,
+    reload: 1.42,
+    bulletSpeed: 520 * BALANCE_SCALE,
+    pierce: 0,
+    hp: 270,
+  },
   sunkenSplash: {
     id: 'sunkenSplash',
     name: 'Splash Sunken',
@@ -325,6 +308,11 @@ const TOWER_GUIDE_DETAILS = {
     summary: '한 발마다 한 마리를 정확히 둔화시키는 제어형 성큰. 빠른 몹 카운터에 특화.',
     tips: '단일 타겟 제어이므로 군집 대응은 Splash/Spine과 함께 배치해야 효율이 높음.',
   },
+  longSunken: {
+    role: '초장거리 저격',
+    summary: '맵 끝에서 끝까지 커버하는 초장거리 포격 성큰. 우회 없이 핵심 대상을 즉시 압박.',
+    tips: '비용/공속 부담이 커서 초반 과투자는 위험. Spine/Splash와 함께 운영해야 안정적.',
+  },
   spine: {
     role: '지속 화력 특화',
     summary: '중거리에서 빠른 탄막으로 잔몹과 러시 웨이브를 쓸어내는 타워.',
@@ -357,10 +345,7 @@ const state = {
   score: 0,
   selectedTower: 'sunken',
   sunkenFootprint: 1,
-  ultSunkenCharges: 0,
-  ultSunkenArmed: false,
   sellMode: false,
-  paused: false,
   simSpeed: 1,
   stageTimer: 0,
   spawnQueue: [],
@@ -890,24 +875,6 @@ function getPlacementSpec(kind) {
   const base = TOWER_TYPES[kind];
   if (!base) return null;
 
-  if (kind === 'sunken' && state.ultSunkenArmed && state.ultSunkenCharges > 0) {
-    return {
-      kind,
-      footprint: 1,
-      cost: 0,
-      range: base.range * 2.2,
-      damage: base.damage * 3.35,
-      reload: base.reload * 0.58,
-      bulletSpeed: base.bulletSpeed * 1.24,
-      pierce: 3,
-      hp: base.hp * 4.6,
-      color: '#ffd77a',
-      splashRadius: 0,
-      splashFalloff: 0,
-      ultimate: true,
-    };
-  }
-
   if (kind === 'sunken' && state.sunkenFootprint === 2) {
     return {
       kind,
@@ -922,7 +889,6 @@ function getPlacementSpec(kind) {
       color: base.color,
       splashRadius: base.splashRadius || 0,
       splashFalloff: base.splashFalloff || 0,
-      ultimate: false,
     };
   }
 
@@ -939,7 +905,6 @@ function getPlacementSpec(kind) {
     color: base.color,
     splashRadius: base.splashRadius || 0,
     splashFalloff: base.splashFalloff || 0,
-    ultimate: false,
   };
 }
 
@@ -1089,7 +1054,6 @@ function makeTower(kind, c, r, spec = null) {
     hp: placement.hp * hpMul,
     cooldown: rand(0.02, placement.reload),
     color: placement.color || base.color,
-    ultimate: Boolean(placement.ultimate),
     snareDuration: base.snareDuration || 0,
     snareSlow: base.snareSlow || 1,
     weakenMul: base.weakenMul || 1,
@@ -1115,6 +1079,8 @@ function upgradeTower(tower) {
     ? 1.24
     : tower.kind === 'sunkenSlow'
       ? 1.19
+    : tower.kind === 'longSunken'
+      ? 1.12
     : tower.kind === 'sunkenSplash'
       ? 1.18
     : tower.kind === 'spine'
@@ -1125,6 +1091,8 @@ function upgradeTower(tower) {
 
   const damageMul = tower.kind === 'snare'
     ? 1.26
+    : tower.kind === 'longSunken'
+      ? 1.32
     : tower.kind === 'sunkenSlow'
       ? 1.28
     : tower.kind === 'sunkenSplash'
@@ -1132,6 +1100,8 @@ function upgradeTower(tower) {
       : 1.34;
   const reloadMul = tower.kind === 'sunken'
     ? 0.88
+    : tower.kind === 'longSunken'
+      ? 0.93
     : tower.kind === 'sunkenSlow'
       ? 0.9
     : tower.kind === 'sunkenSplash'
@@ -1206,19 +1176,11 @@ function tryPlaceTower(c, r) {
   state.towers.push(tower);
   state.gold -= placement.cost;
 
-  if (placement.ultimate) {
-    state.ultSunkenCharges = Math.max(0, state.ultSunkenCharges - 1);
-    if (state.ultSunkenCharges <= 0) state.ultSunkenArmed = false;
-    flashBanner('ULT SUNKEN DEPLOY', 0.9);
-    impactSfx.play('ultPlace', { volume: 0.44, minGap: 0.12, rateMin: 0.95, rateMax: 1.02 });
-  } else {
-    impactSfx.play('build', { volume: 0.28, minGap: 0.045, rateMin: 0.96, rateMax: 1.04 });
-  }
+  impactSfx.play('build', { volume: 0.28, minGap: 0.045, rateMin: 0.96, rateMax: 1.04 });
 
   for (const enemy of state.enemies) {
     enemy.repath = 0;
   }
-  refreshUltButton();
   refreshBuildHint();
   sfx(420 + rand(-20, 30), 0.04, 'triangle', 0.014);
 }
@@ -1465,18 +1427,13 @@ function startRun() {
   state.simSpeed = 1;
   state.selectedTower = 'sunken';
   state.sunkenFootprint = 1;
-  state.ultSunkenCharges = 0;
-  state.ultSunkenArmed = false;
   state.sellMode = false;
-  state.paused = false;
   state.towerHpBonus = 0;
   state.rushDamageBonus = 0;
   state.pendingStage = 0;
   state.pendingStageBonusGold = 0;
   state.rewardUiUnlockAt = 0;
   setSelectedButton();
-  refreshUltButton();
-  refreshPauseButton();
   setSellMode(false);
   refreshBuildHint();
 
@@ -1495,8 +1452,6 @@ function startRun() {
 function setDefeat() {
   submitSingleRank('defeat');
   state.mode = 'defeat';
-  state.paused = false;
-  refreshPauseButton();
   overlayEl.classList.remove('banner-passive');
   overlayEl.classList.remove('reward-mode');
   overlayEl.classList.remove('hidden');
@@ -1516,8 +1471,6 @@ function setDefeat() {
 function setVictory() {
   submitSingleRank('victory');
   state.mode = 'victory';
-  state.paused = false;
-  refreshPauseButton();
   overlayEl.classList.remove('banner-passive');
   overlayEl.classList.remove('reward-mode');
   overlayEl.classList.remove('hidden');
@@ -1543,8 +1496,6 @@ function showStageReward() {
   state.gold += clearGold;
   state.rushDamageBonus += autoRushBonus;
   state.mode = 'reward';
-  state.paused = false;
-  refreshPauseButton();
   state.rewardUiUnlockAt = performance.now() + 220;
 
   overlayEl.classList.remove('banner-passive');
@@ -1595,9 +1546,7 @@ function refreshHud() {
   aliveTextEl.textContent = String(state.enemies.length);
   queueTextEl.textContent = String(state.spawnQueue.length);
   killsTextEl.textContent = String(state.kills);
-  if (speedTextEl) speedTextEl.textContent = state.paused ? `STOP ${state.simSpeed.toFixed(2)}x` : `${state.simSpeed.toFixed(2)}x`;
-  refreshUltButton();
-  refreshPauseButton();
+  if (speedTextEl) speedTextEl.textContent = `${state.simSpeed.toFixed(2)}x`;
 }
 
 function setSelectedButton() {
@@ -1612,67 +1561,6 @@ function setSellMode(enabled) {
   btnSellMode.classList.toggle('active', state.sellMode);
   const nameEl = btnSellMode.querySelector('.name');
   if (nameEl) nameEl.textContent = state.sellMode ? 'SELL ON' : 'SELL OFF';
-}
-
-function refreshPauseButton() {
-  if (!btnPause) return;
-  btnPause.classList.toggle('active', state.paused);
-  const nameEl = btnPause.querySelector('.name');
-  const costEl = btnPause.querySelector('.cost');
-  if (nameEl) nameEl.textContent = state.paused ? 'STOP ON' : 'STOP OFF';
-  if (costEl) costEl.textContent = state.paused ? '정비 중' : '정비 모드';
-}
-
-function setPauseMode(enabled) {
-  if (state.mode !== 'playing') return;
-  state.paused = Boolean(enabled);
-  refreshPauseButton();
-  refreshBuildHint();
-}
-
-function togglePauseMode() {
-  if (state.mode !== 'playing') return;
-  setPauseMode(!state.paused);
-  if (state.paused) {
-    flashBanner('정비 모드 ON', 0.7);
-    sfx(330, 0.055, 'triangle', 0.014);
-  } else {
-    flashBanner('정비 모드 OFF', 0.65);
-    sfx(460, 0.05, 'triangle', 0.013);
-  }
-}
-
-function refreshUltButton() {
-  if (!btnUltSunken) return;
-  const armed = state.ultSunkenArmed && state.ultSunkenCharges > 0;
-  btnUltSunken.classList.toggle('active', armed);
-  const nameEl = btnUltSunken.querySelector('.name');
-  const costEl = btnUltSunken.querySelector('.cost');
-  if (nameEl) nameEl.textContent = armed ? 'ULT ON' : 'ULT OFF';
-  if (costEl) costEl.textContent = `필살 성큰 ${state.ultSunkenCharges}`;
-}
-
-function setUltSunkenArmed(enabled) {
-  if (state.ultSunkenCharges <= 0) {
-    state.ultSunkenArmed = false;
-  } else {
-    state.ultSunkenArmed = Boolean(enabled);
-  }
-  refreshUltButton();
-  refreshBuildHint();
-}
-
-function grantUltSunkenCharge(count = 1, reason = '') {
-  const before = state.ultSunkenCharges;
-  state.ultSunkenCharges = clamp(state.ultSunkenCharges + count, 0, 3);
-  if (state.ultSunkenCharges > before) {
-    state.ultSunkenArmed = true;
-    const suffix = reason ? ` (${reason})` : '';
-    flashBanner(`ULT SUNKEN +${state.ultSunkenCharges - before}${suffix}`, 0.9);
-    impactSfx.play('ultReady', { volume: 0.38, minGap: 0.15, rateMin: 0.96, rateMax: 1.02 });
-  }
-  refreshUltButton();
-  refreshBuildHint();
 }
 
 function setSimSpeed(nextSpeed) {
@@ -1693,43 +1581,18 @@ function changeSimSpeed(delta) {
 function refreshBuildHint() {
   if (!buildHintEl) return;
   const footprint = state.sunkenFootprint === 2 ? '2x2' : '1x1';
-  const ultState = state.ultSunkenArmed && state.ultSunkenCharges > 0 ? 'ON' : 'OFF';
   const sellState = state.sellMode ? 'ON' : 'OFF';
-  const pauseState = state.paused ? 'ON' : 'OFF';
   const mobileTag = isMobileView ? '모바일 큰칸' : '일반';
-  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · H 정비모드(${pauseState}) · 1/2/3/4/5/6 선택 · Q 성큰크기(${footprint}) · R 필살성큰(${ultState}/${state.ultSunkenCharges}) · ${mobileTag} · F +0.25x · G -0.25x`;
+  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4/5/6/7 선택 · Q 성큰크기(${footprint}) · ${mobileTag} · F +0.25x · G -0.25x`;
   refreshModeHelp();
   refreshTowerGuide();
 }
 
 function refreshModeHelp() {
   if (!modeHelpEl) return;
-  const ultOn = state.ultSunkenArmed && state.ultSunkenCharges > 0;
-  const ultTag = ultOn ? 'ULT ON' : 'ULT OFF';
-  const audio = readAudioFlags();
-  const sfxTag = audio.sfx ? 'SFX ON' : 'SFX OFF';
-  const stopTag = state.paused ? 'STOP ON' : 'STOP OFF';
-
-  let ultDesc = '';
-  if (ultOn) {
-    ultDesc = `다음 Sunken 1회가 필살 성큰으로 배치됩니다. 배치 즉시 충전 1개 소모 (${state.ultSunkenCharges}개 보유).`;
-  } else if (state.ultSunkenCharges > 0) {
-    ultDesc = `일반 성큰 모드입니다. R 키 또는 ULT 버튼으로 ON하면 다음 Sunken 1회가 필살 성큰이 됩니다 (${state.ultSunkenCharges}개 보유).`;
-  } else {
-    ultDesc = '일반 성큰 모드입니다. 보스/러시몹 처치로 ULT 충전을 얻을 수 있습니다.';
-  }
-
-  const sfxDesc = audio.sfx
-    ? '타격/피격/건설 효과음이 재생됩니다. 상단 HUD의 SFX 버튼으로 끌 수 있습니다.'
-    : '효과음이 음소거 상태입니다. 상단 HUD의 SFX 버튼으로 다시 켤 수 있습니다. (BGM은 별도)';
-  const stopDesc = state.paused
-    ? '정비 모드입니다. 적 이동/스폰/타워 공격은 멈추고 배치/업그레이드/판매만 가능합니다.'
-    : '실시간 전투 모드입니다. H 키 또는 STOP 버튼으로 언제든 정비 모드로 전환할 수 있습니다.';
-
   modeHelpEl.innerHTML = `
-    <div class="row"><span class="tag">${ultTag}</span>${ultDesc}</div>
-    <div class="row"><span class="tag">${sfxTag}</span>${sfxDesc}</div>
-    <div class="row"><span class="tag">${stopTag}</span>${stopDesc}</div>
+    <div class="row"><span class="tag">AUDIO</span>BGM/SFX는 항상 ON으로 고정됩니다.</div>
+    <div class="row"><span class="tag">SPEED</span>F(+0.25x), G(-0.25x)로 웨이브 진행 속도를 조절할 수 있습니다.</div>
   `;
 }
 
@@ -1851,21 +1714,20 @@ function emitBullet(tower, target) {
   const d = Math.hypot(dx, dy) || 1;
   const isSnare = tower.kind === 'snare';
   const isSlowSunken = tower.kind === 'sunkenSlow';
-  const isUltSunken = tower.kind === 'sunken' && tower.ultimate;
   const isSplashSunken = tower.kind === 'sunkenSplash';
+  const isLongSunken = tower.kind === 'longSunken';
 
   state.bullets.push({
     x: tower.x,
     y: tower.y,
     vx: (dx / d) * tower.bulletSpeed,
     vy: (dy / d) * tower.bulletSpeed,
-    r: isUltSunken ? 6.5 : isSplashSunken ? 5.6 : tower.kind === 'obelisk' ? 5 : (isSnare || isSlowSunken) ? 4.5 : 4,
-    damage: isUltSunken ? tower.damage * 1.12 : tower.damage,
+    r: isSplashSunken ? 5.6 : (tower.kind === 'obelisk' || isLongSunken) ? 5.2 : (isSnare || isSlowSunken) ? 4.5 : 4,
+    damage: tower.damage,
     life: 2,
     color: tower.color,
-    pierce: (isSnare || isSlowSunken) ? 0 : tower.pierce + (isUltSunken ? 1 : 0),
+    pierce: (isSnare || isSlowSunken) ? 0 : tower.pierce,
     towerKind: tower.kind,
-    ult: isUltSunken,
     splashRadius: isSplashSunken ? tower.splashRadius : 0,
     splashFalloff: isSplashSunken ? tower.splashFalloff : 0,
     snareDuration: tower.snareDuration,
@@ -1886,10 +1748,10 @@ function emitBullet(tower, target) {
   }
 
   if (tower.kind === 'sunken') {
-    if (isUltSunken) {
-      impactSfx.play('ultShot', { volume: 0.42, minGap: 0.08, rateMin: 0.9, rateMax: 0.98 });
-    }
     if (Math.random() < 0.4) sfx(330 + rand(-24, 18), 0.03, 'triangle', 0.011);
+  } else if (tower.kind === 'longSunken') {
+    impactSfx.play('enemyHitHeavy', { volume: 0.32, minGap: 0.06, rateMin: 0.88, rateMax: 0.97 });
+    if (Math.random() < 0.5) sfx(214 + rand(-14, 12), 0.055, 'sawtooth', 0.012);
   } else if (tower.kind === 'sunkenSplash') {
     impactSfx.play('enemyHitHeavy', { volume: 0.26, minGap: 0.08, rateMin: 0.95, rateMax: 1.03 });
     if (Math.random() < 0.6) sfx(290 + rand(-18, 14), 0.04, 'square', 0.012);
@@ -1901,7 +1763,7 @@ function emitBullet(tower, target) {
   }
 }
 
-function hurtEnemy(enemy, damage, sourceKind = '', sourceUlt = false, secondary = false) {
+function hurtEnemy(enemy, damage, sourceKind = '', secondary = false) {
   const weakenDamage = enemy.weakenTimer > 0 ? enemy.weakenMul : 1;
   const rushDamage = enemy.fast ? 1 + state.rushDamageBonus : 1;
   enemy.hp -= damage * weakenDamage * rushDamage;
@@ -1921,19 +1783,27 @@ function hurtEnemy(enemy, damage, sourceKind = '', sourceUlt = false, secondary 
   }
 
   if (sourceKind === 'sunken') {
-    impactSfx.play(sourceUlt ? 'enemyHitHeavy' : 'enemyHit', {
-      volume: sourceUlt ? 0.38 : 0.28,
-      minGap: sourceUlt ? 0.08 : 0.04,
-      rateMin: sourceUlt ? 0.9 : 0.95,
-      rateMax: sourceUlt ? 0.99 : 1.06,
+    impactSfx.play('enemyHit', {
+      volume: 0.28,
+      minGap: 0.04,
+      rateMin: 0.95,
+      rateMax: 1.06,
     });
     if (!secondary && Math.random() < 0.35) sfx(286 + rand(-22, 18), 0.04, 'triangle', 0.011);
+  } else if (sourceKind === 'longSunken') {
+    impactSfx.play('enemyHitHeavy', {
+      volume: 0.38,
+      minGap: 0.06,
+      rateMin: 0.84,
+      rateMax: 0.96,
+    });
+    if (!secondary && Math.random() < 0.42) sfx(208 + rand(-16, 14), 0.05, 'sawtooth', 0.012);
   } else if (sourceKind === 'sunkenSplash') {
-    impactSfx.play(sourceUlt ? 'enemyHitHeavy' : 'enemyHit', {
-      volume: sourceUlt ? 0.42 : 0.3,
-      minGap: sourceUlt ? 0.09 : 0.05,
-      rateMin: sourceUlt ? 0.88 : 0.93,
-      rateMax: sourceUlt ? 0.97 : 1.02,
+    impactSfx.play('enemyHit', {
+      volume: 0.3,
+      minGap: 0.05,
+      rateMin: 0.93,
+      rateMax: 1.02,
     });
     if (!secondary && Math.random() < 0.5) sfx(270 + rand(-16, 14), 0.04, 'square', 0.012);
   } else if (sourceKind === 'spine') {
@@ -1975,16 +1845,11 @@ function hurtEnemy(enemy, damage, sourceKind = '', sourceUlt = false, secondary 
     if (idx >= 0) state.enemies.splice(idx, 1);
 
     if (enemy.boss) {
-      grantUltSunkenCharge(1, 'BOSS');
       bgmAudio?.fx('win');
       impactSfx.play('enemyHitHeavy', { volume: 0.46, minGap: 0.12, rateMin: 0.88, rateMax: 0.95 });
       sfx(280, 0.2, 'sawtooth', 0.04);
       flashBanner('BOSS DOWN', 0.9);
     } else {
-      const dropChance = enemy.fast ? 0.08 : 0.035;
-      if (Math.random() < dropChance) {
-        grantUltSunkenCharge(1, enemy.fast ? '러시 처치' : '럭키');
-      }
       if (Math.random() < 0.35) {
         sfx(560, 0.04, 'triangle', 0.013);
       }
@@ -2027,6 +1892,36 @@ function spawnTowerHitVfx(x, y, towerKind, isUlt = false, secondary = false) {
       expand: isUlt ? 26 : 18,
       lineWidth: isUlt ? 2.5 : 1.8,
       color: isUlt ? '#ffd681' : '#90e9ff',
+      render: 'ring',
+    });
+    return;
+  }
+
+  if (towerKind === 'longSunken') {
+    const burstCount = secondary ? 3 : 6;
+    for (let i = 0; i < burstCount; i += 1) {
+      const ang = rand(0, TAU);
+      const speed = rand(100, 240);
+      push({
+        x,
+        y,
+        vx: Math.cos(ang) * speed,
+        vy: Math.sin(ang) * speed,
+        life: rand(0.12, 0.24),
+        size: rand(2, 3.6),
+        color: '#ffdca5',
+      });
+    }
+    push({
+      x,
+      y,
+      vx: 0,
+      vy: 0,
+      life: secondary ? 0.11 : 0.22,
+      size: secondary ? 5.2 : 7.4,
+      expand: secondary ? 9 : 17,
+      lineWidth: 2,
+      color: '#ffcb81',
       render: 'ring',
     });
     return;
@@ -2189,15 +2084,15 @@ function updateBullets(dt) {
           enemy.weakenTimer = Math.max(enemy.weakenTimer, snareDuration + 0.6);
           enemy.weakenMul = Math.max(enemy.weakenMul, b.weakenMul || 1.25);
         }
-        spawnTowerHitVfx(enemy.x, enemy.y, b.towerKind, Boolean(b.ult), false);
+        spawnTowerHitVfx(enemy.x, enemy.y, b.towerKind, false, false);
         const damage = b.towerKind === 'snare' ? b.damage * 0.55 : b.damage;
-        hurtEnemy(enemy, damage, b.towerKind, Boolean(b.ult), false);
+        hurtEnemy(enemy, damage, b.towerKind, false);
         if (b.towerKind === 'snare' && Math.random() < 0.28) flashBanner('Snare: 둔화/약화', 0.45);
         state.bullets.splice(i, 1);
         removed = true;
       } else {
-        spawnTowerHitVfx(enemy.x, enemy.y, b.towerKind, Boolean(b.ult), false);
-        hurtEnemy(enemy, b.damage, b.towerKind, Boolean(b.ult), false);
+        spawnTowerHitVfx(enemy.x, enemy.y, b.towerKind, false, false);
+        hurtEnemy(enemy, b.damage, b.towerKind, false);
 
         if (b.splashRadius > 0) {
           const splashRadius = b.splashRadius;
@@ -2213,8 +2108,8 @@ function updateBullets(dt) {
             const rawRate = 1 - (sDist / Math.max(1, splashRadius));
             const rate = clamp(rawRate, b.splashFalloff || 0.35, 1);
             const splashDamage = b.damage * rate * 0.72;
-            spawnTowerHitVfx(other.x, other.y, b.towerKind, Boolean(b.ult), true);
-            hurtEnemy(other, splashDamage, b.towerKind, Boolean(b.ult), true);
+            spawnTowerHitVfx(other.x, other.y, b.towerKind, false, true);
+            hurtEnemy(other, splashDamage, b.towerKind, true);
           }
 
           for (let p = 0; p < 8; p += 1) {
@@ -2619,6 +2514,7 @@ function drawEndpoints() {
 function drawTowerSunken(tower, now) {
   const isSplash = tower.kind === 'sunkenSplash';
   const isSlow = tower.kind === 'sunkenSlow';
+  const isLong = tower.kind === 'longSunken';
   const scale = 1 + ((tower.footprint || 1) - 1) * 0.86;
   const pulse = 0.5 + 0.5 * Math.sin(now * 4 + tower.c * 0.31 + tower.r * 0.17);
   const ringR = (8.4 + tower.level * 1.3) * scale;
@@ -2634,6 +2530,8 @@ function drawTowerSunken(tower, now) {
 
   ctx.strokeStyle = isSplash
     ? `rgba(255, 201, 143, ${0.34 + pulse * 0.24})`
+    : isLong
+      ? `rgba(255, 208, 143, ${0.34 + pulse * 0.24})`
     : isSlow
       ? `rgba(145, 244, 214, ${0.34 + pulse * 0.24})`
     : `rgba(147, 225, 255, ${0.34 + pulse * 0.24})`;
@@ -2647,6 +2545,10 @@ function drawTowerSunken(tower, now) {
     aura.addColorStop(0, 'rgba(255, 224, 156, 0.42)');
     aura.addColorStop(0.58, 'rgba(255, 171, 93, 0.24)');
     aura.addColorStop(1, 'rgba(255, 117, 42, 0)');
+  } else if (isLong) {
+    aura.addColorStop(0, 'rgba(255, 242, 196, 0.46)');
+    aura.addColorStop(0.58, 'rgba(255, 196, 116, 0.26)');
+    aura.addColorStop(1, 'rgba(158, 93, 38, 0)');
   } else if (isSlow) {
     aura.addColorStop(0, 'rgba(203, 255, 239, 0.44)');
     aura.addColorStop(0.58, 'rgba(130, 234, 199, 0.24)');
@@ -2668,6 +2570,10 @@ function drawTowerSunken(tower, now) {
     vortex.addColorStop(0, '#ffd27e');
     vortex.addColorStop(0.65, '#b0763f');
     vortex.addColorStop(1, '#2e1e12');
+  } else if (isLong) {
+    vortex.addColorStop(0, '#ffe2aa');
+    vortex.addColorStop(0.65, '#b88946');
+    vortex.addColorStop(1, '#32230f');
   } else if (isSlow) {
     vortex.addColorStop(0, '#c9ffe9');
     vortex.addColorStop(0.65, '#4fba95');
@@ -2684,6 +2590,8 @@ function drawTowerSunken(tower, now) {
 
   ctx.strokeStyle = isSplash
     ? 'rgba(255, 232, 171, 0.62)'
+    : isLong
+      ? 'rgba(255, 236, 186, 0.66)'
     : isSlow
       ? 'rgba(201, 255, 238, 0.65)'
       : 'rgba(196, 242, 255, 0.62)';
@@ -2699,6 +2607,8 @@ function drawTowerSunken(tower, now) {
     const orbitCount = 3 + tower.level;
     ctx.fillStyle = isSplash
       ? 'rgba(255, 216, 143, 0.84)'
+      : isLong
+        ? 'rgba(255, 227, 166, 0.84)'
       : isSlow
         ? 'rgba(194, 255, 236, 0.84)'
         : 'rgba(197, 242, 255, 0.84)';
@@ -2715,6 +2625,8 @@ function drawTowerSunken(tower, now) {
   const teeth = 5 + tower.level * 2;
   ctx.fillStyle = isSplash
     ? 'rgba(255, 215, 142, 0.78)'
+    : isLong
+      ? 'rgba(255, 219, 150, 0.8)'
     : isSlow
       ? 'rgba(191, 255, 229, 0.78)'
       : 'rgba(198, 246, 255, 0.78)';
@@ -2731,22 +2643,11 @@ function drawTowerSunken(tower, now) {
     ctx.fill();
   }
 
-  if (tower.ultimate) {
-    ctx.strokeStyle = `rgba(255, 218, 130, ${0.55 + pulse * 0.32})`;
-    ctx.lineWidth = 2.6;
-    ctx.beginPath();
-    ctx.arc(0, 0, ringR + 8 + pulse * 2, 0, TAU);
-    ctx.stroke();
-
-    ctx.fillStyle = 'rgba(255, 236, 177, 0.9)';
-    ctx.beginPath();
-    ctx.arc(0, 0, 2.8 + pulse * 1.3, 0, TAU);
-    ctx.fill();
-  }
-
   if (tower.level >= 3) {
     ctx.strokeStyle = isSplash
       ? `rgba(255, 190, 115, ${0.66 + pulse * 0.2})`
+      : isLong
+        ? `rgba(255, 209, 124, ${0.66 + pulse * 0.2})`
       : isSlow
         ? `rgba(135, 248, 209, ${0.66 + pulse * 0.2})`
         : `rgba(162, 236, 255, ${0.66 + pulse * 0.2})`;
@@ -2760,9 +2661,11 @@ function drawTowerSunken(tower, now) {
     }
   }
 
-  if (isSplash || isSlow) {
+  if (isSplash || isSlow || isLong) {
     ctx.strokeStyle = isSplash
       ? `rgba(255, 169, 86, ${0.52 + pulse * 0.24})`
+      : isLong
+        ? `rgba(255, 196, 98, ${0.52 + pulse * 0.24})`
       : `rgba(92, 246, 208, ${0.52 + pulse * 0.24})`;
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -2929,6 +2832,8 @@ function drawTowers() {
 
     const border = tower.kind === 'sunken'
       ? 'rgba(141, 217, 255, 0.8)'
+      : tower.kind === 'longSunken'
+        ? 'rgba(255, 208, 143, 0.9)'
       : tower.kind === 'sunkenSlow'
         ? 'rgba(145, 244, 214, 0.88)'
       : tower.kind === 'sunkenSplash'
@@ -2942,7 +2847,12 @@ function drawTowers() {
     ctx.lineWidth = 2;
     ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
 
-    if (tower.kind === 'sunken' || tower.kind === 'sunkenSplash' || tower.kind === 'sunkenSlow') {
+    if (
+      tower.kind === 'sunken'
+      || tower.kind === 'sunkenSplash'
+      || tower.kind === 'sunkenSlow'
+      || tower.kind === 'longSunken'
+    ) {
       drawTowerSunken(tower, now);
     } else if (tower.kind === 'spine') {
       drawTowerSpine(tower, now);
@@ -3294,13 +3204,6 @@ function step(dt) {
     overlayEl.innerHTML = '';
   }
 
-  if (state.paused) {
-    draw();
-    drawBanner();
-    refreshHud();
-    return;
-  }
-
   let remain = simDt;
   let guard = 0;
   while (remain > 0 && guard < 32) {
@@ -3337,17 +3240,6 @@ function chooseTower(kind) {
 }
 
 controlsEl.addEventListener('click', (event) => {
-  if (event.target.closest('[data-action="toggle-ult"]')) {
-    if (state.ultSunkenCharges <= 0) {
-      flashBanner('ULT 충전 없음', 0.7, true);
-      sfx(180, 0.05, 'sawtooth', 0.018);
-      return;
-    }
-    setUltSunkenArmed(!state.ultSunkenArmed);
-    sfx(state.ultSunkenArmed ? 500 : 360, 0.05, 'triangle', 0.014);
-    return;
-  }
-
   const sellToggle = event.target.closest('[data-action="toggle-sell"]');
   if (sellToggle) {
     setSellMode(!state.sellMode);
@@ -3366,27 +3258,9 @@ controlsEl.addEventListener('click', (event) => {
     return;
   }
 
-  if (event.target.closest('[data-action="toggle-pause"]')) {
-    togglePauseMode();
-    return;
-  }
-
   const btn = event.target.closest('.build-btn[data-kind]');
   if (!btn) return;
   chooseTower(btn.dataset.kind);
-});
-
-hudEl?.addEventListener('click', () => {
-  // HUD 내부 SFX/BGM 토글 클릭 후 상태 문구를 즉시 동기화한다.
-  window.setTimeout(() => {
-    refreshModeHelp();
-  }, 0);
-});
-
-window.addEventListener('storage', (event) => {
-  if (event.key === 'taptapcho_neon_audio_v1') {
-    refreshModeHelp();
-  }
 });
 
 canvas.addEventListener('contextmenu', (event) => {
@@ -3483,10 +3357,11 @@ canvas.addEventListener('pointercancel', (event) => {
 window.addEventListener('keydown', (event) => {
   if (event.code === 'Digit1') chooseTower('sunken');
   if (event.code === 'Digit2') chooseTower('sunkenSlow');
-  if (event.code === 'Digit3') chooseTower('sunkenSplash');
-  if (event.code === 'Digit4') chooseTower('spine');
-  if (event.code === 'Digit5') chooseTower('obelisk');
-  if (event.code === 'Digit6') chooseTower('snare');
+  if (event.code === 'Digit3') chooseTower('longSunken');
+  if (event.code === 'Digit4') chooseTower('sunkenSplash');
+  if (event.code === 'Digit5') chooseTower('spine');
+  if (event.code === 'Digit6') chooseTower('obelisk');
+  if (event.code === 'Digit7') chooseTower('snare');
 
   if (event.code === 'KeyQ') {
     state.sunkenFootprint = state.sunkenFootprint === 1 ? 2 : 1;
@@ -3494,24 +3369,10 @@ window.addEventListener('keydown', (event) => {
     sfx(390, 0.05, 'triangle', 0.014);
   }
 
-  if (event.code === 'KeyR') {
-    if (state.ultSunkenCharges <= 0) {
-      flashBanner('ULT 충전 없음', 0.7, true);
-      sfx(180, 0.05, 'sawtooth', 0.018);
-    } else {
-      setUltSunkenArmed(!state.ultSunkenArmed);
-      sfx(state.ultSunkenArmed ? 500 : 360, 0.05, 'triangle', 0.014);
-    }
-  }
-
   if (event.code === 'KeyE') {
     setSellMode(!state.sellMode);
     refreshBuildHint();
     sfx(state.sellMode ? 300 : 410, 0.05, 'triangle', 0.013);
-  }
-
-  if (event.code === 'KeyH') {
-    togglePauseMode();
   }
 
   if (event.code === 'KeyF') {
