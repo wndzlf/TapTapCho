@@ -1747,73 +1747,42 @@ function refreshModeHelp() {
   `;
 }
 
-function buildTowerLevelCurve(kind) {
-  const placement = getPlacementSpec(kind);
-  const base = TOWER_TYPES[kind];
-  if (!placement || !base) return [];
+function buildTowerPerLevelChangeLine(kind) {
+  const { rangeMul, damageMul, reloadMul } = getTowerUpgradeFactors(kind);
+  const apsMul = 1 / reloadMul;
 
-  const sim = {
-    kind,
-    level: 1,
-    range: placement.range,
-    damage: placement.damage,
-    reload: placement.reload,
-    pierce: placement.pierce || 0,
-    splashRadius: placement.splashRadius || 0,
-    splashFalloff: placement.splashFalloff || 0,
-    snareDuration: base.snareDuration || 0,
-    snareSlow: base.snareSlow || 1,
-    weakenMul: base.weakenMul || 1,
-    stunDuration: base.stunDuration || 0,
-    stunChain: base.stunChain || 0,
-    stunRadius: base.stunRadius || 0,
-  };
-
-  const rows = [];
-  const snapshot = () => rows.push({
-    level: sim.level,
-    range: sim.range,
-    damage: sim.damage,
-    reload: sim.reload,
-    aps: sim.reload > 0 ? (1 / sim.reload) : 0,
-    dps: sim.reload > 0 ? (sim.damage / sim.reload) : sim.damage,
-    pierce: sim.pierce,
-    splashRadius: sim.splashRadius,
-    snareDuration: sim.snareDuration,
-    snareSlow: sim.snareSlow,
-    weakenMul: sim.weakenMul,
-    stunDuration: sim.stunDuration,
-    stunChain: sim.stunChain,
-    stunRadius: sim.stunRadius,
-  });
-
-  snapshot();
-  while (sim.level < MAX_TOWER_LEVEL) {
-    sim.level += 1;
-    applyTowerUpgradeScaling(sim);
-    snapshot();
-  }
-  return rows;
-}
-
-function buildTowerProgressText(kind, row) {
   const parts = [
-    `피해 ${Math.round(row.damage)}`,
-    `연사 ${row.aps.toFixed(2)}/s`,
-    `DPS ${Math.round(row.dps)}`,
-    `사거리 ${Math.round(row.range / BALANCE_SCALE)}`,
+    `피해 +${Math.round((damageMul - 1) * 100)}%`,
+    `연사 +${Math.round((apsMul - 1) * 100)}%`,
+    `사거리 +${Math.round((rangeMul - 1) * 100)}%`,
   ];
 
-  if (kind === 'obelisk' && row.pierce > 0) parts.push(`관통 ${row.pierce}`);
-  if (kind === 'sunkenSplash' && row.splashRadius > 0) parts.push(`스플래시 ${Math.round(row.splashRadius / BALANCE_SCALE)}`);
-  if ((kind === 'snare' || kind === 'sunkenSlow') && row.snareDuration > 0) {
-    parts.push(`둔화 ${(Math.round((1 - row.snareSlow) * 100))}%/${row.snareDuration.toFixed(2)}s`);
-  }
-  if (kind === 'snare' && row.weakenMul > 1) parts.push(`약화 +${Math.round((row.weakenMul - 1) * 100)}%`);
-  if (kind === 'sunkenStun' && row.stunDuration > 0) {
-    parts.push(`스턴 ${row.stunChain}명/${row.stunDuration.toFixed(2)}s`);
+  if (kind === 'obelisk') {
+    parts.push('관통 +1 (최대 3)');
+  } else if (kind === 'sunkenSplash') {
+    parts.push('스플래시 반경 +15%');
+  } else if (kind === 'sunkenSlow') {
+    parts.push('둔화시간 +12%');
+    parts.push('둔화강도 강화');
+  } else if (kind === 'snare') {
+    parts.push('둔화시간 +13%');
+    parts.push('둔화강도 강화');
+    parts.push('약화 +9%p');
+  } else if (kind === 'sunkenStun') {
+    parts.push('스턴시간 +10%');
+    parts.push('스턴반경 +6%');
+    parts.push('스턴대상 +1 (Lv3/5/7)');
   }
 
+  return parts.join(' · ');
+}
+
+function buildTowerUpgradeCostLine(baseCost) {
+  const parts = [];
+  for (let lv = 1; lv < MAX_TOWER_LEVEL; lv += 1) {
+    const cost = upgradeCost({ level: lv, baseCost });
+    parts.push(`Lv${lv}→${lv + 1} ${cost}`);
+  }
   return parts.join(' · ');
 }
 
@@ -1835,8 +1804,6 @@ function refreshTowerGuide() {
 
   const attacksPerSec = placement.reload > 0 ? (1 / placement.reload) : 0;
   const damagePerSec = placement.reload > 0 ? placement.damage / placement.reload : placement.damage;
-  const curve = buildTowerLevelCurve(state.selectedTower);
-  const maxRow = curve[curve.length - 1] || null;
   const badges = [
     `비용 ${placement.cost}`,
     `1발 피해 ${Math.round(placement.damage)}`,
@@ -1851,13 +1818,8 @@ function refreshTowerGuide() {
   if (tower.snareDuration && tower.snareSlow) badges.push(`둔화 ${Math.round((1 - tower.snareSlow) * 100)}%`);
   if (tower.stunDuration && tower.stunChain) badges.push(`스턴 ${tower.stunChain}명`);
 
-  const growthSummary = maxRow
-    ? `Lv1 → Lv${MAX_TOWER_LEVEL}: 피해 ${Math.round(placement.damage)}→${Math.round(maxRow.damage)} · 연사 ${attacksPerSec.toFixed(2)}→${maxRow.aps.toFixed(2)}/s · DPS ${Math.round(damagePerSec)}→${Math.round(maxRow.dps)}`
-    : '';
-
-  const levelRows = curve
-    .map((row) => `<div class="curve-item"><span class="lv">Lv${row.level}</span><span class="vals">${buildTowerProgressText(state.selectedTower, row)}</span></div>`)
-    .join('');
+  const perLevelSummary = buildTowerPerLevelChangeLine(state.selectedTower);
+  const upgradeCostSummary = buildTowerUpgradeCostLine(placement.cost);
 
   towerGuideEl.innerHTML = `
     <div class="line">
@@ -1866,9 +1828,8 @@ function refreshTowerGuide() {
     </div>
     <div class="meta">${guide.role}</div>
     <div class="desc">${guide.summary} ${guide.tips}</div>
-    <div class="growth">${growthSummary}</div>
-    <div class="curve-title">레벨 성장 상세</div>
-    <div class="curve-list">${levelRows}</div>
+    <div class="growth">레벨 +1당 변화: ${perLevelSummary}</div>
+    <div class="growth">업그레이드 비용(+1): ${upgradeCostSummary}</div>
   `;
 }
 
