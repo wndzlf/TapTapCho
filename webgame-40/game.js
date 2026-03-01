@@ -186,10 +186,10 @@ const impactSfx = (() => {
 const isMobileView = window.matchMedia('(max-width: 860px), (pointer: coarse)').matches;
 if (isMobileView) {
   canvas.width = 720;
-  canvas.height = 1280;
+  canvas.height = 960;
 } else {
   canvas.width = 960;
-  canvas.height = 540;
+  canvas.height = 500;
 }
 const GRID_CELL = isMobileView ? 48 : 30;
 const BALANCE_SCALE = GRID_CELL / 30;
