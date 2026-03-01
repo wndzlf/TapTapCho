@@ -1537,13 +1537,15 @@ function setVictory() {
 function showStageReward() {
   const nightmareIndex = Math.max(0, state.stage - 20);
   const clearGold = 70 + state.stage * 14 + nightmareIndex * 28 + Math.floor(nightmareIndex * nightmareIndex * 3);
+  const autoRushBonus = 0.25;
   state.pendingStage = state.stage + 1;
   state.pendingStageBonusGold = clearGold;
   state.gold += clearGold;
+  state.rushDamageBonus += autoRushBonus;
   state.mode = 'reward';
   state.paused = false;
   refreshPauseButton();
-  state.rewardUiUnlockAt = performance.now() + 420;
+  state.rewardUiUnlockAt = performance.now() + 220;
 
   overlayEl.classList.remove('banner-passive');
   overlayEl.classList.add('reward-mode');
@@ -1551,58 +1553,27 @@ function showStageReward() {
   overlayEl.innerHTML = `
     <div class="modal reward-modal">
       <h2>Stage ${state.stage} 클리어</h2>
-      <p>보상 +${clearGold} Gold · 다음 Stage 시작 전 강화 1개 선택</p>
-      <div class="reward-grid">
-        <button type="button" class="reward-btn" data-action="reward:towerhp" disabled>
-          <strong>타워 내구 +15%</strong>
-          <span>현재 배치 + 이후 배치 모두 내구 증가</span>
-        </button>
-        <button type="button" class="reward-btn" data-action="reward:siege" disabled>
-          <strong>러시 대응 +25%</strong>
-          <span>빠른 몹(bat/hopper/raider/crusher) 대상 피해 증가</span>
-        </button>
-        <button type="button" class="reward-btn" data-action="reward:repair" disabled>
-          <strong>리페어 즉시 복구</strong>
-          <span>모든 타워 체력 60% 복구 + Base 2 회복</span>
-        </button>
+      <p>보상 +${clearGold} Gold · 러시 대응 +25% 자동 적용 (누적 +${Math.round(state.rushDamageBonus * 100)}%)</p>
+      <div class="actions">
+        <button type="button" data-action="reward:next" disabled>다음 스테이지 시작</button>
       </div>
     </div>
   `;
   const unlockAt = state.rewardUiUnlockAt;
   window.setTimeout(() => {
     if (state.mode !== 'reward' || state.rewardUiUnlockAt !== unlockAt) return;
-    for (const btn of overlayEl.querySelectorAll('.reward-btn[disabled]')) {
+    for (const btn of overlayEl.querySelectorAll('[data-action=\"reward:next\"][disabled]')) {
       btn.disabled = false;
     }
-  }, 430);
+  }, 230);
 }
 
 function applyStageReward(kind) {
   if (state.mode !== 'reward') return;
   if (performance.now() < state.rewardUiUnlockAt) return;
-
-  if (kind === 'towerhp') {
-    state.towerHpBonus += 0.15;
-    for (const tower of state.towers) {
-      tower.maxHp *= 1.15;
-      tower.hp = Math.min(tower.maxHp, tower.hp * 1.15);
-    }
-    flashBanner('타워 내구 +15%', 0.9);
-    sfx(520, 0.07, 'triangle', 0.028);
-  } else if (kind === 'siege') {
-    state.rushDamageBonus += 0.25;
-    flashBanner('러시 대응 +25%', 0.9);
-    sfx(620, 0.07, 'triangle', 0.028);
-  } else if (kind === 'repair') {
-    for (const tower of state.towers) {
-      tower.hp = Math.min(tower.maxHp, tower.hp + tower.maxHp * 0.6);
-    }
-    state.baseHp = Math.min(20, state.baseHp + 2);
-    flashBanner('리페어 완료', 0.9);
-    sfx(420, 0.08, 'triangle', 0.03);
-  } else {
-    return;
-  }
+  if (kind !== 'next') return;
+  flashBanner(`러시 대응 누적 +${Math.round(state.rushDamageBonus * 100)}%`, 0.9);
+  sfx(620, 0.07, 'triangle', 0.028);
 
   state.mode = 'playing';
   overlayEl.classList.add('hidden');
