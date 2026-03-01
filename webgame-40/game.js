@@ -2131,6 +2131,14 @@ function updateBullets(dt) {
   }
 }
 
+function stageMoveSpeedMultiplier(stage = state.stage) {
+  const s = Math.max(1, Math.floor(stage || 1));
+  const stageIndex = s - 1;
+  const nightmareIndex = Math.max(0, s - 20);
+  // 전체 몹 이동속도는 스테이지 상승에 따라 "조금씩" 누적 상승한다.
+  return 1 + stageIndex * 0.008 + nightmareIndex * 0.014;
+}
+
 function updateEnemy(enemy, dt) {
   enemy.repath -= dt;
   enemy.snareTimer = Math.max(0, enemy.snareTimer - dt);
@@ -2138,7 +2146,7 @@ function updateEnemy(enemy, dt) {
   if (enemy.snareTimer <= 0) enemy.snareSlowMul = 1;
   if (enemy.weakenTimer <= 0) enemy.weakenMul = 1;
 
-  const speed = enemy.speed * (enemy.snareTimer > 0 ? enemy.snareSlowMul : 1);
+  const speed = enemy.speed * stageMoveSpeedMultiplier(state.stage) * (enemy.snareTimer > 0 ? enemy.snareSlowMul : 1);
 
   function keepEnemyInPassableCell(prevX, prevY) {
     const nowCell = worldToCell(enemy.x, enemy.y);
