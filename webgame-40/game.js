@@ -388,12 +388,23 @@ function upgradeTower(tower) {
     return false;
   }
 
+  const rangeMul = tower.kind === 'sunken'
+    ? 1.24
+    : tower.kind === 'spine'
+      ? 1.16
+      : tower.kind === 'obelisk'
+        ? 1.15
+        : 1.2;
+
+  const damageMul = tower.kind === 'snare' ? 1.26 : 1.34;
+  const reloadMul = tower.kind === 'sunken' ? 0.88 : 0.9;
+
   state.gold -= cost;
   tower.level += 1;
   tower.spent += cost;
-  tower.range *= 1.13;
-  tower.damage *= 1.34;
-  tower.reload *= 0.9;
+  tower.range *= rangeMul;
+  tower.damage *= damageMul;
+  tower.reload *= reloadMul;
   tower.pierce = Math.min(3, tower.pierce + (tower.kind === 'obelisk' ? 1 : 0));
   if (tower.kind === 'snare') {
     tower.snareDuration *= 1.13;
@@ -404,7 +415,8 @@ function upgradeTower(tower) {
   tower.maxHp *= 1.34;
   tower.hp = Math.min(tower.maxHp, tower.hp + tower.maxHp * 0.25);
 
-  flashBanner(`UPGRADE Lv.${tower.level}`, 0.7);
+  const rangePercent = Math.round((rangeMul - 1) * 100);
+  flashBanner(`UPGRADE Lv.${tower.level} · RANGE +${rangePercent}%`, 0.75);
   sfx(620, 0.07, 'triangle', 0.022);
   return true;
 }
