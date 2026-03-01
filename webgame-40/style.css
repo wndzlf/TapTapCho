@@ -134,7 +134,8 @@ header p {
 
 .rank-list {
   margin: 0;
-  padding: 0 0 0 20px;
+  padding: 0;
+  list-style: none;
   display: grid;
   gap: 4px;
   max-height: 170px;
