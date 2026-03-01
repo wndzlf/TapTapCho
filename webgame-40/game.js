@@ -24,6 +24,7 @@ const rankStatusEl = document.getElementById('rankStatus');
 
 const btnSellMode = document.getElementById('btnSellMode');
 const btnSpeedUp = document.getElementById('btnSpeedUp');
+const btnEmperorShield = document.getElementById('btnEmperorShield');
 try {
   const audioKey = 'taptapcho_neon_audio_v1';
   const raw = localStorage.getItem(audioKey);
@@ -401,8 +402,14 @@ const state = {
   pendingStage: 0,
   pendingStageBonusGold: 0,
   rewardUiUnlockAt: 0,
+  emperorShieldTimer: 0,
+  emperorShieldFx: 0,
+  emperorShieldHitCooldown: 0,
   banner: { text: '', ttl: 0, warn: false },
 };
+
+const EMPEROR_SHIELD_COST = 1000;
+const EMPEROR_SHIELD_DURATION = 10;
 
 const sfxCtx = window.AudioContext ? new AudioContext() : null;
 
@@ -1498,6 +1505,9 @@ function startRun() {
   state.pendingStage = 0;
   state.pendingStageBonusGold = 0;
   state.rewardUiUnlockAt = 0;
+  state.emperorShieldTimer = 0;
+  state.emperorShieldFx = 0;
+  state.emperorShieldHitCooldown = 0;
   setSelectedButton();
   setSellMode(false);
   refreshBuildHint();
@@ -1612,6 +1622,7 @@ function refreshHud() {
   queueTextEl.textContent = String(state.spawnQueue.length);
   killsTextEl.textContent = String(state.kills);
   if (speedTextEl) speedTextEl.textContent = `${state.simSpeed.toFixed(2)}x`;
+  refreshEmperorShieldButton();
 }
 
 function setSelectedButton() {
@@ -1643,12 +1654,54 @@ function changeSimSpeed(delta) {
   }
 }
 
+function refreshEmperorShieldButton() {
+  if (!btnEmperorShield) return;
+  const nameEl = btnEmperorShield.querySelector('.name');
+  const costEl = btnEmperorShield.querySelector('.cost');
+  const active = state.emperorShieldTimer > 0.001;
+  if (active) {
+    btnEmperorShield.classList.add('active');
+    btnEmperorShield.classList.remove('locked');
+    if (nameEl) nameEl.textContent = 'SHIELD ON';
+    if (costEl) costEl.textContent = `${state.emperorShieldTimer.toFixed(1)}s`;
+    return;
+  }
+  btnEmperorShield.classList.remove('active');
+  const notEnoughGold = state.gold < EMPEROR_SHIELD_COST;
+  btnEmperorShield.classList.toggle('locked', notEnoughGold);
+  if (nameEl) nameEl.textContent = 'EMPEROR SHIELD';
+  if (costEl) costEl.textContent = `${EMPEROR_SHIELD_COST} Gold / 10s`;
+}
+
+function castEmperorShield() {
+  if (state.mode !== 'playing') return;
+  if (state.emperorShieldTimer > 0.001) {
+    flashBanner('황제 보호막 활성 중', 0.45);
+    sfx(500, 0.04, 'triangle', 0.013);
+    return;
+  }
+  if (state.gold < EMPEROR_SHIELD_COST) {
+    flashBanner(`Gold 부족 · ${EMPEROR_SHIELD_COST} 필요`, 0.6, true);
+    sfx(180, 0.08, 'sawtooth', 0.022);
+    return;
+  }
+
+  state.gold -= EMPEROR_SHIELD_COST;
+  state.emperorShieldTimer = EMPEROR_SHIELD_DURATION;
+  state.emperorShieldFx = Math.max(state.emperorShieldFx, 0.8);
+  state.emperorShieldHitCooldown = 0;
+  flashBanner('황제 보호막 전개 · 10초 무적', 0.95);
+  impactSfx.play('build', { volume: 0.42, minGap: 0.08, rateMin: 0.88, rateMax: 0.95 });
+  sfx(860, 0.12, 'triangle', 0.03);
+  refreshHud();
+}
+
 function refreshBuildHint() {
   if (!buildHintEl) return;
   const footprint = state.sunkenFootprint === 2 ? '2x2' : '1x1';
   const sellState = state.sellMode ? 'ON' : 'OFF';
   const mobileTag = isMobileView ? '모바일 큰칸' : '일반';
-  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4/5/6/7/8/9 선택 · Q 성큰크기(${footprint}) · ${mobileTag} · F +0.25x · G -0.25x`;
+  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4/5/6/7/8/9 선택 · Q 성큰크기(${footprint}) · R 황제보호막(1000/10초) · ${mobileTag} · F +0.25x · G -0.25x`;
   refreshModeHelp();
   refreshTowerGuide();
 }
@@ -1657,6 +1710,7 @@ function refreshModeHelp() {
   if (!modeHelpEl) return;
   modeHelpEl.innerHTML = `
     <div class="row"><span class="tag">AUDIO</span>BGM/SFX는 항상 ON으로 고정됩니다.</div>
+    <div class="row"><span class="tag">SHIELD</span>R(또는 SHIELD 버튼)로 1000 Gold를 소모해 마지막 황제 보호막을 10초 전개합니다.</div>
     <div class="row"><span class="tag">SPEED</span>F(+0.25x), G(-0.25x)로 웨이브 진행 속도를 조절할 수 있습니다.</div>
   `;
 }
@@ -2468,16 +2522,25 @@ function updateEnemy(enemy, dt) {
 
   const goalCenter = cellCenter(GOAL.c, GOAL.r);
   if (Math.hypot(enemy.x - goalCenter.x, enemy.y - goalCenter.y) < GRID.cell * 0.38) {
-    state.baseHp -= enemy.leak;
     const idx = state.enemies.indexOf(enemy);
     if (idx >= 0) state.enemies.splice(idx, 1);
-
-    flashBanner(`BASE -${enemy.leak}`, 0.6, true);
-    impactSfx.play('baseHit', { volume: 0.4, minGap: 0.06, rateMin: 0.9, rateMax: 1.01 });
-    sfx(180, 0.09, 'sawtooth', 0.03);
-    if (state.baseHp <= 0) {
-      state.baseHp = 0;
-      setDefeat();
+    if (state.emperorShieldTimer > 0.001) {
+      state.emperorShieldFx = Math.max(state.emperorShieldFx, 0.62);
+      if (state.emperorShieldHitCooldown <= 0) {
+        flashBanner('황제 보호막이 공격을 흡수함', 0.45);
+        impactSfx.play('towerHit', { volume: 0.35, minGap: 0.05, rateMin: 1.02, rateMax: 1.12 });
+        sfx(760, 0.05, 'triangle', 0.02);
+        state.emperorShieldHitCooldown = 0.12;
+      }
+    } else {
+      state.baseHp -= enemy.leak;
+      flashBanner(`BASE -${enemy.leak}`, 0.6, true);
+      impactSfx.play('baseHit', { volume: 0.4, minGap: 0.06, rateMin: 0.9, rateMax: 1.01 });
+      sfx(180, 0.09, 'sawtooth', 0.03);
+      if (state.baseHp <= 0) {
+        state.baseHp = 0;
+        setDefeat();
+      }
     }
   }
 }
@@ -2752,6 +2815,39 @@ function drawEndpoints() {
   ctx.beginPath();
   ctx.arc(gp.x, gp.y, 12, 0, TAU);
   ctx.fill();
+
+  if (state.emperorShieldTimer > 0.001) {
+    const remainRatio = clamp(state.emperorShieldTimer / EMPEROR_SHIELD_DURATION, 0, 1);
+    const pulse = 0.5 + 0.5 * Math.sin(performance.now() * 0.012);
+    const shieldR = 17 + pulse * 3 + (1 - remainRatio) * 3;
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const shell = ctx.createRadialGradient(gp.x, gp.y, 3, gp.x, gp.y, shieldR + 10);
+    shell.addColorStop(0, 'rgba(255, 247, 184, 0.62)');
+    shell.addColorStop(0.5, 'rgba(132, 220, 255, 0.26)');
+    shell.addColorStop(1, 'rgba(72, 146, 255, 0)');
+    ctx.fillStyle = shell;
+    ctx.beginPath();
+    ctx.arc(gp.x, gp.y, shieldR + 10, 0, TAU);
+    ctx.fill();
+
+    ctx.strokeStyle = `rgba(157, 225, 255, ${0.58 + pulse * 0.25})`;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.arc(gp.x, gp.y, shieldR, 0, TAU);
+    ctx.stroke();
+
+    const fxBoost = clamp(state.emperorShieldFx / 0.9, 0, 1);
+    if (fxBoost > 0.001) {
+      ctx.strokeStyle = `rgba(255, 238, 170, ${0.25 + fxBoost * 0.65})`;
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.arc(gp.x, gp.y, shieldR + 6 + fxBoost * 4, 0, TAU);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
 }
 
 function drawTowerSunken(tower, now) {
@@ -3511,6 +3607,10 @@ function draw() {
 }
 
 function step(dt) {
+  state.emperorShieldTimer = Math.max(0, state.emperorShieldTimer - dt);
+  state.emperorShieldFx = Math.max(0, state.emperorShieldFx - dt);
+  state.emperorShieldHitCooldown = Math.max(0, state.emperorShieldHitCooldown - dt);
+
   if (state.mode !== 'playing') {
     draw();
     refreshHud();
@@ -3578,6 +3678,11 @@ controlsEl.addEventListener('click', (event) => {
 
   if (event.target.closest('[data-action="speed-down"]')) {
     changeSimSpeed(-0.25);
+    return;
+  }
+
+  if (event.target.closest('[data-action="emperor-shield"]')) {
+    castEmperorShield();
     return;
   }
 
@@ -3706,6 +3811,10 @@ window.addEventListener('keydown', (event) => {
 
   if (event.code === 'KeyG') {
     changeSimSpeed(-0.25);
+  }
+
+  if (event.code === 'KeyR') {
+    castEmperorShield();
   }
 
 });
