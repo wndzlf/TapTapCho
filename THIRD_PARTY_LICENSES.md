@@ -28,6 +28,18 @@
 
 ## 이미지/스프라이트
 
+### Sunken Sixway Defense 몹 탱크 에셋
+- 팩명: Tanks
+- 제작자: Kenney Vleugels (Kenney.nl)
+- 출처: https://kenney.nl/assets/tanks
+- 라이선스: Creative Commons Zero (CC0 1.0)
+- 라이선스 원문: https://creativecommons.org/publicdomain/zero/1.0/
+- 프로젝트 내 경로: `assets/kenney_tanks/png/`
+
+고지 참고:
+- `assets/kenney_tanks/png/License.txt` 기준으로 개인/상업 프로젝트에서 사용 가능.
+- 크레딧 표기는 의무가 아니지만 권장.
+
 ### Hyperfold 외계인/UFO 에셋
 - 팩명: Alien UFO pack
 - 제작자: Kenney Vleugels (Kenney.nl)

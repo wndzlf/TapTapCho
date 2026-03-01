@@ -111,6 +111,16 @@ header p {
   box-shadow: 0 0 0 2px rgba(240, 202, 119, 0.24) inset;
 }
 
+.mode-btn {
+  border-color: #5b6ea5;
+  background: linear-gradient(180deg, #1d2d4a, #162744);
+}
+
+.mode-btn.active {
+  border-color: #ff9ab2;
+  box-shadow: 0 0 0 2px rgba(255, 154, 178, 0.3) inset;
+}
+
 .hint {
   margin-left: auto;
   color: #9cb0cf;
@@ -248,7 +258,12 @@ footer {
   }
 
   .build-btn {
-    min-width: 98px;
+    min-width: 124px;
+    padding: 10px 11px;
+  }
+
+  .build-btn .name {
+    font-size: 15px;
   }
 
   .reward-grid {

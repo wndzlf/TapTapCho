@@ -10,11 +10,13 @@ const goldTextEl = document.getElementById('goldText');
 const aliveTextEl = document.getElementById('aliveText');
 const queueTextEl = document.getElementById('queueText');
 const killsTextEl = document.getElementById('killsText');
+const buildHintEl = document.getElementById('buildHint');
 
 const btnSunken = document.getElementById('btnSunken');
 const btnSpine = document.getElementById('btnSpine');
 const btnObelisk = document.getElementById('btnObelisk');
 const btnSnare = document.getElementById('btnSnare');
+const btnSellMode = document.getElementById('btnSellMode');
 
 const bgmAudio = window.TapTapNeonAudio?.create('webgame-40', hudEl, {
   theme: 'rush',
@@ -22,14 +24,29 @@ const bgmAudio = window.TapTapNeonAudio?.create('webgame-40', hudEl, {
   showThemeToggle: false,
 });
 
+const ENEMY_TANK_SOURCES = {
+  ghoul: '../assets/kenney_tanks/png/tanks_tankGreen1.png',
+  bat: '../assets/kenney_tanks/png/tanks_tankGrey1.png',
+  brute: '../assets/kenney_tanks/png/tanks_tankDesert2.png',
+  elder: '../assets/kenney_tanks/png/tanks_tankNavy3.png',
+  raider: '../assets/kenney_tanks/png/tanks_tankGrey4.png',
+  crusher: '../assets/kenney_tanks/png/tanks_tankDesert5.png',
+  lord: '../assets/kenney_tanks/png/tanks_tankNavy5.png',
+};
+const ENEMY_TANK_IMAGES = Object.create(null);
+
+const isMobileView = window.matchMedia('(max-width: 860px), (pointer: coarse)').matches;
+const GRID_CELL = isMobileView ? 48 : 30;
+const BALANCE_SCALE = GRID_CELL / 30;
+
 const W = canvas.width;
 const H = canvas.height;
 const TAU = Math.PI * 2;
 
 const GRID = {
-  cell: 30,
-  cols: Math.floor(W / 30),
-  rows: Math.floor(H / 30),
+  cell: GRID_CELL,
+  cols: Math.floor(W / GRID_CELL),
+  rows: Math.floor(H / GRID_CELL),
 };
 
 const SPAWN = { c: 0, r: Math.floor(GRID.rows / 2) };
@@ -41,10 +58,10 @@ const TOWER_TYPES = {
     name: 'Sunken',
     cost: 40,
     color: '#8dd9ff',
-    range: 96,
+    range: 96 * BALANCE_SCALE,
     damage: 24,
     reload: 0.55,
-    bulletSpeed: 360,
+    bulletSpeed: 360 * BALANCE_SCALE,
     pierce: 0,
     hp: 250,
   },
@@ -53,10 +70,10 @@ const TOWER_TYPES = {
     name: 'Spine',
     cost: 70,
     color: '#b9e8ac',
-    range: 124,
+    range: 124 * BALANCE_SCALE,
     damage: 18,
     reload: 0.28,
-    bulletSpeed: 420,
+    bulletSpeed: 420 * BALANCE_SCALE,
     pierce: 0,
     hp: 190,
   },
@@ -65,10 +82,10 @@ const TOWER_TYPES = {
     name: 'Obelisk',
     cost: 110,
     color: '#e2b1ff',
-    range: 150,
+    range: 150 * BALANCE_SCALE,
     damage: 52,
     reload: 1.1,
-    bulletSpeed: 330,
+    bulletSpeed: 330 * BALANCE_SCALE,
     pierce: 1,
     hp: 320,
   },
@@ -77,10 +94,10 @@ const TOWER_TYPES = {
     name: 'Snare',
     cost: 90,
     color: '#9ae8ff',
-    range: 132,
+    range: 132 * BALANCE_SCALE,
     damage: 12,
     reload: 0.72,
-    bulletSpeed: 340,
+    bulletSpeed: 340 * BALANCE_SCALE,
     pierce: 0,
     hp: 210,
     snareDuration: 2.4,
@@ -98,6 +115,8 @@ const state = {
   kills: 0,
   score: 0,
   selectedTower: 'sunken',
+  sunkenFootprint: 1,
+  sellMode: false,
   fastForward: false,
   stageTimer: 0,
   spawnQueue: [],
@@ -173,7 +192,64 @@ function keyOf(c, r) {
 }
 
 function getTower(c, r) {
-  return state.towers.find((t) => t.c === c && t.r === r);
+  return state.towers.find((tower) => (
+    c >= tower.c
+    && c < tower.c + (tower.footprint || 1)
+    && r >= tower.r
+    && r < tower.r + (tower.footprint || 1)
+  ));
+}
+
+function getPlacementSpec(kind) {
+  const base = TOWER_TYPES[kind];
+  if (!base) return null;
+
+  if (kind === 'sunken' && state.sunkenFootprint === 2) {
+    return {
+      kind,
+      footprint: 2,
+      cost: 120,
+      range: base.range * 1.34,
+      damage: base.damage * 1.62,
+      reload: base.reload * 1.08,
+      bulletSpeed: base.bulletSpeed * 1.03,
+      pierce: base.pierce,
+      hp: base.hp * 2.45,
+      color: base.color,
+    };
+  }
+
+  return {
+    kind,
+    footprint: 1,
+    cost: base.cost,
+    range: base.range,
+    damage: base.damage,
+    reload: base.reload,
+    bulletSpeed: base.bulletSpeed,
+    pierce: base.pierce,
+    hp: base.hp,
+    color: base.color,
+  };
+}
+
+function getFootprintCells(c, r, footprint) {
+  const cells = [];
+  for (let ry = 0; ry < footprint; ry += 1) {
+    for (let rx = 0; rx < footprint; rx += 1) {
+      cells.push({ c: c + rx, r: r + ry });
+    }
+  }
+  return cells;
+}
+
+function canUseFootprint(cells) {
+  for (const cell of cells) {
+    if (!inBounds(cell.c, cell.r)) return false;
+    if (isReserved(cell.c, cell.r)) return false;
+    if (getTower(cell.c, cell.r)) return false;
+  }
+  return true;
 }
 
 function passable(c, r) {
@@ -255,28 +331,32 @@ function flashBanner(text, ttl = 1.2, warn = false) {
   state.banner.warn = warn;
 }
 
-function makeTower(kind, c, r) {
+function makeTower(kind, c, r, spec = null) {
   const base = TOWER_TYPES[kind];
-  const center = cellCenter(c, r);
+  const placement = spec || getPlacementSpec(kind);
+  const footprint = placement?.footprint || 1;
+  const center = cellCenter(c + (footprint - 1) * 0.5, r + (footprint - 1) * 0.5);
   const hpMul = 1 + state.towerHpBonus;
   return {
     id: state.nextTowerId++,
     kind,
     c,
     r,
+    footprint,
     x: center.x,
     y: center.y,
     level: 1,
-    spent: base.cost,
-    range: base.range,
-    damage: base.damage,
-    reload: base.reload,
-    bulletSpeed: base.bulletSpeed,
-    pierce: base.pierce,
-    maxHp: base.hp * hpMul,
-    hp: base.hp * hpMul,
-    cooldown: rand(0.02, base.reload),
-    color: base.color,
+    baseCost: placement.cost,
+    spent: placement.cost,
+    range: placement.range,
+    damage: placement.damage,
+    reload: placement.reload,
+    bulletSpeed: placement.bulletSpeed,
+    pierce: placement.pierce,
+    maxHp: placement.hp * hpMul,
+    hp: placement.hp * hpMul,
+    cooldown: rand(0.02, placement.reload),
+    color: placement.color || base.color,
     sealTimer: 0,
     snareDuration: base.snareDuration || 0,
     snareSlow: base.snareSlow || 1,
@@ -285,7 +365,7 @@ function makeTower(kind, c, r) {
 }
 
 function upgradeCost(tower) {
-  const base = TOWER_TYPES[tower.kind].cost;
+  const base = tower.baseCost || TOWER_TYPES[tower.kind].cost;
   return Math.floor(base * (0.85 + tower.level * 0.75));
 }
 
@@ -319,45 +399,49 @@ function upgradeTower(tower) {
 }
 
 function tryPlaceTower(c, r) {
-  if (!inBounds(c, r)) return;
-  if (isReserved(c, r)) {
-    flashBanner('출발/도착 지점은 배치 불가', 0.9, true);
-    return;
-  }
-
   const existing = getTower(c, r);
   if (existing) {
     upgradeTower(existing);
     return;
   }
 
-  const type = TOWER_TYPES[state.selectedTower];
-  if (state.gold < type.cost) {
+  const placement = getPlacementSpec(state.selectedTower);
+  if (!placement) return;
+
+  if (state.gold < placement.cost) {
     flashBanner('Gold 부족', 0.9, true);
     return;
   }
 
-  const blockedKey = keyOf(c, r);
-  state.blocked.add(blockedKey);
+  const footprintCells = getFootprintCells(c, r, placement.footprint);
+  if (!canUseFootprint(footprintCells)) {
+    flashBanner('배치 불가(범위/지점)', 0.85, true);
+    sfx(180, 0.06, 'sawtooth', 0.02);
+    return;
+  }
+
+  for (const cell of footprintCells) {
+    state.blocked.add(keyOf(cell.c, cell.r));
+  }
   const ok = buildDistanceMap();
   if (!ok) {
-    state.blocked.delete(blockedKey);
+    for (const cell of footprintCells) {
+      state.blocked.delete(keyOf(cell.c, cell.r));
+    }
     buildDistanceMap();
     flashBanner('길이 막혀 배치 불가', 1.1, true);
     sfx(170, 0.08, 'sawtooth', 0.03);
     return;
   }
 
-  const tower = makeTower(state.selectedTower, c, r);
+  const tower = makeTower(state.selectedTower, c, r, placement);
   state.towers.push(tower);
-  state.gold -= type.cost;
+  state.gold -= placement.cost;
 
   for (const enemy of state.enemies) {
     enemy.repath = 0;
   }
-
-  flashBanner(`${type.name} 배치`, 0.7);
-  sfx(460, 0.05, 'triangle', 0.018);
+  sfx(420 + rand(-20, 30), 0.04, 'triangle', 0.014);
 }
 
 function sellTower(c, r) {
@@ -428,10 +512,10 @@ function makeEnemy(type) {
     type,
     x: spawn.x + rand(-7, 7),
     y: spawn.y + rand(-7, 7),
-    r: d.r * radiusMul,
+    r: d.r * radiusMul * BALANCE_SCALE,
     hp: Math.floor(d.hp),
     maxHp: Math.floor(d.hp),
-    speed: d.speed,
+    speed: d.speed * BALANCE_SCALE,
     reward: d.reward + Math.floor(s * 1.3),
     leak,
     color: d.color,
@@ -448,7 +532,7 @@ function makeEnemy(type) {
     breaker: Boolean(d.breaker),
     towerDamage: d.towerDamage || 0,
     attackInterval: Math.max(0.45, (d.attackInterval || 1) - s * 0.008 - lateIndex * 0.012),
-    attackRange: d.attackRange || 0,
+    attackRange: (d.attackRange || 0) * BALANCE_SCALE,
     attackCd: rand(0.1, 0.6),
     targetTowerId: 0,
     snareTimer: 0,
@@ -549,11 +633,15 @@ function startRun() {
   state.blocked.clear();
   state.fastForward = false;
   state.selectedTower = 'sunken';
+  state.sunkenFootprint = 1;
+  state.sellMode = false;
   state.towerHpBonus = 0;
   state.siegeDamageBonus = 0;
   state.pendingStage = 0;
   state.pendingStageBonusGold = 0;
   setSelectedButton();
+  setSellMode(false);
+  refreshBuildHint();
 
   buildDistanceMap();
   startStage(1);
@@ -672,9 +760,25 @@ function refreshHud() {
 }
 
 function setSelectedButton() {
-  for (const btn of controlsEl.querySelectorAll('.build-btn')) {
+  for (const btn of controlsEl.querySelectorAll('.build-btn[data-kind]')) {
     btn.classList.toggle('active', btn.dataset.kind === state.selectedTower);
   }
+}
+
+function setSellMode(enabled) {
+  state.sellMode = Boolean(enabled);
+  if (!btnSellMode) return;
+  btnSellMode.classList.toggle('active', state.sellMode);
+  const nameEl = btnSellMode.querySelector('.name');
+  if (nameEl) nameEl.textContent = state.sellMode ? 'SELL ON' : 'SELL OFF';
+}
+
+function refreshBuildHint() {
+  if (!buildHintEl) return;
+  const footprint = state.sunkenFootprint === 2 ? '2x2' : '1x1';
+  const sellState = state.sellMode ? 'ON' : 'OFF';
+  const mobileTag = isMobileView ? '모바일 큰칸' : '일반';
+  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4 선택 · Q 성큰크기(${footprint}) · ${mobileTag} · F 가속`;
 }
 
 function nearestEnemy(x, y, range) {
@@ -778,7 +882,12 @@ function removeTower(tower) {
   const idx = state.towers.indexOf(tower);
   if (idx < 0) return false;
   state.towers.splice(idx, 1);
-  state.blocked.delete(keyOf(tower.c, tower.r));
+  const footprint = tower.footprint || 1;
+  for (let ry = 0; ry < footprint; ry += 1) {
+    for (let rx = 0; rx < footprint; rx += 1) {
+      state.blocked.delete(keyOf(tower.c + rx, tower.r + ry));
+    }
+  }
   buildDistanceMap();
   for (const enemy of state.enemies) {
     enemy.repath = 0;
@@ -801,7 +910,13 @@ function damageTower(tower, amount, sourceEnemy = null) {
       color: sourceEnemy?.color || '#ffb3c1',
     });
   }
-  if (Math.random() < 0.35) sfx(220 + rand(-30, 20), 0.05, 'square', 0.018);
+  if (sourceEnemy) {
+    const base = sourceEnemy.type === 'crusher' ? 128 : 164;
+    const gain = sourceEnemy.type === 'crusher' ? 0.024 : 0.018;
+    sfx(base + rand(-18, 14), 0.06, 'square', gain);
+  } else if (Math.random() < 0.2) {
+    sfx(220 + rand(-24, 16), 0.05, 'square', 0.016);
+  }
   if (tower.hp > 0) return;
 
   removeTower(tower);
@@ -843,10 +958,14 @@ function emitBullet(tower, target) {
     });
   }
 
-  if (Math.random() < 0.4) sfx(440 + rand(-30, 40), 0.03, 'square', 0.011);
+  if (tower.kind === 'sunken') {
+    if (Math.random() < 0.4) sfx(330 + rand(-24, 18), 0.03, 'triangle', 0.011);
+  } else if (Math.random() < 0.35) {
+    sfx(430 + rand(-26, 28), 0.03, 'square', 0.01);
+  }
 }
 
-function hurtEnemy(enemy, damage) {
+function hurtEnemy(enemy, damage, sourceKind = '') {
   const weakenDamage = enemy.weakenTimer > 0 ? enemy.weakenMul : 1;
   const siegeDamage = enemy.breaker ? 1 + state.siegeDamageBonus : 1;
   enemy.hp -= damage * weakenDamage * siegeDamage;
@@ -863,6 +982,12 @@ function hurtEnemy(enemy, damage) {
       size: rand(1.8, 3.4),
       color: enemy.color,
     });
+  }
+
+  if (sourceKind === 'sunken') {
+    if (Math.random() < 0.35) sfx(286 + rand(-22, 18), 0.04, 'triangle', 0.011);
+  } else if (sourceKind === 'snare') {
+    if (Math.random() < 0.28) sfx(248 + rand(-18, 16), 0.04, 'sine', 0.01);
   }
 
   if (enemy.hp <= 0) {
@@ -923,13 +1048,13 @@ function updateBullets(dt) {
           enemy.snareSlowMul = Math.min(enemy.snareSlowMul, b.snareSlow || 0.55);
           enemy.weakenTimer = Math.max(enemy.weakenTimer, (b.snareDuration || 2) + 0.6);
           enemy.weakenMul = Math.max(enemy.weakenMul, b.weakenMul || 1.25);
-          hurtEnemy(enemy, b.damage * 0.55);
+          hurtEnemy(enemy, b.damage * 0.55, b.towerKind);
           if (Math.random() < 0.28) flashBanner('Snare: 공성몹 둔화/약화', 0.45);
         }
         state.bullets.splice(i, 1);
         removed = true;
       } else {
-        hurtEnemy(enemy, b.damage);
+        hurtEnemy(enemy, b.damage, b.towerKind);
         if (b.pierce > 0) {
           b.pierce -= 1;
           b.damage *= 0.78;
@@ -1181,8 +1306,9 @@ function drawEndpoints() {
 }
 
 function drawTowerSunken(tower, now) {
+  const scale = 1 + ((tower.footprint || 1) - 1) * 0.86;
   const pulse = 0.5 + 0.5 * Math.sin(now * 4 + tower.c * 0.31 + tower.r * 0.17);
-  const ringR = 8.4 + tower.level * 1.3;
+  const ringR = (8.4 + tower.level * 1.3) * scale;
 
   ctx.save();
   ctx.translate(tower.x, tower.y);
@@ -1341,8 +1467,9 @@ function drawTowerObelisk(tower, now) {
 }
 
 function drawTowerSnare(tower, now) {
+  const scale = 1 + ((tower.footprint || 1) - 1) * 0.86;
   const pulse = 0.5 + 0.5 * Math.sin(now * 6.2 + tower.c * 0.21);
-  const ringR = 8 + tower.level * 1.1;
+  const ringR = (8 + tower.level * 1.1) * scale;
 
   ctx.save();
   ctx.translate(tower.x, tower.y);
@@ -1378,10 +1505,11 @@ function drawTowers() {
   const now = performance.now() * 0.001;
 
   for (const tower of state.towers) {
+    const footprint = tower.footprint || 1;
     const x = tower.c * GRID.cell + 2;
     const y = tower.r * GRID.cell + 2;
-    const w = GRID.cell - 4;
-    const h = GRID.cell - 4;
+    const w = GRID.cell * footprint - 4;
+    const h = GRID.cell * footprint - 4;
 
     ctx.fillStyle = '#0f1727';
     ctx.fillRect(x, y, w, h);
@@ -1409,16 +1537,17 @@ function drawTowers() {
 
     const hpRatio = clamp(tower.hp / tower.maxHp, 0, 1);
     if (hpRatio < 0.999) {
+      const hpBarW = 22 + (footprint - 1) * 18;
       ctx.fillStyle = 'rgba(0,0,0,0.55)';
-      ctx.fillRect(tower.x - 11, tower.y - 18, 22, 4);
+      ctx.fillRect(tower.x - hpBarW * 0.5, tower.y - 18 - (footprint - 1) * 4, hpBarW, 4);
       ctx.fillStyle = hpRatio > 0.4 ? '#92f0b3' : '#ff8aa5';
-      ctx.fillRect(tower.x - 11, tower.y - 18, 22 * hpRatio, 4);
+      ctx.fillRect(tower.x - hpBarW * 0.5, tower.y - 18 - (footprint - 1) * 4, hpBarW * hpRatio, 4);
     }
 
     if (tower.level > 1) {
       ctx.fillStyle = '#e8f2ff';
       ctx.font = '12px sans-serif';
-      ctx.fillText(`L${tower.level}`, tower.x - 7, tower.y + 18);
+      ctx.fillText(`L${tower.level}`, tower.x - 7, tower.y + 18 + (footprint - 1) * 4);
     }
 
     if (tower.sealTimer > 0) {
@@ -1438,6 +1567,32 @@ function drawTowers() {
       ctx.stroke();
     }
   }
+}
+
+function loadEnemySprites() {
+  for (const [type, src] of Object.entries(ENEMY_TANK_SOURCES)) {
+    const img = new Image();
+    img.src = src;
+    ENEMY_TANK_IMAGES[type] = img;
+  }
+}
+
+function drawEnemyTankSprite(enemy) {
+  const img = ENEMY_TANK_IMAGES[enemy.type];
+  if (!img || !img.complete || !img.naturalWidth) return false;
+
+  const ang = Math.atan2(enemy.vy, enemy.vx) + Math.PI * 0.5;
+  const sizeMul = enemy.boss ? 3.0 : 2.65;
+  const size = enemy.r * sizeMul;
+
+  ctx.save();
+  ctx.translate(enemy.x, enemy.y);
+  ctx.rotate(ang);
+  if (enemy.snareTimer > 0) ctx.globalAlpha = 0.84;
+  ctx.drawImage(img, -size * 0.5, -size * 0.5, size, size);
+  ctx.globalAlpha = 1;
+  ctx.restore();
+  return true;
 }
 
 function drawEnemies() {
@@ -1473,15 +1628,22 @@ function drawEnemies() {
       }
     }
 
-    ctx.fillStyle = '#100f19';
+    ctx.fillStyle = 'rgba(10, 14, 22, 0.62)';
     ctx.beginPath();
-    ctx.arc(enemy.x, enemy.y, enemy.r + 3, 0, TAU);
+    ctx.ellipse(enemy.x, enemy.y + enemy.r * 0.15, enemy.r * 1.05, enemy.r * 0.72, 0, 0, TAU);
     ctx.fill();
 
-    ctx.fillStyle = enemy.color;
-    ctx.beginPath();
-    ctx.arc(enemy.x, enemy.y, enemy.r, 0, TAU);
-    ctx.fill();
+    if (!drawEnemyTankSprite(enemy)) {
+      ctx.fillStyle = '#100f19';
+      ctx.beginPath();
+      ctx.arc(enemy.x, enemy.y, enemy.r + 3, 0, TAU);
+      ctx.fill();
+
+      ctx.fillStyle = enemy.color;
+      ctx.beginPath();
+      ctx.arc(enemy.x, enemy.y, enemy.r, 0, TAU);
+      ctx.fill();
+    }
 
     if (enemy.breaker) {
       ctx.strokeStyle = 'rgba(255, 230, 180, 0.86)';
@@ -1635,11 +1797,21 @@ function frame(now) {
 function chooseTower(kind) {
   if (!TOWER_TYPES[kind]) return;
   state.selectedTower = kind;
+  if (state.sellMode) setSellMode(false);
   setSelectedButton();
+  refreshBuildHint();
 }
 
 controlsEl.addEventListener('click', (event) => {
-  const btn = event.target.closest('.build-btn');
+  const sellToggle = event.target.closest('[data-action="toggle-sell"]');
+  if (sellToggle) {
+    setSellMode(!state.sellMode);
+    refreshBuildHint();
+    sfx(state.sellMode ? 310 : 390, 0.05, 'triangle', 0.013);
+    return;
+  }
+
+  const btn = event.target.closest('.build-btn[data-kind]');
   if (!btn) return;
   chooseTower(btn.dataset.kind);
 });
@@ -1656,7 +1828,7 @@ canvas.addEventListener('pointerdown', (event) => {
   const y = (event.clientY - rect.top) * (H / rect.height);
   const cell = worldToCell(x, y);
 
-  if (event.button === 2) {
+  if (event.button === 2 || state.sellMode) {
     sellTower(cell.c, cell.r);
   } else {
     tryPlaceTower(cell.c, cell.r);
@@ -1668,6 +1840,18 @@ window.addEventListener('keydown', (event) => {
   if (event.code === 'Digit2') chooseTower('spine');
   if (event.code === 'Digit3') chooseTower('obelisk');
   if (event.code === 'Digit4') chooseTower('snare');
+
+  if (event.code === 'KeyQ') {
+    state.sunkenFootprint = state.sunkenFootprint === 1 ? 2 : 1;
+    refreshBuildHint();
+    sfx(390, 0.05, 'triangle', 0.014);
+  }
+
+  if (event.code === 'KeyE') {
+    setSellMode(!state.sellMode);
+    refreshBuildHint();
+    sfx(state.sellMode ? 300 : 410, 0.05, 'triangle', 0.013);
+  }
 
   if (event.code === 'KeyF') {
     state.fastForward = !state.fastForward;
@@ -1700,6 +1884,9 @@ function showMenu() {
 
 showMenu();
 setSelectedButton();
+setSellMode(false);
+refreshBuildHint();
 buildDistanceMap();
 refreshHud();
+loadEnemySprites();
 requestAnimationFrame(frame);
