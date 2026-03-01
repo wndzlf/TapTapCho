@@ -13,6 +13,11 @@ const killsTextEl = document.getElementById('killsText');
 const speedTextEl = document.getElementById('speedText');
 const buildHintEl = document.getElementById('buildHint');
 const towerGuideEl = document.getElementById('towerGuide');
+const rankNameEl = document.getElementById('rankName');
+const rankRefreshEl = document.getElementById('rankRefresh');
+const rankListEl = document.getElementById('rankList');
+const rankScopeEl = document.getElementById('rankScope');
+const rankStatusEl = document.getElementById('rankStatus');
 
 const btnSunken = document.getElementById('btnSunken');
 const btnSpine = document.getElementById('btnSpine');
@@ -170,6 +175,25 @@ const W = canvas.width;
 const H = canvas.height;
 const TAU = Math.PI * 2;
 let battlefieldBackdrop = null;
+
+const SINGLE_RANK = {
+  profileKey: 'taptapcho_web40_single_rank_profile_v1',
+  localKey: 'taptapcho_web40_single_rank_local_v1',
+  serverKey: 'taptapcho_web40_single_rank_server_v1',
+  maxSave: 30,
+  showCount: 10,
+};
+
+const singleRankState = {
+  playerId: '',
+  playerName: '',
+  localRows: [],
+  remoteRows: [],
+  ws: null,
+  connected: false,
+  serverUrl: '',
+  connectTried: false,
+};
 
 const GRID = {
   cell: GRID_CELL,
@@ -332,6 +356,349 @@ function clamp(v, min, max) {
 
 function rand(min, max) {
   return min + Math.random() * (max - min);
+}
+
+function randomPlayerId() {
+  return `p-${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
+}
+
+function normalizeRankName(raw) {
+  const name = String(raw || '').trim().replace(/[^a-zA-Z0-9가-힣 _-]/g, '').slice(0, 14);
+  return name || `Player${Math.floor(rand(100, 999))}`;
+}
+
+function normalizeRankRow(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const stage = clamp(Math.floor(Number(raw.stage) || 0), 1, 999);
+  const kills = clamp(Math.floor(Number(raw.kills) || 0), 0, 999999);
+  const score = clamp(Math.floor(Number(raw.score) || 0), 0, 999999999);
+  const updatedAt = Math.floor(Number(raw.updatedAt || Date.now()));
+  const playerId = String(raw.playerId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 36);
+  if (!playerId) return null;
+  return {
+    playerId,
+    playerName: normalizeRankName(raw.playerName || raw.name),
+    stage,
+    kills,
+    score,
+    updatedAt: Number.isFinite(updatedAt) ? updatedAt : Date.now(),
+  };
+}
+
+function compareRankRows(a, b) {
+  if (a.stage !== b.stage) return b.stage - a.stage;
+  if (a.kills !== b.kills) return b.kills - a.kills;
+  if (a.score !== b.score) return b.score - a.score;
+  return a.updatedAt - b.updatedAt;
+}
+
+function isBetterRankRow(next, prev) {
+  return compareRankRows(next, prev) < 0;
+}
+
+function saveRankProfile() {
+  try {
+    localStorage.setItem(SINGLE_RANK.profileKey, JSON.stringify({
+      playerId: singleRankState.playerId,
+      playerName: singleRankState.playerName,
+      serverUrl: singleRankState.serverUrl,
+    }));
+    localStorage.setItem(SINGLE_RANK.serverKey, singleRankState.serverUrl || '');
+  } catch (_) {}
+}
+
+function loadRankProfile() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(SINGLE_RANK.profileKey) || '{}');
+    const playerId = String(parsed.playerId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 36);
+    const playerName = normalizeRankName(parsed.playerName || '');
+    const serverUrl = String(parsed.serverUrl || '').trim();
+    return { playerId, playerName, serverUrl };
+  } catch (_) {
+    return { playerId: '', playerName: '', serverUrl: '' };
+  }
+}
+
+function saveLocalRankRows() {
+  try {
+    localStorage.setItem(SINGLE_RANK.localKey, JSON.stringify(singleRankState.localRows));
+  } catch (_) {}
+}
+
+function loadLocalRankRows() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(SINGLE_RANK.localKey) || '[]');
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map(normalizeRankRow)
+      .filter(Boolean)
+      .sort(compareRankRows)
+      .slice(0, SINGLE_RANK.maxSave);
+  } catch (_) {
+    return [];
+  }
+}
+
+function rankRowsToRender() {
+  if (singleRankState.connected && singleRankState.remoteRows.length > 0) {
+    return singleRankState.remoteRows;
+  }
+  return singleRankState.localRows;
+}
+
+function renderSingleRank() {
+  if (!rankListEl) return;
+  rankListEl.innerHTML = '';
+  const rows = rankRowsToRender().slice(0, SINGLE_RANK.showCount);
+
+  if (!rows.length) {
+    const li = document.createElement('li');
+    li.textContent = '기록 없음';
+    rankListEl.appendChild(li);
+    return;
+  }
+
+  rows.forEach((row, idx) => {
+    const li = document.createElement('li');
+    if (idx === 0) li.classList.add('top1');
+    const meTag = row.playerId === singleRankState.playerId ? ' · YOU' : '';
+    li.textContent = `${idx + 1}. ${row.playerName} · Stage ${row.stage} · Kills ${row.kills}${meTag}`;
+    rankListEl.appendChild(li);
+  });
+}
+
+function setRankStatus(text) {
+  if (!rankStatusEl) return;
+  rankStatusEl.textContent = text;
+}
+
+function setRankScope(text) {
+  if (!rankScopeEl) return;
+  rankScopeEl.textContent = text;
+}
+
+function defaultRankServerUrl() {
+  const host = window.location.hostname;
+  if (!host) return '';
+  const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  return `${proto}://${host}:9091`;
+}
+
+function updateLocalRank(row) {
+  const idx = singleRankState.localRows.findIndex((it) => it.playerId === row.playerId);
+  if (idx < 0) {
+    singleRankState.localRows.push(row);
+  } else {
+    const prev = singleRankState.localRows[idx];
+    if (isBetterRankRow(row, prev)) {
+      singleRankState.localRows[idx] = row;
+    } else {
+      singleRankState.localRows[idx] = {
+        ...prev,
+        playerName: row.playerName,
+        updatedAt: Math.max(prev.updatedAt, row.updatedAt),
+      };
+    }
+  }
+  singleRankState.localRows = singleRankState.localRows
+    .map(normalizeRankRow)
+    .filter(Boolean)
+    .sort(compareRankRows)
+    .slice(0, SINGLE_RANK.maxSave);
+  saveLocalRankRows();
+}
+
+function applyRankNameFromInput() {
+  if (!rankNameEl) return;
+  const normalized = normalizeRankName(rankNameEl.value);
+  rankNameEl.value = normalized;
+  singleRankState.playerName = normalized;
+  saveRankProfile();
+
+  if (singleRankState.connected && singleRankState.ws && singleRankState.ws.readyState === WebSocket.OPEN) {
+    singleRankState.ws.send(JSON.stringify({
+      type: 'set_identity',
+      playerId: singleRankState.playerId,
+      name: singleRankState.playerName,
+    }));
+  }
+}
+
+function openRankSocket(force = false) {
+  if (!rankListEl) return;
+  if (singleRankState.connected) return;
+  if (singleRankState.connectTried && !force) return;
+  singleRankState.connectTried = true;
+
+  const url = singleRankState.serverUrl || defaultRankServerUrl();
+  if (!url) {
+    setRankScope('LOCAL');
+    setRankStatus('서버 주소 없음 · 로컬 랭킹');
+    renderSingleRank();
+    return;
+  }
+
+  if (singleRankState.ws) {
+    try { singleRankState.ws.close(); } catch (_) {}
+    singleRankState.ws = null;
+  }
+
+  let ws;
+  try {
+    ws = new WebSocket(url);
+  } catch (_) {
+    setRankScope('LOCAL');
+    setRankStatus('랭킹 서버 연결 실패 · 로컬 랭킹');
+    renderSingleRank();
+    return;
+  }
+
+  singleRankState.ws = ws;
+  setRankStatus('랭킹 서버 연결 시도 중...');
+
+  ws.addEventListener('open', () => {
+    if (singleRankState.ws !== ws) return;
+    singleRankState.connected = true;
+    singleRankState.serverUrl = url;
+    saveRankProfile();
+    setRankScope('ONLINE');
+    setRankStatus('온라인 랭킹 연결됨');
+
+    ws.send(JSON.stringify({
+      type: 'set_identity',
+      playerId: singleRankState.playerId,
+      name: singleRankState.playerName,
+    }));
+    ws.send(JSON.stringify({ type: 'single_rank_list', limit: SINGLE_RANK.showCount }));
+  });
+
+  ws.addEventListener('message', (event) => {
+    if (singleRankState.ws !== ws) return;
+    let msg;
+    try {
+      msg = JSON.parse(event.data);
+    } catch (_) {
+      return;
+    }
+    if (!msg || typeof msg.type !== 'string') return;
+
+    if (msg.type === 'single_rank_list' && Array.isArray(msg.entries)) {
+      singleRankState.remoteRows = msg.entries
+        .map(normalizeRankRow)
+        .filter(Boolean)
+        .sort(compareRankRows)
+        .slice(0, SINGLE_RANK.maxSave);
+      renderSingleRank();
+      setRankStatus(singleRankState.remoteRows.length ? '온라인 랭킹 갱신됨' : '온라인 랭킹 비어있음');
+      return;
+    }
+
+    if (msg.type === 'single_rank_ack') {
+      if (Array.isArray(msg.entries)) {
+        singleRankState.remoteRows = msg.entries
+          .map(normalizeRankRow)
+          .filter(Boolean)
+          .sort(compareRankRows)
+          .slice(0, SINGLE_RANK.maxSave);
+        renderSingleRank();
+      }
+      if (Number.isFinite(Number(msg.rank))) {
+        setRankStatus(`온라인 랭킹 반영 완료 · 현재 ${Math.floor(Number(msg.rank))}위`);
+      }
+    }
+  });
+
+  ws.addEventListener('close', () => {
+    if (singleRankState.ws !== ws) return;
+    singleRankState.connected = false;
+    singleRankState.ws = null;
+    setRankScope('LOCAL');
+    setRankStatus('서버 미연결 · 로컬 랭킹');
+    renderSingleRank();
+  });
+
+  ws.addEventListener('error', () => {
+    if (singleRankState.ws !== ws) return;
+    singleRankState.connected = false;
+    singleRankState.ws = null;
+    setRankScope('LOCAL');
+    setRankStatus('서버 연결 실패 · 로컬 랭킹');
+    renderSingleRank();
+  });
+}
+
+function submitSingleRank(resultMode = 'defeat') {
+  const stage = resultMode === 'victory'
+    ? state.maxStage
+    : clamp(Math.floor(state.stage || 1), 1, state.maxStage);
+
+  const row = normalizeRankRow({
+    playerId: singleRankState.playerId,
+    playerName: singleRankState.playerName,
+    stage,
+    kills: state.kills,
+    score: state.score,
+    updatedAt: Date.now(),
+  });
+  if (!row) return;
+
+  updateLocalRank(row);
+  renderSingleRank();
+  setRankStatus(`로컬 랭킹 반영 · Stage ${row.stage} / Kills ${row.kills}`);
+
+  if (singleRankState.connected && singleRankState.ws && singleRankState.ws.readyState === WebSocket.OPEN) {
+    singleRankState.ws.send(JSON.stringify({
+      type: 'single_rank_submit',
+      playerId: singleRankState.playerId,
+      name: singleRankState.playerName,
+      stage: row.stage,
+      kills: row.kills,
+      score: row.score,
+      limit: SINGLE_RANK.showCount,
+    }));
+  }
+}
+
+function initSingleRank() {
+  if (!rankListEl) return;
+  const profile = loadRankProfile();
+  let savedServerUrl = '';
+  try {
+    savedServerUrl = String(localStorage.getItem(SINGLE_RANK.serverKey) || '').trim();
+  } catch (_) {}
+  singleRankState.playerId = profile.playerId || randomPlayerId();
+  singleRankState.playerName = profile.playerName || normalizeRankName('');
+  singleRankState.serverUrl = profile.serverUrl || savedServerUrl || defaultRankServerUrl();
+  singleRankState.localRows = loadLocalRankRows();
+
+  if (rankNameEl) {
+    rankNameEl.value = singleRankState.playerName;
+    rankNameEl.addEventListener('change', applyRankNameFromInput);
+    rankNameEl.addEventListener('blur', applyRankNameFromInput);
+    rankNameEl.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        applyRankNameFromInput();
+        rankNameEl.blur();
+      }
+    });
+  }
+
+  if (rankRefreshEl) {
+    rankRefreshEl.addEventListener('click', () => {
+      if (singleRankState.connected && singleRankState.ws && singleRankState.ws.readyState === WebSocket.OPEN) {
+        singleRankState.ws.send(JSON.stringify({ type: 'single_rank_list', limit: SINGLE_RANK.showCount }));
+        setRankStatus('온라인 랭킹 새로고침 요청');
+      } else {
+        openRankSocket(true);
+      }
+    });
+  }
+
+  saveRankProfile();
+  setRankScope('LOCAL');
+  setRankStatus('로컬 랭킹 준비 완료');
+  renderSingleRank();
+  openRankSocket(false);
 }
 
 function toIndex(c, r) {
@@ -916,6 +1283,7 @@ function startRun() {
 }
 
 function setDefeat() {
+  submitSingleRank('defeat');
   state.mode = 'defeat';
   overlayEl.classList.remove('banner-passive');
   overlayEl.classList.remove('hidden');
@@ -933,6 +1301,7 @@ function setDefeat() {
 }
 
 function setVictory() {
+  submitSingleRank('victory');
   state.mode = 'victory';
   overlayEl.classList.remove('banner-passive');
   overlayEl.classList.remove('hidden');
@@ -2763,5 +3132,6 @@ setSellMode(false);
 refreshBuildHint();
 buildDistanceMap();
 refreshHud();
+initSingleRank();
 loadEnemySprites();
 requestAnimationFrame(frame);

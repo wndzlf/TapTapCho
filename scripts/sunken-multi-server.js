@@ -1,5 +1,7 @@
 const http = require('http');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const WebSocket = require('ws');
 
 const PORT = Number(process.env.SUNKEN_MULTI_PORT || 9091);
@@ -11,6 +13,8 @@ const OFFLINE_GRACE_MS = 3 * 60 * 1000;
 const MAX_PLAYERS = 4;
 const SLOT_COUNT = 8;
 const ACTION_MEMORY = 240;
+const SINGLE_RANK_MAX = 300;
+const SINGLE_RANK_FILE = path.join(__dirname, '..', 'data', 'sunken-single-ranks.json');
 
 const LANES = ['north', 'east', 'south', 'west'];
 
@@ -199,6 +203,93 @@ function listRoomsPayload() {
     t: Date.now(),
   };
 }
+
+function compareSingleRank(a, b) {
+  if (a.stage !== b.stage) return b.stage - a.stage;
+  if (a.kills !== b.kills) return b.kills - a.kills;
+  if (a.score !== b.score) return b.score - a.score;
+  return a.updatedAt - b.updatedAt;
+}
+
+function normalizeSingleRankRow(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const playerId = safePlayerId(raw.playerId);
+  const playerName = safePlayerName(raw.name || raw.playerName);
+  const stage = clamp(Math.floor(Number(raw.stage) || 0), 1, 999);
+  const kills = clamp(Math.floor(Number(raw.kills) || 0), 0, 999999);
+  const score = clamp(Math.floor(Number(raw.score) || 0), 0, 999999999);
+  const updatedAt = Math.floor(Number(raw.updatedAt || Date.now()));
+  return {
+    playerId,
+    playerName,
+    stage,
+    kills,
+    score,
+    updatedAt: Number.isFinite(updatedAt) ? updatedAt : Date.now(),
+  };
+}
+
+function loadSingleRankRows() {
+  try {
+    if (!fs.existsSync(SINGLE_RANK_FILE)) return [];
+    const parsed = JSON.parse(fs.readFileSync(SINGLE_RANK_FILE, 'utf8'));
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map(normalizeSingleRankRow)
+      .filter(Boolean)
+      .sort(compareSingleRank)
+      .slice(0, SINGLE_RANK_MAX);
+  } catch (error) {
+    console.warn('[sunken-multi-server] leaderboard load failed:', error?.message || error);
+    return [];
+  }
+}
+
+function saveSingleRankRows(rows) {
+  try {
+    fs.mkdirSync(path.dirname(SINGLE_RANK_FILE), { recursive: true });
+    fs.writeFileSync(SINGLE_RANK_FILE, JSON.stringify(rows, null, 2));
+  } catch (error) {
+    console.warn('[sunken-multi-server] leaderboard save failed:', error?.message || error);
+  }
+}
+
+function listSingleRankRows(limit = 10) {
+  const lim = clamp(Math.floor(Number(limit) || 10), 1, 50);
+  return singleRankRows.slice(0, lim);
+}
+
+function submitSingleRank(raw) {
+  const row = normalizeSingleRankRow(raw);
+  if (!row) return { ok: false, reason: 'invalid_payload', rank: 0 };
+
+  const idx = singleRankRows.findIndex((it) => it.playerId === row.playerId);
+  if (idx < 0) {
+    singleRankRows.push(row);
+  } else {
+    const prev = singleRankRows[idx];
+    const better = compareSingleRank(row, prev) < 0;
+    singleRankRows[idx] = better
+      ? row
+      : {
+          ...prev,
+          playerName: row.playerName,
+          updatedAt: Math.max(prev.updatedAt, row.updatedAt),
+        };
+  }
+
+  singleRankRows = singleRankRows
+    .map(normalizeSingleRankRow)
+    .filter(Boolean)
+    .sort(compareSingleRank)
+    .slice(0, SINGLE_RANK_MAX);
+
+  saveSingleRankRows(singleRankRows);
+  const rank = singleRankRows.findIndex((it) => it.playerId === row.playerId) + 1;
+  return { ok: true, rank: rank > 0 ? rank : 0 };
+}
+
+let singleRankRows = loadSingleRankRows();
 
 function getLaneSlotProgress(slot) {
   const base = (slot + 1) / (SLOT_COUNT + 1);
@@ -850,6 +941,7 @@ const server = http.createServer((req, res) => {
     service: 'sunken-multi-server',
     port: PORT,
     rooms: Array.from(rooms.values()).map(roomSummary),
+    singleLeaderboardTop: listSingleRankRows(10),
   };
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.end(JSON.stringify(payload));
@@ -859,6 +951,18 @@ const wss = new WebSocket.Server({ server });
 
 function broadcastRoomsToAll() {
   const payload = JSON.stringify(listRoomsPayload());
+  for (const client of wss.clients) {
+    if (client.readyState !== WebSocket.OPEN) continue;
+    client.send(payload);
+  }
+}
+
+function broadcastSingleRanksToAll(limit = 10) {
+  const payload = JSON.stringify({
+    type: 'single_rank_list',
+    entries: listSingleRankRows(limit),
+    t: Date.now(),
+  });
   for (const client of wss.clients) {
     if (client.readyState !== WebSocket.OPEN) continue;
     client.send(payload);
@@ -880,6 +984,11 @@ wss.on('connection', (ws) => {
   });
 
   send(ws, listRoomsPayload());
+  send(ws, {
+    type: 'single_rank_list',
+    entries: listSingleRankRows(10),
+    t: Date.now(),
+  });
 
   ws.on('message', (raw) => {
     let msg;
@@ -908,6 +1017,41 @@ wss.on('connection', (ws) => {
 
     if (msg.type === 'list_rooms') {
       send(ws, listRoomsPayload());
+      return;
+    }
+
+    if (msg.type === 'single_rank_list') {
+      send(ws, {
+        type: 'single_rank_list',
+        entries: listSingleRankRows(msg.limit),
+        t: Date.now(),
+      });
+      return;
+    }
+
+    if (msg.type === 'single_rank_submit') {
+      const result = submitSingleRank({
+        playerId: msg.playerId || ws.identity.playerId,
+        name: msg.name || ws.identity.name,
+        stage: msg.stage,
+        kills: msg.kills,
+        score: msg.score,
+        updatedAt: Date.now(),
+      });
+
+      if (!result.ok) {
+        send(ws, { type: 'error', message: '랭킹 제출 실패' });
+        return;
+      }
+
+      send(ws, {
+        type: 'single_rank_ack',
+        ok: true,
+        rank: result.rank,
+        entries: listSingleRankRows(msg.limit),
+        t: Date.now(),
+      });
+      broadcastSingleRanksToAll(10);
       return;
     }
 

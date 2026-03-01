@@ -29,6 +29,13 @@ body {
   margin: 14px auto 22px;
 }
 
+.top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .mode-tabs {
   display: inline-flex;
   border: 1px solid var(--line);
@@ -65,6 +72,88 @@ header h1 {
 header p {
   margin: 7px 0 12px;
   color: var(--muted);
+}
+
+.single-rank {
+  width: min(360px, 100%);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #141d31, #10182a);
+  padding: 8px 10px;
+  display: grid;
+  gap: 7px;
+}
+
+.rank-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.rank-head strong {
+  font-size: 13px;
+  color: #f3f7ff;
+}
+
+.rank-head span {
+  border: 1px solid #3e567d;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 11px;
+  color: #c8dcff;
+  background: rgba(41, 64, 100, 0.28);
+}
+
+.rank-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.rank-controls input {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid #476189;
+  border-radius: 8px;
+  background: #0f1728;
+  color: #eaf1ff;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+.rank-controls button {
+  border: 1px solid #4f6d9d;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #213457, #182746);
+  color: #e7f0ff;
+  font-size: 12px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.rank-list {
+  margin: 0;
+  padding: 0 0 0 20px;
+  display: grid;
+  gap: 4px;
+  max-height: 170px;
+  overflow-y: auto;
+}
+
+.rank-list li {
+  color: #d7e5fb;
+  font-size: 12px;
+  line-height: 1.28;
+}
+
+.rank-list .top1 {
+  color: #ffe49a;
+  font-weight: 800;
+}
+
+.rank-status {
+  color: #9eb3d4;
+  font-size: 11px;
 }
 
 .hud {
@@ -352,6 +441,34 @@ footer {
   .wrap {
     width: 98vw;
     margin: 8px auto 14px;
+  }
+
+  .top-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .mode-tabs {
+    margin-bottom: 0;
+  }
+
+  .single-rank {
+    width: 100%;
+    padding: 7px 8px;
+    gap: 5px;
+  }
+
+  .rank-head strong {
+    font-size: 12px;
+  }
+
+  .rank-head span,
+  .rank-controls input,
+  .rank-controls button,
+  .rank-list li,
+  .rank-status {
+    font-size: 11px;
   }
 
   header p {
