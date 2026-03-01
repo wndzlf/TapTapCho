@@ -140,11 +140,35 @@ function randomId(prefix = 'a') {
 
 function normalizeServerUrl(value) {
   const raw = String(value || '').trim();
-  if (!raw) {
-    const host = window.location.hostname || 'localhost';
-    return `ws://${host}:9091`;
+  if (!raw) return '';
+  let candidate = raw;
+  if (/^https?:\/\//i.test(candidate)) {
+    candidate = candidate.replace(/^http:\/\//i, 'ws://').replace(/^https:\/\//i, 'wss://');
+  } else if (!/^wss?:\/\//i.test(candidate)) {
+    const proto = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    candidate = `${proto}${candidate}`;
   }
-  return raw;
+
+  try {
+    const parsed = new URL(candidate);
+    if (parsed.protocol !== 'ws:' && parsed.protocol !== 'wss:') return '';
+    const host = parsed.hostname;
+    if (!host) return '';
+    const port = parsed.port ? `:${parsed.port}` : '';
+    return `${parsed.protocol}//${host}${port}`;
+  } catch (_) {
+    return '';
+  }
+}
+
+function fixedMultiServerUrl() {
+  const configured = window.TapTapChoConfig?.multiServer || '';
+  return normalizeServerUrl(configured);
+}
+
+function defaultMultiServerUrl() {
+  const host = window.location.hostname || 'localhost';
+  return `ws://${host}:9091`;
 }
 
 function normalizeName(value) {
@@ -234,9 +258,10 @@ function savePending() {
 }
 
 function loadStorage() {
-  const host = window.location.hostname || 'localhost';
-
-  client.serverUrl = normalizeServerUrl(localStorage.getItem(STORAGE.server) || `ws://${host}:9091`);
+  const fixedServer = fixedMultiServerUrl();
+  client.serverUrl = fixedServer
+    || normalizeServerUrl(localStorage.getItem(STORAGE.server) || '')
+    || defaultMultiServerUrl();
   client.playerId = String(localStorage.getItem(STORAGE.playerId) || '').trim();
   if (!client.playerId) {
     client.playerId = randomId('p').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 28);
@@ -264,6 +289,8 @@ function loadStorage() {
     }));
 
   serverUrlEl.value = client.serverUrl;
+  serverUrlEl.readOnly = Boolean(fixedServer);
+  serverUrlEl.title = fixedServer ? '고정 서버 모드' : '';
   playerNameEl.value = client.playerName;
   roomNameEl.value = 'Sunken Team Room';
   if (roomSizeEl) roomSizeEl.value = String(client.createMaxPlayers);
@@ -283,9 +310,13 @@ function setOverlay(text, visible) {
 }
 
 function connect(silent = false) {
-  client.serverUrl = normalizeServerUrl(serverUrlEl.value);
+  const fixedServer = fixedMultiServerUrl();
+  client.serverUrl = fixedServer
+    || normalizeServerUrl(serverUrlEl.value)
+    || defaultMultiServerUrl();
   client.playerName = normalizeName(playerNameEl.value);
   serverUrlEl.value = client.serverUrl;
+  serverUrlEl.readOnly = Boolean(fixedServer);
   playerNameEl.value = client.playerName;
   saveInputs();
 

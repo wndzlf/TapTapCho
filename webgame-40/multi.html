@@ -94,6 +94,13 @@
   </div>
 
   <script src="../assets/js/neon-audio.js"></script>
+  <script>
+    window.TapTapChoConfig = Object.assign({}, window.TapTapChoConfig, {
+      // 멀티 고정 서버 주소 (예: wss://sunken-multi.example.com)
+      // 빈 문자열이면 입력값/기본값(ws://<host>:9091)을 사용합니다.
+      multiServer: 'wss://trees-innovation-covers-ears.trycloudflare.com',
+    });
+  </script>
   <script src="multi.js"></script>
 </body>
 </html>
