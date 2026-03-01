@@ -86,10 +86,16 @@ const TOWER_TYPES = {
 
 const ENEMY_COLORS = {
   ghoul: '#83e693',
-  runner: '#ffbe6f',
+  bat: '#ffbe6f',
+  hopper: '#93e7ff',
   brute: '#ffdbe0',
-  siege: '#ff8f8f',
+  elder: '#d9b2ff',
   raider: '#91b8ff',
+  crusher: '#ff8f8f',
+  lord: '#ffa0f2',
+  // 구버전 서버 상태와의 호환 색상.
+  runner: '#ffbe6f',
+  siege: '#ff8f8f',
   boss: '#ffa0f2',
 };
 
@@ -910,8 +916,9 @@ function drawEnemies(room) {
     ctx.strokeStyle = '#111f3d';
     ctx.lineWidth = 1.5;
 
-    const w = enemy.kind === 'boss' ? 26 : 18;
-    const h = enemy.kind === 'boss' ? 18 : 12;
+    const isBossLike = enemy.kind === 'lord' || enemy.kind === 'boss';
+    const w = isBossLike ? 26 : 18;
+    const h = isBossLike ? 18 : 12;
 
     const rx = p.x - w * 0.5;
     const ry = p.y - h * 0.5;

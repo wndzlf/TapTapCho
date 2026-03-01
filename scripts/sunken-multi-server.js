@@ -27,6 +27,12 @@ const LANE_PRESETS = {
   3: ['north', 'east', 'west'],
   4: [...LANES],
 };
+const ENEMY_KIND_ALIASES = {
+  runner: 'bat',
+  siege: 'crusher',
+  boss: 'lord',
+};
+const ENEMY_KIND_SET = new Set(['ghoul', 'bat', 'hopper', 'brute', 'elder', 'raider', 'crusher', 'lord']);
 
 const TOWER_TYPES = {
   sunken: {
@@ -159,6 +165,12 @@ function cloneLaneSlots(slots) {
 function roomLanes(room) {
   const lanes = Array.isArray(room?.activeLanes) ? room.activeLanes.filter((lane) => LANES.includes(lane)) : [];
   return lanes.length ? lanes : [...LANES];
+}
+
+function normalizeEnemyKind(raw) {
+  const kindRaw = String(raw || 'ghoul').slice(0, 20).toLowerCase();
+  const kind = ENEMY_KIND_ALIASES[kindRaw] || kindRaw;
+  return ENEMY_KIND_SET.has(kind) ? kind : 'ghoul';
 }
 
 function createRoom(name, maxPlayers = MAX_PLAYERS) {
@@ -438,7 +450,7 @@ function normalizeEnemyState(raw, activeLanes) {
   const lane = String(raw.lane || '');
   if (!activeLanes.includes(lane)) return null;
   const id = clamp(toFiniteInt(raw.id, 0), 1, 1_000_000_000);
-  const kind = String(raw.kind || 'ghoul').slice(0, 20) || 'ghoul';
+  const kind = normalizeEnemyKind(raw.kind || 'ghoul');
   const maxHp = clamp(toFiniteInt(raw.maxHp, 1), 1, 9999999);
   const hp = clamp(Number(raw.hp), 0, maxHp);
   return {
@@ -451,9 +463,10 @@ function normalizeEnemyState(raw, activeLanes) {
     speed: clamp(toFiniteNumber(raw.speed, 0.08), 0.01, 5),
     reward: clamp(toFiniteInt(raw.reward, 0), 0, 1000000),
     coreDamage: clamp(toFiniteInt(raw.coreDamage, 1), 1, 1000),
-    siegeDamage: clamp(toFiniteInt(raw.siegeDamage, 0), 0, 1000),
-    siegeRate: clamp(toFiniteNumber(raw.siegeRate, 1), 0.1, 30),
-    siegeCooldown: clamp(toFiniteNumber(raw.siegeCooldown, 0), 0, 30),
+    // 멀티는 싱글과 동일하게 "공성 타워 파괴 몹"을 쓰지 않는다.
+    siegeDamage: 0,
+    siegeRate: 0,
+    siegeCooldown: 0,
     slowTimer: clamp(toFiniteNumber(raw.slowTimer, 0), 0, 30),
     slowMul: clamp(toFiniteNumber(raw.slowMul, 1), 0.05, 1),
     weakTimer: clamp(toFiniteNumber(raw.weakTimer, 0), 0, 30),
@@ -750,39 +763,68 @@ function getLaneSlotProgress(slot) {
 }
 
 function chooseEnemyArchetype(wave) {
+  const stage = Math.max(1, Math.floor(Number(wave) || 1));
+  const nightmareIndex = Math.max(0, stage - 20);
   const roll = Math.random();
-  if (wave < 3) {
-    return roll < 0.76 ? 'ghoul' : 'runner';
-  }
-  if (wave < 6) {
-    if (roll < 0.52) return 'ghoul';
-    if (roll < 0.82) return 'runner';
-    return 'brute';
-  }
-  if (wave < 10) {
-    if (roll < 0.38) return 'ghoul';
-    if (roll < 0.66) return 'runner';
-    if (roll < 0.9) return 'brute';
-    return 'siege';
-  }
+  const batChance = stage >= 3
+    ? clamp(0.22 + stage * 0.004 - nightmareIndex * 0.006, 0.1, 0.34)
+    : 0;
+  const bruteChance = stage >= 4
+    ? clamp(0.14 + stage * 0.01 + nightmareIndex * 0.012, 0.14, 0.45)
+    : 0;
+  const elderChance = stage >= 7
+    ? clamp(0.08 + (stage - 7) * 0.014 + nightmareIndex * 0.018, 0.08, 0.42)
+    : 0;
+  const raiderChance = stage >= 5
+    ? clamp(0.1 + (stage - 5) * 0.012 + nightmareIndex * 0.022, 0.1, 0.42)
+    : 0;
+  const crusherChance = stage >= 8
+    ? clamp(0.06 + (stage - 8) * 0.011 + nightmareIndex * 0.024, 0.06, 0.38)
+    : 0;
+  const hopperChance = stage >= 13
+    ? clamp(0.05 + (stage - 13) * 0.012 + nightmareIndex * 0.018, 0.05, 0.28)
+    : 0;
 
-  if (roll < 0.3) return 'runner';
-  if (roll < 0.58) return 'brute';
-  if (roll < 0.82) return 'siege';
-  return 'raider';
+  let threshold = crusherChance;
+  if (roll < threshold) return 'crusher';
+  threshold += elderChance;
+  if (roll < threshold) return 'elder';
+  threshold += raiderChance;
+  if (roll < threshold) return 'raider';
+  threshold += bruteChance;
+  if (roll < threshold) return 'brute';
+  threshold += hopperChance;
+  if (roll < threshold) return 'hopper';
+  if (roll < threshold + batChance) return 'bat';
+  return 'ghoul';
 }
 
-function makeEnemy(room, lane, kind) {
-  const waveScaleHp = 1 + (room.wave - 1) * 0.16;
-  const waveScaleSpeed = 1 + (room.wave - 1) * 0.032;
-
+function makeEnemy(room, lane, kindRaw) {
+  const kind = normalizeEnemyKind(kindRaw);
+  const wave = Math.max(1, Math.floor(Number(room.wave) || 1));
+  const stageIndex = wave - 1;
+  const earlyStageIndex = Math.min(stageIndex, 9);
+  const lateIndex = Math.max(0, wave - 10);
+  const nightmareIndex = Math.max(0, wave - 20);
+  const waveScaleHp = (
+    1
+    + earlyStageIndex * 0.12
+    + lateIndex * 0.08
+    + lateIndex * lateIndex * 0.001
+    + nightmareIndex * 0.2
+    + nightmareIndex * nightmareIndex * 0.012
+  );
+  const waveScaleSpeed = 1 + stageIndex * 0.018 + lateIndex * 0.006 + nightmareIndex * 0.014;
+  const rewardScale = 1 + stageIndex * 0.048 + nightmareIndex * 0.03;
   const table = {
-    ghoul: { hp: 74, speed: 0.08, reward: 11, coreDamage: 1, siegeDamage: 0, siegeRate: 0 },
-    runner: { hp: 58, speed: 0.122, reward: 10, coreDamage: 1, siegeDamage: 0, siegeRate: 0 },
-    brute: { hp: 160, speed: 0.064, reward: 20, coreDamage: 2, siegeDamage: 0, siegeRate: 0 },
-    siege: { hp: 220, speed: 0.054, reward: 28, coreDamage: 3, siegeDamage: 24, siegeRate: 1.25 },
-    raider: { hp: 130, speed: 0.095, reward: 22, coreDamage: 2, siegeDamage: 12, siegeRate: 1.4 },
-    boss: { hp: 560, speed: 0.046, reward: 64, coreDamage: 8, siegeDamage: 34, siegeRate: 1.0 },
+    ghoul: { hp: 74, speed: 0.08, reward: 11, coreDamage: 1 },
+    bat: { hp: 56, speed: 0.125, reward: 10, coreDamage: 1 },
+    hopper: { hp: 48, speed: 0.15, reward: 13, coreDamage: 2 },
+    brute: { hp: 164, speed: 0.068, reward: 20, coreDamage: 2 },
+    elder: { hp: 258, speed: 0.062, reward: 26, coreDamage: 3 },
+    raider: { hp: 132, speed: 0.102, reward: 23, coreDamage: 2 },
+    crusher: { hp: 224, speed: 0.092, reward: 31, coreDamage: 3 },
+    lord: { hp: 620, speed: 0.056, reward: 68, coreDamage: 5 },
   };
 
   const base = table[kind] || table.ghoul;
@@ -794,15 +836,15 @@ function makeEnemy(room, lane, kind) {
     hp: Math.round(base.hp * waveScaleHp),
     maxHp: Math.round(base.hp * waveScaleHp),
     speed: base.speed * waveScaleSpeed,
-    reward: Math.round(base.reward * (1 + (room.wave - 1) * 0.05)),
+    reward: Math.round(base.reward * rewardScale),
     coreDamage: base.coreDamage,
     slowTimer: 0,
     slowMul: 1,
     weakTimer: 0,
     weakMul: 1,
-    siegeDamage: Math.round(base.siegeDamage * (1 + (room.wave - 1) * 0.08)),
-    siegeRate: base.siegeRate,
-    siegeCooldown: rand(0.2, 0.8),
+    siegeDamage: 0,
+    siegeRate: 0,
+    siegeCooldown: 0,
   };
 }
 
@@ -811,17 +853,38 @@ function startWave(room, wave) {
   room.waveState = 'spawning';
   room.waveCooldown = 0;
   room.spawnTimer = 0;
-  room.spawnInterval = clamp(1.05 - (wave - 1) * 0.032, 0.32, 1.05);
+  const earlyWave = Math.min(wave, 10);
+  const lateIndex = Math.max(0, wave - 10);
+  const nightmareIndex = Math.max(0, wave - 20);
+  room.spawnInterval = clamp(
+    0.62 - earlyWave * 0.018 - lateIndex * 0.008 - nightmareIndex * 0.005,
+    0.18,
+    0.62,
+  );
   const lanes = roomLanes(room);
 
-  const perLane = 5 + Math.floor(wave * 1.9);
+  const perLane = (
+    7
+    + Math.floor(wave * 1.7)
+    + Math.floor(lateIndex * 0.6)
+    + Math.floor(nightmareIndex * 1.2)
+  );
   for (const lane of LANES) {
     room.laneSpawnRemain[lane] = lanes.includes(lane) ? perLane : 0;
   }
 
-  if (wave % 5 === 0) {
+  if (wave >= 21) {
     for (const lane of lanes) {
-      room.enemies.push(makeEnemy(room, lane, 'boss'));
+      room.enemies.push(makeEnemy(room, lane, 'lord'));
+    }
+  } else if (wave % 5 === 0) {
+    for (const lane of lanes) {
+      room.enemies.push(makeEnemy(room, lane, 'lord'));
+    }
+  }
+  if (wave >= 27) {
+    for (const lane of lanes) {
+      room.enemies.push(makeEnemy(room, lane, 'lord'));
     }
   }
 }
@@ -1230,7 +1293,16 @@ function spawnStep(room) {
 
   if (room.wave >= 8 && Math.random() < 0.34 && lanes.length) {
     const lane = lanes[Math.floor(Math.random() * lanes.length)];
-    room.enemies.push(makeEnemy(room, lane, 'siege'));
+    let extraType = 'raider';
+    if (room.wave >= 13 && Math.random() < 0.34) {
+      extraType = 'hopper';
+    } else if (room.wave >= 8 && Math.random() < 0.44) {
+      extraType = 'crusher';
+    }
+    if (room.wave >= 18 && Math.random() < 0.22) {
+      extraType = 'elder';
+    }
+    room.enemies.push(makeEnemy(room, lane, extraType));
   }
 }
 
@@ -1293,7 +1365,6 @@ function updateRoom(room, now, dt) {
   if (room.phase === 'running') {
     updateWave(room, dt);
     updateTowers(room, dt);
-    updateSiegeAttacks(room, dt);
     updateEnemies(room, dt);
 
     if (room.coreHp <= 0) {
