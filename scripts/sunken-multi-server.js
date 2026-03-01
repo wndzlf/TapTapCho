@@ -1421,6 +1421,30 @@ function leaveRoom(ws, shouldDestroyPlayer = false) {
   ws.playerId = '';
 }
 
+function resetRoomForNewRun(room) {
+  room.coreHp = room.coreHpMax;
+  room.teamGold = 320;
+  room.kills = 0;
+  room.phase = 'running';
+  room.waveState = 'spawning';
+  room.waveCooldown = 0;
+  room.spawnTimer = 0;
+  room.enemies = [];
+
+  for (const lane of LANES) {
+    room.laneSpawnRemain[lane] = 0;
+    room.laneTowers[lane] = Array.from({ length: SLOT_COUNT }, () => null);
+  }
+
+  for (const player of room.players.values()) {
+    player.kills = 0;
+    player.builds = 0;
+  }
+
+  startWave(room, 1);
+  markMultiStateDirty();
+}
+
 function joinRoom(ws, roomId, playerId, playerName) {
   const room = rooms.get(roomId);
   if (!room) {
@@ -1462,6 +1486,15 @@ function joinRoom(ws, roomId, playerId, playerName) {
 
   ws.roomId = room.id;
   ws.playerId = player.id;
+
+  // 패배 상태 방은 재입장 시 즉시 새 런으로 초기화해 "배치 불가" 상태를 없앤다.
+  if (room.phase !== 'running' || room.coreHp <= 0) {
+    resetRoomForNewRun(room);
+    broadcastRoom(room, {
+      type: 'room_notice',
+      message: '방이 새 라운드로 초기화되었습니다.',
+    });
+  }
 
   room.lastActiveAt = Date.now();
   markMultiStateDirty();

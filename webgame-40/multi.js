@@ -50,6 +50,10 @@ const W = canvas.width;
 const H = canvas.height;
 const CX = W * 0.5;
 const CY = H * 0.5;
+const LANE_LEFT_X = W * 0.08;
+const LANE_RIGHT_X = W * 0.82;
+const CORE_X = W * 0.92;
+const CORE_Y = H * 0.5;
 
 const STORAGE = {
   server: 'sunken-multi-server-url',
@@ -199,25 +203,42 @@ function roomActiveLanes(room) {
   return lanes.length ? lanes : [...LANES];
 }
 
+function normalizeEnemyKind(kindRaw) {
+  const key = String(kindRaw || '').toLowerCase();
+  if (key === 'runner') return 'bat';
+  if (key === 'siege') return 'crusher';
+  if (key === 'boss') return 'lord';
+  return key || 'ghoul';
+}
+
+function normalizeSnapshot(roomRaw) {
+  if (!roomRaw || typeof roomRaw !== 'object') return null;
+  const room = { ...roomRaw };
+  const enemies = Array.isArray(roomRaw.enemies) ? roomRaw.enemies : [];
+  room.enemies = enemies.map((enemy) => ({
+    ...enemy,
+    kind: normalizeEnemyKind(enemy?.kind),
+  }));
+  return room;
+}
+
 function laneGroupText(room) {
   return roomActiveLanes(room)
     .map((lane) => LANE_LABEL[lane] || lane)
     .join('/');
 }
 
+function laneY(lane) {
+  // 멀티도 싱글과 같은 "수평 전선" 느낌으로 통일한다.
+  if (lane === 'north') return H * 0.2;
+  if (lane === 'east') return H * 0.4;
+  if (lane === 'south') return H * 0.6;
+  return H * 0.8;
+}
+
 function lanePoint(lane, progress) {
   const t = clamp(progress, 0, 1);
-
-  if (lane === 'north') {
-    return { x: CX, y: lerp(H * 0.08, CY, t) };
-  }
-  if (lane === 'east') {
-    return { x: lerp(W * 0.92, CX, t), y: CY };
-  }
-  if (lane === 'south') {
-    return { x: CX, y: lerp(H * 0.92, CY, t) };
-  }
-  return { x: lerp(W * 0.08, CX, t), y: CY };
+  return { x: lerp(LANE_LEFT_X, LANE_RIGHT_X, t), y: laneY(lane) };
 }
 
 function slotProgress(slot) {
@@ -440,7 +461,7 @@ function connect(silent = false) {
     }
 
     if (msg.type === 'snapshot') {
-      client.snapshot = msg.room || null;
+      client.snapshot = normalizeSnapshot(msg.room || null);
       if (client.snapshot) {
         setOverlay('', false);
       }
@@ -680,7 +701,7 @@ function refreshHud() {
 
   if (client.lane) {
     const sellText = client.sellMode ? 'ON' : 'OFF';
-    hintTextEl.textContent = `내 라인(${LANE_LABEL[client.lane]}) 슬롯 터치로 배치 · E 판매모드(${sellText}) · 오프라인 작업은 Pending 유지`;
+    hintTextEl.textContent = `내 라인(${LANE_LABEL[client.lane]}) 슬롯을 터치/클릭해 배치 · E 판매모드(${sellText}) · 오프라인 작업은 Pending 유지`;
   }
 }
 
@@ -757,9 +778,18 @@ function getMyLaneSlotByPointer(x, y) {
     }
   }
 
-  const maxRadius = isMobile ? 36 : 28;
-  if (best === null || bestD > maxRadius * maxRadius) return null;
-  return best;
+  const maxRadius = isMobile ? 70 : 48;
+  if (best === null) return null;
+  if (bestD <= maxRadius * maxRadius) return best;
+
+  // 슬롯 원을 정확히 누르지 않아도, 본인 라인 근처를 찍으면 가장 가까운 슬롯으로 보정한다.
+  const laneCenterY = laneY(client.lane);
+  const inLaneBand = Math.abs(y - laneCenterY) <= (isMobile ? 34 : 26);
+  const inLaneX = x >= LANE_LEFT_X - 22 && x <= LANE_RIGHT_X + 22;
+  if (!inLaneBand || !inLaneX) return null;
+
+  const t = clamp((x - LANE_LEFT_X) / Math.max(1, (LANE_RIGHT_X - LANE_LEFT_X)), 0, 1);
+  return clamp(Math.round(t * (SLOT_COUNT - 1)), 0, SLOT_COUNT - 1);
 }
 
 function issueBuildOrSell(slot) {
@@ -781,10 +811,25 @@ function issueBuildOrSell(slot) {
 }
 
 function drawBackgroundGrid() {
-  ctx.fillStyle = '#0b1426';
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+  bgGrad.addColorStop(0, '#4a503f');
+  bgGrad.addColorStop(0.55, '#3c4434');
+  bgGrad.addColorStop(1, '#2a3026');
+  ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
-  ctx.strokeStyle = 'rgba(95, 124, 173, 0.2)';
+  // 싱글과 통일된 전장 도로 레이어.
+  for (const lane of LANES) {
+    const ly = laneY(lane);
+    const road = ctx.createLinearGradient(0, ly - 18, 0, ly + 18);
+    road.addColorStop(0, 'rgba(48, 43, 33, 0.62)');
+    road.addColorStop(0.5, 'rgba(72, 62, 43, 0.78)');
+    road.addColorStop(1, 'rgba(44, 40, 31, 0.62)');
+    ctx.fillStyle = road;
+    ctx.fillRect(0, ly - 20, W, 40);
+  }
+
+  ctx.strokeStyle = 'rgba(95, 124, 173, 0.16)';
   ctx.lineWidth = 1;
 
   const gap = isMobile ? 34 : 30;
@@ -827,10 +872,21 @@ function drawLanes() {
     ctx.setLineDash([]);
 
     const spawn = lanePoint(lane, 0);
+    const laneEnd = lanePoint(lane, 1);
     ctx.fillStyle = LANE_COLOR[lane];
     ctx.beginPath();
     ctx.arc(spawn.x, spawn.y, 11, 0, Math.PI * 2);
     ctx.fill();
+    ctx.beginPath();
+    ctx.arc(laneEnd.x, laneEnd.y, 7, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(215, 233, 255, 0.2)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(laneEnd.x, laneEnd.y);
+    ctx.lineTo(CORE_X, CORE_Y);
+    ctx.stroke();
 
     ctx.fillStyle = '#dbe9ff';
     ctx.font = 'bold 14px system-ui';
@@ -949,18 +1005,18 @@ function drawCore(room) {
 
   ctx.fillStyle = 'rgba(171, 205, 255, 0.1)';
   ctx.beginPath();
-  ctx.arc(CX, CY, aura, 0, Math.PI * 2);
+  ctx.arc(CORE_X, CORE_Y, aura, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = hpRate > 0.36 ? '#7af3a8' : '#ff9ab2';
   ctx.beginPath();
-  ctx.arc(CX, CY, radius, 0, Math.PI * 2);
+  ctx.arc(CORE_X, CORE_Y, radius, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = '#0a1426';
   ctx.font = 'bold 18px system-ui';
   ctx.textAlign = 'center';
-  ctx.fillText(String(Math.round(coreHp)), CX, CY + 6);
+  ctx.fillText(String(Math.round(coreHp)), CORE_X, CORE_Y + 6);
 }
 
 function drawTopHud() {
