@@ -2802,23 +2802,163 @@ function drawPathPreview() {
   ctx.stroke();
 }
 
+function drawSpawnBeacon(x, y, now) {
+  const pulse = 0.5 + 0.5 * Math.sin(now * 0.008);
+  const haloR = 14 + pulse * 3.5;
+
+  ctx.save();
+  const halo = ctx.createRadialGradient(x, y, 2, x, y, haloR + 6);
+  halo.addColorStop(0, 'rgba(184, 255, 219, 0.68)');
+  halo.addColorStop(0.55, 'rgba(112, 232, 179, 0.3)');
+  halo.addColorStop(1, 'rgba(79, 190, 140, 0)');
+  ctx.fillStyle = halo;
+  ctx.beginPath();
+  ctx.arc(x, y, haloR + 6, 0, TAU);
+  ctx.fill();
+
+  ctx.fillStyle = '#89f2be';
+  ctx.beginPath();
+  ctx.arc(x, y, 10, 0, TAU);
+  ctx.fill();
+
+  ctx.strokeStyle = `rgba(201, 255, 224, ${0.48 + pulse * 0.35})`;
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.arc(x, y, haloR, 0, TAU);
+  ctx.stroke();
+
+  ctx.fillStyle = '#d9ffe7';
+  ctx.beginPath();
+  ctx.moveTo(x - 3.8, y - 5.2);
+  ctx.lineTo(x + 5.6, y);
+  ctx.lineTo(x - 3.8, y + 5.2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawEmperorFortress(x, y, now) {
+  const hpRatio = clamp(state.baseHp / 20, 0, 1);
+  const lowHp = hpRatio < 0.45;
+  const pulse = 0.5 + 0.5 * Math.sin(now * 0.008);
+  const warnPulse = 0.5 + 0.5 * Math.sin(now * 0.018);
+
+  ctx.save();
+  ctx.translate(x, y);
+
+  // 그림자/바닥
+  ctx.fillStyle = 'rgba(8, 12, 20, 0.52)';
+  ctx.beginPath();
+  ctx.ellipse(0, 11.5, 20, 6.5, 0, 0, TAU);
+  ctx.fill();
+
+  const baseGlow = ctx.createRadialGradient(0, 1, 2, 0, 1, 28);
+  baseGlow.addColorStop(0, 'rgba(255, 226, 174, 0.36)');
+  baseGlow.addColorStop(0.6, 'rgba(184, 109, 130, 0.2)');
+  baseGlow.addColorStop(1, 'rgba(55, 28, 40, 0)');
+  ctx.fillStyle = baseGlow;
+  ctx.beginPath();
+  ctx.arc(0, 1, 28, 0, TAU);
+  ctx.fill();
+
+  // 외곽 링
+  ctx.strokeStyle = `rgba(255, 204, 148, ${0.52 + pulse * 0.3})`;
+  ctx.lineWidth = 2.1;
+  ctx.beginPath();
+  ctx.arc(0, 1, 15.5 + pulse * 0.8, 0, TAU);
+  ctx.stroke();
+
+  // 요새 본체
+  const bodyGrad = ctx.createLinearGradient(0, -12, 0, 12);
+  bodyGrad.addColorStop(0, '#f6d89a');
+  bodyGrad.addColorStop(0.55, '#bc8e58');
+  bodyGrad.addColorStop(1, '#6f4c32');
+  ctx.fillStyle = bodyGrad;
+  ctx.beginPath();
+  ctx.moveTo(-9.5, 8.8);
+  ctx.lineTo(-11.2, -3);
+  ctx.lineTo(-5.2, -9.4);
+  ctx.lineTo(5.2, -9.4);
+  ctx.lineTo(11.2, -3);
+  ctx.lineTo(9.5, 8.8);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = '#3c2619';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  // 좌우 타워
+  ctx.fillStyle = '#9f6c46';
+  ctx.fillRect(-13.8, -5.5, 3.6, 9.8);
+  ctx.fillRect(10.2, -5.5, 3.6, 9.8);
+  ctx.fillStyle = '#d7aa73';
+  ctx.fillRect(-14.6, -7.2, 5.2, 2.5);
+  ctx.fillRect(9.4, -7.2, 5.2, 2.5);
+
+  // 중앙 코어
+  const coreGrad = ctx.createRadialGradient(0, -0.6, 1, 0, -0.6, 6.3);
+  coreGrad.addColorStop(0, hpRatio > 0.45 ? '#fff8d6' : '#ffe0b6');
+  coreGrad.addColorStop(0.5, hpRatio > 0.45 ? '#ffcf79' : '#ff9d87');
+  coreGrad.addColorStop(1, hpRatio > 0.45 ? '#cc7c2b' : '#9f3f46');
+  ctx.fillStyle = coreGrad;
+  ctx.beginPath();
+  ctx.arc(0, -0.6, 5.7, 0, TAU);
+  ctx.fill();
+
+  ctx.strokeStyle = 'rgba(255, 243, 212, 0.76)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.arc(0, -0.6, 3.1 + pulse * 0.6, 0, TAU);
+  ctx.stroke();
+
+  // 왕관 장식
+  ctx.fillStyle = '#ffdd91';
+  ctx.beginPath();
+  ctx.moveTo(-6.8, -10.1);
+  ctx.lineTo(-4.3, -15.2);
+  ctx.lineTo(-1.2, -11.1);
+  ctx.lineTo(0, -16.2);
+  ctx.lineTo(1.2, -11.1);
+  ctx.lineTo(4.3, -15.2);
+  ctx.lineTo(6.8, -10.1);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#6b4727';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // 내구 인디케이터(텍스트 대신 5칸)
+  const pipCount = 5;
+  const alivePips = Math.round(hpRatio * pipCount);
+  for (let i = 0; i < pipCount; i += 1) {
+    const px = -10 + i * 5;
+    ctx.fillStyle = i < alivePips ? '#ffd68f' : 'rgba(98, 68, 53, 0.88)';
+    ctx.fillRect(px, 11.8, 3.4, 1.8);
+  }
+
+  if (lowHp) {
+    ctx.strokeStyle = `rgba(255, 105, 123, ${0.42 + warnPulse * 0.44})`;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.arc(0, 1, 19 + warnPulse * 1.8, 0, TAU);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
 function drawEndpoints() {
   const sp = cellCenter(SPAWN.c, SPAWN.r);
   const gp = cellCenter(GOAL.c, GOAL.r);
+  const now = performance.now();
 
-  ctx.fillStyle = '#7df7be';
-  ctx.beginPath();
-  ctx.arc(sp.x, sp.y, 11, 0, TAU);
-  ctx.fill();
-
-  ctx.fillStyle = '#ff8da2';
-  ctx.beginPath();
-  ctx.arc(gp.x, gp.y, 12, 0, TAU);
-  ctx.fill();
+  drawSpawnBeacon(sp.x, sp.y, now);
+  drawEmperorFortress(gp.x, gp.y, now);
 
   if (state.emperorShieldTimer > 0.001) {
     const remainRatio = clamp(state.emperorShieldTimer / EMPEROR_SHIELD_DURATION, 0, 1);
-    const pulse = 0.5 + 0.5 * Math.sin(performance.now() * 0.012);
+    const pulse = 0.5 + 0.5 * Math.sin(now * 0.012);
     const shieldR = 17 + pulse * 3 + (1 - remainRatio) * 3;
 
     ctx.save();
