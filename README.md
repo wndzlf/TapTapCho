@@ -59,6 +59,55 @@ python3 -m http.server 8080
 - 연결이 끊기면 우상단 `새로고침/재연결` 버튼이 표시됩니다.
 - 끊긴 상태에서 한 배치/판매 작업은 Pending 큐로 저장되고, 새로고침 후 재연결 시 자동 재전송됩니다.
 
+### 싱글 랭킹 서버 등록(맥미니 호스트)
+
+싱글 모드에서도 플레이어 닉네임을 서버에 등록하고 기록을 계속 유지할 수 있습니다.
+
+1. 맥미니에서 랭킹/멀티 서버 실행:
+
+```bash
+cd /Users/user/TapTapCho
+npm install
+npm run sunken-multi-server
+```
+
+2. 게임 정적 서버 실행:
+
+```bash
+cd /Users/user/TapTapCho
+python3 -m http.server 8080
+```
+
+3. 맥미니 IP 확인:
+
+```bash
+ipconfig getifaddr en0
+```
+
+(`en0`가 비어 있으면 `en1` 확인)
+
+4. 싱글 모드(`/webgame-40/index.html`) 상단 랭킹 패널에서:
+- `닉네임` 입력
+- `랭킹 서버`에 `ws://<맥미니IP>:9091` 입력
+- `등록/저장` 클릭
+
+5. 저장 위치:
+- 싱글 랭킹 점수: `/Users/user/TapTapCho/data/sunken-single-ranks.json`
+- 플레이어 등록 정보: `/Users/user/TapTapCho/data/sunken-single-players.json`
+
+6. 연결 점검:
+
+```bash
+curl http://<맥미니IP>:9091
+```
+
+`ok: true`와 `singleLeaderboardTop`가 보이면 정상입니다.
+
+연결이 안 될 때 체크:
+- 맥미니 방화벽에서 Node(`node`) 인바운드 허용
+- 공유기/같은 와이파이 망인지 확인
+- 서버 포트 변경 시: `SUNKEN_MULTI_PORT=9091 npm run sunken-multi-server`
+
 ## 2) 개발 원칙
 
 - 5초 안에 재미 포인트가 보여야 합니다.

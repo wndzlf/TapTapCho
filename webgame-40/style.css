@@ -108,6 +108,7 @@ header p {
 .rank-controls {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .rank-controls input {
@@ -129,6 +130,10 @@ header p {
   font-size: 12px;
   padding: 6px 10px;
   cursor: pointer;
+}
+
+.rank-controls-server input {
+  width: 100%;
 }
 
 .rank-list {
@@ -497,6 +502,10 @@ footer {
   .rank-list li,
   .rank-status {
     font-size: 11px;
+  }
+
+  .rank-controls-main button {
+    padding: 6px 8px;
   }
 
   header p {

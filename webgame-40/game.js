@@ -15,6 +15,8 @@ const buildHintEl = document.getElementById('buildHint');
 const modeHelpEl = document.getElementById('modeHelp');
 const towerGuideEl = document.getElementById('towerGuide');
 const rankNameEl = document.getElementById('rankName');
+const rankSaveEl = document.getElementById('rankSave');
+const rankServerUrlEl = document.getElementById('rankServerUrl');
 const rankRefreshEl = document.getElementById('rankRefresh');
 const rankListEl = document.getElementById('rankList');
 const rankScopeEl = document.getElementById('rankScope');
@@ -383,8 +385,12 @@ function randomPlayerId() {
   return `p-${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
 }
 
+function sanitizeRankName(raw) {
+  return String(raw || '').trim().replace(/[^a-zA-Z0-9가-힣 _-]/g, '').slice(0, 14);
+}
+
 function normalizeRankName(raw) {
-  const name = String(raw || '').trim().replace(/[^a-zA-Z0-9가-힣 _-]/g, '').slice(0, 14);
+  const name = sanitizeRankName(raw);
   return name || `Player${Math.floor(rand(100, 999))}`;
 }
 
@@ -432,7 +438,7 @@ function loadRankProfile() {
   try {
     const parsed = JSON.parse(localStorage.getItem(SINGLE_RANK.profileKey) || '{}');
     const playerId = String(parsed.playerId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 36);
-    const playerName = normalizeRankName(parsed.playerName || '');
+    const playerName = sanitizeRankName(parsed.playerName || '');
     const serverUrl = String(parsed.serverUrl || '').trim();
     return { playerId, playerName, serverUrl };
   } catch (_) {
@@ -529,20 +535,94 @@ function updateLocalRank(row) {
   saveLocalRankRows();
 }
 
-function applyRankNameFromInput() {
-  if (!rankNameEl) return;
-  const normalized = normalizeRankName(rankNameEl.value);
-  rankNameEl.value = normalized;
-  singleRankState.playerName = normalized;
+function normalizeRankServerUrl(raw) {
+  const source = String(raw || '').trim();
+  if (!source) return '';
+  let candidate = source;
+  if (/^https?:\/\//i.test(candidate)) {
+    candidate = candidate.replace(/^http:\/\//i, 'ws://').replace(/^https:\/\//i, 'wss://');
+  } else if (!/^wss?:\/\//i.test(candidate)) {
+    const proto = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    candidate = `${proto}${candidate}`;
+  }
+
+  try {
+    const parsed = new URL(candidate);
+    if (parsed.protocol !== 'ws:' && parsed.protocol !== 'wss:') return '';
+    const host = parsed.hostname;
+    if (!host) return '';
+    const port = parsed.port ? `:${parsed.port}` : '';
+    return `${parsed.protocol}//${host}${port}`;
+  } catch (_) {
+    return '';
+  }
+}
+
+function syncRankInputs() {
+  if (rankNameEl) rankNameEl.value = singleRankState.playerName || '';
+  if (rankServerUrlEl) rankServerUrlEl.value = singleRankState.serverUrl || '';
+}
+
+function sendRankIdentityToServer(ws = singleRankState.ws) {
+  if (!singleRankState.playerName) return;
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+  const payload = {
+    type: 'set_identity',
+    playerId: singleRankState.playerId,
+    name: singleRankState.playerName,
+  };
+  ws.send(JSON.stringify(payload));
+  ws.send(JSON.stringify({ type: 'single_rank_register', ...payload }));
+}
+
+function ensureRankIdentityRegistered() {
+  if (singleRankState.playerName) return true;
+  setRankStatus('닉네임 등록 후 서버 기록 저장 가능');
+  flashBanner('닉네임 등록 필요', 0.9, true);
+  if (rankNameEl) {
+    rankNameEl.focus();
+    rankNameEl.select?.();
+  }
+  return false;
+}
+
+function applyRankProfileFromInput(connectNow = false) {
+  const nextName = sanitizeRankName(rankNameEl ? rankNameEl.value : singleRankState.playerName);
+  if (!nextName) {
+    ensureRankIdentityRegistered();
+    return false;
+  }
+
+  const rawServer = rankServerUrlEl ? rankServerUrlEl.value : (singleRankState.serverUrl || defaultRankServerUrl());
+  const nextServer = normalizeRankServerUrl(rawServer || defaultRankServerUrl());
+  if (!nextServer) {
+    setRankStatus('서버 주소 형식 오류 · 예: ws://192.168.0.10:9091');
+    flashBanner('서버 주소 확인', 0.9, true);
+    if (rankServerUrlEl) {
+      rankServerUrlEl.focus();
+      rankServerUrlEl.select?.();
+    }
+    return false;
+  }
+
+  singleRankState.playerName = nextName;
+  singleRankState.serverUrl = nextServer;
   saveRankProfile();
+  syncRankInputs();
 
   if (singleRankState.connected && singleRankState.ws && singleRankState.ws.readyState === WebSocket.OPEN) {
-    singleRankState.ws.send(JSON.stringify({
-      type: 'set_identity',
-      playerId: singleRankState.playerId,
-      name: singleRankState.playerName,
-    }));
+    sendRankIdentityToServer(singleRankState.ws);
+    setRankStatus('닉네임 등록 완료 · 온라인 랭킹 반영 대기');
+  } else {
+    setRankStatus('닉네임 등록 완료 · 서버 연결 시도');
   }
+
+  if (connectNow) {
+    singleRankState.connectTried = false;
+    openRankSocket(true);
+  }
+  return true;
 }
 
 function openRankSocket(force = false) {
@@ -581,15 +661,12 @@ function openRankSocket(force = false) {
     if (singleRankState.ws !== ws) return;
     singleRankState.connected = true;
     singleRankState.serverUrl = url;
+    syncRankInputs();
     saveRankProfile();
     setRankScope('ONLINE');
-    setRankStatus('온라인 랭킹 연결됨');
+    setRankStatus(singleRankState.playerName ? '온라인 랭킹 연결됨' : '온라인 연결됨 · 닉네임 등록 필요');
 
-    ws.send(JSON.stringify({
-      type: 'set_identity',
-      playerId: singleRankState.playerId,
-      name: singleRankState.playerName,
-    }));
+    sendRankIdentityToServer(ws);
     ws.send(JSON.stringify({ type: 'single_rank_list', limit: SINGLE_RANK.showCount }));
   });
 
@@ -611,6 +688,19 @@ function openRankSocket(force = false) {
         .slice(0, SINGLE_RANK.maxSave);
       renderSingleRank();
       setRankStatus(singleRankState.remoteRows.length ? '온라인 랭킹 갱신됨' : '온라인 랭킹 비어있음');
+      return;
+    }
+
+    if (msg.type === 'single_rank_registered') {
+      if (typeof msg.playerId === 'string' && msg.playerId) {
+        singleRankState.playerId = String(msg.playerId).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 36) || singleRankState.playerId;
+      }
+      if (typeof msg.name === 'string' && msg.name) {
+        singleRankState.playerName = sanitizeRankName(msg.name);
+      }
+      saveRankProfile();
+      syncRankInputs();
+      setRankStatus('플레이어 등록 완료 · 서버 기록 유지됨');
       return;
     }
 
@@ -649,6 +739,8 @@ function openRankSocket(force = false) {
 }
 
 function submitSingleRank(resultMode = 'defeat') {
+  if (!ensureRankIdentityRegistered()) return;
+
   const stage = resultMode === 'victory'
     ? state.maxStage
     : clamp(Math.floor(state.stage || 1), 1, state.maxStage);
@@ -688,19 +780,38 @@ function initSingleRank() {
     savedServerUrl = String(localStorage.getItem(SINGLE_RANK.serverKey) || '').trim();
   } catch (_) {}
   singleRankState.playerId = profile.playerId || randomPlayerId();
-  singleRankState.playerName = profile.playerName || normalizeRankName('');
-  singleRankState.serverUrl = profile.serverUrl || savedServerUrl || defaultRankServerUrl();
+  singleRankState.playerName = sanitizeRankName(profile.playerName || '');
+  singleRankState.serverUrl = normalizeRankServerUrl(profile.serverUrl || savedServerUrl || defaultRankServerUrl()) || defaultRankServerUrl();
   singleRankState.localRows = loadLocalRankRows();
 
   if (rankNameEl) {
-    rankNameEl.value = singleRankState.playerName;
-    rankNameEl.addEventListener('change', applyRankNameFromInput);
-    rankNameEl.addEventListener('blur', applyRankNameFromInput);
+    rankNameEl.addEventListener('blur', () => {
+      rankNameEl.value = sanitizeRankName(rankNameEl.value);
+    });
     rankNameEl.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
-        applyRankNameFromInput();
-        rankNameEl.blur();
+        event.preventDefault();
+        applyRankProfileFromInput(true);
       }
+    });
+  }
+
+  if (rankServerUrlEl) {
+    rankServerUrlEl.addEventListener('blur', () => {
+      const normalized = normalizeRankServerUrl(rankServerUrlEl.value);
+      if (normalized) rankServerUrlEl.value = normalized;
+    });
+    rankServerUrlEl.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        applyRankProfileFromInput(true);
+      }
+    });
+  }
+
+  if (rankSaveEl) {
+    rankSaveEl.addEventListener('click', () => {
+      applyRankProfileFromInput(true);
     });
   }
 
@@ -715,9 +826,10 @@ function initSingleRank() {
     });
   }
 
+  syncRankInputs();
   saveRankProfile();
   setRankScope('LOCAL');
-  setRankStatus('로컬 랭킹 준비 완료');
+  setRankStatus(singleRankState.playerName ? '프로필 로드 완료' : '닉네임 입력 후 등록/저장');
   renderSingleRank();
   openRankSocket(false);
 }

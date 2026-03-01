@@ -15,6 +15,8 @@ const SLOT_COUNT = 8;
 const ACTION_MEMORY = 240;
 const SINGLE_RANK_MAX = 300;
 const SINGLE_RANK_FILE = path.join(__dirname, '..', 'data', 'sunken-single-ranks.json');
+const SINGLE_PLAYER_MAX = 2000;
+const SINGLE_PLAYER_FILE = path.join(__dirname, '..', 'data', 'sunken-single-players.json');
 
 const LANES = ['north', 'east', 'south', 'west'];
 
@@ -290,6 +292,80 @@ function submitSingleRank(raw) {
 }
 
 let singleRankRows = loadSingleRankRows();
+
+function normalizeSinglePlayerRow(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const playerId = safePlayerId(raw.playerId);
+  const playerName = safePlayerName(raw.playerName || raw.name);
+  const createdAt = Math.floor(Number(raw.createdAt || Date.now()));
+  const updatedAt = Math.floor(Number(raw.updatedAt || Date.now()));
+  const lastSeenAt = Math.floor(Number(raw.lastSeenAt || updatedAt || Date.now()));
+  return {
+    playerId,
+    playerName,
+    createdAt: Number.isFinite(createdAt) ? createdAt : Date.now(),
+    updatedAt: Number.isFinite(updatedAt) ? updatedAt : Date.now(),
+    lastSeenAt: Number.isFinite(lastSeenAt) ? lastSeenAt : Date.now(),
+  };
+}
+
+function loadSinglePlayerRows() {
+  try {
+    if (!fs.existsSync(SINGLE_PLAYER_FILE)) return [];
+    const parsed = JSON.parse(fs.readFileSync(SINGLE_PLAYER_FILE, 'utf8'));
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map(normalizeSinglePlayerRow)
+      .filter(Boolean)
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .slice(0, SINGLE_PLAYER_MAX);
+  } catch (error) {
+    console.warn('[sunken-multi-server] single player registry load failed:', error?.message || error);
+    return [];
+  }
+}
+
+function saveSinglePlayerRows(rows) {
+  try {
+    fs.mkdirSync(path.dirname(SINGLE_PLAYER_FILE), { recursive: true });
+    fs.writeFileSync(SINGLE_PLAYER_FILE, JSON.stringify(rows, null, 2));
+  } catch (error) {
+    console.warn('[sunken-multi-server] single player registry save failed:', error?.message || error);
+  }
+}
+
+function registerSinglePlayer(raw) {
+  const row = normalizeSinglePlayerRow(raw);
+  if (!row) return null;
+  const now = Date.now();
+  row.updatedAt = now;
+  row.lastSeenAt = now;
+
+  const idx = singlePlayerRows.findIndex((it) => it.playerId === row.playerId);
+  if (idx < 0) {
+    row.createdAt = now;
+    singlePlayerRows.push(row);
+  } else {
+    const prev = singlePlayerRows[idx];
+    singlePlayerRows[idx] = {
+      ...prev,
+      playerName: row.playerName,
+      updatedAt: now,
+      lastSeenAt: now,
+    };
+  }
+
+  singlePlayerRows = singlePlayerRows
+    .map(normalizeSinglePlayerRow)
+    .filter(Boolean)
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, SINGLE_PLAYER_MAX);
+
+  saveSinglePlayerRows(singlePlayerRows);
+  return singlePlayerRows.find((it) => it.playerId === row.playerId) || row;
+}
+
+let singlePlayerRows = loadSinglePlayerRows();
 
 function getLaneSlotProgress(slot) {
   const base = (slot + 1) / (SLOT_COUNT + 1);
@@ -941,6 +1017,7 @@ const server = http.createServer((req, res) => {
     service: 'sunken-multi-server',
     port: PORT,
     rooms: Array.from(rooms.values()).map(roomSummary),
+    singlePlayersCount: singlePlayerRows.length,
     singleLeaderboardTop: listSingleRankRows(10),
   };
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -1007,10 +1084,34 @@ wss.on('connection', (ws) => {
     if (msg.type === 'set_identity') {
       ws.identity.playerId = safePlayerId(msg.playerId);
       ws.identity.name = safePlayerName(msg.name);
+      registerSinglePlayer({
+        playerId: ws.identity.playerId,
+        name: ws.identity.name,
+      });
       send(ws, {
         type: 'welcome',
         playerId: ws.identity.playerId,
         name: ws.identity.name,
+      });
+      return;
+    }
+
+    if (msg.type === 'single_rank_register') {
+      const registered = registerSinglePlayer({
+        playerId: msg.playerId || ws.identity.playerId,
+        name: msg.name || ws.identity.name,
+      });
+      if (!registered) {
+        send(ws, { type: 'error', message: '플레이어 등록 실패' });
+        return;
+      }
+      ws.identity.playerId = registered.playerId;
+      ws.identity.name = registered.playerName;
+      send(ws, {
+        type: 'single_rank_registered',
+        playerId: registered.playerId,
+        name: registered.playerName,
+        updatedAt: registered.updatedAt,
       });
       return;
     }
@@ -1030,6 +1131,10 @@ wss.on('connection', (ws) => {
     }
 
     if (msg.type === 'single_rank_submit') {
+      registerSinglePlayer({
+        playerId: msg.playerId || ws.identity.playerId,
+        name: msg.name || ws.identity.name,
+      });
       const result = submitSingleRank({
         playerId: msg.playerId || ws.identity.playerId,
         name: msg.name || ws.identity.name,

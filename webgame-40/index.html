@@ -19,9 +19,13 @@
             <strong>싱글 모드 유저 순위</strong>
             <span id="rankScope">LOCAL</span>
           </div>
-          <div class="rank-controls">
+          <div class="rank-controls rank-controls-main">
             <input id="rankName" type="text" maxlength="14" placeholder="닉네임" />
+            <button id="rankSave" type="button">등록/저장</button>
             <button id="rankRefresh" type="button">새로고침</button>
+          </div>
+          <div class="rank-controls rank-controls-server">
+            <input id="rankServerUrl" type="text" inputmode="url" spellcheck="false" placeholder="랭킹 서버 (예: ws://192.168.0.10:9091)" />
           </div>
           <ol class="rank-list" id="rankList"></ol>
           <div class="rank-status" id="rankStatus">로컬 랭킹 불러오는 중...</div>
