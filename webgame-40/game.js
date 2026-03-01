@@ -25,7 +25,6 @@ const btnSpine = document.getElementById('btnSpine');
 const btnObelisk = document.getElementById('btnObelisk');
 const btnSnare = document.getElementById('btnSnare');
 const btnSellMode = document.getElementById('btnSellMode');
-const btnSpeedDown = document.getElementById('btnSpeedDown');
 const btnSpeedUp = document.getElementById('btnSpeedUp');
 const btnUltSunken = document.getElementById('btnUltSunken');
 
@@ -1460,7 +1459,7 @@ function grantUltSunkenCharge(count = 1, reason = '') {
 }
 
 function setSimSpeed(nextSpeed) {
-  state.simSpeed = clamp(Math.round(nextSpeed * 100) / 100, 0.25, 3);
+  state.simSpeed = clamp(Math.round(nextSpeed * 100) / 100, 1, 3);
   refreshBuildHint();
   refreshHud();
 }
@@ -1480,7 +1479,7 @@ function refreshBuildHint() {
   const ultState = state.ultSunkenArmed && state.ultSunkenCharges > 0 ? 'ON' : 'OFF';
   const sellState = state.sellMode ? 'ON' : 'OFF';
   const mobileTag = isMobileView ? '모바일 큰칸' : '일반';
-  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4/5 선택 · Q 성큰크기(${footprint}) · R 필살성큰(${ultState}/${state.ultSunkenCharges}) · ${mobileTag} · F +0.25x · G -0.25x`;
+  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4/5 선택 · Q 성큰크기(${footprint}) · R 필살성큰(${ultState}/${state.ultSunkenCharges}) · ${mobileTag} · F +0.25x`;
   refreshModeHelp();
   refreshTowerGuide();
 }
@@ -3072,11 +3071,6 @@ controlsEl.addEventListener('click', (event) => {
     return;
   }
 
-  if (event.target.closest('[data-action="speed-down"]')) {
-    changeSimSpeed(-0.25);
-    return;
-  }
-
   if (event.target.closest('[data-action="speed-up"]')) {
     changeSimSpeed(0.25);
     return;
@@ -3152,9 +3146,6 @@ window.addEventListener('keydown', (event) => {
     changeSimSpeed(0.25);
   }
 
-  if (event.code === 'KeyG') {
-    changeSimSpeed(-0.25);
-  }
 });
 
 overlayEl.addEventListener('click', (event) => {
