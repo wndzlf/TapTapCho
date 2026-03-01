@@ -200,7 +200,7 @@ const GRID = {
 
 const SPAWN = { c: 0, r: Math.floor(GRID.rows / 2) };
 const GOAL = { c: GRID.cols - 1, r: Math.floor(GRID.rows / 2) };
-const MAX_TOWER_LEVEL = 5;
+const MAX_TOWER_LEVEL = 7;
 const MAX_SIM_SUBSTEP = 1 / 120;
 
 const TOWER_TYPES = {
@@ -1079,9 +1079,17 @@ function makeTower(kind, c, r, spec = null) {
 
 function upgradeCost(tower) {
   const base = tower.baseCost || TOWER_TYPES[tower.kind].cost;
-  // 레벨이 오를수록 비용이 급격히 증가하도록 곡선 가중치를 적용한다.
+  // 레벨이 오를수록 비용이 가파르게 증가하도록 후반 구간(4+, 6+) 가중치를 추가한다.
   const lv = Math.max(1, tower.level);
-  return Math.floor(base * (0.95 + lv * 0.82 + lv * lv * 0.16));
+  const mid = Math.max(0, lv - 3);
+  const late = Math.max(0, lv - 5);
+  return Math.floor(base * (
+    1.05
+    + lv * 0.88
+    + lv * lv * 0.2
+    + mid * mid * 0.42
+    + late * late * 0.85
+  ));
 }
 
 function upgradeTower(tower) {
