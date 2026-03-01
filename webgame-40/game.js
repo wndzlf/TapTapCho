@@ -39,6 +39,7 @@ const bgmAudio = window.TapTapNeonAudio?.create('webgame-40', hudEl, {
 const ENEMY_TANK_SOURCES = {
   ghoul: '../assets/kenney_tanks/png/tanks_tankGreen1.png',
   bat: '../assets/kenney_tanks/png/tanks_tankGrey1.png',
+  hopper: '../assets/kenney_tanks/png/tanks_tankGrey1.png',
   brute: '../assets/kenney_tanks/png/tanks_tankDesert2.png',
   elder: '../assets/kenney_tanks/png/tanks_tankNavy3.png',
   raider: '../assets/kenney_tanks/png/tanks_tankGrey4.png',
@@ -350,6 +351,7 @@ const state = {
   particles: [],
   blocked: new Set(),
   dist: [],
+  distJump: [],
   towerHpBonus: 0,
   rushDamageBonus: 0,
   pendingStage: 0,
@@ -943,47 +945,57 @@ function passable(c, r) {
   return !state.blocked.has(keyOf(c, r));
 }
 
+function passableForEnemy(enemy, c, r) {
+  if (!inBounds(c, r)) return false;
+  if (isReserved(c, r)) return true;
+  if (enemy?.jumper) return true;
+  return !state.blocked.has(keyOf(c, r));
+}
+
 function buildDistanceMap() {
   const size = GRID.cols * GRID.rows;
-  const dist = Array(size).fill(Infinity);
-  const q = new Int32Array(size);
-  let head = 0;
-  let tail = 0;
+  const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
-  const goalIdx = toIndex(GOAL.c, GOAL.r);
-  dist[goalIdx] = 0;
-  q[tail++] = goalIdx;
+  function buildDist(ignoreBlocks = false) {
+    const dist = Array(size).fill(Infinity);
+    const q = new Int32Array(size);
+    let head = 0;
+    let tail = 0;
 
-  const dirs = [
-    [1, 0],
-    [-1, 0],
-    [0, 1],
-    [0, -1],
-  ];
+    const goalIdx = toIndex(GOAL.c, GOAL.r);
+    dist[goalIdx] = 0;
+    q[tail++] = goalIdx;
 
-  while (head < tail) {
-    const idx = q[head++];
-    const c = idx % GRID.cols;
-    const r = Math.floor(idx / GRID.cols);
-    const d = dist[idx] + 1;
+    while (head < tail) {
+      const idx = q[head++];
+      const c = idx % GRID.cols;
+      const r = Math.floor(idx / GRID.cols);
+      const d = dist[idx] + 1;
 
-    for (const [dc, dr] of dirs) {
-      const nc = c + dc;
-      const nr = r + dr;
-      if (!passable(nc, nr)) continue;
-      const nIdx = toIndex(nc, nr);
-      if (dist[nIdx] <= d) continue;
-      dist[nIdx] = d;
-      q[tail++] = nIdx;
+      for (const [dc, dr] of dirs) {
+        const nc = c + dc;
+        const nr = r + dr;
+        const canPass = ignoreBlocks ? inBounds(nc, nr) : passable(nc, nr);
+        if (!canPass) continue;
+        const nIdx = toIndex(nc, nr);
+        if (dist[nIdx] <= d) continue;
+        dist[nIdx] = d;
+        q[tail++] = nIdx;
+      }
     }
+
+    return dist;
   }
 
+  const dist = buildDist(false);
   state.dist = dist;
+  state.distJump = buildDist(true);
   return Number.isFinite(dist[toIndex(SPAWN.c, SPAWN.r)]);
 }
 
-function neighborStep(c, r) {
-  const current = state.dist[toIndex(c, r)];
+function neighborStep(c, r, enemy = null) {
+  const distMap = enemy?.jumper ? state.distJump : state.dist;
+  const current = distMap[toIndex(c, r)];
   let bestC = c;
   let bestR = r;
   let best = current;
@@ -998,8 +1010,8 @@ function neighborStep(c, r) {
   for (const [dc, dr] of dirs) {
     const nc = c + dc;
     const nr = r + dr;
-    if (!passable(nc, nr)) continue;
-    const d = state.dist[toIndex(nc, nr)];
+    if (!passableForEnemy(enemy, nc, nr)) continue;
+    const d = distMap[toIndex(nc, nr)];
     if (d < best) {
       best = d;
       bestC = nc;
@@ -1219,6 +1231,7 @@ function makeEnemy(type) {
   const typeThreat = {
     ghoul: 0.02,
     bat: 0.06,
+    hopper: 0.2,
     brute: 0.12,
     elder: 0.18,
     raider: 0.26,
@@ -1228,6 +1241,7 @@ function makeEnemy(type) {
   const defs = {
     ghoul: { hp: (58 + s * 12) * stageHpMul * 1.0, speed: (36 + s * 1.6) * stageSpeedMul, reward: 7, leak: 1, r: 10, color: '#c54f72' },
     bat: { hp: (34 + s * 7) * stageHpMul * 0.8, speed: (64 + s * 2.9) * stageSpeedMul, reward: 7, leak: 1, r: 8, color: '#d07ab4', fast: true },
+    hopper: { hp: (24 + s * 5) * stageHpMul * 0.56, speed: (98 + s * 3.6) * stageSpeedMul, reward: 10, leak: 2, r: 8.5, color: '#9ae8ff', fast: true, jumper: true },
     brute: { hp: (150 + s * 28) * stageHpMul * 1.18, speed: (29 + s * 1.3) * stageSpeedMul, reward: 12, leak: 2, r: 13, color: '#9e5a9c' },
     elder: { hp: (262 + s * 46) * stageHpMul * 1.32, speed: (37 + s * 1.5) * stageSpeedMul, reward: 25, leak: 3, r: 15, color: '#b86ec8' },
     raider: {
@@ -1278,6 +1292,7 @@ function makeEnemy(type) {
     threat,
     morph: rand(0, TAU),
     fast: Boolean(d.fast),
+    jumper: Boolean(d.jumper),
     snareTimer: 0,
     snareSlowMul: 1,
     weakenTimer: 0,
@@ -1318,6 +1333,9 @@ function makeStageQueue(stage) {
     const crusherChance = stage >= 8
       ? clamp(0.06 + (stage - 8) * 0.011 + nightmareIndex * 0.024, 0.06, 0.38)
       : 0;
+    const hopperChance = stage >= 13
+      ? clamp(0.05 + (stage - 13) * 0.012 + nightmareIndex * 0.018, 0.05, 0.28)
+      : 0;
 
     let threshold = crusherChance;
     if (roll < threshold) type = 'crusher';
@@ -1330,7 +1348,11 @@ function makeStageQueue(stage) {
         else {
           threshold += bruteChance;
           if (roll < threshold) type = 'brute';
-          else if (roll < threshold + batChance) type = 'bat';
+          else {
+            threshold += hopperChance;
+            if (roll < threshold) type = 'hopper';
+            else if (roll < threshold + batChance) type = 'bat';
+          }
         }
       }
     }
@@ -1354,13 +1376,13 @@ function makeStageQueue(stage) {
     if (stage <= 12) {
       queue.splice(surgePos, 0, 'elder', 'elder', 'crusher');
     } else {
-      queue.splice(surgePos, 0, 'elder', 'brute', Math.random() < 0.55 ? 'crusher' : 'raider');
+      queue.splice(surgePos, 0, 'elder', 'brute', Math.random() < 0.55 ? 'crusher' : 'raider', stage >= 13 ? 'hopper' : 'bat');
     }
   }
 
   if (stage >= 21) {
     const surgePos = Math.floor(queue.length * 0.56);
-    queue.splice(surgePos, 0, 'crusher', 'raider', 'elder', 'brute', 'crusher', 'raider');
+    queue.splice(surgePos, 0, 'crusher', 'hopper', 'raider', 'elder', 'brute', 'hopper', 'crusher', 'raider');
   }
 
   if (stage >= 6) {
@@ -1368,7 +1390,10 @@ function makeStageQueue(stage) {
     const crusherPickChance = clamp(0.32 + lateIndex * 0.01, 0.32, 0.44);
     for (let i = 0; i < rushCount; i += 1) {
       const pos = Math.floor(queue.length * (0.28 + Math.random() * 0.5));
-      queue.splice(pos, 0, stage >= 8 && Math.random() < crusherPickChance ? 'crusher' : 'raider');
+      const pick = stage >= 13 && Math.random() < 0.28
+        ? 'hopper'
+        : (stage >= 8 && Math.random() < crusherPickChance ? 'crusher' : 'raider');
+      queue.splice(pos, 0, pick);
     }
   }
 
@@ -1486,7 +1511,7 @@ function showStageReward() {
         </button>
         <button type="button" class="reward-btn" data-action="reward:siege">
           <strong>러시 대응 +25%</strong>
-          <span>빠른 몹(bat/raider/crusher) 대상 피해 증가</span>
+          <span>빠른 몹(bat/hopper/raider/crusher) 대상 피해 증가</span>
         </button>
         <button type="button" class="reward-btn" data-action="reward:repair">
           <strong>리페어 즉시 복구</strong>
@@ -2117,10 +2142,10 @@ function updateEnemy(enemy, dt) {
 
   function keepEnemyInPassableCell(prevX, prevY) {
     const nowCell = worldToCell(enemy.x, enemy.y);
-    if (passable(nowCell.c, nowCell.r)) return;
+    if (passableForEnemy(enemy, nowCell.c, nowCell.r)) return;
 
     const prevCell = worldToCell(prevX, prevY);
-    if (passable(prevCell.c, prevCell.r)) {
+    if (passableForEnemy(enemy, prevCell.c, prevCell.r)) {
       enemy.x = prevX;
       enemy.y = prevY;
     } else {
@@ -2140,7 +2165,7 @@ function updateEnemy(enemy, dt) {
     enemy.targetC = clamp(cell.c, 0, GRID.cols - 1);
     enemy.targetR = clamp(cell.r, 0, GRID.rows - 1);
 
-    const step = neighborStep(enemy.targetC, enemy.targetR);
+    const step = neighborStep(enemy.targetC, enemy.targetR, enemy);
     if (step.valid) {
       enemy.targetC = step.c;
       enemy.targetR = step.r;
@@ -2881,6 +2906,15 @@ function drawEnemies() {
       ctx.lineTo(enemy.x + enemy.r * 0.55, enemy.y + enemy.r * 0.1);
       ctx.moveTo(enemy.x + enemy.r * 0.28, enemy.y - enemy.r * 0.56);
       ctx.lineTo(enemy.x - enemy.r * 0.2, enemy.y + enemy.r * 0.5);
+      ctx.stroke();
+    }
+
+    if (enemy.jumper) {
+      const jumpPulse = 0.45 + 0.55 * Math.sin(now * 9 + enemy.morph * 1.6);
+      ctx.strokeStyle = `rgba(148, 246, 255, ${0.58 + jumpPulse * 0.35})`;
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(enemy.x, enemy.y - enemy.r * 0.45, enemy.r * 0.75 + jumpPulse * 1.8, Math.PI * 0.1, Math.PI * 0.9);
       ctx.stroke();
     }
 
