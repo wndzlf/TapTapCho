@@ -227,6 +227,7 @@ const GRID = {
 const SPAWN = { c: 0, r: Math.floor(GRID.rows / 2) };
 const GOAL = { c: GRID.cols - 1, r: Math.floor(GRID.rows / 2) };
 const MAX_TOWER_LEVEL = 5;
+const MAX_SIM_SUBSTEP = 1 / 120;
 
 const TOWER_TYPES = {
   sunken: {
@@ -2219,6 +2220,26 @@ function updateEnemy(enemy, dt) {
 
   const speed = enemy.speed * (enemy.snareTimer > 0 ? enemy.snareSlowMul : 1);
 
+  function keepEnemyInPassableCell(prevX, prevY) {
+    const nowCell = worldToCell(enemy.x, enemy.y);
+    if (passable(nowCell.c, nowCell.r)) return;
+
+    const prevCell = worldToCell(prevX, prevY);
+    if (passable(prevCell.c, prevCell.r)) {
+      enemy.x = prevX;
+      enemy.y = prevY;
+    } else {
+      const clampedC = clamp(prevCell.c, 0, GRID.cols - 1);
+      const clampedR = clamp(prevCell.r, 0, GRID.rows - 1);
+      const center = cellCenter(clampedC, clampedR);
+      enemy.x = center.x;
+      enemy.y = center.y;
+    }
+    enemy.vx *= 0.22;
+    enemy.vy *= 0.22;
+    enemy.repath = 0;
+  }
+
   if (enemy.breaker && state.towers.length > 0) {
     let targetTower = state.towers.find((t) => t.id === enemy.targetTowerId);
     if (!targetTower) {
@@ -2236,20 +2257,26 @@ function updateEnemy(enemy, dt) {
       if (td <= enemy.attackRange + GRID.cell * 0.28) {
         enemy.vx *= 0.72;
         enemy.vy *= 0.72;
+        const prevX = enemy.x;
+        const prevY = enemy.y;
         enemy.x += enemy.vx * dt;
         enemy.y += enemy.vy * dt;
+        keepEnemyInPassableCell(prevX, prevY);
         if (enemy.attackCd <= 0) {
           damageTower(targetTower, enemy.towerDamage, enemy);
           enemy.attackCd = enemy.attackInterval;
           if (Math.random() < 0.5) flashBanner('공성 몹이 건물 공격 중', 0.32, true);
         }
       } else {
+        const prevX = enemy.x;
+        const prevY = enemy.y;
         enemy.vx += tx * speed * dt * 3.3;
         enemy.vy += ty * speed * dt * 3.3;
         enemy.vx *= 0.89;
         enemy.vy *= 0.89;
         enemy.x += enemy.vx * dt;
         enemy.y += enemy.vy * dt;
+        keepEnemyInPassableCell(prevX, prevY);
       }
       return;
     }
@@ -2278,12 +2305,15 @@ function updateEnemy(enemy, dt) {
   const nx = dx / d;
   const ny = dy / d;
 
+  const prevX = enemy.x;
+  const prevY = enemy.y;
   enemy.vx += nx * speed * dt * 3.2;
   enemy.vy += ny * speed * dt * 3.2;
   enemy.vx *= 0.9;
   enemy.vy *= 0.9;
   enemy.x += enemy.vx * dt;
   enemy.y += enemy.vy * dt;
+  keepEnemyInPassableCell(prevX, prevY);
 
   const goalCenter = cellCenter(GOAL.c, GOAL.r);
   if (Math.hypot(enemy.x - goalCenter.x, enemy.y - goalCenter.y) < GRID.cell * 0.38) {
@@ -3178,11 +3208,19 @@ function step(dt) {
     overlayEl.innerHTML = '';
   }
 
-  updateSpawning(simDt);
-  updateTowers(simDt);
-  updateBullets(simDt);
-  updateEnemies(simDt);
-  updateParticles(simDt);
+  let remain = simDt;
+  let guard = 0;
+  while (remain > 0 && guard < 32) {
+    const subDt = Math.min(MAX_SIM_SUBSTEP, remain);
+    updateSpawning(subDt);
+    updateTowers(subDt);
+    updateBullets(subDt);
+    updateEnemies(subDt);
+    updateParticles(subDt);
+    remain -= subDt;
+    guard += 1;
+    if (state.mode !== 'playing') break;
+  }
 
   draw();
   drawBanner();
