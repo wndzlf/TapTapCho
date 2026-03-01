@@ -558,6 +558,11 @@ function normalizeRankServerUrl(raw) {
   }
 }
 
+function fixedRankServerUrl() {
+  const configured = window.TapTapChoConfig?.singleRankServer;
+  return normalizeRankServerUrl(configured || '');
+}
+
 function syncRankInputs() {
   if (rankNameEl) rankNameEl.value = singleRankState.playerName || '';
   if (rankServerUrlEl) rankServerUrlEl.value = singleRankState.serverUrl || '';
@@ -594,20 +599,12 @@ function applyRankProfileFromInput(connectNow = false) {
     return false;
   }
 
-  const rawServer = rankServerUrlEl ? rankServerUrlEl.value : (singleRankState.serverUrl || defaultRankServerUrl());
+  const fixedServer = fixedRankServerUrl();
+  const rawServer = fixedServer || (rankServerUrlEl ? rankServerUrlEl.value : (singleRankState.serverUrl || defaultRankServerUrl()));
   const nextServer = normalizeRankServerUrl(rawServer || defaultRankServerUrl());
-  if (!nextServer) {
-    setRankStatus('서버 주소 형식 오류 · 예: ws://192.168.0.10:9091');
-    flashBanner('서버 주소 확인', 0.9, true);
-    if (rankServerUrlEl) {
-      rankServerUrlEl.focus();
-      rankServerUrlEl.select?.();
-    }
-    return false;
-  }
 
   singleRankState.playerName = nextName;
-  singleRankState.serverUrl = nextServer;
+  singleRankState.serverUrl = nextServer || '';
   saveRankProfile();
   syncRankInputs();
 
@@ -615,7 +612,7 @@ function applyRankProfileFromInput(connectNow = false) {
     sendRankIdentityToServer(singleRankState.ws);
     setRankStatus('닉네임 등록 완료 · 온라인 랭킹 반영 대기');
   } else {
-    setRankStatus('닉네임 등록 완료 · 서버 연결 시도');
+    setRankStatus(singleRankState.serverUrl ? '닉네임 등록 완료 · 서버 연결 시도' : '닉네임 등록 완료 · 로컬 기록 모드');
   }
 
   if (connectNow) {
@@ -631,7 +628,7 @@ function openRankSocket(force = false) {
   if (singleRankState.connectTried && !force) return;
   singleRankState.connectTried = true;
 
-  const url = singleRankState.serverUrl || defaultRankServerUrl();
+  const url = fixedRankServerUrl() || singleRankState.serverUrl || defaultRankServerUrl();
   if (!url) {
     setRankScope('LOCAL');
     setRankStatus('서버 주소 없음 · 로컬 랭킹');
@@ -781,7 +778,9 @@ function initSingleRank() {
   } catch (_) {}
   singleRankState.playerId = profile.playerId || randomPlayerId();
   singleRankState.playerName = sanitizeRankName(profile.playerName || '');
-  singleRankState.serverUrl = normalizeRankServerUrl(profile.serverUrl || savedServerUrl || defaultRankServerUrl()) || defaultRankServerUrl();
+  singleRankState.serverUrl = fixedRankServerUrl()
+    || normalizeRankServerUrl(profile.serverUrl || savedServerUrl || defaultRankServerUrl())
+    || defaultRankServerUrl();
   singleRankState.localRows = loadLocalRankRows();
 
   if (rankNameEl) {
@@ -789,19 +788,6 @@ function initSingleRank() {
       rankNameEl.value = sanitizeRankName(rankNameEl.value);
     });
     rankNameEl.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        applyRankProfileFromInput(true);
-      }
-    });
-  }
-
-  if (rankServerUrlEl) {
-    rankServerUrlEl.addEventListener('blur', () => {
-      const normalized = normalizeRankServerUrl(rankServerUrlEl.value);
-      if (normalized) rankServerUrlEl.value = normalized;
-    });
-    rankServerUrlEl.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         event.preventDefault();
         applyRankProfileFromInput(true);

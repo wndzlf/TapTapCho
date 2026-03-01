@@ -132,10 +132,6 @@ header p {
   cursor: pointer;
 }
 
-.rank-controls-server input {
-  width: 100%;
-}
-
 .rank-list {
   margin: 0;
   padding: 0 0 0 20px;

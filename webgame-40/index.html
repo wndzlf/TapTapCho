@@ -24,9 +24,6 @@
             <button id="rankSave" type="button">등록/저장</button>
             <button id="rankRefresh" type="button">새로고침</button>
           </div>
-          <div class="rank-controls rank-controls-server">
-            <input id="rankServerUrl" type="text" inputmode="url" spellcheck="false" placeholder="랭킹 서버 (예: ws://192.168.0.10:9091)" />
-          </div>
           <ol class="rank-list" id="rankList"></ol>
           <div class="rank-status" id="rankStatus">로컬 랭킹 불러오는 중...</div>
         </section>
@@ -102,6 +99,13 @@
   </div>
 
   <script src="../assets/js/neon-audio.js"></script>
+  <script>
+    window.TapTapChoConfig = Object.assign({}, window.TapTapChoConfig, {
+      // Cloudflare 고정 랭킹 서버 주소 (예: wss://sunken-rank.example.com)
+      // 빈 문자열이면 현재 호스트 기준 ws(s)://<host>:9091 로 연결합니다.
+      singleRankServer: '',
+    });
+  </script>
   <script src="game.js"></script>
 </body>
 </html>

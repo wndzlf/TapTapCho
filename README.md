@@ -86,10 +86,10 @@ ipconfig getifaddr en0
 
 (`en0`가 비어 있으면 `en1` 확인)
 
-4. 싱글 모드(`/webgame-40/index.html`) 상단 랭킹 패널에서:
-- `닉네임` 입력
-- `랭킹 서버`에 `ws://<맥미니IP>:9091` 입력
-- `등록/저장` 클릭
+4. 싱글 고정 서버 주소 설정(`/webgame-40/index.html`):
+- `window.TapTapChoConfig.singleRankServer` 값을 `wss://<Cloudflare-도메인>`으로 설정
+- 예시: `singleRankServer: 'wss://sunken-rank.example.com'`
+- 싱글 모드 랭킹 패널에서는 `닉네임`만 입력 후 `등록/저장` 클릭
 
 5. 저장 위치:
 - 싱글 랭킹 점수: `/Users/user/TapTapCho/data/sunken-single-ranks.json`
@@ -102,6 +102,9 @@ curl http://<맥미니IP>:9091
 ```
 
 `ok: true`와 `singleLeaderboardTop`가 보이면 정상입니다.
+
+Cloudflare 사용 시:
+- 웹이 HTTPS면 `wss://` 주소를 사용해야 브라우저 혼합콘텐츠 차단이 발생하지 않습니다.
 
 연결이 안 될 때 체크:
 - 맥미니 방화벽에서 Node(`node`) 인바운드 허용
