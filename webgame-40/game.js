@@ -3106,7 +3106,7 @@ canvas.addEventListener('contextmenu', (event) => {
   event.preventDefault();
 });
 
-canvas.addEventListener('pointerdown', (event) => {
+function handleCanvasAction(event) {
   if (state.mode !== 'playing') return;
 
   const rect = canvas.getBoundingClientRect();
@@ -3118,6 +3118,78 @@ canvas.addEventListener('pointerdown', (event) => {
     sellTower(cell.c, cell.r);
   } else {
     tryPlaceTower(cell.c, cell.r);
+  }
+}
+
+const MOBILE_TAP_MAX_MOVE = 16;
+const MOBILE_TAP_MAX_MS = 280;
+const MOBILE_SCROLL_GUARD_MS = 140;
+
+const mobileTapState = {
+  active: false,
+  pointerId: -1,
+  startX: 0,
+  startY: 0,
+  startAt: 0,
+  moved: false
+};
+
+let lastScrollAt = 0;
+window.addEventListener('scroll', () => {
+  lastScrollAt = performance.now();
+}, { passive: true });
+
+function clearMobileTap() {
+  mobileTapState.active = false;
+  mobileTapState.pointerId = -1;
+  mobileTapState.startX = 0;
+  mobileTapState.startY = 0;
+  mobileTapState.startAt = 0;
+  mobileTapState.moved = false;
+}
+
+function tapMovedTooFar(event) {
+  const dx = event.clientX - mobileTapState.startX;
+  const dy = event.clientY - mobileTapState.startY;
+  return dx * dx + dy * dy > MOBILE_TAP_MAX_MOVE * MOBILE_TAP_MAX_MOVE;
+}
+
+canvas.addEventListener('pointerdown', (event) => {
+  if (event.pointerType !== 'touch') {
+    handleCanvasAction(event);
+    return;
+  }
+
+  mobileTapState.active = true;
+  mobileTapState.pointerId = event.pointerId;
+  mobileTapState.startX = event.clientX;
+  mobileTapState.startY = event.clientY;
+  mobileTapState.startAt = performance.now();
+  mobileTapState.moved = false;
+});
+
+canvas.addEventListener('pointermove', (event) => {
+  if (!mobileTapState.active || event.pointerId !== mobileTapState.pointerId) return;
+  if (tapMovedTooFar(event)) mobileTapState.moved = true;
+});
+
+canvas.addEventListener('pointerup', (event) => {
+  if (!mobileTapState.active || event.pointerId !== mobileTapState.pointerId) return;
+
+  const elapsed = performance.now() - mobileTapState.startAt;
+  const moved = mobileTapState.moved || tapMovedTooFar(event);
+  const justScrolled = performance.now() - lastScrollAt < MOBILE_SCROLL_GUARD_MS;
+
+  if (!moved && elapsed <= MOBILE_TAP_MAX_MS && !justScrolled) {
+    handleCanvasAction(event);
+  }
+
+  clearMobileTap();
+});
+
+canvas.addEventListener('pointercancel', (event) => {
+  if (mobileTapState.active && event.pointerId === mobileTapState.pointerId) {
+    clearMobileTap();
   }
 });
 

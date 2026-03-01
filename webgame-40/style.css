@@ -351,7 +351,7 @@ canvas {
   width: 100%;
   height: auto;
   max-height: 70vh;
-  touch-action: manipulation;
+  touch-action: pan-y;
 }
 
 .overlay {
