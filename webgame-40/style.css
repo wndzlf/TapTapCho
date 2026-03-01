@@ -261,6 +261,16 @@ header p {
   box-shadow: 0 0 0 2px rgba(255, 212, 117, 0.35) inset;
 }
 
+.pause-btn {
+  border-color: #7b6a5a;
+  background: linear-gradient(180deg, #3a3128, #2c251f);
+}
+
+.pause-btn.active {
+  border-color: #f7b07a;
+  box-shadow: 0 0 0 2px rgba(247, 176, 122, 0.34) inset;
+}
+
 .hint {
   margin-left: auto;
   color: #9cb0cf;
@@ -364,6 +374,12 @@ canvas {
   background: linear-gradient(180deg, rgba(7, 9, 17, 0.44), rgba(8, 10, 20, 0.58));
 }
 
+.overlay.reward-mode {
+  place-items: start center;
+  padding-top: 10px;
+  background: linear-gradient(180deg, rgba(7, 9, 17, 0.24), rgba(8, 10, 20, 0.06));
+}
+
 .overlay.banner-passive {
   pointer-events: none;
   background: transparent;
@@ -379,6 +395,12 @@ canvas {
   border-radius: 14px;
   background: linear-gradient(180deg, rgba(19, 27, 43, 0.96), rgba(12, 19, 33, 0.96));
   padding: 18px;
+}
+
+.modal.reward-modal {
+  width: min(980px, 97%);
+  border-color: #5f79a5;
+  background: linear-gradient(180deg, rgba(18, 28, 45, 0.96), rgba(11, 18, 33, 0.96));
 }
 
 .modal h2 {
@@ -439,6 +461,13 @@ canvas {
 .reward-btn:hover {
   border-color: #f0ca77;
   box-shadow: 0 0 0 1px rgba(240, 202, 119, 0.3) inset;
+}
+
+.reward-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+  border-color: #415675;
+  box-shadow: none;
 }
 
 .banner {
@@ -610,6 +639,15 @@ footer {
 
   .reward-grid {
     grid-template-columns: 1fr;
+  }
+
+  .overlay.reward-mode {
+    padding-top: 6px;
+  }
+
+  .modal.reward-modal {
+    width: min(760px, 98%);
+    padding: 12px;
   }
 }
 

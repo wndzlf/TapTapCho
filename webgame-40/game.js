@@ -27,6 +27,7 @@ const btnSpine = document.getElementById('btnSpine');
 const btnObelisk = document.getElementById('btnObelisk');
 const btnSnare = document.getElementById('btnSnare');
 const btnSellMode = document.getElementById('btnSellMode');
+const btnPause = document.getElementById('btnPause');
 const btnSpeedUp = document.getElementById('btnSpeedUp');
 const btnUltSunken = document.getElementById('btnUltSunken');
 
@@ -359,6 +360,7 @@ const state = {
   ultSunkenCharges: 0,
   ultSunkenArmed: false,
   sellMode: false,
+  paused: false,
   simSpeed: 1,
   stageTimer: 0,
   spawnQueue: [],
@@ -376,6 +378,7 @@ const state = {
   rushDamageBonus: 0,
   pendingStage: 0,
   pendingStageBonusGold: 0,
+  rewardUiUnlockAt: 0,
   banner: { text: '', ttl: 0, warn: false },
 };
 
@@ -1463,12 +1466,15 @@ function startRun() {
   state.ultSunkenCharges = 0;
   state.ultSunkenArmed = false;
   state.sellMode = false;
+  state.paused = false;
   state.towerHpBonus = 0;
   state.rushDamageBonus = 0;
   state.pendingStage = 0;
   state.pendingStageBonusGold = 0;
+  state.rewardUiUnlockAt = 0;
   setSelectedButton();
   refreshUltButton();
+  refreshPauseButton();
   setSellMode(false);
   refreshBuildHint();
 
@@ -1476,6 +1482,7 @@ function startRun() {
   startStage(1);
 
   overlayEl.classList.add('hidden');
+  overlayEl.classList.remove('reward-mode');
   overlayEl.classList.remove('banner-passive');
   overlayEl.innerHTML = '';
   bgmAudio?.unlock();
@@ -1486,7 +1493,10 @@ function startRun() {
 function setDefeat() {
   submitSingleRank('defeat');
   state.mode = 'defeat';
+  state.paused = false;
+  refreshPauseButton();
   overlayEl.classList.remove('banner-passive');
+  overlayEl.classList.remove('reward-mode');
   overlayEl.classList.remove('hidden');
   overlayEl.innerHTML = `
     <div class="modal">
@@ -1504,7 +1514,10 @@ function setDefeat() {
 function setVictory() {
   submitSingleRank('victory');
   state.mode = 'victory';
+  state.paused = false;
+  refreshPauseButton();
   overlayEl.classList.remove('banner-passive');
+  overlayEl.classList.remove('reward-mode');
   overlayEl.classList.remove('hidden');
   overlayEl.innerHTML = `
     <div class="modal">
@@ -1526,33 +1539,45 @@ function showStageReward() {
   state.pendingStageBonusGold = clearGold;
   state.gold += clearGold;
   state.mode = 'reward';
+  state.paused = false;
+  refreshPauseButton();
+  state.rewardUiUnlockAt = performance.now() + 420;
 
   overlayEl.classList.remove('banner-passive');
+  overlayEl.classList.add('reward-mode');
   overlayEl.classList.remove('hidden');
   overlayEl.innerHTML = `
-    <div class="modal">
+    <div class="modal reward-modal">
       <h2>Stage ${state.stage} 클리어</h2>
       <p>보상 +${clearGold} Gold · 다음 Stage 시작 전 강화 1개 선택</p>
       <div class="reward-grid">
-        <button type="button" class="reward-btn" data-action="reward:towerhp">
+        <button type="button" class="reward-btn" data-action="reward:towerhp" disabled>
           <strong>타워 내구 +15%</strong>
           <span>현재 배치 + 이후 배치 모두 내구 증가</span>
         </button>
-        <button type="button" class="reward-btn" data-action="reward:siege">
+        <button type="button" class="reward-btn" data-action="reward:siege" disabled>
           <strong>러시 대응 +25%</strong>
           <span>빠른 몹(bat/hopper/raider/crusher) 대상 피해 증가</span>
         </button>
-        <button type="button" class="reward-btn" data-action="reward:repair">
+        <button type="button" class="reward-btn" data-action="reward:repair" disabled>
           <strong>리페어 즉시 복구</strong>
           <span>모든 타워 체력 60% 복구 + Base 2 회복</span>
         </button>
       </div>
     </div>
   `;
+  const unlockAt = state.rewardUiUnlockAt;
+  window.setTimeout(() => {
+    if (state.mode !== 'reward' || state.rewardUiUnlockAt !== unlockAt) return;
+    for (const btn of overlayEl.querySelectorAll('.reward-btn[disabled]')) {
+      btn.disabled = false;
+    }
+  }, 430);
 }
 
 function applyStageReward(kind) {
   if (state.mode !== 'reward') return;
+  if (performance.now() < state.rewardUiUnlockAt) return;
 
   if (kind === 'towerhp') {
     state.towerHpBonus += 0.15;
@@ -1579,8 +1604,10 @@ function applyStageReward(kind) {
 
   state.mode = 'playing';
   overlayEl.classList.add('hidden');
+  overlayEl.classList.remove('reward-mode');
   overlayEl.classList.remove('banner-passive');
   overlayEl.innerHTML = '';
+  state.rewardUiUnlockAt = 0;
 
   const nextStage = state.pendingStage || state.stage + 1;
   state.pendingStage = 0;
@@ -1595,8 +1622,9 @@ function refreshHud() {
   aliveTextEl.textContent = String(state.enemies.length);
   queueTextEl.textContent = String(state.spawnQueue.length);
   killsTextEl.textContent = String(state.kills);
-  if (speedTextEl) speedTextEl.textContent = `${state.simSpeed.toFixed(2)}x`;
+  if (speedTextEl) speedTextEl.textContent = state.paused ? `STOP ${state.simSpeed.toFixed(2)}x` : `${state.simSpeed.toFixed(2)}x`;
   refreshUltButton();
+  refreshPauseButton();
 }
 
 function setSelectedButton() {
@@ -1611,6 +1639,34 @@ function setSellMode(enabled) {
   btnSellMode.classList.toggle('active', state.sellMode);
   const nameEl = btnSellMode.querySelector('.name');
   if (nameEl) nameEl.textContent = state.sellMode ? 'SELL ON' : 'SELL OFF';
+}
+
+function refreshPauseButton() {
+  if (!btnPause) return;
+  btnPause.classList.toggle('active', state.paused);
+  const nameEl = btnPause.querySelector('.name');
+  const costEl = btnPause.querySelector('.cost');
+  if (nameEl) nameEl.textContent = state.paused ? 'STOP ON' : 'STOP OFF';
+  if (costEl) costEl.textContent = state.paused ? '정비 중' : '정비 모드';
+}
+
+function setPauseMode(enabled) {
+  if (state.mode !== 'playing') return;
+  state.paused = Boolean(enabled);
+  refreshPauseButton();
+  refreshBuildHint();
+}
+
+function togglePauseMode() {
+  if (state.mode !== 'playing') return;
+  setPauseMode(!state.paused);
+  if (state.paused) {
+    flashBanner('정비 모드 ON', 0.7);
+    sfx(330, 0.055, 'triangle', 0.014);
+  } else {
+    flashBanner('정비 모드 OFF', 0.65);
+    sfx(460, 0.05, 'triangle', 0.013);
+  }
 }
 
 function refreshUltButton() {
@@ -1666,8 +1722,9 @@ function refreshBuildHint() {
   const footprint = state.sunkenFootprint === 2 ? '2x2' : '1x1';
   const ultState = state.ultSunkenArmed && state.ultSunkenCharges > 0 ? 'ON' : 'OFF';
   const sellState = state.sellMode ? 'ON' : 'OFF';
+  const pauseState = state.paused ? 'ON' : 'OFF';
   const mobileTag = isMobileView ? '모바일 큰칸' : '일반';
-  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4/5/6 선택 · Q 성큰크기(${footprint}) · R 필살성큰(${ultState}/${state.ultSunkenCharges}) · ${mobileTag} · F +0.25x · G -0.25x`;
+  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · H 정비모드(${pauseState}) · 1/2/3/4/5/6 선택 · Q 성큰크기(${footprint}) · R 필살성큰(${ultState}/${state.ultSunkenCharges}) · ${mobileTag} · F +0.25x · G -0.25x`;
   refreshModeHelp();
   refreshTowerGuide();
 }
@@ -1678,6 +1735,7 @@ function refreshModeHelp() {
   const ultTag = ultOn ? 'ULT ON' : 'ULT OFF';
   const audio = readAudioFlags();
   const sfxTag = audio.sfx ? 'SFX ON' : 'SFX OFF';
+  const stopTag = state.paused ? 'STOP ON' : 'STOP OFF';
 
   let ultDesc = '';
   if (ultOn) {
@@ -1691,10 +1749,14 @@ function refreshModeHelp() {
   const sfxDesc = audio.sfx
     ? '타격/피격/건설 효과음이 재생됩니다. 상단 HUD의 SFX 버튼으로 끌 수 있습니다.'
     : '효과음이 음소거 상태입니다. 상단 HUD의 SFX 버튼으로 다시 켤 수 있습니다. (BGM은 별도)';
+  const stopDesc = state.paused
+    ? '정비 모드입니다. 적 이동/스폰/타워 공격은 멈추고 배치/업그레이드/판매만 가능합니다.'
+    : '실시간 전투 모드입니다. H 키 또는 STOP 버튼으로 언제든 정비 모드로 전환할 수 있습니다.';
 
   modeHelpEl.innerHTML = `
     <div class="row"><span class="tag">${ultTag}</span>${ultDesc}</div>
     <div class="row"><span class="tag">${sfxTag}</span>${sfxDesc}</div>
+    <div class="row"><span class="tag">${stopTag}</span>${stopDesc}</div>
   `;
 }
 
@@ -3197,8 +3259,16 @@ function step(dt) {
   state.banner.ttl = Math.max(0, state.banner.ttl - dt);
   if (state.banner.ttl <= 0 && overlayEl.querySelector('.banner')) {
     overlayEl.classList.add('hidden');
+    overlayEl.classList.remove('reward-mode');
     overlayEl.classList.remove('banner-passive');
     overlayEl.innerHTML = '';
+  }
+
+  if (state.paused) {
+    draw();
+    drawBanner();
+    refreshHud();
+    return;
   }
 
   let remain = simDt;
@@ -3263,6 +3333,11 @@ controlsEl.addEventListener('click', (event) => {
 
   if (event.target.closest('[data-action="speed-down"]')) {
     changeSimSpeed(-0.25);
+    return;
+  }
+
+  if (event.target.closest('[data-action="toggle-pause"]')) {
+    togglePauseMode();
     return;
   }
 
@@ -3405,6 +3480,10 @@ window.addEventListener('keydown', (event) => {
     sfx(state.sellMode ? 300 : 410, 0.05, 'triangle', 0.013);
   }
 
+  if (event.code === 'KeyH') {
+    togglePauseMode();
+  }
+
   if (event.code === 'KeyF') {
     changeSimSpeed(0.25);
   }
@@ -3427,6 +3506,7 @@ overlayEl.addEventListener('click', (event) => {
 
 function showMenu() {
   overlayEl.classList.remove('banner-passive');
+  overlayEl.classList.remove('reward-mode');
   overlayEl.classList.remove('hidden');
   overlayEl.innerHTML = `
     <div class="modal">
