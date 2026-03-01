@@ -236,6 +236,26 @@ header p {
   font-size: 12px;
 }
 
+.build-btn[data-kind="longSunken"] {
+  border-color: #4b6da7;
+  background: linear-gradient(180deg, #1a2948, #14223f);
+}
+
+.build-btn[data-kind="longSunken"] .icon {
+  background: rgba(143, 185, 255, 0.24);
+  color: #d6e7ff;
+}
+
+.build-btn[data-kind="sunkenSplash"] {
+  border-color: #93604a;
+  background: linear-gradient(180deg, #2f241d, #251d18);
+}
+
+.build-btn[data-kind="sunkenSplash"] .icon {
+  background: rgba(255, 159, 111, 0.24);
+  color: #ffd9c5;
+}
+
 .build-btn.active {
   border-color: #f0ca77;
   box-shadow: 0 0 0 2px rgba(240, 202, 119, 0.24) inset;

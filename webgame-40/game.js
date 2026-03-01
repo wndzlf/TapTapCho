@@ -234,7 +234,7 @@ const TOWER_TYPES = {
     id: 'longSunken',
     name: 'Long Sunken',
     cost: 220,
-    color: '#ffd08f',
+    color: '#8fb9ff',
     range: Math.hypot(W, H) * 1.2,
     damage: 58,
     reload: 1.42,
@@ -246,7 +246,7 @@ const TOWER_TYPES = {
     id: 'sunkenSplash',
     name: 'Splash Sunken',
     cost: 130,
-    color: '#ffc184',
+    color: '#ff9f6f',
     range: 114 * BALANCE_SCALE,
     damage: 36,
     reload: 0.9,
@@ -1909,7 +1909,7 @@ function spawnTowerHitVfx(x, y, towerKind, isUlt = false, secondary = false) {
         vy: Math.sin(ang) * speed,
         life: rand(0.12, 0.24),
         size: rand(2, 3.6),
-        color: '#ffdca5',
+        color: '#a7c8ff',
       });
     }
     push({
@@ -1921,7 +1921,7 @@ function spawnTowerHitVfx(x, y, towerKind, isUlt = false, secondary = false) {
       size: secondary ? 5.2 : 7.4,
       expand: secondary ? 9 : 17,
       lineWidth: 2,
-      color: '#ffcb81',
+      color: '#78a6ff',
       render: 'ring',
     });
     return;
@@ -2531,7 +2531,7 @@ function drawTowerSunken(tower, now) {
   ctx.strokeStyle = isSplash
     ? `rgba(255, 201, 143, ${0.34 + pulse * 0.24})`
     : isLong
-      ? `rgba(255, 208, 143, ${0.34 + pulse * 0.24})`
+      ? `rgba(152, 194, 255, ${0.34 + pulse * 0.24})`
     : isSlow
       ? `rgba(145, 244, 214, ${0.34 + pulse * 0.24})`
     : `rgba(147, 225, 255, ${0.34 + pulse * 0.24})`;
@@ -2546,9 +2546,9 @@ function drawTowerSunken(tower, now) {
     aura.addColorStop(0.58, 'rgba(255, 171, 93, 0.24)');
     aura.addColorStop(1, 'rgba(255, 117, 42, 0)');
   } else if (isLong) {
-    aura.addColorStop(0, 'rgba(255, 242, 196, 0.46)');
-    aura.addColorStop(0.58, 'rgba(255, 196, 116, 0.26)');
-    aura.addColorStop(1, 'rgba(158, 93, 38, 0)');
+    aura.addColorStop(0, 'rgba(206, 226, 255, 0.48)');
+    aura.addColorStop(0.58, 'rgba(123, 171, 255, 0.27)');
+    aura.addColorStop(1, 'rgba(56, 88, 156, 0)');
   } else if (isSlow) {
     aura.addColorStop(0, 'rgba(203, 255, 239, 0.44)');
     aura.addColorStop(0.58, 'rgba(130, 234, 199, 0.24)');
@@ -2571,9 +2571,9 @@ function drawTowerSunken(tower, now) {
     vortex.addColorStop(0.65, '#b0763f');
     vortex.addColorStop(1, '#2e1e12');
   } else if (isLong) {
-    vortex.addColorStop(0, '#ffe2aa');
-    vortex.addColorStop(0.65, '#b88946');
-    vortex.addColorStop(1, '#32230f');
+    vortex.addColorStop(0, '#d5e4ff');
+    vortex.addColorStop(0.65, '#5e89d5');
+    vortex.addColorStop(1, '#15203a');
   } else if (isSlow) {
     vortex.addColorStop(0, '#c9ffe9');
     vortex.addColorStop(0.65, '#4fba95');
@@ -2591,7 +2591,7 @@ function drawTowerSunken(tower, now) {
   ctx.strokeStyle = isSplash
     ? 'rgba(255, 232, 171, 0.62)'
     : isLong
-      ? 'rgba(255, 236, 186, 0.66)'
+      ? 'rgba(216, 232, 255, 0.68)'
     : isSlow
       ? 'rgba(201, 255, 238, 0.65)'
       : 'rgba(196, 242, 255, 0.62)';
@@ -2608,7 +2608,7 @@ function drawTowerSunken(tower, now) {
     ctx.fillStyle = isSplash
       ? 'rgba(255, 216, 143, 0.84)'
       : isLong
-        ? 'rgba(255, 227, 166, 0.84)'
+        ? 'rgba(196, 221, 255, 0.86)'
       : isSlow
         ? 'rgba(194, 255, 236, 0.84)'
         : 'rgba(197, 242, 255, 0.84)';
@@ -2626,7 +2626,7 @@ function drawTowerSunken(tower, now) {
   ctx.fillStyle = isSplash
     ? 'rgba(255, 215, 142, 0.78)'
     : isLong
-      ? 'rgba(255, 219, 150, 0.8)'
+      ? 'rgba(172, 206, 255, 0.82)'
     : isSlow
       ? 'rgba(191, 255, 229, 0.78)'
       : 'rgba(198, 246, 255, 0.78)';
@@ -2647,7 +2647,7 @@ function drawTowerSunken(tower, now) {
     ctx.strokeStyle = isSplash
       ? `rgba(255, 190, 115, ${0.66 + pulse * 0.2})`
       : isLong
-        ? `rgba(255, 209, 124, ${0.66 + pulse * 0.2})`
+        ? `rgba(133, 182, 255, ${0.66 + pulse * 0.2})`
       : isSlow
         ? `rgba(135, 248, 209, ${0.66 + pulse * 0.2})`
         : `rgba(162, 236, 255, ${0.66 + pulse * 0.2})`;
@@ -2665,7 +2665,7 @@ function drawTowerSunken(tower, now) {
     ctx.strokeStyle = isSplash
       ? `rgba(255, 169, 86, ${0.52 + pulse * 0.24})`
       : isLong
-        ? `rgba(255, 196, 98, ${0.52 + pulse * 0.24})`
+        ? `rgba(118, 170, 255, ${0.52 + pulse * 0.24})`
       : `rgba(92, 246, 208, ${0.52 + pulse * 0.24})`;
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -2833,11 +2833,11 @@ function drawTowers() {
     const border = tower.kind === 'sunken'
       ? 'rgba(141, 217, 255, 0.8)'
       : tower.kind === 'longSunken'
-        ? 'rgba(255, 208, 143, 0.9)'
+        ? 'rgba(143, 185, 255, 0.92)'
       : tower.kind === 'sunkenSlow'
         ? 'rgba(145, 244, 214, 0.88)'
       : tower.kind === 'sunkenSplash'
-        ? 'rgba(255, 193, 132, 0.86)'
+        ? 'rgba(255, 159, 111, 0.9)'
         : tower.kind === 'spine'
           ? 'rgba(185, 232, 172, 0.8)'
           : tower.kind === 'obelisk'
