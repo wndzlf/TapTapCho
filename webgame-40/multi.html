@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sunken Sixway Defense - Multi</title>
+  <link rel="stylesheet" href="multi.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="mode-tabs">
+        <a class="mode-tab" href="./index.html">싱글 모드</a>
+        <a class="mode-tab active" href="./multi.html">멀티 모드</a>
+      </div>
+      <h1>Sunken Sixway Defense: 4P Multi</h1>
+      <p>12시·3시·6시·9시 라인에서 몹이 몰려옵니다. 중앙 코어를 팀으로 지키세요.</p>
+    </header>
+
+    <section class="net" id="netPanel">
+      <label>서버
+        <input id="serverUrl" type="text" placeholder="ws://192.168.0.10:9091" />
+      </label>
+      <label>아이디
+        <input id="playerName" type="text" maxlength="14" placeholder="Player" />
+      </label>
+      <label>방 이름
+        <input id="roomName" type="text" maxlength="22" placeholder="예: 성큰 팀전" />
+      </label>
+      <button id="btnConnect" type="button">연결</button>
+      <button id="btnCreateRoom" type="button">방 만들기</button>
+      <button id="btnRefreshRooms" type="button">목록 새로고침</button>
+      <button id="btnLeaveRoom" type="button">방 나가기</button>
+      <button id="btnReconnect" class="reconnect" type="button">새로고침/재연결</button>
+      <div class="status" id="statusText">연결 전</div>
+    </section>
+
+    <section class="rooms" id="roomsPanel">
+      <h2>멀티 방 목록</h2>
+      <div class="room-list" id="roomList"></div>
+    </section>
+
+    <section class="hud" id="hudPanel">
+      <div class="stat">Room <b id="roomText">-</b></div>
+      <div class="stat">Lane <b id="laneText">-</b></div>
+      <div class="stat">Wave <b id="waveText">-</b></div>
+      <div class="stat">Core <b id="coreText">-</b></div>
+      <div class="stat">Gold <b id="goldText">-</b></div>
+      <div class="stat">Queue <b id="queueText">-</b></div>
+      <div class="stat">Players <b id="playersText">-</b></div>
+      <div class="stat">Pending <b id="pendingText">0</b></div>
+    </section>
+
+    <section class="controls">
+      <button class="build-btn active" data-tower="sunken" id="btnSunken" type="button">
+        <span class="icon">S</span>
+        <span class="name">Sunken</span>
+        <span class="cost">60</span>
+      </button>
+      <button class="build-btn" data-tower="spine" id="btnSpine" type="button">
+        <span class="icon">P</span>
+        <span class="name">Spine</span>
+        <span class="cost">92</span>
+      </button>
+      <button class="build-btn" data-tower="obelisk" id="btnObelisk" type="button">
+        <span class="icon">O</span>
+        <span class="name">Obelisk</span>
+        <span class="cost">138</span>
+      </button>
+      <button class="build-btn" data-tower="snare" id="btnSnare" type="button">
+        <span class="icon">N</span>
+        <span class="name">Snare</span>
+        <span class="cost">118</span>
+      </button>
+      <button class="build-btn mode-btn" id="btnSellMode" type="button">
+        <span class="icon">E</span>
+        <span class="name">SELL OFF</span>
+        <span class="cost">판매 모드</span>
+      </button>
+      <div class="hint" id="hintText">내 라인의 슬롯을 눌러 배치/판매 · 오프라인 중 작업은 Pending으로 저장됩니다.</div>
+    </section>
+
+    <div class="arena">
+      <canvas id="game" width="960" height="640"></canvas>
+      <div class="overlay" id="overlay">방 목록에서 입장하면 시작됩니다.</div>
+    </div>
+  </div>
+
+  <script src="../assets/js/neon-audio.js"></script>
+  <script src="multi.js"></script>
+</body>
+</html>

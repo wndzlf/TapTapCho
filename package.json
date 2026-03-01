@@ -4,6 +4,7 @@
   "type": "commonjs",
   "scripts": {
     "worm-lan-server": "node scripts/worm-lan-server.js",
+    "sunken-multi-server": "node scripts/sunken-multi-server.js",
     "generate-thumbnails": "node scripts/generate-thumbnails.js"
   },
   "dependencies": {

@@ -33,6 +33,32 @@ python3 -m http.server 8080
 - Server 입력값: `ws://<호스트PC-IP>:9090`
 - 같은 Room 코드로 `Host` 또는 `Join`
 
+### 같은 와이파이 멀티(Sunken Sixway 4P)
+
+1. 멀티 서버 실행 (호스트 PC 1대):
+
+```bash
+cd /Users/user/TapTapCho
+npm install
+npm run sunken-multi-server
+```
+
+2. 정적 웹 서버 실행:
+
+```bash
+cd /Users/user/TapTapCho
+python3 -m http.server 8080
+```
+
+3. 같은 와이파이 기기에서 접속:
+- 게임 페이지: `http://<호스트PC-IP>:8080/webgame-40/multi.html`
+- Server 입력값: `ws://<호스트PC-IP>:9091`
+- 방 만들기 후 방 목록에서 클릭 참여(방 번호 수동 입력 없이 참여 가능)
+
+4. 오프라인 복구:
+- 연결이 끊기면 우상단 `새로고침/재연결` 버튼이 표시됩니다.
+- 끊긴 상태에서 한 배치/판매 작업은 Pending 큐로 저장되고, 새로고침 후 재연결 시 자동 재전송됩니다.
+
 ## 2) 개발 원칙
 
 - 5초 안에 재미 포인트가 보여야 합니다.
