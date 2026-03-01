@@ -74,6 +74,13 @@ const IMPACT_SFX_SOURCES = {
     '../assets/audio/kenney_impact/impactPunch_heavy_003.ogg',
     '../assets/audio/kenney_impact/impactPunch_heavy_004.ogg',
   ],
+  towerBreak: [
+    '../assets/audio/kenney_impact/impactMetal_light_000.ogg',
+    '../assets/audio/kenney_impact/impactMetal_light_001.ogg',
+    '../assets/audio/kenney_impact/impactMetal_light_002.ogg',
+    '../assets/audio/kenney_impact/impactMetal_light_003.ogg',
+    '../assets/audio/kenney_impact/impactMetal_light_004.ogg',
+  ],
   baseHit: [
     '../assets/audio/kenney_impact/impactPlate_heavy_000.ogg',
     '../assets/audio/kenney_impact/impactPlate_heavy_001.ogg',
@@ -1688,6 +1695,7 @@ function damageTower(tower, amount, sourceEnemy = null) {
   if (tower.hp > 0) return;
 
   removeTower(tower);
+  impactSfx.play('towerBreak', { volume: 0.22, minGap: 0.08, rateMin: 0.86, rateMax: 0.95 });
   flashBanner(`${tower.kind.toUpperCase()} DESTROYED`, 0.9, true);
   sfx(170, 0.12, 'sawtooth', 0.04);
 }
