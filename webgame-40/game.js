@@ -169,6 +169,7 @@ const BALANCE_SCALE = GRID_CELL / 30;
 const W = canvas.width;
 const H = canvas.height;
 const TAU = Math.PI * 2;
+let battlefieldBackdrop = null;
 
 const GRID = {
   cell: GRID_CELL,
@@ -1809,27 +1810,148 @@ function updateSpawning(dt) {
   }
 }
 
+function getBattlefieldBackdrop() {
+  if (battlefieldBackdrop) return battlefieldBackdrop;
+
+  const layer = document.createElement('canvas');
+  layer.width = W;
+  layer.height = H;
+  const bx = layer.getContext('2d');
+
+  const baseGrad = bx.createLinearGradient(0, 0, 0, H);
+  baseGrad.addColorStop(0, '#4a503f');
+  baseGrad.addColorStop(0.45, '#3e4536');
+  baseGrad.addColorStop(1, '#2c3128');
+  bx.fillStyle = baseGrad;
+  bx.fillRect(0, 0, W, H);
+
+  // 중앙 전투 라인(진흙길 + 전차 궤도)로 "전장" 인상을 강화.
+  const battleLineY = cellCenter(Math.floor(GRID.cols / 2), SPAWN.r).y;
+  const roadGrad = bx.createLinearGradient(0, battleLineY - GRID.cell * 1.1, 0, battleLineY + GRID.cell * 1.1);
+  roadGrad.addColorStop(0, 'rgba(44, 40, 30, 0.78)');
+  roadGrad.addColorStop(0.5, 'rgba(72, 62, 43, 0.86)');
+  roadGrad.addColorStop(1, 'rgba(45, 40, 31, 0.78)');
+  bx.fillStyle = roadGrad;
+  bx.fillRect(0, battleLineY - GRID.cell * 1.2, W, GRID.cell * 2.4);
+
+  bx.strokeStyle = 'rgba(96, 86, 61, 0.54)';
+  bx.lineWidth = 2.4;
+  for (let lane = -1; lane <= 1; lane += 1) {
+    const y = battleLineY + lane * (GRID.cell * 0.45);
+    bx.beginPath();
+    bx.moveTo(0, y);
+    bx.lineTo(W, y);
+    bx.stroke();
+  }
+
+  // 흙 얼룩/잔해 텍스처
+  for (let i = 0; i < 220; i += 1) {
+    const x = Math.random() * W;
+    const y = Math.random() * H;
+    const r = 4 + Math.random() * 16;
+    bx.fillStyle = Math.random() < 0.5
+      ? `rgba(66, 71, 56, ${0.08 + Math.random() * 0.1})`
+      : `rgba(22, 24, 19, ${0.05 + Math.random() * 0.1})`;
+    bx.beginPath();
+    bx.arc(x, y, r, 0, TAU);
+    bx.fill();
+  }
+
+  // 전장 분화구
+  const craterCount = Math.max(18, Math.floor((W * H) / 32000));
+  for (let i = 0; i < craterCount; i += 1) {
+    const x = rand(36, W - 36);
+    const y = rand(34, H - 34);
+    const r = rand(14, 34);
+    bx.fillStyle = 'rgba(29, 26, 22, 0.6)';
+    bx.beginPath();
+    bx.ellipse(x, y, r * 1.1, r * 0.82, rand(0, TAU), 0, TAU);
+    bx.fill();
+
+    bx.strokeStyle = 'rgba(107, 96, 72, 0.45)';
+    bx.lineWidth = 1.4;
+    bx.beginPath();
+    bx.arc(x, y, r * 0.86, 0, TAU);
+    bx.stroke();
+
+    bx.strokeStyle = 'rgba(18, 16, 14, 0.34)';
+    bx.lineWidth = 2;
+    bx.beginPath();
+    bx.arc(x + 1.3, y + 1.1, r * 0.62, 0, TAU);
+    bx.stroke();
+  }
+
+  // 참호 라인
+  const trenchLines = Math.max(3, Math.floor(H / 220));
+  for (let i = 0; i < trenchLines; i += 1) {
+    const y = ((i + 1) / (trenchLines + 1)) * H + rand(-22, 22);
+    bx.strokeStyle = 'rgba(31, 35, 27, 0.68)';
+    bx.lineWidth = 10 + Math.random() * 6;
+    bx.beginPath();
+    bx.moveTo(-20, y + rand(-8, 8));
+    bx.bezierCurveTo(W * 0.22, y + rand(-30, 30), W * 0.58, y + rand(-26, 26), W + 20, y + rand(-10, 10));
+    bx.stroke();
+
+    bx.strokeStyle = 'rgba(88, 80, 58, 0.45)';
+    bx.lineWidth = 2.2;
+    bx.beginPath();
+    bx.moveTo(-20, y - 4 + rand(-6, 6));
+    bx.bezierCurveTo(W * 0.28, y + rand(-20, 20), W * 0.64, y + rand(-18, 18), W + 20, y + rand(-8, 8));
+    bx.stroke();
+  }
+
+  // 상단/하단 철조망 느낌
+  for (const yy of [18, H - 18]) {
+    bx.strokeStyle = 'rgba(78, 84, 71, 0.56)';
+    bx.lineWidth = 1.3;
+    bx.beginPath();
+    bx.moveTo(0, yy);
+    bx.lineTo(W, yy);
+    bx.stroke();
+    for (let x = 10; x < W; x += 36) {
+      bx.beginPath();
+      bx.moveTo(x, yy - 5);
+      bx.lineTo(x + 6, yy + 5);
+      bx.moveTo(x + 10, yy - 5);
+      bx.lineTo(x + 16, yy + 5);
+      bx.stroke();
+    }
+  }
+
+  battlefieldBackdrop = layer;
+  return battlefieldBackdrop;
+}
+
 function drawBackground() {
-  const grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, '#161d30');
-  grad.addColorStop(1, '#0b101b');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, H);
+  const backdrop = getBattlefieldBackdrop();
+  ctx.drawImage(backdrop, 0, 0);
 
-  const pulse = Math.sin(performance.now() * 0.0012) * 0.5 + 0.5;
-
-  ctx.fillStyle = `rgba(131, 176, 255, ${0.06 + pulse * 0.05})`;
-  for (let i = 0; i < 7; i += 1) {
-    const x = (i * 170 + performance.now() * 0.015) % (W + 220) - 110;
-    const y = ((i * 137 + performance.now() * 0.008) % (H + 180)) - 90;
+  // 실시간 연기/포연 레이어
+  const t = performance.now() * 0.001;
+  const plumes = [
+    { x: W * 0.14, y: H * 0.18, r: 70 },
+    { x: W * 0.84, y: H * 0.22, r: 86 },
+    { x: W * 0.27, y: H * 0.78, r: 74 },
+    { x: W * 0.73, y: H * 0.72, r: 92 },
+  ];
+  for (let i = 0; i < plumes.length; i += 1) {
+    const puff = plumes[i];
+    const px = puff.x + Math.sin(t * (0.52 + i * 0.08) + i * 1.4) * 12;
+    const py = puff.y + Math.cos(t * (0.42 + i * 0.06) + i * 0.9) * 9;
+    const radius = puff.r + Math.sin(t * 0.9 + i * 2.2) * 8;
+    const smoke = ctx.createRadialGradient(px, py, radius * 0.08, px, py, radius);
+    smoke.addColorStop(0, 'rgba(128, 122, 106, 0.16)');
+    smoke.addColorStop(0.55, 'rgba(76, 74, 67, 0.12)');
+    smoke.addColorStop(1, 'rgba(20, 21, 19, 0)');
+    ctx.fillStyle = smoke;
     ctx.beginPath();
-    ctx.arc(x, y, 90 + (i % 3) * 26, 0, TAU);
+    ctx.arc(px, py, radius, 0, TAU);
     ctx.fill();
   }
 }
 
 function drawGrid() {
-  ctx.strokeStyle = 'rgba(90, 116, 157, 0.22)';
+  ctx.strokeStyle = 'rgba(126, 143, 109, 0.2)';
   ctx.lineWidth = 1;
 
   for (let c = 0; c <= GRID.cols; c += 1) {
