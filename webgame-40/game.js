@@ -350,7 +350,7 @@ const TOWER_GUIDE_DETAILS = {
 const state = {
   mode: 'menu',
   stage: 1,
-  maxStage: 30,
+  maxStage: 50,
   baseHp: 20,
   gold: 160,
   kills: 0,
