@@ -266,6 +266,16 @@ header p {
   color: #ebdbff;
 }
 
+.build-btn[data-kind="sunkenStun"] {
+  border-color: #9f7a2f;
+  background: linear-gradient(180deg, #34280f, #281f0c);
+}
+
+.build-btn[data-kind="sunkenStun"] .icon {
+  background: rgba(255, 217, 106, 0.24);
+  color: #fff0c8;
+}
+
 .build-btn.active {
   border-color: #f0ca77;
   box-shadow: 0 0 0 2px rgba(240, 202, 119, 0.24) inset;
