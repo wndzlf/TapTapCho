@@ -245,6 +245,11 @@ canvas {
   background: linear-gradient(180deg, rgba(7, 9, 17, 0.44), rgba(8, 10, 20, 0.58));
 }
 
+.overlay.banner-passive {
+  pointer-events: none;
+  background: transparent;
+}
+
 .overlay.hidden {
   display: none;
 }

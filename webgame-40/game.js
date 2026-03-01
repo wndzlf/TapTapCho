@@ -907,6 +907,8 @@ function startRun() {
   startStage(1);
 
   overlayEl.classList.add('hidden');
+  overlayEl.classList.remove('banner-passive');
+  overlayEl.innerHTML = '';
   bgmAudio?.unlock();
   sfx(400, 0.09, 'triangle', 0.025);
   refreshHud();
@@ -914,6 +916,7 @@ function startRun() {
 
 function setDefeat() {
   state.mode = 'defeat';
+  overlayEl.classList.remove('banner-passive');
   overlayEl.classList.remove('hidden');
   overlayEl.innerHTML = `
     <div class="modal">
@@ -930,6 +933,7 @@ function setDefeat() {
 
 function setVictory() {
   state.mode = 'victory';
+  overlayEl.classList.remove('banner-passive');
   overlayEl.classList.remove('hidden');
   overlayEl.innerHTML = `
     <div class="modal">
@@ -951,6 +955,7 @@ function showStageReward() {
   state.gold += clearGold;
   state.mode = 'reward';
 
+  overlayEl.classList.remove('banner-passive');
   overlayEl.classList.remove('hidden');
   overlayEl.innerHTML = `
     <div class="modal">
@@ -1002,6 +1007,7 @@ function applyStageReward(kind) {
 
   state.mode = 'playing';
   overlayEl.classList.add('hidden');
+  overlayEl.classList.remove('banner-passive');
   overlayEl.innerHTML = '';
 
   const nextStage = state.pendingStage || state.stage + 1;
@@ -1744,6 +1750,7 @@ function drawTowerSunken(tower, now) {
   const scale = 1 + ((tower.footprint || 1) - 1) * 0.86;
   const pulse = 0.5 + 0.5 * Math.sin(now * 4 + tower.c * 0.31 + tower.r * 0.17);
   const ringR = (8.4 + tower.level * 1.3) * scale;
+  const levelPower = clamp((tower.level - 1) / 2, 0, 1);
 
   ctx.save();
   ctx.translate(tower.x, tower.y);
@@ -1760,6 +1767,23 @@ function drawTowerSunken(tower, now) {
   ctx.beginPath();
   ctx.arc(0, 0, ringR + 1.3, 0, TAU);
   ctx.stroke();
+
+  const aura = ctx.createRadialGradient(0, 0, ringR * 0.45, 0, 0, ringR + 12 + tower.level * 2.2);
+  if (isSplash) {
+    aura.addColorStop(0, 'rgba(255, 224, 156, 0.42)');
+    aura.addColorStop(0.58, 'rgba(255, 171, 93, 0.24)');
+    aura.addColorStop(1, 'rgba(255, 117, 42, 0)');
+  } else {
+    aura.addColorStop(0, 'rgba(188, 245, 255, 0.4)');
+    aura.addColorStop(0.58, 'rgba(122, 214, 255, 0.24)');
+    aura.addColorStop(1, 'rgba(58, 135, 186, 0)');
+  }
+  ctx.globalAlpha = 0.24 + levelPower * 0.2 + pulse * 0.08;
+  ctx.fillStyle = aura;
+  ctx.beginPath();
+  ctx.arc(0, 0, ringR + 10 + tower.level * 1.2 + pulse * 1.5, 0, TAU);
+  ctx.fill();
+  ctx.globalAlpha = 1;
 
   const vortex = ctx.createRadialGradient(0, 0, 1, 0, 0, ringR);
   if (isSplash) {
@@ -1783,6 +1807,19 @@ function drawTowerSunken(tower, now) {
     ctx.beginPath();
     ctx.arc(0, 0, 3.1 + i * 1.6, rot, rot + Math.PI * 0.95);
     ctx.stroke();
+  }
+
+  if (tower.level >= 2) {
+    const orbitCount = 3 + tower.level;
+    ctx.fillStyle = isSplash ? 'rgba(255, 216, 143, 0.84)' : 'rgba(197, 242, 255, 0.84)';
+    for (let i = 0; i < orbitCount; i += 1) {
+      const orbitA = now * (1.2 + i * 0.07) + i * (TAU / orbitCount);
+      const orbitR = ringR + 5.5 + tower.level * 1.7 + Math.sin(now * 2.5 + i) * 1.2;
+      const size = 1.2 + levelPower * 0.9;
+      ctx.beginPath();
+      ctx.arc(Math.cos(orbitA) * orbitR, Math.sin(orbitA) * orbitR, size, 0, TAU);
+      ctx.fill();
+    }
   }
 
   const teeth = 5 + tower.level * 2;
@@ -1811,6 +1848,18 @@ function drawTowerSunken(tower, now) {
     ctx.beginPath();
     ctx.arc(0, 0, 2.8 + pulse * 1.3, 0, TAU);
     ctx.fill();
+  }
+
+  if (tower.level >= 3) {
+    ctx.strokeStyle = isSplash ? `rgba(255, 190, 115, ${0.66 + pulse * 0.2})` : `rgba(162, 236, 255, ${0.66 + pulse * 0.2})`;
+    ctx.lineWidth = 1.8;
+    for (let i = 0; i < 4; i += 1) {
+      const beamA = now * 1.7 + i * (TAU / 4);
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(beamA) * (ringR - 2.4), Math.sin(beamA) * (ringR - 2.4));
+      ctx.lineTo(Math.cos(beamA) * (ringR + 10 + pulse * 2.4), Math.sin(beamA) * (ringR + 10 + pulse * 2.4));
+      ctx.stroke();
+    }
   }
 
   if (isSplash) {
@@ -2218,6 +2267,7 @@ function drawBanner() {
   const html = `<div class="${cls}">${state.banner.text}</div>`;
 
   if (!overlayEl.classList.contains('hidden')) return;
+  overlayEl.classList.add('banner-passive');
 
   const current = overlayEl.querySelector('.banner');
   if (!current || current.textContent !== state.banner.text || current.className !== cls) {
@@ -2250,6 +2300,7 @@ function step(dt) {
   state.banner.ttl = Math.max(0, state.banner.ttl - dt);
   if (state.banner.ttl <= 0 && overlayEl.querySelector('.banner')) {
     overlayEl.classList.add('hidden');
+    overlayEl.classList.remove('banner-passive');
     overlayEl.innerHTML = '';
   }
 
@@ -2383,6 +2434,7 @@ overlayEl.addEventListener('click', (event) => {
 });
 
 function showMenu() {
+  overlayEl.classList.remove('banner-passive');
   overlayEl.classList.remove('hidden');
   overlayEl.innerHTML = `
     <div class="modal">
