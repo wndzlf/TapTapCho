@@ -251,19 +251,60 @@ footer {
 }
 
 @media (max-width: 860px) {
+  .wrap {
+    width: 98vw;
+    margin: 8px auto 14px;
+  }
+
+  header p {
+    margin: 4px 0 8px;
+    font-size: 14px;
+  }
+
+  .hud {
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  .stat {
+    min-width: 86px;
+    font-size: 14px;
+  }
+
+  .controls {
+    gap: 6px;
+    padding: 8px;
+  }
+
   .hint {
     width: 100%;
     margin-left: 0;
-    font-size: 12px;
+    font-size: 11px;
+    line-height: 1.25;
   }
 
   .build-btn {
-    min-width: 124px;
-    padding: 10px 11px;
+    min-width: 92px;
+    padding: 6px 7px;
+    gap: 2px;
+  }
+
+  .build-btn .icon {
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
   }
 
   .build-btn .name {
-    font-size: 15px;
+    font-size: 13px;
+  }
+
+  .build-btn .cost {
+    font-size: 11px;
+  }
+
+  canvas {
+    max-height: 82vh;
   }
 
   .reward-grid {
