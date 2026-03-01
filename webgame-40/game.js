@@ -20,6 +20,7 @@ const btnSnare = document.getElementById('btnSnare');
 const btnSellMode = document.getElementById('btnSellMode');
 const btnSpeedDown = document.getElementById('btnSpeedDown');
 const btnSpeedUp = document.getElementById('btnSpeedUp');
+const btnUltSunken = document.getElementById('btnUltSunken');
 
 const bgmAudio = window.TapTapNeonAudio?.create('webgame-40', hudEl, {
   theme: 'rush',
@@ -37,6 +38,121 @@ const ENEMY_TANK_SOURCES = {
   lord: '../assets/kenney_tanks/png/tanks_tankNavy5.png',
 };
 const ENEMY_TANK_IMAGES = Object.create(null);
+
+const IMPACT_SFX_SOURCES = {
+  build: [
+    '../assets/audio/kenney_impact/impactWood_medium_000.ogg',
+    '../assets/audio/kenney_impact/impactWood_medium_001.ogg',
+    '../assets/audio/kenney_impact/impactWood_medium_002.ogg',
+    '../assets/audio/kenney_impact/impactWood_medium_003.ogg',
+    '../assets/audio/kenney_impact/impactWood_medium_004.ogg',
+  ],
+  enemyHit: [
+    '../assets/audio/kenney_impact/impactMetal_light_000.ogg',
+    '../assets/audio/kenney_impact/impactMetal_light_001.ogg',
+    '../assets/audio/kenney_impact/impactMetal_light_002.ogg',
+    '../assets/audio/kenney_impact/impactMetal_light_003.ogg',
+    '../assets/audio/kenney_impact/impactMetal_light_004.ogg',
+  ],
+  enemyHitHeavy: [
+    '../assets/audio/kenney_impact/impactBell_heavy_000.ogg',
+    '../assets/audio/kenney_impact/impactBell_heavy_001.ogg',
+    '../assets/audio/kenney_impact/impactBell_heavy_002.ogg',
+    '../assets/audio/kenney_impact/impactBell_heavy_003.ogg',
+    '../assets/audio/kenney_impact/impactBell_heavy_004.ogg',
+  ],
+  towerHit: [
+    '../assets/audio/kenney_impact/impactPunch_heavy_000.ogg',
+    '../assets/audio/kenney_impact/impactPunch_heavy_001.ogg',
+    '../assets/audio/kenney_impact/impactPunch_heavy_002.ogg',
+    '../assets/audio/kenney_impact/impactPunch_heavy_003.ogg',
+    '../assets/audio/kenney_impact/impactPunch_heavy_004.ogg',
+  ],
+  baseHit: [
+    '../assets/audio/kenney_impact/impactPlate_heavy_000.ogg',
+    '../assets/audio/kenney_impact/impactPlate_heavy_001.ogg',
+    '../assets/audio/kenney_impact/impactPlate_heavy_002.ogg',
+    '../assets/audio/kenney_impact/impactPlate_heavy_003.ogg',
+    '../assets/audio/kenney_impact/impactPlate_heavy_004.ogg',
+  ],
+  ultReady: [
+    '../assets/audio/kenney_impact/impactBell_heavy_001.ogg',
+    '../assets/audio/kenney_impact/impactBell_heavy_002.ogg',
+  ],
+  ultPlace: [
+    '../assets/audio/kenney_impact/impactBell_heavy_003.ogg',
+    '../assets/audio/kenney_impact/impactBell_heavy_004.ogg',
+  ],
+  ultShot: [
+    '../assets/audio/kenney_impact/impactBell_heavy_000.ogg',
+    '../assets/audio/kenney_impact/impactBell_heavy_002.ogg',
+  ],
+};
+
+function isSfxEnabled() {
+  try {
+    const raw = localStorage.getItem('taptapcho_neon_audio_v1');
+    if (!raw) return true;
+    const parsed = JSON.parse(raw);
+    return parsed?.sfx !== false;
+  } catch (_) {
+    return true;
+  }
+}
+
+const impactSfx = (() => {
+  const pools = Object.create(null);
+  const roundRobin = Object.create(null);
+  const lastPlayed = Object.create(null);
+
+  function ensurePool(name) {
+    if (pools[name]) return pools[name];
+    const sources = IMPACT_SFX_SOURCES[name] || [];
+    const pool = [];
+    for (const src of sources) {
+      for (let i = 0; i < 2; i += 1) {
+        const audio = new Audio(src);
+        audio.preload = 'auto';
+        audio.setAttribute('playsinline', '');
+        pool.push(audio);
+      }
+    }
+    pools[name] = pool;
+    roundRobin[name] = 0;
+    return pool;
+  }
+
+  function play(name, {
+    volume = 0.36,
+    minGap = 0.06,
+    rateMin = 0.95,
+    rateMax = 1.05,
+  } = {}) {
+    if (!isSfxEnabled()) return;
+    const now = performance.now();
+    const last = lastPlayed[name] || 0;
+    if (now - last < minGap * 1000) return;
+    lastPlayed[name] = now;
+
+    const pool = ensurePool(name);
+    if (!pool.length) return;
+
+    const idx = roundRobin[name] % pool.length;
+    roundRobin[name] += 1;
+    const audio = pool[idx];
+    if (!audio) return;
+
+    audio.volume = clamp(volume, 0, 1);
+    audio.playbackRate = rand(rateMin, rateMax);
+    audio.currentTime = 0;
+    const played = audio.play();
+    if (played && typeof played.catch === 'function') {
+      played.catch(() => {});
+    }
+  }
+
+  return { play };
+})();
 
 const isMobileView = window.matchMedia('(max-width: 860px), (pointer: coarse)').matches;
 if (isMobileView) {
@@ -126,6 +242,8 @@ const state = {
   score: 0,
   selectedTower: 'sunken',
   sunkenFootprint: 1,
+  ultSunkenCharges: 0,
+  ultSunkenArmed: false,
   sellMode: false,
   simSpeed: 1,
   stageTimer: 0,
@@ -215,6 +333,22 @@ function getPlacementSpec(kind) {
   const base = TOWER_TYPES[kind];
   if (!base) return null;
 
+  if (kind === 'sunken' && state.ultSunkenArmed && state.ultSunkenCharges > 0) {
+    return {
+      kind,
+      footprint: 1,
+      cost: 0,
+      range: base.range * 2.2,
+      damage: base.damage * 3.35,
+      reload: base.reload * 0.58,
+      bulletSpeed: base.bulletSpeed * 1.24,
+      pierce: 3,
+      hp: base.hp * 4.6,
+      color: '#ffd77a',
+      ultimate: true,
+    };
+  }
+
   if (kind === 'sunken' && state.sunkenFootprint === 2) {
     return {
       kind,
@@ -227,6 +361,7 @@ function getPlacementSpec(kind) {
       pierce: base.pierce,
       hp: base.hp * 2.45,
       color: base.color,
+      ultimate: false,
     };
   }
 
@@ -241,6 +376,7 @@ function getPlacementSpec(kind) {
     pierce: base.pierce,
     hp: base.hp,
     color: base.color,
+    ultimate: false,
   };
 }
 
@@ -380,6 +516,7 @@ function makeTower(kind, c, r, spec = null) {
     hp: placement.hp * hpMul,
     cooldown: rand(0.02, placement.reload),
     color: placement.color || base.color,
+    ultimate: Boolean(placement.ultimate),
     sealTimer: 0,
     snareDuration: base.snareDuration || 0,
     snareSlow: base.snareSlow || 1,
@@ -473,9 +610,20 @@ function tryPlaceTower(c, r) {
   state.towers.push(tower);
   state.gold -= placement.cost;
 
+  if (placement.ultimate) {
+    state.ultSunkenCharges = Math.max(0, state.ultSunkenCharges - 1);
+    if (state.ultSunkenCharges <= 0) state.ultSunkenArmed = false;
+    flashBanner('ULT SUNKEN DEPLOY', 0.9);
+    impactSfx.play('ultPlace', { volume: 0.44, minGap: 0.12, rateMin: 0.95, rateMax: 1.02 });
+  } else {
+    impactSfx.play('build', { volume: 0.28, minGap: 0.045, rateMin: 0.96, rateMax: 1.04 });
+  }
+
   for (const enemy of state.enemies) {
     enemy.repath = 0;
   }
+  refreshUltButton();
+  refreshBuildHint();
   sfx(420 + rand(-20, 30), 0.04, 'triangle', 0.014);
 }
 
@@ -486,6 +634,7 @@ function sellTower(c, r) {
   state.gold += refund;
   removeTower(tower);
   flashBanner(`SELL +${refund}`, 0.8);
+  impactSfx.play('build', { volume: 0.2, minGap: 0.05, rateMin: 0.92, rateMax: 0.98 });
   sfx(340, 0.06, 'triangle', 0.018);
 }
 
@@ -670,12 +819,15 @@ function startRun() {
   state.simSpeed = 1;
   state.selectedTower = 'sunken';
   state.sunkenFootprint = 1;
+  state.ultSunkenCharges = 0;
+  state.ultSunkenArmed = false;
   state.sellMode = false;
   state.towerHpBonus = 0;
   state.siegeDamageBonus = 0;
   state.pendingStage = 0;
   state.pendingStageBonusGold = 0;
   setSelectedButton();
+  refreshUltButton();
   setSellMode(false);
   refreshBuildHint();
 
@@ -794,6 +946,7 @@ function refreshHud() {
   queueTextEl.textContent = String(state.spawnQueue.length);
   killsTextEl.textContent = String(state.kills);
   if (speedTextEl) speedTextEl.textContent = `${state.simSpeed.toFixed(2)}x`;
+  refreshUltButton();
 }
 
 function setSelectedButton() {
@@ -808,6 +961,39 @@ function setSellMode(enabled) {
   btnSellMode.classList.toggle('active', state.sellMode);
   const nameEl = btnSellMode.querySelector('.name');
   if (nameEl) nameEl.textContent = state.sellMode ? 'SELL ON' : 'SELL OFF';
+}
+
+function refreshUltButton() {
+  if (!btnUltSunken) return;
+  const armed = state.ultSunkenArmed && state.ultSunkenCharges > 0;
+  btnUltSunken.classList.toggle('active', armed);
+  const nameEl = btnUltSunken.querySelector('.name');
+  const costEl = btnUltSunken.querySelector('.cost');
+  if (nameEl) nameEl.textContent = armed ? 'ULT ON' : 'ULT OFF';
+  if (costEl) costEl.textContent = `필살 성큰 ${state.ultSunkenCharges}`;
+}
+
+function setUltSunkenArmed(enabled) {
+  if (state.ultSunkenCharges <= 0) {
+    state.ultSunkenArmed = false;
+  } else {
+    state.ultSunkenArmed = Boolean(enabled);
+  }
+  refreshUltButton();
+  refreshBuildHint();
+}
+
+function grantUltSunkenCharge(count = 1, reason = '') {
+  const before = state.ultSunkenCharges;
+  state.ultSunkenCharges = clamp(state.ultSunkenCharges + count, 0, 3);
+  if (state.ultSunkenCharges > before) {
+    state.ultSunkenArmed = true;
+    const suffix = reason ? ` (${reason})` : '';
+    flashBanner(`ULT SUNKEN +${state.ultSunkenCharges - before}${suffix}`, 0.9);
+    impactSfx.play('ultReady', { volume: 0.38, minGap: 0.15, rateMin: 0.96, rateMax: 1.02 });
+  }
+  refreshUltButton();
+  refreshBuildHint();
 }
 
 function setSimSpeed(nextSpeed) {
@@ -828,9 +1014,10 @@ function changeSimSpeed(delta) {
 function refreshBuildHint() {
   if (!buildHintEl) return;
   const footprint = state.sunkenFootprint === 2 ? '2x2' : '1x1';
+  const ultState = state.ultSunkenArmed && state.ultSunkenCharges > 0 ? 'ON' : 'OFF';
   const sellState = state.sellMode ? 'ON' : 'OFF';
   const mobileTag = isMobileView ? '모바일 큰칸' : '일반';
-  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4 선택 · Q 성큰크기(${footprint}) · ${mobileTag} · F +0.25x · G -0.25x`;
+  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4 선택 · Q 성큰크기(${footprint}) · R 필살성큰(${ultState}/${state.ultSunkenCharges}) · ${mobileTag} · F +0.25x · G -0.25x`;
 }
 
 function nearestEnemy(x, y, range) {
@@ -963,6 +1150,7 @@ function damageTower(tower, amount, sourceEnemy = null) {
     });
   }
   if (sourceEnemy) {
+    impactSfx.play('towerHit', { volume: 0.36, minGap: 0.05, rateMin: 0.92, rateMax: 1.03 });
     const base = sourceEnemy.type === 'crusher' ? 128 : 164;
     const gain = sourceEnemy.type === 'crusher' ? 0.024 : 0.018;
     sfx(base + rand(-18, 14), 0.06, 'square', gain);
@@ -981,18 +1169,20 @@ function emitBullet(tower, target) {
   const dy = target.y - tower.y;
   const d = Math.hypot(dx, dy) || 1;
   const isSnare = tower.kind === 'snare';
+  const isUltSunken = tower.kind === 'sunken' && tower.ultimate;
 
   state.bullets.push({
     x: tower.x,
     y: tower.y,
     vx: (dx / d) * tower.bulletSpeed,
     vy: (dy / d) * tower.bulletSpeed,
-    r: tower.kind === 'obelisk' ? 5 : isSnare ? 4.5 : 4,
-    damage: tower.damage,
+    r: isUltSunken ? 6.5 : tower.kind === 'obelisk' ? 5 : isSnare ? 4.5 : 4,
+    damage: isUltSunken ? tower.damage * 1.12 : tower.damage,
     life: 2,
     color: tower.color,
-    pierce: isSnare ? 0 : tower.pierce,
+    pierce: isSnare ? 0 : tower.pierce + (isUltSunken ? 1 : 0),
     towerKind: tower.kind,
+    ult: isUltSunken,
     snareDuration: tower.snareDuration,
     snareSlow: tower.snareSlow,
     weakenMul: tower.weakenMul,
@@ -1011,13 +1201,16 @@ function emitBullet(tower, target) {
   }
 
   if (tower.kind === 'sunken') {
+    if (isUltSunken) {
+      impactSfx.play('ultShot', { volume: 0.42, minGap: 0.08, rateMin: 0.9, rateMax: 0.98 });
+    }
     if (Math.random() < 0.4) sfx(330 + rand(-24, 18), 0.03, 'triangle', 0.011);
   } else if (Math.random() < 0.35) {
     sfx(430 + rand(-26, 28), 0.03, 'square', 0.01);
   }
 }
 
-function hurtEnemy(enemy, damage, sourceKind = '') {
+function hurtEnemy(enemy, damage, sourceKind = '', sourceUlt = false) {
   const weakenDamage = enemy.weakenTimer > 0 ? enemy.weakenMul : 1;
   const siegeDamage = enemy.breaker ? 1 + state.siegeDamageBonus : 1;
   enemy.hp -= damage * weakenDamage * siegeDamage;
@@ -1037,9 +1230,18 @@ function hurtEnemy(enemy, damage, sourceKind = '') {
   }
 
   if (sourceKind === 'sunken') {
+    impactSfx.play(sourceUlt ? 'enemyHitHeavy' : 'enemyHit', {
+      volume: sourceUlt ? 0.38 : 0.28,
+      minGap: sourceUlt ? 0.08 : 0.04,
+      rateMin: sourceUlt ? 0.9 : 0.95,
+      rateMax: sourceUlt ? 0.99 : 1.06,
+    });
     if (Math.random() < 0.35) sfx(286 + rand(-22, 18), 0.04, 'triangle', 0.011);
   } else if (sourceKind === 'snare') {
+    impactSfx.play('enemyHit', { volume: 0.24, minGap: 0.05, rateMin: 0.96, rateMax: 1.05 });
     if (Math.random() < 0.28) sfx(248 + rand(-18, 16), 0.04, 'sine', 0.01);
+  } else if (sourceKind) {
+    impactSfx.play('enemyHit', { volume: 0.26, minGap: 0.045, rateMin: 0.95, rateMax: 1.04 });
   }
 
   if (enemy.hp <= 0) {
@@ -1050,11 +1252,19 @@ function hurtEnemy(enemy, damage, sourceKind = '') {
     if (idx >= 0) state.enemies.splice(idx, 1);
 
     if (enemy.boss) {
+      grantUltSunkenCharge(1, 'BOSS');
       bgmAudio?.fx('win');
+      impactSfx.play('enemyHitHeavy', { volume: 0.46, minGap: 0.12, rateMin: 0.88, rateMax: 0.95 });
       sfx(280, 0.2, 'sawtooth', 0.04);
       flashBanner('BOSS DOWN', 0.9);
-    } else if (Math.random() < 0.35) {
-      sfx(560, 0.04, 'triangle', 0.013);
+    } else {
+      const dropChance = enemy.breaker ? 0.11 : 0.035;
+      if (Math.random() < dropChance) {
+        grantUltSunkenCharge(1, enemy.breaker ? '공성 처치' : '럭키');
+      }
+      if (Math.random() < 0.35) {
+        sfx(560, 0.04, 'triangle', 0.013);
+      }
     }
   }
 }
@@ -1100,13 +1310,13 @@ function updateBullets(dt) {
           enemy.snareSlowMul = Math.min(enemy.snareSlowMul, b.snareSlow || 0.55);
           enemy.weakenTimer = Math.max(enemy.weakenTimer, (b.snareDuration || 2) + 0.6);
           enemy.weakenMul = Math.max(enemy.weakenMul, b.weakenMul || 1.25);
-          hurtEnemy(enemy, b.damage * 0.55, b.towerKind);
+          hurtEnemy(enemy, b.damage * 0.55, b.towerKind, Boolean(b.ult));
           if (Math.random() < 0.28) flashBanner('Snare: 공성몹 둔화/약화', 0.45);
         }
         state.bullets.splice(i, 1);
         removed = true;
       } else {
-        hurtEnemy(enemy, b.damage, b.towerKind);
+        hurtEnemy(enemy, b.damage, b.towerKind, Boolean(b.ult));
         if (b.pierce > 0) {
           b.pierce -= 1;
           b.damage *= 0.78;
@@ -1213,6 +1423,7 @@ function updateEnemy(enemy, dt) {
     if (idx >= 0) state.enemies.splice(idx, 1);
 
     flashBanner(`BASE -${enemy.leak}`, 0.6, true);
+    impactSfx.play('baseHit', { volume: 0.4, minGap: 0.06, rateMin: 0.9, rateMax: 1.01 });
     sfx(180, 0.09, 'sawtooth', 0.03);
     if (state.baseHp <= 0) {
       state.baseHp = 0;
@@ -1418,6 +1629,19 @@ function drawTowerSunken(tower, now) {
     ctx.lineTo(Math.cos(a) * outer, Math.sin(a) * outer);
     ctx.lineTo(Math.cos(a + spread) * inner, Math.sin(a + spread) * inner);
     ctx.closePath();
+    ctx.fill();
+  }
+
+  if (tower.ultimate) {
+    ctx.strokeStyle = `rgba(255, 218, 130, ${0.55 + pulse * 0.32})`;
+    ctx.lineWidth = 2.6;
+    ctx.beginPath();
+    ctx.arc(0, 0, ringR + 8 + pulse * 2, 0, TAU);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255, 236, 177, 0.9)';
+    ctx.beginPath();
+    ctx.arc(0, 0, 2.8 + pulse * 1.3, 0, TAU);
     ctx.fill();
   }
 
@@ -1879,6 +2103,17 @@ function chooseTower(kind) {
 }
 
 controlsEl.addEventListener('click', (event) => {
+  if (event.target.closest('[data-action="toggle-ult"]')) {
+    if (state.ultSunkenCharges <= 0) {
+      flashBanner('ULT 충전 없음', 0.7, true);
+      sfx(180, 0.05, 'sawtooth', 0.018);
+      return;
+    }
+    setUltSunkenArmed(!state.ultSunkenArmed);
+    sfx(state.ultSunkenArmed ? 500 : 360, 0.05, 'triangle', 0.014);
+    return;
+  }
+
   const sellToggle = event.target.closest('[data-action="toggle-sell"]');
   if (sellToggle) {
     setSellMode(!state.sellMode);
@@ -1931,6 +2166,16 @@ window.addEventListener('keydown', (event) => {
     state.sunkenFootprint = state.sunkenFootprint === 1 ? 2 : 1;
     refreshBuildHint();
     sfx(390, 0.05, 'triangle', 0.014);
+  }
+
+  if (event.code === 'KeyR') {
+    if (state.ultSunkenCharges <= 0) {
+      flashBanner('ULT 충전 없음', 0.7, true);
+      sfx(180, 0.05, 'sawtooth', 0.018);
+    } else {
+      setUltSunkenArmed(!state.ultSunkenArmed);
+      sfx(state.ultSunkenArmed ? 500 : 360, 0.05, 'triangle', 0.014);
+    }
   }
 
   if (event.code === 'KeyE') {

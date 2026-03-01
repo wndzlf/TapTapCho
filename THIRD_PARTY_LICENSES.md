@@ -26,6 +26,18 @@
 고지 참고:
 - CC0는 저작권 표기 의무가 없으나, 출처/제작자 표기를 권장함.
 
+### Sunken Sixway Defense Impact SFX
+- 팩명: Impact Sounds (1.0)
+- 제작자: Kenney Vleugels (www.kenney.nl)
+- 출처: https://kenney.nl/assets/impact-sounds
+- 라이선스: Creative Commons Zero (CC0 1.0)
+- 라이선스 원문: https://creativecommons.org/publicdomain/zero/1.0/
+- 프로젝트 내 경로: `assets/audio/kenney_impact/`
+- 참고 파일: `assets/audio/kenney_impact/License.txt`
+
+고지 참고:
+- CC0는 저작권 표기 의무가 없으나, 출처/제작자 표기를 권장함.
+
 ## 이미지/스프라이트
 
 ### Sunken Sixway Defense 몹 탱크 에셋

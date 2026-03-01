@@ -148,6 +148,16 @@ header p {
   box-shadow: 0 0 0 2px rgba(255, 154, 178, 0.3) inset;
 }
 
+.ult-btn {
+  border-color: #8b6b2f;
+  background: linear-gradient(180deg, #3f3016, #2c2210);
+}
+
+.ult-btn.active {
+  border-color: #ffd475;
+  box-shadow: 0 0 0 2px rgba(255, 212, 117, 0.35) inset;
+}
+
 .hint {
   margin-left: auto;
   color: #9cb0cf;
