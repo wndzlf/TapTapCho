@@ -1612,12 +1612,13 @@ function refreshTowerGuide() {
   };
 
   const attacksPerSec = tower.reload > 0 ? (1 / tower.reload) : 0;
-  const dps = tower.reload > 0 ? tower.damage / tower.reload : tower.damage;
+  const damagePerSec = tower.reload > 0 ? tower.damage / tower.reload : tower.damage;
   const badges = [
     `비용 ${tower.cost}`,
     `사거리 ${Math.round(tower.range / BALANCE_SCALE)}`,
     `초당 ${attacksPerSec.toFixed(2)}발`,
-    `기본 DPS ${Math.round(dps)}`,
+    `초당 피해 ${Math.round(damagePerSec)}`,
+    `내구 HP ${Math.round(tower.hp)}`,
     `최대 Lv${MAX_TOWER_LEVEL}`,
   ];
 
