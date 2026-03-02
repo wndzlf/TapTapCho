@@ -27,6 +27,7 @@ const btnSellMode = document.getElementById('btnSellMode');
 const btnSpeedUp = document.getElementById('btnSpeedUp');
 const btnPause = document.getElementById('btnPause');
 const btnMerge = document.getElementById('btnMerge');
+const btnCull = document.getElementById('btnCull');
 const btnEmperorShield = document.getElementById('btnEmperorShield');
 const btnSunken = document.getElementById('btnSunken');
 try {
@@ -372,6 +373,9 @@ const state = {
 const EMPEROR_SHIELD_COST = 1000;
 const EMPEROR_SHIELD_DURATION = 10;
 const EMPEROR_SHIELD_MAX_USES = 5;
+
+const CULL_COST = 10000;
+const CULL_HP_MULT = 0.65;
 
 const TURN_SLOW_DURATION = 0.35;
 const TURN_SLOW_MUL = 0.82;
@@ -1684,6 +1688,10 @@ function refreshHud() {
     const spec = getPlacementSpec('sunken');
     if (sunkenCostEl && spec) sunkenCostEl.textContent = `${spec.cost}`;
   }
+  if (btnCull) {
+    const costEl = btnCull.querySelector('.cost');
+    if (costEl) costEl.textContent = `${CULL_COST} Gold`;
+  }
   refreshEmperorShieldButton();
 }
 
@@ -1797,6 +1805,23 @@ function castEmperorShield() {
   flashBanner(`황제 보호막 전개 · 10초 무적 (${state.emperorShieldUses}/${EMPEROR_SHIELD_MAX_USES})`, 0.95);
   impactSfx.play('build', { volume: 0.42, minGap: 0.08, rateMin: 0.88, rateMax: 0.95 });
   sfx(860, 0.12, 'triangle', 0.03);
+  refreshHud();
+}
+
+function castCull() {
+  if (state.mode !== 'playing') return;
+  if (state.gold < CULL_COST) {
+    flashBanner(`Gold 부족 · ${CULL_COST} 필요`, 0.6, true);
+    sfx(180, 0.08, 'sawtooth', 0.022);
+    return;
+  }
+  state.gold -= CULL_COST;
+  for (const enemy of state.enemies) {
+    enemy.hp = Math.max(1, Math.floor(enemy.hp * CULL_HP_MULT));
+  }
+  flashBanner(`적 HP ${(1 - CULL_HP_MULT) * 100 | 0}% 감소`, 0.7);
+  impactSfx.play('enemyHitHeavy', { volume: 0.32, minGap: 0.06, rateMin: 0.9, rateMax: 1.0 });
+  sfx(520, 0.08, 'triangle', 0.02);
   refreshHud();
 }
 
@@ -4030,6 +4055,11 @@ function handleControlsClick(event) {
   if (event.target.closest('[data-action="toggle-pause"]')) {
     setPaused(!state.paused);
     if (state.paused) flashBanner('PAUSED', 0.5);
+    return;
+  }
+
+  if (event.target.closest('[data-action="cull-enemies"]')) {
+    castCull();
     return;
   }
 
