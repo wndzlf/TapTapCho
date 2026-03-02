@@ -384,6 +384,7 @@ const state = {
   kills: 0,
   score: 0,
   selectedTower: 'sunken',
+  selectedCell: null,
   sunkenFootprint: 1,
   sellMode: false,
   simSpeed: 1,
@@ -2885,6 +2886,22 @@ function drawGrid() {
   }
 }
 
+function drawSelectedCell() {
+  if (!state.selectedCell) return;
+  const { c, r, at } = state.selectedCell;
+  if (!inBounds(c, r)) return;
+  const x = c * GRID.cell;
+  const y = r * GRID.cell;
+  const pulse = 0.5 + 0.5 * Math.sin((performance.now() - at) * 0.012);
+  ctx.save();
+  ctx.strokeStyle = `rgba(255, 214, 117, ${0.45 + pulse * 0.35})`;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x + 1, y + 1, GRID.cell - 2, GRID.cell - 2);
+  ctx.fillStyle = `rgba(255, 214, 117, ${0.08 + pulse * 0.06})`;
+  ctx.fillRect(x + 2, y + 2, GRID.cell - 4, GRID.cell - 4);
+  ctx.restore();
+}
+
 function drawPathPreview() {
   let c = SPAWN.c;
   let r = SPAWN.r;
@@ -3844,6 +3861,7 @@ function drawBanner() {
 function draw() {
   drawBackground();
   drawGrid();
+  drawSelectedCell();
   drawPathPreview();
   drawEndpoints();
   drawTowers();
@@ -3951,6 +3969,10 @@ function handleCanvasAction(event) {
   const x = (event.clientX - rect.left) * (W / rect.width);
   const y = (event.clientY - rect.top) * (H / rect.height);
   const cell = worldToCell(x, y);
+
+  if (inBounds(cell.c, cell.r)) {
+    state.selectedCell = { c: cell.c, r: cell.r, at: performance.now() };
+  }
 
   if (event.button === 2 || state.sellMode) {
     sellTower(cell.c, cell.r);
