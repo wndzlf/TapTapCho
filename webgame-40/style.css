@@ -229,11 +229,11 @@ header p {
 
 .build-btn {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: 1fr;
   grid-template-areas:
-    "icon name"
-    "cost cost";
-  gap: 2px 3px;
+    "name"
+    "cost";
+  gap: 2px;
   border: 1px solid #3f557b;
   background: linear-gradient(180deg, #1b2640, #151f34);
   color: var(--text);
@@ -249,7 +249,7 @@ header p {
   width: 18px;
   height: 18px;
   border-radius: 999px;
-  display: inline-flex;
+  display: none;
   align-items: center;
   justify-content: center;
   font-weight: 700;
