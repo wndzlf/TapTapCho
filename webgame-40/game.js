@@ -4099,6 +4099,7 @@ function handleCanvasAction(event) {
     flashBanner(`합치기 성공`, 0.7);
     impactSfx.play('build', { volume: 0.32, minGap: 0.05, rateMin: 0.96, rateMax: 1.06 });
     state.mergePick = null;
+    setMergeMode(false);
     refreshBuildHint();
     return;
   }
