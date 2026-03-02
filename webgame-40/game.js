@@ -1344,6 +1344,7 @@ function makeEnemy(type) {
   const earlyStageIndex = Math.min(stageIndex, 9);
   const lateIndex = Math.max(0, s - 10);
   const nightmareIndex = Math.max(0, s - 20);
+  const overdriveIndex = Math.max(0, s - 35);
   // Stage 21+ applies extra scaling to make the late game clearly harder.
   const stageSpeedMul = (
     1
@@ -1362,6 +1363,16 @@ function makeEnemy(type) {
     + nightmareIndex * 0.52
     + nightmareIndex * nightmareIndex * 0.044
   ) * 1.25 * (1 + s * 0.012);
+  // Extra HP pressure so late-game fused/stun towers cannot erase waves instantly.
+  const hardHpMul = (
+    1
+    + lateIndex * 0.018
+    + nightmareIndex * 0.09
+    + nightmareIndex * nightmareIndex * 0.0022
+    + overdriveIndex * 0.05
+  );
+  const finalHpMul = stageHpMul * hardHpMul;
+  const eliteHpMul = 1 + Math.max(0, s - 22) * 0.03;
   const radiusMul = (
     1
     + stageIndex * 0.012
@@ -1381,13 +1392,13 @@ function makeEnemy(type) {
     lord: 0.3,
   };
   const defs = {
-    ghoul: { hp: (58 + s * 12) * stageHpMul * 1.0, speed: (36 + s * 1.6) * stageSpeedMul, reward: 7, leak: 1, r: 10, color: '#c54f72' },
-    bat: { hp: (34 + s * 7) * stageHpMul * 0.8, speed: (64 + s * 2.9) * stageSpeedMul, reward: 7, leak: 1, r: 8, color: '#d07ab4', fast: true },
-    hopper: { hp: (24 + s * 5) * stageHpMul * 0.56, speed: (98 + s * 3.6) * stageSpeedMul, reward: 10, leak: 2, r: 8.5, color: '#9ae8ff', fast: true, jumper: true },
-    brute: { hp: (150 + s * 28) * stageHpMul * 1.18, speed: (29 + s * 1.3) * stageSpeedMul, reward: 12, leak: 2, r: 13, color: '#9e5a9c' },
-    elder: { hp: (262 + s * 46) * stageHpMul * 1.32, speed: (37 + s * 1.5) * stageSpeedMul, reward: 25, leak: 3, r: 15, color: '#b86ec8' },
+    ghoul: { hp: (58 + s * 12) * finalHpMul * 1.0, speed: (36 + s * 1.6) * stageSpeedMul, reward: 7, leak: 1, r: 10, color: '#c54f72' },
+    bat: { hp: (34 + s * 7) * finalHpMul * 0.8, speed: (64 + s * 2.9) * stageSpeedMul, reward: 7, leak: 1, r: 8, color: '#d07ab4', fast: true },
+    hopper: { hp: (24 + s * 5) * finalHpMul * 0.56, speed: (98 + s * 3.6) * stageSpeedMul, reward: 10, leak: 2, r: 8.5, color: '#9ae8ff', fast: true, jumper: true },
+    brute: { hp: (150 + s * 28) * finalHpMul * 1.18 * eliteHpMul, speed: (29 + s * 1.3) * stageSpeedMul, reward: 12, leak: 2, r: 13, color: '#9e5a9c' },
+    elder: { hp: (262 + s * 46) * finalHpMul * 1.32 * eliteHpMul, speed: (37 + s * 1.5) * stageSpeedMul, reward: 25, leak: 3, r: 15, color: '#b86ec8' },
     raider: {
-      hp: (98 + s * 21) * stageHpMul * 0.98,
+      hp: (98 + s * 21) * finalHpMul * 0.98 * eliteHpMul,
       speed: (56 + s * 2.2) * stageSpeedMul,
       reward: 18,
       leak: 2,
@@ -1396,7 +1407,7 @@ function makeEnemy(type) {
       fast: true,
     },
     crusher: {
-      hp: (212 + s * 38) * stageHpMul * 1.1,
+      hp: (212 + s * 38) * finalHpMul * 1.1 * eliteHpMul,
       speed: (44 + s * 1.9) * stageSpeedMul,
       reward: 30,
       leak: 3,
@@ -1405,7 +1416,7 @@ function makeEnemy(type) {
       fast: true,
     },
     juggernaut: {
-      hp: (420 + s * 80) * stageHpMul * 1.55,
+      hp: (420 + s * 80) * finalHpMul * 1.55 * eliteHpMul,
       speed: (22 + s * 0.6) * stageSpeedMul,
       reward: 42,
       leak: 4,
@@ -1413,7 +1424,7 @@ function makeEnemy(type) {
       color: '#6f7a86',
       stunImmune: true,
     },
-    lord: { hp: (700 + s * 140) * stageHpMul * 1.65, speed: (27 + s) * stageSpeedMul, reward: 58, leak: 5, r: 18, color: '#f26a84', boss: true },
+    lord: { hp: (700 + s * 140) * finalHpMul * 1.65 * eliteHpMul * (1 + nightmareIndex * 0.05), speed: (27 + s) * stageSpeedMul, reward: 58, leak: 5, r: 18, color: '#f26a84', boss: true },
   };
   const d = defs[type];
   const spawn = cellCenter(SPAWN.c, SPAWN.r);
