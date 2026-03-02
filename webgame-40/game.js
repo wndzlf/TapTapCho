@@ -1475,7 +1475,6 @@ function makeEnemy(type) {
       leak: 5,
       r: 19,
       color: '#6f7a86',
-      stunImmune: true,
       towerBreaker: true,
       siege: true,
       attackMul: 8.8,
@@ -1488,7 +1487,6 @@ function makeEnemy(type) {
       leak: 6,
       r: 22,
       color: '#8f7c62',
-      stunImmune: true,
       towerBreaker: true,
       siege: true,
       attackMul: 12.5,
@@ -1501,16 +1499,21 @@ function makeEnemy(type) {
       leak: 8,
       r: 24,
       color: '#70798a',
-      stunImmune: true,
       towerBreaker: true,
       attackMul: 15.5,
       siege: true,
       damageTakenMul: 0.27,
     },
     lord: {
-      hp: (1200 + s * 240) * finalHpMul * 2.6 * eliteHpMul * (1 + nightmareIndex * 0.12),
-      speed: (24 + s * 0.8) * stageSpeedMul * 0.82,
-      reward: 88,
+      hp: (420 + s * 95) * finalHpMul * (
+        s >= 45 ? 2.9
+          : s >= 35 ? 2.2
+            : s >= 25 ? 1.7
+              : s >= 15 ? 1.25
+                : 0.95
+      ),
+      speed: (22 + s * 0.5) * stageSpeedMul * 0.86,
+      reward: 72,
       leak: 6,
       r: 20,
       color: '#f26a84',
@@ -1542,10 +1545,7 @@ function makeEnemy(type) {
   const adaptiveBreaker = canAdaptiveBreaker && Math.random() < adaptiveBreakerChance;
   const towerBreaker = Boolean(d.towerBreaker || adaptiveBreaker);
   const siege = Boolean(d.siege || (towerBreaker && !d.fast));
-  const stunImmune = Boolean(
-    d.stunImmune
-    || (towerBreaker && s >= 20 && Math.random() < clamp(0.1 + nightmareIndex * 0.02, 0.1, 0.44))
-  );
+  const stunImmune = Boolean(d.stunImmune);
   const adaptiveHpMul = adaptiveBreaker ? (1.4 + pressureIndex * 0.05) : 1;
   const adaptiveSpeedMul = adaptiveBreaker ? 0.86 : 1;
   const damageTakenMul = clamp(
@@ -1603,10 +1603,6 @@ function makeEnemy(type) {
 }
 
 function makeStageQueue(stage) {
-  if (STUN_IMMUNE_BOSS_STAGES.includes(stage)) {
-    if (stage >= 25) return ['bulwark', 'behemoth', 'juggernaut', 'behemoth'];
-    return stage >= 15 ? ['bulwark', 'behemoth', 'juggernaut'] : ['juggernaut'];
-  }
   const queue = [];
   const earlyStage = Math.min(stage, 10);
   const lateIndex = Math.max(0, stage - 10);
@@ -1755,9 +1751,10 @@ function makeStageQueue(stage) {
   if (stage >= 18) queue.push('behemoth');
   if (stage >= 24) queue.push('bulwark');
 
-  if (stage >= 21) queue.push('lord');
-  if (stage >= 27) queue.push('lord');
-  queue.push('lord');
+  if (STUN_IMMUNE_BOSS_STAGES.includes(stage)) {
+    // 지정 스테이지에만 스턴 면역 보스를 1마리만 추가.
+    queue.push('lord');
+  }
   return queue;
 }
 
@@ -3217,7 +3214,7 @@ function spawnOne() {
   );
   state.spawnSerial += 1;
   state.enemies.push(enemy);
-  if (type === 'lord' || type === 'behemoth') {
+  if (enemy.boss) {
     flashBanner(`STAGE ${state.stage} BOSS`, 1.2, true);
     bgmAudio?.fx('fail');
   }
