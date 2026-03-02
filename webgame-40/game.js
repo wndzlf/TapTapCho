@@ -432,7 +432,31 @@ function buildEnemyBuckets() {
   return buckets;
 }
 
+function buildTowerBuckets() {
+  const buckets = new Map();
+  for (const tower of state.towers) {
+    const cell = worldToCell(tower.x, tower.y);
+    const key = `${cell.c},${cell.r}`;
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(tower);
+  }
+  return buckets;
+}
+
 function collectNearbyEnemies(buckets, c, r, radiusCells = 1) {
+  const list = [];
+  for (let dc = -radiusCells; dc <= radiusCells; dc += 1) {
+    for (let dr = -radiusCells; dr <= radiusCells; dr += 1) {
+      const key = `${c + dc},${r + dr}`;
+      const bucket = buckets.get(key);
+      if (!bucket) continue;
+      list.push(...bucket);
+    }
+  }
+  return list;
+}
+
+function collectNearbyTowers(buckets, c, r, radiusCells = 1) {
   const list = [];
   for (let dc = -radiusCells; dc <= radiusCells; dc += 1) {
     for (let dr = -radiusCells; dr <= radiusCells; dr += 1) {
@@ -1395,6 +1419,7 @@ function makeEnemy(type) {
     turnSlowTimer: 0,
     lastDirX: 0,
     lastDirY: 0,
+    attack: (1 + s * 0.06) * (d.boss ? 3 : d.fast ? 1.4 : 1),
   };
 }
 
@@ -2584,6 +2609,26 @@ function updateEnemy(enemy, dt) {
   enemy.lastDirY = ny;
   keepEnemyInPassableCell(prevX, prevY);
 
+  if (currentTowerBuckets) {
+    const cell = worldToCell(enemy.x, enemy.y);
+    const towers = collectNearbyTowers(currentTowerBuckets, cell.c, cell.r, 1);
+    for (const tower of towers) {
+      const dxT = tower.x - enemy.x;
+      const dyT = tower.y - enemy.y;
+      const rr = enemy.r + GRID.cell * 0.45;
+      if (dxT * dxT + dyT * dyT > rr * rr) continue;
+      tower.hp -= enemy.attack * dt;
+      if (tower.hp <= 0) {
+        removeTower(tower);
+        flashBanner('TOWER DESTROYED', 0.6, true);
+        impactSfx.play('enemyHitHeavy', { volume: 0.32, minGap: 0.05, rateMin: 0.9, rateMax: 1.02 });
+        sfx(220, 0.06, 'sawtooth', 0.02);
+        for (const e of state.enemies) e.repath = 0;
+      }
+      break;
+    }
+  }
+
   const goalCenter = cellCenter(GOAL.c, GOAL.r);
   if (Math.hypot(enemy.x - goalCenter.x, enemy.y - goalCenter.y) < GRID.cell * 0.38) {
     const idx = state.enemies.indexOf(enemy);
@@ -2608,6 +2653,8 @@ function updateEnemy(enemy, dt) {
     }
   }
 }
+
+let currentTowerBuckets = null;
 
 function updateEnemies(dt) {
   for (const enemy of [...state.enemies]) {
@@ -3916,6 +3963,7 @@ function step(dt) {
   while (remain > 0 && guard < 32) {
     const subDt = Math.min(MAX_SIM_SUBSTEP, remain);
     updateSpawning(subDt);
+    currentTowerBuckets = buildTowerBuckets();
     updateTowers(subDt);
     updateBullets(subDt);
     updateEnemies(subDt);
