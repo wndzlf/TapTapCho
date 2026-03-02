@@ -2043,34 +2043,6 @@ function emitBullet(tower, target) {
   emitBulletForKind(tower, target, tower.kind);
 }
 
-  for (let i = 0; i < 3; i += 1) {
-    pushParticle({
-      x: tower.x,
-      y: tower.y,
-      vx: rand(-80, 80),
-      vy: rand(-80, 80),
-      life: rand(0.08, 0.2),
-      size: rand(1.8, 3.2),
-      color: tower.color,
-    });
-  }
-
-  if (tower.kind === 'sunken') {
-    if (Math.random() < 0.4) sfx(330 + rand(-24, 18), 0.03, 'triangle', 0.011);
-  } else if (tower.kind === 'sunkenSplash') {
-    impactSfx.play('enemyHitHeavy', { volume: 0.26, minGap: 0.08, rateMin: 0.95, rateMax: 1.03 });
-    if (Math.random() < 0.6) sfx(290 + rand(-18, 14), 0.04, 'square', 0.012);
-  } else if (tower.kind === 'sunkenNova') {
-    impactSfx.play('enemyHit', { volume: 0.26, minGap: 0.05, rateMin: 1.0, rateMax: 1.11 });
-    if (Math.random() < 0.52) sfx(352 + rand(-20, 20), 0.04, 'square', 0.012);
-  } else if (tower.kind === 'sunkenStun') {
-    impactSfx.play('enemyHitHeavy', { volume: 0.28, minGap: 0.05, rateMin: 0.96, rateMax: 1.05 });
-    if (Math.random() < 0.58) sfx(316 + rand(-20, 18), 0.04, 'square', 0.012);
-  } else if (Math.random() < 0.35) {
-    sfx(430 + rand(-26, 28), 0.03, 'square', 0.01);
-  }
-}
-
 function hurtEnemy(enemy, damage, sourceKind = '', secondary = false) {
   const weakenDamage = enemy.weakenTimer > 0 ? enemy.weakenMul : 1;
   const rushDamage = enemy.fast ? 1 + state.rushDamageBonus : 1;
