@@ -368,6 +368,7 @@ const state = {
   paused: false,
   pauseUses: 0,
   cullUses: 0,
+  choLottoActive: false,
   simSpeed: 1,
   stageTimer: 0,
   spawnQueue: [],
@@ -1310,6 +1311,11 @@ function tryPlaceTower(c, r) {
   const placement = getPlacementSpec(state.selectedTower);
   if (!placement) return;
 
+  if (state.selectedTower === 'choSunken' && !state.choLottoActive) {
+    flashBanner('Cho Lotto 당첨 필요', 0.7, true);
+    return;
+  }
+
   if (state.gold < placement.cost) {
     flashBanner('Gold 부족', 0.9, true);
     return;
@@ -1339,6 +1345,10 @@ function tryPlaceTower(c, r) {
   const tower = makeTower(state.selectedTower, c, r, placement);
   state.towers.push(tower);
   state.gold -= placement.cost;
+  if (state.selectedTower === 'choSunken') {
+    state.choLottoActive = false;
+    state.selectedTower = 'sunken';
+  }
 
   impactSfx.play('build', { volume: 0.28, minGap: 0.045, rateMin: 0.96, rateMax: 1.04 });
 
@@ -4155,6 +4165,7 @@ function handleControlsClick(event) {
     state.gold -= CHO_LOTTO_COST;
     if (Math.random() < CHO_LOTTO_CHANCE) {
       state.selectedTower = 'choSunken';
+      state.choLottoActive = true;
       showChoLottoWin();
     } else {
       flashBanner('꽝...', 0.6, true);
