@@ -244,26 +244,6 @@ header p {
   cursor: pointer;
 }
 
-.build-btn.icon-only {
-  grid-template-columns: 1fr;
-  grid-template-areas: "icon";
-  min-width: 56px;
-  min-height: 46px;
-  padding: 4px;
-  justify-items: center;
-}
-
-.build-btn.icon-only .name,
-.build-btn.icon-only .cost {
-  display: none;
-}
-
-.build-btn.icon-only .icon {
-  width: 22px;
-  height: 22px;
-  font-size: 12px;
-}
-
 .build-btn .icon {
   grid-area: icon;
   width: 18px;
@@ -783,17 +763,6 @@ footer {
 
   .build-btn .cost {
     font-size: clamp(7px, 2.2vw, 8px);
-  }
-
-  .build-btn.icon-only {
-    min-width: 48px;
-    min-height: 40px;
-  }
-
-  .build-btn.icon-only .icon {
-    width: 18px;
-    height: 18px;
-    font-size: 11px;
   }
 
   canvas {
