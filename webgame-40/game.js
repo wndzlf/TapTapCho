@@ -402,7 +402,7 @@ const CULL_HP_MULT = 0.5;
 const CULL_MAX_USES = 5;
 
 const CHO_LOTTO_COST = 1000;
-const CHO_LOTTO_CHANCE = 0.06;
+const CHO_LOTTO_CHANCE = 0.1;
 
 const TURN_SLOW_DURATION = 0.35;
 const TURN_SLOW_MUL = 0.82;
