@@ -312,6 +312,11 @@ header p {
   background: linear-gradient(180deg, #1e3a28, #14281c);
 }
 
+.build-btn[data-kind="choSunken"] {
+  border-color: #63ff9a;
+  background: linear-gradient(180deg, #123b28, #0d2a1f);
+}
+
 .build-btn[data-kind="sunkenNova"] {
   border-color: #7b58af;
   background: linear-gradient(180deg, #2b1f3f, #221933);

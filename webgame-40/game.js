@@ -27,6 +27,7 @@ const btnSellMode = document.getElementById('btnSellMode');
 const btnSpeedUp = document.getElementById('btnSpeedUp');
 const btnPause = document.getElementById('btnPause');
 const btnMerge = document.getElementById('btnMerge');
+const btnChoLotto = document.getElementById('btnChoLotto');
 const btnCull = document.getElementById('btnCull');
 const btnEmperorShield = document.getElementById('btnEmperorShield');
 const btnSunken = document.getElementById('btnSunken');
@@ -249,6 +250,22 @@ const TOWER_TYPES = {
     splashRadius: 74 * BALANCE_SCALE,
     splashFalloff: 0.5,
   },
+  choSunken: {
+    id: 'choSunken',
+    name: 'Cho Sunken',
+    cost: 1000,
+    color: '#63ff9a',
+    range: 104 * BALANCE_SCALE,
+    damage: 22,
+    reload: 0.95,
+    bulletSpeed: 300 * BALANCE_SCALE,
+    pierce: 0,
+    hp: 280,
+    splashRadius: 80 * BALANCE_SCALE,
+    splashFalloff: 0.45,
+    poisonDuration: 3.6,
+    poisonDps: 6.5,
+  },
   sunkenNova: {
     id: 'sunkenNova',
     name: 'Nova Sunken',
@@ -316,6 +333,11 @@ const TOWER_GUIDE_DETAILS = {
     summary: '짧은 사거리에서 망치처럼 한 방으로 광역 피해를 주는 근접 타워.',
     tips: '코너/길목 앞에 두면 꺾이는 몹을 강하게 눌러줌. 사거리가 짧아 전면 배치 필수.',
   },
+  choSunken: {
+    role: '히든 독가스',
+    summary: '스플래시와 독가스로 지속 피해를 주는 희귀 성큰.',
+    tips: '로또로만 등장. 독 맞은 적은 몇 초간 추가 피해를 받음.',
+  },
   sunkenNova: {
     role: '360도 방사 화력',
     summary: '발사 시 전 방향으로 탄막을 뿌려 측면/후방 새는 몹까지 동시에 커버.',
@@ -378,6 +400,9 @@ const EMPEROR_SHIELD_MAX_USES = 5;
 const CULL_COST = 10000;
 const CULL_HP_MULT = 0.5;
 const CULL_MAX_USES = 5;
+
+const CHO_LOTTO_COST = 1000;
+const CHO_LOTTO_CHANCE = 0.06;
 
 const TURN_SLOW_DURATION = 0.35;
 const TURN_SLOW_MUL = 0.82;
@@ -1150,6 +1175,8 @@ function makeTower(kind, c, r, spec = null) {
     stunDuration: base.stunDuration || 0,
     stunChain: base.stunChain || 0,
     stunRadius: base.stunRadius || 0,
+    poisonDuration: base.poisonDuration || 0,
+    poisonDps: base.poisonDps || 0,
   };
 }
 
@@ -1179,6 +1206,8 @@ function getTowerUpgradeFactors(kind) {
       ? 1.18
     : kind === 'sunkenHammer'
       ? 1.12
+    : kind === 'choSunken'
+      ? 1.16
     : kind === 'spine'
       ? 1.16
       : 1.2;
@@ -1191,6 +1220,8 @@ function getTowerUpgradeFactors(kind) {
       ? 1.3
     : kind === 'sunkenHammer'
       ? 1.33
+    : kind === 'choSunken'
+      ? 1.28
       : 1.34;
 
   const reloadMul = kind === 'sunken'
@@ -1203,6 +1234,8 @@ function getTowerUpgradeFactors(kind) {
       ? 0.92
     : kind === 'sunkenHammer'
       ? 0.92
+    : kind === 'choSunken'
+      ? 0.9
       : 0.9;
 
   return { rangeMul, damageMul, reloadMul };
@@ -1222,6 +1255,9 @@ function applyTowerUpgradeScaling(tower, factors = null, kindOverride = null, le
   } else if (kind === 'sunkenHammer') {
     tower.splashRadius *= 1.12;
     tower.splashFalloff = clamp(tower.splashFalloff + 0.04, 0.32, 0.7);
+  } else if (kind === 'choSunken') {
+    tower.poisonDuration *= 1.15;
+    tower.poisonDps *= 1.12;
   } else if (kind === 'sunkenStun') {
     tower.stunDuration = Math.min(2.1, tower.stunDuration * 1.1);
     tower.stunRadius *= 1.06;
@@ -1426,6 +1462,8 @@ function makeEnemy(type) {
     turnSlowTimer: 0,
     lastDirX: 0,
     lastDirY: 0,
+    poisonTimer: 0,
+    poisonDps: 0,
     attack: (1 + s * 0.06) * (d.boss ? 3 : d.fast ? 1.4 : 1),
   };
 }
@@ -1694,6 +1732,10 @@ function refreshHud() {
     const costEl = btnCull.querySelector('.cost');
     if (costEl) costEl.textContent = `${CULL_COST} Gold (${state.cullUses}/${CULL_MAX_USES})`;
   }
+  if (btnChoLotto) {
+    const costEl = btnChoLotto.querySelector('.cost');
+    if (costEl) costEl.textContent = `${CHO_LOTTO_COST} Gold`;
+  }
   refreshEmperorShieldButton();
 }
 
@@ -1867,6 +1909,9 @@ function buildTowerPerLevelChangeLine(kind) {
     parts.push('스플래시 반경 +15%');
   } else if (kind === 'sunkenHammer') {
     parts.push('스플래시 반경 +12%');
+  } else if (kind === 'choSunken') {
+    parts.push('독 지속 +15%');
+    parts.push('독 DPS +12%');
   } else if (kind === 'sunkenStun') {
     parts.push('스턴시간 +10%');
     parts.push('스턴반경 +6%');
@@ -2043,7 +2088,7 @@ function emitBulletForKind(tower, target, kind) {
   const dx = target.x - tower.x;
   const dy = target.y - tower.y;
   const d = Math.hypot(dx, dy) || 1;
-  const isSplash = kind === 'sunkenSplash' || kind === 'sunkenHammer';
+  const isSplash = kind === 'sunkenSplash' || kind === 'sunkenHammer' || kind === 'choSunken';
   const isNova = kind === 'sunkenNova';
   const isStun = kind === 'sunkenStun';
   const isHammer = kind === 'sunkenHammer';
@@ -2067,6 +2112,8 @@ function emitBulletForKind(tower, target, kind) {
     stunDuration: tower.stunDuration,
     stunChain: tower.stunChain,
     stunRadius: tower.stunRadius,
+    poisonDuration: tower.poisonDuration,
+    poisonDps: tower.poisonDps,
     lightning: isHammer,
   });
 
@@ -2462,6 +2509,11 @@ function updateBullets(dt) {
       const rr = enemy.r + b.r;
       if (dx * dx + dy * dy > rr * rr) continue;
 
+      if (b.poisonDuration) {
+        enemy.poisonTimer = Math.max(enemy.poisonTimer || 0, b.poisonDuration);
+        enemy.poisonDps = Math.max(enemy.poisonDps || 0, b.poisonDps || 0);
+      }
+
       if (b.towerKind === 'sunkenStun') {
         applyStunChain(enemy, b);
         hurtEnemy(enemy, b.damage, b.towerKind, false);
@@ -2519,6 +2571,10 @@ function updateBullets(dt) {
             const rate = clamp(rawRate, b.splashFalloff || 0.35, 1);
             const splashDamage = b.damage * rate * 0.72;
             spawnTowerHitVfx(other.x, other.y, b.towerKind, false, true);
+            if (b.poisonDuration) {
+              other.poisonTimer = Math.max(other.poisonTimer || 0, b.poisonDuration);
+              other.poisonDps = Math.max(other.poisonDps || 0, b.poisonDps || 0);
+            }
             hurtEnemy(other, splashDamage, b.towerKind, true);
           }
 
@@ -2568,6 +2624,10 @@ function updateEnemy(enemy, dt) {
   enemy.weakenTimer = Math.max(0, enemy.weakenTimer - dt);
   enemy.stunTimer = Math.max(0, (enemy.stunTimer || 0) - dt);
   enemy.stunFx = Math.max(0, (enemy.stunFx || 0) - dt);
+  enemy.poisonTimer = Math.max(0, (enemy.poisonTimer || 0) - dt);
+  if (enemy.poisonTimer > 0 && enemy.poisonDps > 0) {
+    enemy.hp -= enemy.poisonDps * dt;
+  }
   if (enemy.snareTimer <= 0) {
     enemy.snareSlowMul = 1;
     enemy.slowSource = '';
@@ -3797,6 +3857,12 @@ function drawEnemies() {
       }
     }
 
+    if (enemy.poisonTimer > 0.001) {
+      ctx.fillStyle = 'rgba(120, 255, 170, 0.9)';
+      ctx.font = '10px sans-serif';
+      ctx.fillText('☠', enemy.x - 4, enemy.y - enemy.r - 6);
+    }
+
     if (enemy.weakenTimer > 0) {
       ctx.strokeStyle = 'rgba(255, 237, 170, 0.82)';
       ctx.lineWidth = 1.4;
@@ -4066,6 +4132,22 @@ function handleControlsClick(event) {
     return;
   }
 
+  if (event.target.closest('[data-action="cho-lotto"]')) {
+    if (state.gold < CHO_LOTTO_COST) {
+      flashBanner(`Gold 부족 · ${CHO_LOTTO_COST} 필요`, 0.6, true);
+      return;
+    }
+    state.gold -= CHO_LOTTO_COST;
+    if (Math.random() < CHO_LOTTO_CHANCE) {
+      state.selectedTower = 'choSunken';
+      flashBanner('Cho Sunken 획득!', 0.8);
+    } else {
+      flashBanner('꽝...', 0.6, true);
+    }
+    refreshHud();
+    return;
+  }
+
   if (event.target.closest('[data-action="cull-enemies"]')) {
     castCull();
     return;
@@ -4130,6 +4212,11 @@ function handleCanvasAction(event) {
 
     if (baseKinds.includes('sunkenNova') || targetKinds.includes('sunkenNova')) {
       flashBanner('Nova Sunken은 합치기 불가', 0.75, true);
+      return;
+    }
+
+    if (baseKinds.includes('choSunken') || targetKinds.includes('choSunken')) {
+      flashBanner('Cho Sunken은 합치기 불가', 0.75, true);
       return;
     }
 
