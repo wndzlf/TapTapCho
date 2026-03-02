@@ -232,18 +232,7 @@ const TOWER_TYPES = {
     snareDuration: 1.45,
     snareSlow: 0.62,
   },
-  longSunken: {
-    id: 'longSunken',
-    name: 'Long Sunken',
-    cost: 220,
-    color: '#8fb9ff',
-    range: Math.hypot(W, H) * 1.2,
-    damage: 58,
-    reload: 1.42,
-    bulletSpeed: 520 * BALANCE_SCALE,
-    pierce: 0,
-    hp: 270,
-  },
+  // Long Sunken removed
   sunkenSplash: {
     id: 'sunkenSplash',
     name: 'Splash Sunken',
@@ -337,11 +326,7 @@ const TOWER_GUIDE_DETAILS = {
     summary: '한 발마다 한 마리를 정확히 둔화시키는 제어형 성큰. 빠른 몹 카운터에 특화.',
     tips: '단일 타겟 제어이므로 군집 대응은 Splash/Spine과 함께 배치해야 효율이 높음.',
   },
-  longSunken: {
-    role: '초장거리 저격',
-    summary: '맵 끝에서 끝까지 커버하는 초장거리 포격 성큰. 우회 없이 핵심 대상을 즉시 압박.',
-    tips: '비용/공속 부담이 커서 초반 과투자는 위험. Spine/Splash와 함께 운영해야 안정적.',
-  },
+  // Long Sunken removed
   spine: {
     role: '지속 화력 특화',
     summary: '중거리에서 빠른 탄막으로 잔몹과 러시 웨이브를 쓸어내는 타워.',
@@ -1185,8 +1170,6 @@ function getTowerUpgradeFactors(kind) {
     ? 1.24
     : kind === 'sunkenSlow'
       ? 1.19
-    : kind === 'longSunken'
-      ? 1.12
     : kind === 'sunkenNova'
       ? 1.15
     : kind === 'sunkenStun'
@@ -1201,10 +1184,8 @@ function getTowerUpgradeFactors(kind) {
         ? 1.15
         : 1.2;
 
-  const damageMul = kind === 'longSunken'
-    ? 1.32
-    : kind === 'sunkenNova'
-      ? 1.24
+  const damageMul = kind === 'sunkenNova'
+    ? 1.24
     : kind === 'sunkenStun'
       ? 1.22
     : kind === 'sunkenSlow'
@@ -1217,8 +1198,6 @@ function getTowerUpgradeFactors(kind) {
 
   const reloadMul = kind === 'sunken'
     ? 0.88
-    : kind === 'longSunken'
-      ? 0.93
     : kind === 'sunkenNova'
       ? 0.9
     : kind === 'sunkenStun'
@@ -2046,7 +2025,7 @@ function emitBullet(tower, target) {
   const isSnare = tower.kind === 'snare';
   const isSlowSunken = tower.kind === 'sunkenSlow';
   const isSplashSunken = tower.kind === 'sunkenSplash' || tower.kind === 'sunkenHammer';
-  const isLongSunken = tower.kind === 'longSunken';
+  // Long Sunken removed
   const isNovaSunken = tower.kind === 'sunkenNova';
   const isStunSunken = tower.kind === 'sunkenStun';
 
@@ -2056,7 +2035,7 @@ function emitBullet(tower, target) {
     y: tower.y,
     vx: (dx / d) * tower.bulletSpeed,
     vy: (dy / d) * tower.bulletSpeed,
-    r: isSplashSunken ? 5.6 : (tower.kind === 'obelisk' || isLongSunken) ? 5.2 : (isSnare || isSlowSunken || isNovaSunken || isStunSunken) ? 4.8 : 4,
+    r: isSplashSunken ? 5.6 : (tower.kind === 'obelisk') ? 5.2 : (isSnare || isSlowSunken || isNovaSunken || isStunSunken) ? 4.8 : 4,
     damage: tower.damage,
     life: 2,
     color: tower.color,
@@ -2087,9 +2066,6 @@ function emitBullet(tower, target) {
 
   if (tower.kind === 'sunken') {
     if (Math.random() < 0.4) sfx(330 + rand(-24, 18), 0.03, 'triangle', 0.011);
-  } else if (tower.kind === 'longSunken') {
-    impactSfx.play('enemyHitHeavy', { volume: 0.32, minGap: 0.06, rateMin: 0.88, rateMax: 0.97 });
-    if (Math.random() < 0.5) sfx(214 + rand(-14, 12), 0.055, 'sawtooth', 0.012);
   } else if (tower.kind === 'sunkenSplash') {
     impactSfx.play('enemyHitHeavy', { volume: 0.26, minGap: 0.08, rateMin: 0.95, rateMax: 1.03 });
     if (Math.random() < 0.6) sfx(290 + rand(-18, 14), 0.04, 'square', 0.012);
@@ -2134,14 +2110,6 @@ function hurtEnemy(enemy, damage, sourceKind = '', secondary = false) {
       rateMax: 1.06,
     });
     if (!secondary && Math.random() < 0.35) sfx(286 + rand(-22, 18), 0.04, 'triangle', 0.011);
-  } else if (sourceKind === 'longSunken') {
-    impactSfx.play('enemyHitHeavy', {
-      volume: 0.38,
-      minGap: 0.06,
-      rateMin: 0.84,
-      rateMax: 0.96,
-    });
-    if (!secondary && Math.random() < 0.42) sfx(208 + rand(-16, 14), 0.05, 'sawtooth', 0.012);
   } else if (sourceKind === 'sunkenSplash') {
     impactSfx.play('enemyHit', {
       volume: 0.3,
@@ -2335,36 +2303,6 @@ function spawnTowerHitVfx(x, y, towerKind, isUlt = false, secondary = false) {
       expand: secondary ? 8 : 13,
       lineWidth: 1.9,
       color: '#ffd14f',
-      render: 'ring',
-    });
-    return;
-  }
-
-  if (towerKind === 'longSunken') {
-    const burstCount = secondary ? 3 : 6;
-    for (let i = 0; i < burstCount; i += 1) {
-      const ang = rand(0, TAU);
-      const speed = rand(100, 240);
-      push({
-        x,
-        y,
-        vx: Math.cos(ang) * speed,
-        vy: Math.sin(ang) * speed,
-        life: rand(0.12, 0.24),
-        size: rand(2, 3.6),
-        color: '#a7c8ff',
-      });
-    }
-    push({
-      x,
-      y,
-      vx: 0,
-      vy: 0,
-      life: secondary ? 0.11 : 0.22,
-      size: secondary ? 5.2 : 7.4,
-      expand: secondary ? 9 : 17,
-      lineWidth: 2,
-      color: '#78a6ff',
       render: 'ring',
     });
     return;
@@ -3228,7 +3166,7 @@ function drawEndpoints() {
 function drawTowerSunken(tower, now) {
   const isSplash = tower.kind === 'sunkenSplash';
   const isSlow = tower.kind === 'sunkenSlow';
-  const isLong = tower.kind === 'longSunken';
+  const isLong = false;
   const isNova = tower.kind === 'sunkenNova';
   const isStun = tower.kind === 'sunkenStun';
   const scale = 1 + ((tower.footprint || 1) - 1) * 0.86;
@@ -3588,8 +3526,6 @@ function drawTowers() {
 
     const border = tower.kind === 'sunken'
       ? 'rgba(141, 217, 255, 0.8)'
-      : tower.kind === 'longSunken'
-        ? 'rgba(143, 185, 255, 0.92)'
       : tower.kind === 'sunkenNova'
         ? 'rgba(198, 155, 255, 0.9)'
       : tower.kind === 'sunkenStun'
@@ -3611,8 +3547,8 @@ function drawTowers() {
       tower.kind === 'sunken'
       || tower.kind === 'sunkenSplash'
       || tower.kind === 'sunkenSlow'
-      || tower.kind === 'longSunken'
       || tower.kind === 'sunkenNova'
+      || tower.kind === 'sunkenHammer'
       || tower.kind === 'sunkenStun'
     ) {
       drawTowerSunken(tower, now);
@@ -4212,7 +4148,6 @@ canvas.addEventListener('pointercancel', (event) => {
 window.addEventListener('keydown', (event) => {
   if (event.code === 'Digit1') chooseTower('sunken');
   if (event.code === 'Digit2') chooseTower('sunkenSlow');
-  if (event.code === 'Digit3') chooseTower('longSunken');
   if (event.code === 'Digit4') chooseTower('sunkenSplash');
   if (event.code === 'Digit5') chooseTower('spine');
   if (event.code === 'Digit6') chooseTower('obelisk');
