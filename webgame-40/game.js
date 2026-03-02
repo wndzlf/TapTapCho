@@ -3,6 +3,7 @@ const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const overlayEl = document.getElementById('overlay');
 const controlsEl = document.getElementById('controls');
+const quickBuildEl = document.getElementById('quickBuild');
 
 const stageTextEl = document.getElementById('stageText');
 const baseTextEl = document.getElementById('baseText');
@@ -1645,7 +1646,7 @@ function refreshHud() {
 }
 
 function setSelectedButton() {
-  for (const btn of controlsEl.querySelectorAll('.build-btn[data-kind]')) {
+  for (const btn of document.querySelectorAll('.build-btn[data-kind]')) {
     btn.classList.toggle('active', btn.dataset.kind === state.selectedTower);
   }
 }
@@ -3880,7 +3881,7 @@ function chooseTower(kind) {
   refreshBuildHint();
 }
 
-controlsEl.addEventListener('click', (event) => {
+function handleControlsClick(event) {
   const sellToggle = event.target.closest('[data-action="toggle-sell"]');
   if (sellToggle) {
     setSellMode(!state.sellMode);
@@ -3907,7 +3908,10 @@ controlsEl.addEventListener('click', (event) => {
   const btn = event.target.closest('.build-btn[data-kind]');
   if (!btn) return;
   chooseTower(btn.dataset.kind);
-});
+}
+
+controlsEl.addEventListener('click', handleControlsClick);
+if (quickBuildEl) quickBuildEl.addEventListener('click', handleControlsClick);
 
 canvas.addEventListener('contextmenu', (event) => {
   event.preventDefault();
