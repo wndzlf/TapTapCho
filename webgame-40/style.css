@@ -195,10 +195,10 @@ header p {
   border: 1px solid var(--line);
   border-radius: 12px;
   background: linear-gradient(180deg, #12192b, #0e1524);
-  padding: 8px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  padding: 6px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
   align-items: center;
 }
 
@@ -216,36 +216,36 @@ header p {
 
 .build-btn {
   display: grid;
-  gap: 3px;
+  gap: 2px;
   border: 1px solid #3f557b;
   background: linear-gradient(180deg, #1b2640, #151f34);
   color: var(--text);
-  border-radius: 10px;
-  min-width: 104px;
-  padding: 7px 8px;
+  border-radius: 9px;
+  min-width: 88px;
+  padding: 6px 7px;
   cursor: pointer;
 }
 
 .build-btn .icon {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 11px;
+  font-size: 9px;
   background: rgba(255, 255, 255, 0.13);
 }
 
 .build-btn .name {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
 }
 
 .build-btn .cost {
   color: #d7e4f8;
-  font-size: 11px;
+  font-size: 9px;
 }
 
 .build-btn[data-kind="longSunken"] {
@@ -669,12 +669,13 @@ footer {
   }
 
   .quick-build {
-    gap: 5px;
-    padding: 5px;
+    gap: 4px;
+    padding: 4px;
     position: sticky;
     top: 70px;
     z-index: 15;
     backdrop-filter: blur(4px);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .controls {
@@ -719,23 +720,23 @@ footer {
   }
 
   .build-btn {
-    min-width: 84px;
-    padding: 5px 6px;
+    min-width: 72px;
+    padding: 4px 5px;
     gap: 2px;
   }
 
   .build-btn .icon {
-    width: 16px;
-    height: 16px;
-    font-size: 9px;
+    width: 14px;
+    height: 14px;
+    font-size: 8px;
   }
 
   .build-btn .name {
-    font-size: 12px;
+    font-size: 10px;
   }
 
   .build-btn .cost {
-    font-size: 10px;
+    font-size: 8px;
   }
 
   canvas {
