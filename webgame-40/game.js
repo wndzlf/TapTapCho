@@ -1332,7 +1332,7 @@ function tryPlaceTower(c, r) {
 function sellTower(c, r) {
   const tower = getTower(c, r);
   if (!tower) return;
-  const refund = Math.floor(tower.spent * 0.6);
+  const refund = Math.floor(tower.spent);
   state.gold += refund;
   removeTower(tower);
   flashBanner(`SELL +${refund}`, 0.8);
