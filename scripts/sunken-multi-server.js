@@ -272,6 +272,7 @@ function normalizeSingleRankRow(raw) {
   const stage = clamp(Math.floor(Number(raw.stage) || 0), 1, 999);
   const kills = clamp(Math.floor(Number(raw.kills) || 0), 0, 999999);
   const score = clamp(Math.floor(Number(raw.score) || 0), 0, 999999999);
+  const timeSec = clamp(Math.floor(Number(raw.timeSec) || 0), 0, 999999);
   const updatedAt = Math.floor(Number(raw.updatedAt || Date.now()));
   return {
     playerId,
@@ -279,6 +280,7 @@ function normalizeSingleRankRow(raw) {
     stage,
     kills,
     score,
+    timeSec,
     updatedAt: Number.isFinite(updatedAt) ? updatedAt : Date.now(),
   };
 }
@@ -328,6 +330,7 @@ function submitSingleRank(raw) {
       : {
           ...prev,
           playerName: row.playerName,
+          timeSec: row.timeSec > 0 ? row.timeSec : prev.timeSec,
           updatedAt: Math.max(prev.updatedAt, row.updatedAt),
         };
   }
@@ -1645,6 +1648,7 @@ wss.on('connection', (ws) => {
         stage: msg.stage,
         kills: msg.kills,
         score: msg.score,
+        timeSec: msg.timeSec,
         updatedAt: Date.now(),
       });
 
