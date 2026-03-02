@@ -231,6 +231,7 @@ header p {
   display: grid;
   grid-template-columns: 1fr;
   grid-template-areas:
+    "icon"
     "name"
     "cost";
   gap: 2px;
@@ -242,19 +243,28 @@ header p {
   min-height: 52px;
   padding: 5px 6px;
   cursor: pointer;
+  align-items: center;
+  justify-items: center;
 }
 
 .build-btn .icon {
   grid-area: icon;
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  display: none;
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 9px;
-  background: rgba(255, 255, 255, 0.13);
+  font-size: 0;
+  background: transparent;
+}
+
+.build-btn .icon::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  display: block;
+  background: #fff;
+  border-radius: 4px;
 }
 
 .build-btn .name {
@@ -263,6 +273,7 @@ header p {
   font-weight: 700;
   align-self: center;
   white-space: nowrap;
+  text-align: center;
 }
 
 .build-btn .cost {
@@ -270,6 +281,7 @@ header p {
   color: #d7e4f8;
   font-size: clamp(5px, 1.7vw, 7px);
   white-space: nowrap;
+  text-align: center;
 }
 
 .build-btn[data-kind="longSunken"] {
@@ -322,19 +334,47 @@ header p {
   background: linear-gradient(180deg, #2b1f3f, #221933);
 }
 
-.build-btn[data-kind="sunkenNova"] .icon {
-  background: rgba(198, 155, 255, 0.24);
-  color: #ebdbff;
-}
-
 .build-btn[data-kind="sunkenStun"] {
   border-color: #9f7a2f;
   background: linear-gradient(180deg, #34280f, #281f0c);
 }
 
-.build-btn[data-kind="sunkenStun"] .icon {
-  background: rgba(255, 217, 106, 0.24);
-  color: #fff0c8;
+.build-btn[data-kind="sunken"] .icon::before {
+  background: #4da3ff;
+  border-radius: 50%;
+}
+
+.build-btn[data-kind="sunkenHammer"] .icon::before {
+  background: #ff4d4d;
+  border-radius: 2px;
+}
+
+.build-btn[data-kind="sunkenSplash"] .icon::before {
+  background: transparent;
+  border: 2px solid #111214;
+  border-radius: 50%;
+}
+
+.build-btn[data-kind="sunkenNova"] .icon::before {
+  background: #c69bff;
+  border-radius: 3px;
+  transform: rotate(45deg);
+}
+
+.build-btn[data-kind="sunkenStun"] .icon::before {
+  background: #7cff8d;
+  clip-path: polygon(50% 0, 0 100%, 100% 100%);
+}
+
+.build-btn[data-kind="spine"] .icon::before {
+  background: #ffffff;
+  clip-path: polygon(50% 0, 65% 35%, 100% 50%, 65% 65%, 50% 100%, 35% 65%, 0 50%, 35% 35%);
+}
+
+.build-btn[data-kind="choSunken"] .icon::before {
+  background: #63ff9a;
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(99, 255, 154, 0.7);
 }
 
 .build-btn.active {
