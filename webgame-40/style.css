@@ -210,7 +210,7 @@ header p {
   background: linear-gradient(180deg, #12192b, #0e1524);
   padding: 6px;
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
   align-items: center;
 }
@@ -233,14 +233,14 @@ header p {
   grid-template-areas:
     "icon name"
     "cost cost";
-  gap: 2px 4px;
+  gap: 2px 3px;
   border: 1px solid #3f557b;
   background: linear-gradient(180deg, #1b2640, #151f34);
   color: var(--text);
   border-radius: 9px;
-  min-width: 88px;
+  min-width: 72px;
   min-height: 52px;
-  padding: 6px 7px;
+  padding: 5px 6px;
   cursor: pointer;
 }
 
@@ -259,7 +259,7 @@ header p {
 
 .build-btn .name {
   grid-area: name;
-  font-size: clamp(8px, 2.3vw, 11px);
+  font-size: clamp(7px, 2.1vw, 10px);
   font-weight: 700;
   align-self: center;
   white-space: nowrap;
@@ -268,7 +268,7 @@ header p {
 .build-btn .cost {
   grid-area: cost;
   color: #d7e4f8;
-  font-size: clamp(7px, 2vw, 9px);
+  font-size: clamp(6px, 1.9vw, 8px);
   white-space: nowrap;
 }
 
