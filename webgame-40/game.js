@@ -3314,8 +3314,6 @@ function drawTowerSunken(tower, now) {
         ? `rgba(188, 146, 255, ${0.66 + pulse * 0.2})`
       : isStun
         ? `rgba(255, 204, 99, ${0.66 + pulse * 0.2})`
-      : isSlow
-        ? `rgba(135, 248, 209, ${0.66 + pulse * 0.2})`
         : `rgba(162, 236, 255, ${0.66 + pulse * 0.2})`;
     ctx.lineWidth = 1.8;
     for (let i = 0; i < 4; i += 1) {
@@ -3327,16 +3325,14 @@ function drawTowerSunken(tower, now) {
     }
   }
 
-  if (isSplash || isSlow || isLong || isNova || isStun) {
+  if (isSplash || isLong || isNova || isStun) {
     ctx.strokeStyle = isSplash
       ? `rgba(255, 169, 86, ${0.52 + pulse * 0.24})`
       : isLong
         ? `rgba(118, 170, 255, ${0.52 + pulse * 0.24})`
       : isNova
         ? `rgba(169, 117, 255, ${0.52 + pulse * 0.24})`
-      : isStun
-        ? `rgba(255, 195, 74, ${0.52 + pulse * 0.24})`
-      : `rgba(92, 246, 208, ${0.52 + pulse * 0.24})`;
+      : `rgba(255, 195, 74, ${0.52 + pulse * 0.24})`;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(0, 0, ringR + 6 + pulse * 1.5, 0, TAU);
