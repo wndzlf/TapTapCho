@@ -211,7 +211,7 @@ const TOWER_TYPES = {
     id: 'sunken',
     name: 'Sunken',
     cost: 40,
-    color: '#ff7ad6',
+    color: '#4da3ff',
     range: 105 * BALANCE_SCALE,
     damage: 30,
     reload: 0.5,
@@ -224,7 +224,7 @@ const TOWER_TYPES = {
     id: 'sunkenSplash',
     name: 'Splash Sunken',
     cost: 130,
-    color: '#ff6f9f',
+    color: '#111214',
     range: 114 * BALANCE_SCALE,
     damage: 36,
     reload: 0.9,
@@ -238,7 +238,7 @@ const TOWER_TYPES = {
     id: 'sunkenHammer',
     name: 'Hammer Sunken',
     cost: 120,
-    color: '#ffd04a',
+    color: '#ff4d4d',
     range: 84 * BALANCE_SCALE,
     damage: 46,
     reload: 0.95,
@@ -279,7 +279,7 @@ const TOWER_TYPES = {
     id: 'spine',
     name: 'Spine',
     cost: 70,
-    color: '#b9e8ac',
+    color: '#ffffff',
     range: 124 * BALANCE_SCALE,
     damage: 18,
     reload: 0.28,
@@ -3423,24 +3423,20 @@ function drawTowers() {
     ctx.fillRect(x, y, w, h);
 
     const border = tower.kind === 'sunken'
-      ? 'rgba(141, 217, 255, 0.8)'
+      ? 'rgba(77, 163, 255, 0.9)'
       : tower.kind === 'sunkenNova'
         ? 'rgba(198, 155, 255, 0.9)'
       : tower.kind === 'sunkenStun'
         ? 'rgba(124, 255, 141, 0.9)'
-      : tower.kind === 'sunkenSlow'
-        ? 'rgba(145, 244, 214, 0.88)'
       : tower.kind === 'sunkenSplash'
-        ? 'rgba(255, 111, 159, 0.9)'
+        ? 'rgba(30, 30, 30, 0.95)'
       : tower.kind === 'sunkenHammer'
-        ? 'rgba(73, 199, 255, 0.9)'
+        ? 'rgba(255, 77, 77, 0.95)'
       : tower.kind === 'fusion'
         ? 'rgba(174, 240, 255, 0.95)'
         : tower.kind === 'spine'
-          ? 'rgba(185, 232, 172, 0.8)'
-          : tower.kind === 'obelisk'
-            ? 'rgba(226, 177, 255, 0.85)'
-            : 'rgba(154, 232, 255, 0.88)';
+          ? 'rgba(255, 255, 255, 0.95)'
+          : 'rgba(154, 232, 255, 0.88)';
     ctx.strokeStyle = border;
     ctx.lineWidth = 2;
     ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
