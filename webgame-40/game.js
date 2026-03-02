@@ -3067,6 +3067,7 @@ function drawTowerSunken(tower, now) {
   const isLong = false;
   const isNova = tower.kind === 'sunkenNova';
   const isStun = tower.kind === 'sunkenStun';
+  const isHammer = tower.kind === 'sunkenHammer';
   const scale = 1 + ((tower.footprint || 1) - 1) * 0.86;
   const pulse = 0.5 + 0.5 * Math.sin(now * 4 + tower.c * 0.31 + tower.r * 0.17);
   const ringR = (8.4 + tower.level * 1.3) * scale;
@@ -3225,6 +3226,49 @@ function drawTowerSunken(tower, now) {
     ctx.lineTo(Math.cos(a + spread) * inner, Math.sin(a + spread) * inner);
     ctx.closePath();
     ctx.fill();
+  }
+
+  if (isHammer) {
+    ctx.fillStyle = 'rgba(255, 96, 96, 0.92)';
+    ctx.fillRect(-5, -3, 10, 6);
+    ctx.fillStyle = 'rgba(255, 210, 120, 0.9)';
+    ctx.fillRect(-1, 3, 2, 8);
+  }
+
+  if (isNova) {
+    ctx.strokeStyle = 'rgba(210, 170, 255, 0.9)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < 6; i += 1) {
+      const a = (i / 6) * TAU + now * 0.6;
+      const r1 = ringR * 0.35;
+      const r2 = ringR * 0.7;
+      ctx.moveTo(Math.cos(a) * r1, Math.sin(a) * r1);
+      ctx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2);
+    }
+    ctx.stroke();
+  }
+
+  if (isStun) {
+    ctx.strokeStyle = 'rgba(140, 255, 170, 0.95)';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(-4, -6);
+    ctx.lineTo(2, -2);
+    ctx.lineTo(-1, 2);
+    ctx.lineTo(5, 6);
+    ctx.stroke();
+  }
+
+  if (isSplash) {
+    ctx.strokeStyle = 'rgba(20, 20, 20, 0.9)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, ringR * 0.55, 0, TAU);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 0, ringR * 0.28, 0, TAU);
+    ctx.stroke();
   }
 
   if (tower.level >= 3) {
