@@ -1404,7 +1404,12 @@ function makeEnemy(type) {
     + nightmareIndex * 0.52
     + nightmareIndex * nightmareIndex * 0.044
   ) * 1.25 * (1 + s * 0.012);
-  const radiusMul = 1 + stageIndex * 0.022;
+  const radiusMul = (
+    1
+    + stageIndex * 0.012
+    + lateIndex * 0.004
+    + nightmareIndex * 0.01
+  );
   const threatBase = clamp(0.18 + s * 0.07 + nightmareIndex * 0.04, 0.2, 1.28);
   const typeThreat = {
     ghoul: 0.02,
@@ -1457,12 +1462,20 @@ function makeEnemy(type) {
   const threat = clamp(threatBase + (typeThreat[type] || 0), 0.2, 1.2);
   const leakBonus = s >= 28 ? 6 : s >= 24 ? 5 : s >= 21 ? 4 : s >= 18 ? 3 : s >= 14 ? 2 : s >= 10 ? 1 : s >= 6 ? 1 : 0;
   const leak = d.leak + (d.boss ? leakBonus : Math.floor(leakBonus * 0.5));
+  const radiusRaw = d.r * radiusMul * BALANCE_SCALE;
+  const radiusCap = d.boss
+    ? 16.5 * BALANCE_SCALE
+    : d.fast
+      ? 11.8 * BALANCE_SCALE
+      : 13.8 * BALANCE_SCALE;
+  const radiusFloor = d.fast ? 6.7 * BALANCE_SCALE : 7.2 * BALANCE_SCALE;
+  const radius = clamp(radiusRaw, radiusFloor, radiusCap);
 
   return {
     type,
     x: spawn.x,
     y: spawn.y,
-    r: d.r * radiusMul * BALANCE_SCALE,
+    r: radius,
     hp: Math.floor(d.hp),
     maxHp: Math.floor(d.hp),
     speed: d.speed * BALANCE_SCALE,
@@ -2896,14 +2909,18 @@ function spawnOne() {
   const enemy = makeEnemy(type);
   const spawn = cellCenter(SPAWN.c, SPAWN.r);
   const aroundSpawn = state.enemies.filter((e) => (
-    Math.abs(e.x - spawn.x) < GRID.cell * 2.7
-    && Math.abs(e.y - spawn.y) < GRID.cell * 1.8
+    Math.abs(e.x - spawn.x) < GRID.cell * 4.6
+    && Math.abs(e.y - spawn.y) < GRID.cell * 2.7
   )).length;
   const lane = state.spawnSerial % 5;
-  const yBands = [0, 0, 0, 0, 0];
-  const spacing = enemy.r * 2.3 + 6;
-  enemy.x = spawn.x - aroundSpawn * spacing;
-  enemy.y = spawn.y + yBands[lane] * (enemy.r * 1.1 + 2);
+  const yBands = [0, -0.75, 0.75, -1.55, 1.55];
+  const spacing = enemy.r * 3.2 + 12 * BALANCE_SCALE;
+  enemy.x = spawn.x - aroundSpawn * spacing - lane * (enemy.r * 0.42);
+  enemy.y = clamp(
+    spawn.y + yBands[lane] * (enemy.r * 0.95 + 3 * BALANCE_SCALE),
+    GRID.cell * 0.5,
+    H - GRID.cell * 0.5
+  );
   state.spawnSerial += 1;
   state.enemies.push(enemy);
   if (type === 'lord') {
@@ -2923,7 +2940,7 @@ function updateSpawning(dt) {
     const earlyStage = Math.min(state.stage, 10);
     const lateIndex = Math.max(0, state.stage - 10);
     const nightmareIndex = Math.max(0, state.stage - 20);
-    const spawnDelay = Math.max(0.038, 0.4 - earlyStage * 0.02 - lateIndex * 0.011 - nightmareIndex * 0.006);
+    const spawnDelay = Math.max(0.052, 0.43 - earlyStage * 0.018 - lateIndex * 0.009 - nightmareIndex * 0.004);
     while (state.spawnTimer <= 0 && state.spawnQueue.length > 0) {
       spawnOne();
       state.spawnTimer += spawnDelay;
@@ -3829,8 +3846,18 @@ function drawEnemyTankSprite(enemy) {
     }
   }
   const ang = Math.atan2(dy, dx);
-  const sizeMul = enemy.boss ? 3.0 : 2.65;
-  const size = enemy.r * sizeMul;
+  const sizeMul = enemy.boss
+    ? 2.4
+    : enemy.type === 'juggernaut'
+      ? 2.35
+      : enemy.fast
+        ? 2.05
+        : 2.2;
+  const size = clamp(
+    enemy.r * sizeMul,
+    18 * BALANCE_SCALE,
+    enemy.boss ? 44 * BALANCE_SCALE : 34 * BALANCE_SCALE
+  );
 
   ctx.save();
   ctx.translate(enemy.x, enemy.y);
