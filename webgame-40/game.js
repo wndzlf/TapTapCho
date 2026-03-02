@@ -26,6 +26,7 @@ const rankStatusEl = document.getElementById('rankStatus');
 const btnSellMode = document.getElementById('btnSellMode');
 const btnSpeedUp = document.getElementById('btnSpeedUp');
 const btnEmperorShield = document.getElementById('btnEmperorShield');
+const btnSunken = document.getElementById('btnSunken');
 try {
   const audioKey = 'taptapcho_neon_audio_v1';
   const raw = localStorage.getItem(audioKey);
@@ -939,10 +940,15 @@ function getPlacementSpec(kind) {
     };
   }
 
+  let cost = base.cost;
+  if (kind === 'sunken' && state.stage <= 3) {
+    cost = Math.max(10, base.cost - 10);
+  }
+
   return {
     kind,
     footprint: 1,
-    cost: base.cost,
+    cost,
     range: base.range,
     damage: base.damage,
     reload: base.reload,
@@ -1221,7 +1227,8 @@ function upgradeTower(tower) {
 
   const rangePercent = Math.round((factors.rangeMul - 1) * 100);
   flashBanner(`UPGRADE Lv.${tower.level} · RANGE +${rangePercent}%`, 0.75);
-  sfx(620, 0.07, 'triangle', 0.022);
+  const upgradePitch = factors.reloadMul < 1 ? 680 : 620;
+  sfx(upgradePitch, 0.07, 'triangle', 0.022);
   return true;
 }
 
@@ -1642,6 +1649,11 @@ function refreshHud() {
   queueTextEl.textContent = String(state.spawnQueue.length);
   killsTextEl.textContent = String(state.kills);
   if (speedTextEl) speedTextEl.textContent = `${state.simSpeed.toFixed(2)}x`;
+  if (btnSunken) {
+    const sunkenCostEl = btnSunken.querySelector('.cost');
+    const spec = getPlacementSpec('sunken');
+    if (sunkenCostEl && spec) sunkenCostEl.textContent = `${spec.cost}`;
+  }
   refreshEmperorShieldButton();
 }
 
@@ -2460,6 +2472,21 @@ function updateBullets(dt) {
         removed = true;
       } else {
         spawnTowerHitVfx(enemy.x, enemy.y, b.towerKind, false, false);
+        if (b.towerKind === 'sunken') {
+          for (let p = 0; p < 4; p += 1) {
+            const ang = rand(0, TAU);
+            const dist = rand(2, 8);
+            state.particles.push({
+              x: enemy.x + Math.cos(ang) * dist,
+              y: enemy.y + Math.sin(ang) * dist,
+              vx: Math.cos(ang) * rand(60, 140),
+              vy: Math.sin(ang) * rand(60, 140),
+              life: rand(0.08, 0.16),
+              size: rand(1.4, 2.6),
+              color: '#bfe9ff',
+            });
+          }
+        }
         hurtEnemy(enemy, b.damage, b.towerKind, false);
 
         if (b.splashRadius > 0) {
