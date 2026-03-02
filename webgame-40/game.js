@@ -1171,6 +1171,9 @@ function makeTower(kind, c, r, spec = null) {
     poisonDps: base.poisonDps || 0,
     tauntRadius: placement.tauntRadius || 0,
     damageMitigation: clamp(placement.damageMitigation || 0, 0, 0.8),
+    guardHitFx: 0,
+    guardHitPulse: 0,
+    guardHitCooldown: 0,
   };
 }
 
@@ -2858,6 +2861,10 @@ function spawnTowerHitVfx(x, y, towerKind, isUlt = false, secondary = false) {
 
 function updateTowers(dt) {
   for (const tower of state.towers) {
+    tower.guardHitFx = Math.max(0, (tower.guardHitFx || 0) - dt * 2.9);
+    tower.guardHitPulse = Math.max(0, (tower.guardHitPulse || 0) - dt * 4.6);
+    tower.guardHitCooldown = Math.max(0, (tower.guardHitCooldown || 0) - dt);
+
     tower.cooldown -= dt;
     if (tower.cooldown > 0) continue;
 
@@ -3175,6 +3182,11 @@ function updateEnemy(enemy, dt) {
           : 1;
       const mitigation = clamp(targetTower.damageMitigation || 0, 0, 0.8);
       targetTower.hp -= enemy.attack * towerBreakMul * (1 - mitigation) * dt;
+      if (targetTower.kind === 'tankerSunken' && targetTower.guardHitCooldown <= 0) {
+        targetTower.guardHitFx = 1;
+        targetTower.guardHitPulse = Math.max(targetTower.guardHitPulse || 0, 1);
+        targetTower.guardHitCooldown = 0.11;
+      }
       if (targetTower.hp <= 0) {
         removeTower(targetTower);
         flashBanner('TOWER DESTROYED', 0.6, true);
@@ -3878,6 +3890,64 @@ function drawTowerSunken(tower, now) {
   }
 
   if (isTanker) {
+    const phaseSeed = Number.isFinite(tower.id) ? tower.id : (tower.c || 0) * 97 + (tower.r || 0) * 13;
+    const shieldPulse = 0.5 + 0.5 * Math.sin(now * 3.6 + phaseSeed * 0.17);
+    const baseShieldR = ringR + 7.5 + tower.level * 0.8 + shieldPulse * 1.2;
+    const hitFx = clamp(tower.guardHitFx || 0, 0, 1);
+    const hitPulse = clamp(tower.guardHitPulse || 0, 0, 1);
+
+    ctx.strokeStyle = `rgba(167, 255, 207, ${0.28 + shieldPulse * 0.18})`;
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.arc(0, 0, baseShieldR, 0, TAU);
+    ctx.stroke();
+
+    for (let i = 0; i < 6; i += 1) {
+      const a = (i / 6) * TAU + now * 0.45;
+      const r1 = baseShieldR - 2.4;
+      const r2 = baseShieldR + 2.2;
+      ctx.strokeStyle = `rgba(145, 241, 188, ${0.2 + shieldPulse * 0.18})`;
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * r1, Math.sin(a) * r1);
+      ctx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2);
+      ctx.stroke();
+    }
+
+    if (hitFx > 0.001) {
+      const burstR = baseShieldR + (1 - hitFx) * 13 + hitPulse * 3.5;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+
+      const shell = ctx.createRadialGradient(0, 0, ringR * 0.8, 0, 0, burstR + 10);
+      shell.addColorStop(0, `rgba(225, 255, 236, ${0.16 + hitFx * 0.22})`);
+      shell.addColorStop(0.56, `rgba(126, 236, 181, ${0.12 + hitFx * 0.2})`);
+      shell.addColorStop(1, 'rgba(54, 134, 95, 0)');
+      ctx.fillStyle = shell;
+      ctx.beginPath();
+      ctx.arc(0, 0, burstR + 10, 0, TAU);
+      ctx.fill();
+
+      ctx.strokeStyle = `rgba(217, 255, 229, ${0.42 + hitFx * 0.4})`;
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.arc(0, 0, burstR, 0, TAU);
+      ctx.stroke();
+
+      ctx.strokeStyle = `rgba(178, 255, 211, ${0.26 + hitFx * 0.34})`;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      for (let i = 0; i < 8; i += 1) {
+        const a = (i / 8) * TAU + now * 0.9;
+        const r1 = baseShieldR * 0.6;
+        const r2 = burstR + 4 + hitPulse * 4;
+        ctx.moveTo(Math.cos(a) * r1, Math.sin(a) * r1);
+        ctx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
     ctx.strokeStyle = 'rgba(198, 255, 214, 0.92)';
     ctx.lineWidth = 2.2;
     ctx.beginPath();
