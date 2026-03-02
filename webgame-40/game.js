@@ -4027,13 +4027,9 @@ function handleCanvasAction(event) {
 
     const baseKinds = baseTower.fusedKinds || [baseTower.kind];
     const targetKinds = targetTower.fusedKinds || [targetTower.kind];
-    if (targetKinds.length !== 1) {
-      flashBanner('합쳐진 타워는 재합치기 불가', 0.7, true);
-      return;
-    }
 
-    const targetKind = targetKinds[0];
-    if (baseKinds.includes(targetKind)) {
+    const overlap = targetKinds.some((k) => baseKinds.includes(k));
+    if (overlap) {
       flashBanner('같은 타입은 합치기 불가', 0.7, true);
       return;
     }
@@ -4043,7 +4039,7 @@ function handleCanvasAction(event) {
       return;
     }
 
-    if (baseKinds.length >= 7) {
+    if (baseKinds.length + targetKinds.length > 7) {
       flashBanner('합치기 최대 7개', 0.7, true);
       return;
     }
@@ -4056,10 +4052,10 @@ function handleCanvasAction(event) {
     }
 
     state.gold -= totalCost;
-    baseTower.fusedKinds = [...baseKinds, targetKind];
+    baseTower.fusedKinds = [...baseKinds, ...targetKinds];
     baseTower.fusedLevels = {
       ...(baseTower.fusedLevels || { [baseTower.kind]: baseTower.level || 1 }),
-      [targetKind]: targetTower.level || 1,
+      ...(targetTower.fusedLevels || { [targetTower.kind]: targetTower.level || 1 }),
     };
     baseTower.kind = 'fusion';
     baseTower.spent += totalCost;
