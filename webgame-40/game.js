@@ -56,6 +56,7 @@ const ENEMY_TANK_SOURCES = {
   elder: '../assets/kenney_tanks/png/tanks_tankNavy3.png',
   raider: '../assets/kenney_tanks/png/tanks_tankGrey4.png',
   crusher: '../assets/kenney_tanks/png/tanks_tankDesert5.png',
+  juggernaut: '../assets/kenney_tanks/png/tanks_tankNavy5.png',
   lord: '../assets/kenney_tanks/png/tanks_tankNavy5.png',
 };
 const ENEMY_TANK_IMAGES = Object.create(null);
@@ -1404,6 +1405,7 @@ function makeEnemy(type) {
     elder: 0.18,
     raider: 0.26,
     crusher: 0.32,
+    juggernaut: 0.38,
     lord: 0.3,
   };
   const defs = {
@@ -1429,6 +1431,15 @@ function makeEnemy(type) {
       r: 15,
       color: '#ffc17c',
       fast: true,
+    },
+    juggernaut: {
+      hp: (420 + s * 80) * stageHpMul * 1.55,
+      speed: (22 + s * 0.6) * stageSpeedMul,
+      reward: 42,
+      leak: 4,
+      r: 18,
+      color: '#6f7a86',
+      stunImmune: true,
     },
     lord: { hp: (700 + s * 140) * stageHpMul * 1.65, speed: (27 + s) * stageSpeedMul, reward: 58, leak: 5, r: 18, color: '#f26a84', boss: true },
   };
@@ -1474,11 +1485,15 @@ function makeEnemy(type) {
     lastDirY: 0,
     poisonTimer: 0,
     poisonDps: 0,
+    stunImmune: Boolean(d.stunImmune),
     attack: (1 + s * 0.06) * (d.boss ? 3 : d.fast ? 1.4 : 1),
   };
 }
 
 function makeStageQueue(stage) {
+  if ([5, 15, 25, 35, 45].includes(stage)) {
+    return ['juggernaut'];
+  }
   const queue = [];
   const earlyStage = Math.min(stage, 10);
   const lateIndex = Math.max(0, stage - 10);
@@ -1514,22 +1529,29 @@ function makeStageQueue(stage) {
     const hopperChance = stage >= 13
       ? clamp(0.05 + (stage - 13) * 0.012 + nightmareIndex * 0.018, 0.05, 0.28)
       : 0;
+    const juggernautChance = stage >= 20
+      ? clamp(0.05 + (stage - 20) * 0.008 + nightmareIndex * 0.01, 0.05, 0.28)
+      : 0;
 
-    let threshold = crusherChance;
-    if (roll < threshold) type = 'crusher';
+    let threshold = juggernautChance;
+    if (roll < threshold) type = 'juggernaut';
     else {
-      threshold += elderChance;
-      if (roll < threshold) type = 'elder';
+      threshold += crusherChance;
+      if (roll < threshold) type = 'crusher';
       else {
-        threshold += raiderChance;
-        if (roll < threshold) type = 'raider';
+        threshold += elderChance;
+        if (roll < threshold) type = 'elder';
         else {
-          threshold += bruteChance;
-          if (roll < threshold) type = 'brute';
+          threshold += raiderChance;
+          if (roll < threshold) type = 'raider';
           else {
-            threshold += hopperChance;
-            if (roll < threshold) type = 'hopper';
-            else if (roll < threshold + batChance) type = 'bat';
+            threshold += bruteChance;
+            if (roll < threshold) type = 'brute';
+            else {
+              threshold += hopperChance;
+              if (roll < threshold) type = 'hopper';
+              else if (roll < threshold + batChance) type = 'bat';
+            }
           }
         }
       }
@@ -2486,6 +2508,7 @@ function updateTowers(dt) {
 }
 
 function applyStunChain(primaryEnemy, bullet) {
+  if (primaryEnemy.stunImmune) return;
   const stunDuration = bullet.stunDuration || 0.85;
   const stunRadius = bullet.stunRadius || (72 * BALANCE_SCALE);
   const stunRadiusSq = stunRadius * stunRadius;
@@ -2506,6 +2529,7 @@ function applyStunChain(primaryEnemy, bullet) {
   const victims = [primaryEnemy, ...nearby];
   for (let i = 0; i < victims.length; i += 1) {
     const victim = victims[i];
+    if (victim.stunImmune) continue;
     victim.stunTimer = Math.max(victim.stunTimer || 0, stunDuration);
     victim.stunFx = Math.max(victim.stunFx || 0, 0.45);
     spawnTowerHitVfx(victim.x, victim.y, 'sunkenStun', false, i > 0);
@@ -2540,9 +2564,11 @@ function updateBullets(dt) {
       }
 
       if (b.towerKind === 'sunkenStun') {
-        applyStunChain(enemy, b);
+        if (!enemy.stunImmune) {
+          applyStunChain(enemy, b);
+          if (Math.random() < 0.08) flashBanner('Stun 연쇄 고정', 0.42);
+        }
         hurtEnemy(enemy, b.damage, b.towerKind, false);
-        if (Math.random() < 0.08) flashBanner('Stun 연쇄 고정', 0.42);
         state.bullets.splice(i, 1);
         removed = true;
       } else if (b.towerKind === 'snare') {
