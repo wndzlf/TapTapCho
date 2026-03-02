@@ -2047,11 +2047,28 @@ function hasAnyValidMergePair() {
   return canMerge;
 }
 
+function isFusionTowerSaturated(tower) {
+  if (!tower || tower.kind !== 'fusion') return false;
+  const kinds = getTowerKindsForMerge(tower);
+  if (!kinds.length) return true;
+  if (hasBlockedMergeKind(kinds)) return true;
+  return kinds.length >= 5;
+}
+
+// Merge 잠금은 "fusion 5개가 모두 포화"일 때만 걸린다.
+function isMergeSystemSaturated() {
+  const fusionTowers = state.towers.filter((tower) => (
+    tower.kind === 'fusion' && (tower.footprint || 1) === 1
+  ));
+  if (fusionTowers.length < MERGE_FUSION_MAX) return false;
+  return fusionTowers.every((tower) => isFusionTowerSaturated(tower));
+}
+
 function refreshMergeButton(selectionCount = null) {
   if (!btnMerge) return;
   const merged = getFusionTowerCount();
   const selected = selectionCount == null ? (state.mergePick ? 1 : 0) : selectionCount;
-  const lockedByCap = merged >= MERGE_FUSION_MAX && !hasAnyValidMergePair();
+  const lockedByCap = merged >= MERGE_FUSION_MAX && isMergeSystemSaturated();
 
   btnMerge.classList.toggle('active', state.mergeMode);
   btnMerge.classList.toggle('locked', lockedByCap && !state.mergeMode);
@@ -2074,7 +2091,7 @@ function refreshMergeButton(selectionCount = null) {
 
 function setMergeMode(enabled) {
   const next = Boolean(enabled);
-  if (next && getFusionTowerCount() >= MERGE_FUSION_MAX && !hasAnyValidMergePair()) {
+  if (next && getFusionTowerCount() >= MERGE_FUSION_MAX && isMergeSystemSaturated()) {
     flashBanner(`Merge cap ${MERGE_FUSION_MAX}/${MERGE_FUSION_MAX}`, 0.75, true);
     state.mergeMode = false;
     state.mergePick = null;
@@ -4639,7 +4656,7 @@ function handleCanvasAction(event) {
   }
 
   if (state.mergeMode) {
-    if (getFusionTowerCount() >= MERGE_FUSION_MAX && !hasAnyValidMergePair()) {
+    if (getFusionTowerCount() >= MERGE_FUSION_MAX && isMergeSystemSaturated()) {
       flashBanner(`Merge cap ${MERGE_FUSION_MAX}/${MERGE_FUSION_MAX}`, 0.75, true);
       setMergeMode(false);
       return;
