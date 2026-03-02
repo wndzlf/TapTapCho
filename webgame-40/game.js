@@ -4285,8 +4285,8 @@ function handleCanvasAction(event) {
       return;
     }
 
-    if (baseKinds.length + targetKinds.length > 7) {
-      flashBanner('합치기 최대 7개', 0.7, true);
+    if (baseKinds.length + targetKinds.length > 5) {
+      flashBanner('합치기 최대 5개', 0.7, true);
       return;
     }
 
