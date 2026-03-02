@@ -2429,23 +2429,18 @@ function updateBullets(dt) {
         if (Math.random() < 0.08) flashBanner('Stun 연쇄 고정', 0.42);
         state.bullets.splice(i, 1);
         removed = true;
-      } else if (b.towerKind === 'snare' || b.towerKind === 'sunkenSlow') {
-        const snareDuration = b.snareDuration || (b.towerKind === 'sunkenSlow' ? 1.25 : 2);
-        const snareSlow = b.snareSlow || (b.towerKind === 'sunkenSlow' ? 0.66 : 0.55);
+      } else if (b.towerKind === 'snare') {
+        const snareDuration = b.snareDuration || 2;
+        const snareSlow = b.snareSlow || 0.55;
         enemy.snareTimer = Math.max(enemy.snareTimer, snareDuration);
         enemy.snareSlowMul = Math.min(enemy.snareSlowMul, snareSlow);
         enemy.slowSource = b.towerKind;
-        if (b.towerKind === 'sunkenSlow') {
-          enemy.slowHitFx = Math.max(enemy.slowHitFx, 0.45);
-        }
-        if (b.towerKind === 'snare') {
-          enemy.weakenTimer = Math.max(enemy.weakenTimer, snareDuration + 0.6);
-          enemy.weakenMul = Math.max(enemy.weakenMul, b.weakenMul || 1.25);
-        }
+        enemy.weakenTimer = Math.max(enemy.weakenTimer, snareDuration + 0.6);
+        enemy.weakenMul = Math.max(enemy.weakenMul, b.weakenMul || 1.25);
         spawnTowerHitVfx(enemy.x, enemy.y, b.towerKind, false, false);
-        const damage = b.towerKind === 'snare' ? b.damage * 0.55 : b.damage;
+        const damage = b.damage * 0.55;
         hurtEnemy(enemy, damage, b.towerKind, false);
-        if (b.towerKind === 'snare' && Math.random() < 0.28) flashBanner('Snare: 둔화/약화', 0.45);
+        if (Math.random() < 0.28) flashBanner('Snare: 둔화/약화', 0.45);
         state.bullets.splice(i, 1);
         removed = true;
       } else {
@@ -3106,7 +3101,6 @@ function drawEndpoints() {
 
 function drawTowerSunken(tower, now) {
   const isSplash = tower.kind === 'sunkenSplash';
-  const isSlow = tower.kind === 'sunkenSlow';
   const isLong = false;
   const isNova = tower.kind === 'sunkenNova';
   const isStun = tower.kind === 'sunkenStun';
@@ -3132,8 +3126,6 @@ function drawTowerSunken(tower, now) {
       ? `rgba(204, 163, 255, ${0.34 + pulse * 0.24})`
     : isStun
       ? `rgba(255, 215, 112, ${0.34 + pulse * 0.24})`
-    : isSlow
-      ? `rgba(145, 244, 214, ${0.34 + pulse * 0.24})`
     : `rgba(147, 225, 255, ${0.34 + pulse * 0.24})`;
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -3157,10 +3149,6 @@ function drawTowerSunken(tower, now) {
     aura.addColorStop(0, 'rgba(255, 232, 157, 0.46)');
     aura.addColorStop(0.58, 'rgba(255, 196, 84, 0.26)');
     aura.addColorStop(1, 'rgba(146, 91, 24, 0)');
-  } else if (isSlow) {
-    aura.addColorStop(0, 'rgba(203, 255, 239, 0.44)');
-    aura.addColorStop(0.58, 'rgba(130, 234, 199, 0.24)');
-    aura.addColorStop(1, 'rgba(49, 126, 112, 0)');
   } else {
     aura.addColorStop(0, 'rgba(188, 245, 255, 0.4)');
     aura.addColorStop(0.58, 'rgba(122, 214, 255, 0.24)');
@@ -3190,10 +3178,6 @@ function drawTowerSunken(tower, now) {
     vortex.addColorStop(0, '#ffe9b0');
     vortex.addColorStop(0.65, '#c08933');
     vortex.addColorStop(1, '#35230d');
-  } else if (isSlow) {
-    vortex.addColorStop(0, '#c9ffe9');
-    vortex.addColorStop(0.65, '#4fba95');
-    vortex.addColorStop(1, '#113a2f');
   } else {
     vortex.addColorStop(0, '#7ee8ff');
     vortex.addColorStop(0.65, '#3e8ab5');
@@ -3212,8 +3196,6 @@ function drawTowerSunken(tower, now) {
       ? 'rgba(225, 208, 255, 0.68)'
     : isStun
       ? 'rgba(255, 230, 163, 0.68)'
-    : isSlow
-      ? 'rgba(201, 255, 238, 0.65)'
       : 'rgba(196, 242, 255, 0.62)';
   ctx.lineWidth = 1.6;
   for (let i = 0; i < 2 + tower.level; i += 1) {
@@ -3233,8 +3215,6 @@ function drawTowerSunken(tower, now) {
         ? 'rgba(222, 204, 255, 0.86)'
       : isStun
         ? 'rgba(255, 226, 152, 0.86)'
-      : isSlow
-        ? 'rgba(194, 255, 236, 0.84)'
         : 'rgba(197, 242, 255, 0.84)';
     for (let i = 0; i < orbitCount; i += 1) {
       const orbitA = now * (1.2 + i * 0.07) + i * (TAU / orbitCount);
@@ -3255,8 +3235,6 @@ function drawTowerSunken(tower, now) {
       ? 'rgba(205, 179, 255, 0.82)'
     : isStun
       ? 'rgba(255, 219, 140, 0.82)'
-    : isSlow
-      ? 'rgba(191, 255, 229, 0.78)'
       : 'rgba(198, 246, 255, 0.78)';
   for (let i = 0; i < teeth; i += 1) {
     const a = (i / teeth) * TAU + now * 0.3;
@@ -3544,7 +3522,6 @@ function drawTowers() {
     if (
       tower.kind === 'sunken'
       || tower.kind === 'sunkenSplash'
-      || tower.kind === 'sunkenSlow'
       || tower.kind === 'sunkenNova'
       || tower.kind === 'sunkenHammer'
       || tower.kind === 'sunkenStun'
@@ -3608,7 +3585,7 @@ function drawEnemyTankSprite(enemy) {
   ctx.translate(enemy.x, enemy.y);
   ctx.rotate(ang);
   if (enemy.snareTimer > 0) {
-    ctx.globalAlpha = enemy.slowSource === 'sunkenSlow' ? 0.76 : 0.84;
+    ctx.globalAlpha = 0.84;
   } else if ((enemy.stunTimer || 0) > 0) {
     ctx.globalAlpha = 0.72;
   }
@@ -3721,55 +3698,19 @@ function drawEnemies() {
 
     if (enemy.snareTimer > 0) {
       const slowIntensity = clamp(1 - enemy.snareSlowMul, 0, 0.8);
-      const isSlowSunken = enemy.slowSource === 'sunkenSlow';
-      ctx.strokeStyle = isSlowSunken
-        ? `rgba(141, 255, 221, ${0.72 + slowIntensity * 0.35})`
-        : 'rgba(155, 241, 255, 0.85)';
-      ctx.lineWidth = isSlowSunken ? 2.2 : 2;
+      ctx.strokeStyle = 'rgba(155, 241, 255, 0.85)';
+      ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(enemy.x, enemy.y, enemy.r + 6, 0, TAU);
       ctx.stroke();
 
-      if (isSlowSunken) {
-        const velLen = Math.hypot(enemy.vx, enemy.vy) || 1;
-        const nx = enemy.vx / velLen;
-        const ny = enemy.vy / velLen;
-        const trailLen = 8 + slowIntensity * 18;
-        ctx.strokeStyle = `rgba(171, 255, 230, ${0.32 + slowIntensity * 0.45})`;
-        ctx.lineWidth = 1.6;
-        for (let i = 0; i < 3; i += 1) {
-          const sideJitter = Math.sin(now * 8.5 + enemy.morph + i * 1.3) * (1.1 + i * 0.4);
-          const ox = -ny * sideJitter;
-          const oy = nx * sideJitter;
-          const back = enemy.r * 0.25 + i * 4.2;
-          const sx = enemy.x - nx * back + ox;
-          const sy = enemy.y - ny * back + oy;
-          const ex = sx - nx * (trailLen + i * 2.8);
-          const ey = sy - ny * (trailLen + i * 2.8);
-          ctx.beginPath();
-          ctx.moveTo(sx, sy);
-          ctx.lineTo(ex, ey);
-          ctx.stroke();
-        }
-
-        ctx.save();
-        ctx.setLineDash([4, 5]);
-        ctx.lineDashOffset = -(now * 26 + enemy.morph * 5);
-        ctx.strokeStyle = `rgba(132, 248, 211, ${0.4 + slowIntensity * 0.42})`;
-        ctx.lineWidth = 1.5;
+      if (enemy.slowHitFx > 0.001) {
+        const hitRatio = clamp(enemy.slowHitFx / 0.45, 0, 1);
+        ctx.strokeStyle = `rgba(201, 255, 236, ${0.24 + hitRatio * 0.5})`;
+        ctx.lineWidth = 1.8;
         ctx.beginPath();
-        ctx.arc(enemy.x, enemy.y, enemy.r + 9 + Math.sin(now * 5 + enemy.morph) * 1.4, 0, TAU);
+        ctx.arc(enemy.x, enemy.y, enemy.r + 10 + (1 - hitRatio) * 6, 0, TAU);
         ctx.stroke();
-        ctx.restore();
-
-        if (enemy.slowHitFx > 0.001) {
-          const hitRatio = clamp(enemy.slowHitFx / 0.45, 0, 1);
-          ctx.strokeStyle = `rgba(201, 255, 236, ${0.24 + hitRatio * 0.5})`;
-          ctx.lineWidth = 1.8;
-          ctx.beginPath();
-          ctx.arc(enemy.x, enemy.y, enemy.r + 10 + (1 - hitRatio) * 6, 0, TAU);
-          ctx.stroke();
-        }
       }
     }
 
@@ -4241,10 +4182,8 @@ canvas.addEventListener('pointercancel', (event) => {
 
 window.addEventListener('keydown', (event) => {
   if (event.code === 'Digit1') chooseTower('sunken');
-  if (event.code === 'Digit2') chooseTower('sunkenSlow');
   if (event.code === 'Digit4') chooseTower('sunkenSplash');
   if (event.code === 'Digit5') chooseTower('spine');
-  if (event.code === 'Digit6') chooseTower('obelisk');
   if (event.code === 'Digit7') chooseTower('sunkenHammer');
   if (event.code === 'Digit8') chooseTower('sunkenNova');
   if (event.code === 'Digit9') chooseTower('sunkenStun');
