@@ -179,8 +179,10 @@ header p {
   white-space: nowrap;
   border: 1px solid rgba(90, 120, 166, 0.45);
   border-radius: 8px;
-  padding: 3px 7px;
+  padding: 3px 6px;
   background: linear-gradient(180deg, rgba(23, 34, 56, 0.8), rgba(16, 24, 41, 0.8));
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stat-gold {
@@ -195,6 +197,7 @@ header p {
   color: #f4f8ff;
   margin-left: 4px;
   font-weight: 700;
+  font-size: 0.95em;
 }
 
 .stat-gold b {
@@ -672,9 +675,11 @@ footer {
 
   .stat {
     min-width: 0;
-    font-size: 11px;
+    font-size: 10px;
     white-space: nowrap;
     padding: 2px 5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .stat-gold {
