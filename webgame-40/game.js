@@ -160,19 +160,17 @@ const impactSfx = (() => {
 })();
 
 const isMobileView = window.matchMedia('(max-width: 860px), (pointer: coarse)').matches;
-if (isMobileView) {
-  canvas.width = 720;
-  canvas.height = 960;
-} else {
-  canvas.width = 960;
-  // 데스크톱은 그리드 셀(30) 배수 높이로 맞춰야 하단 배치 불가 영역이 생기지 않는다.
-  canvas.height = 510;
-}
+const LOGICAL_W = isMobileView ? 720 : 960;
+// 데스크톱은 그리드 셀(30) 배수 높이로 맞춰야 하단 배치 불가 영역이 생기지 않는다.
+const LOGICAL_H = isMobileView ? 960 : 510;
+const RENDER_SCALE = isMobileView ? 0.85 : 1;
+canvas.width = Math.floor(LOGICAL_W * RENDER_SCALE);
+canvas.height = Math.floor(LOGICAL_H * RENDER_SCALE);
 const GRID_CELL = isMobileView ? 48 : 30;
 const BALANCE_SCALE = GRID_CELL / 30;
 
-const W = canvas.width;
-const H = canvas.height;
+const W = LOGICAL_W;
+const H = LOGICAL_H;
 const TAU = Math.PI * 2;
 let battlefieldBackdrop = null;
 
@@ -416,6 +414,10 @@ const EMPEROR_SHIELD_COST = 1000;
 const EMPEROR_SHIELD_DURATION = 10;
 const EMPEROR_SHIELD_MAX_USES = 5;
 
+const MAX_PARTICLES = isMobileView ? 420 : 900;
+const MAX_BULLETS = isMobileView ? 420 : 900;
+const MAX_ENEMIES = isMobileView ? 160 : 260;
+
 const sfxCtx = window.AudioContext ? new AudioContext() : null;
 
 function sfx(freq, duration = 0.06, type = 'triangle', gain = 0.02) {
@@ -440,6 +442,22 @@ function clamp(v, min, max) {
 
 function rand(min, max) {
   return min + Math.random() * (max - min);
+}
+
+function pushParticle(p) {
+  if (state.particles.length >= MAX_PARTICLES) return;
+  if (isMobileView && Math.random() > 0.55) return;
+  const life = p.life ?? 0.18;
+  state.particles.push({
+    ...p,
+    life,
+    ttl: p.ttl || life,
+  });
+}
+
+function pushBullet(b) {
+  if (state.bullets.length >= MAX_BULLETS) return;
+  state.bullets.push(b);
 }
 
 function randomPlayerId() {
@@ -1927,7 +1945,7 @@ function emitNovaBurst(tower) {
 
   for (let i = 0; i < burstCount; i += 1) {
     const ang = spinOffset + (i / burstCount) * TAU;
-    state.bullets.push({
+    pushBullet({
       x: tower.x,
       y: tower.y,
       vx: Math.cos(ang) * tower.bulletSpeed,
@@ -1949,7 +1967,7 @@ function emitNovaBurst(tower) {
   for (let i = 0; i < 10; i += 1) {
     const ang = rand(0, TAU);
     const speed = rand(90, 180);
-    state.particles.push({
+    pushParticle({
       x: tower.x,
       y: tower.y,
       vx: Math.cos(ang) * speed,
@@ -1980,7 +1998,7 @@ function emitBullet(tower, target) {
   const isNovaSunken = tower.kind === 'sunkenNova';
   const isStunSunken = tower.kind === 'sunkenStun';
 
-  state.bullets.push({
+  pushBullet({
     x: tower.x,
     y: tower.y,
     vx: (dx / d) * tower.bulletSpeed,
@@ -2002,7 +2020,7 @@ function emitBullet(tower, target) {
   });
 
   for (let i = 0; i < 3; i += 1) {
-    state.particles.push({
+    pushParticle({
       x: tower.x,
       y: tower.y,
       vx: rand(-80, 80),
@@ -2043,7 +2061,7 @@ function hurtEnemy(enemy, damage, sourceKind = '', secondary = false) {
   enemy.vy += rand(-16, 16);
 
   for (let i = 0; i < 4; i += 1) {
-    state.particles.push({
+    pushParticle({
       x: enemy.x,
       y: enemy.y,
       vx: rand(-100, 100),
@@ -2146,14 +2164,7 @@ function hurtEnemy(enemy, damage, sourceKind = '', secondary = false) {
 }
 
 function spawnTowerHitVfx(x, y, towerKind, isUlt = false, secondary = false) {
-  const push = (p) => {
-    const life = p.life ?? 0.18;
-    state.particles.push({
-      ...p,
-      life,
-      ttl: p.ttl || life,
-    });
-  };
+  const push = (p) => pushParticle(p);
 
   if (towerKind === 'sunken') {
     const burstCount = secondary ? 2 : (isUlt ? 7 : 5);
@@ -2477,7 +2488,7 @@ function updateBullets(dt) {
           for (let p = 0; p < 4; p += 1) {
             const ang = rand(0, TAU);
             const dist = rand(2, 8);
-            state.particles.push({
+            pushParticle({
               x: enemy.x + Math.cos(ang) * dist,
               y: enemy.y + Math.sin(ang) * dist,
               vx: Math.cos(ang) * rand(60, 140),
@@ -2511,7 +2522,7 @@ function updateBullets(dt) {
           for (let p = 0; p < 8; p += 1) {
             const ang = rand(0, TAU);
             const dist = rand(4, splashRadius * 0.45);
-            state.particles.push({
+            pushParticle({
               x: enemy.x + Math.cos(ang) * dist,
               y: enemy.y + Math.sin(ang) * dist,
               vx: Math.cos(ang) * rand(40, 140),
@@ -2676,6 +2687,7 @@ function updateParticles(dt) {
 }
 
 function spawnOne() {
+  if (state.enemies.length >= MAX_ENEMIES) return;
   const type = state.spawnQueue.shift();
   if (!type) return;
   const enemy = makeEnemy(type);
@@ -3859,6 +3871,7 @@ function drawBanner() {
 }
 
 function draw() {
+  ctx.setTransform(RENDER_SCALE, 0, 0, RENDER_SCALE, 0, 0);
   drawBackground();
   drawGrid();
   drawSelectedCell();
