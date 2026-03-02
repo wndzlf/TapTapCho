@@ -167,7 +167,7 @@ const impactSfx = (() => {
 
 const isMobileView = window.matchMedia('(max-width: 860px), (pointer: coarse)').matches;
 const LOGICAL_W = isMobileView ? 720 : 960;
-// 데스크톱은 그리드 셀(30) 배수 높이로 맞춰야 하단 배치 불가 영역이 생기지 않는다.
+// Desktop canvas height should stay aligned to grid-cell multiples to avoid blocked bottom rows.
 const LOGICAL_H = isMobileView ? 960 : 510;
 const RENDER_SCALE = isMobileView ? 0.85 : 1;
 canvas.width = Math.floor(LOGICAL_W * RENDER_SCALE);
@@ -308,48 +308,6 @@ const TOWER_TYPES = {
     hp: 190,
   },
   // Obelisk removed
-  // Snare removed
-};
-
-const TOWER_GUIDE_DETAILS = {
-  sunken: {
-    role: '기본 라인 딜러',
-    summary: '저비용/고연사 단일 공격. 초반 길목을 빠르게 채우는 핵심 타워.',
-    tips: '다수 배치에 강하지만, 후반 고체력 적은 단독 처리력이 낮음.',
-  },
-  // Slow Sunken removed
-  // Long Sunken removed
-  spine: {
-    role: '지속 화력 특화',
-    summary: '중거리에서 빠른 탄막으로 잔몹과 러시 웨이브를 쓸어내는 타워.',
-    tips: '한 방이 약해 보스는 Obelisk 계열과 조합해야 안정적.',
-  },
-  // Obelisk removed
-  sunkenSplash: {
-    role: '광역 압축 화력',
-    summary: '피격 지점 주변에 스플래시 대미지를 주는 중후반 핵심 광역 타워.',
-    tips: '좁은 길목, 몹이 뭉치는 구간에 배치하면 효율이 크게 상승.',
-  },
-  sunkenHammer: {
-    role: '근거리 스플래시 타격',
-    summary: '짧은 사거리에서 망치처럼 한 방으로 광역 피해를 주는 근접 타워.',
-    tips: '코너/길목 앞에 두면 꺾이는 몹을 강하게 눌러줌. 사거리가 짧아 전면 배치 필수.',
-  },
-  choSunken: {
-    role: '히든 독가스',
-    summary: '스플래시와 독가스로 지속 피해를 주는 희귀 성큰.',
-    tips: '로또로만 등장. 독 맞은 적은 몇 초간 추가 피해를 받음.',
-  },
-  sunkenNova: {
-    role: '360도 방사 화력',
-    summary: '발사 시 전 방향으로 탄막을 뿌려 측면/후방 새는 몹까지 동시에 커버.',
-    tips: '단일 대상 화력은 낮으므로 Long/Obelisk와 함께 보스 처리 라인을 구성해야 효율적.',
-  },
-  sunkenStun: {
-    role: '제어형 단속 화력',
-    summary: '명중 시 주변 최대 3마리를 잠깐 멈추게 만들어 러시 타이밍을 끊어낸다.',
-    tips: '스턴 지속이 짧아 화력 타워와 같이 두면 훨씬 강력하다.',
-  },
   // Snare removed
 };
 
@@ -609,7 +567,7 @@ function renderSingleRank() {
 
   if (!rows.length) {
     const li = document.createElement('li');
-    li.textContent = '기록 없음';
+    li.textContent = 'No records';
     rankListEl.appendChild(li);
     return;
   }
@@ -712,8 +670,8 @@ function sendRankIdentityToServer(ws = singleRankState.ws) {
 
 function ensureRankIdentityRegistered() {
   if (singleRankState.playerName) return true;
-  setRankStatus('닉네임 등록 후 서버 기록 저장 가능');
-  flashBanner('닉네임 등록 필요', 0.9, true);
+  setRankStatus('Set a name to save online.');
+  flashBanner('Name required', 0.9, true);
   if (rankNameEl) {
     rankNameEl.focus();
     rankNameEl.select?.();
@@ -739,9 +697,9 @@ function applyRankProfileFromInput(connectNow = false) {
 
   if (singleRankState.connected && singleRankState.ws && singleRankState.ws.readyState === WebSocket.OPEN) {
     sendRankIdentityToServer(singleRankState.ws);
-    setRankStatus('닉네임 등록 완료 · 온라인 랭킹 반영 대기');
+    setRankStatus('Name saved · waiting for sync');
   } else {
-    setRankStatus(singleRankState.serverUrl ? '닉네임 등록 완료 · 서버 연결 시도' : '닉네임 등록 완료 · 로컬 기록 모드');
+    setRankStatus(singleRankState.serverUrl ? 'Name saved · connecting...' : 'Name saved · local mode');
   }
 
   if (connectNow) {
@@ -760,7 +718,7 @@ function openRankSocket(force = false) {
   const url = fixedRankServerUrl() || singleRankState.serverUrl || defaultRankServerUrl();
   if (!url) {
     setRankScope('LOCAL');
-    setRankStatus('서버 주소 없음 · 로컬 랭킹');
+    setRankStatus('No server URL · local mode');
     renderSingleRank();
     return;
   }
@@ -775,13 +733,13 @@ function openRankSocket(force = false) {
     ws = new WebSocket(url);
   } catch (_) {
     setRankScope('LOCAL');
-    setRankStatus('랭킹 서버 연결 실패 · 로컬 랭킹');
+    setRankStatus('Server connect failed · local mode');
     renderSingleRank();
     return;
   }
 
   singleRankState.ws = ws;
-  setRankStatus('랭킹 서버 연결 시도 중...');
+  setRankStatus('Connecting to rank server...');
 
   ws.addEventListener('open', () => {
     if (singleRankState.ws !== ws) return;
@@ -790,7 +748,7 @@ function openRankSocket(force = false) {
     syncRankInputs();
     saveRankProfile();
     setRankScope('ONLINE');
-    setRankStatus(singleRankState.playerName ? '온라인 랭킹 연결됨' : '온라인 연결됨 · 닉네임 등록 필요');
+    setRankStatus(singleRankState.playerName ? 'Online leaderboard connected' : 'Connected · set name');
 
     sendRankIdentityToServer(ws);
     ws.send(JSON.stringify({ type: 'single_rank_list', limit: SINGLE_RANK.showCount }));
@@ -813,7 +771,7 @@ function openRankSocket(force = false) {
         .sort(compareRankRows)
         .slice(0, SINGLE_RANK.maxSave);
       renderSingleRank();
-      setRankStatus(singleRankState.remoteRows.length ? '온라인 랭킹 갱신됨' : '온라인 랭킹 비어있음');
+      setRankStatus(singleRankState.remoteRows.length ? 'Online leaderboard updated' : 'No online records');
       return;
     }
 
@@ -826,7 +784,7 @@ function openRankSocket(force = false) {
       }
       saveRankProfile();
       syncRankInputs();
-      setRankStatus('플레이어 등록 완료 · 서버 기록 유지됨');
+      setRankStatus('Player registered');
       return;
     }
 
@@ -840,7 +798,7 @@ function openRankSocket(force = false) {
         renderSingleRank();
       }
       if (Number.isFinite(Number(msg.rank))) {
-        setRankStatus(`온라인 랭킹 반영 완료 · 현재 ${Math.floor(Number(msg.rank))}위`);
+        setRankStatus(`Rank updated · #${Math.floor(Number(msg.rank))}`);
       }
     }
   });
@@ -850,7 +808,7 @@ function openRankSocket(force = false) {
     singleRankState.connected = false;
     singleRankState.ws = null;
     setRankScope('LOCAL');
-    setRankStatus('서버 미연결 · 로컬 랭킹');
+    setRankStatus('Offline · local leaderboard');
     renderSingleRank();
   });
 
@@ -859,7 +817,7 @@ function openRankSocket(force = false) {
     singleRankState.connected = false;
     singleRankState.ws = null;
     setRankScope('LOCAL');
-    setRankStatus('서버 연결 실패 · 로컬 랭킹');
+    setRankStatus('Server error · local leaderboard');
     renderSingleRank();
   });
 }
@@ -884,7 +842,7 @@ function submitSingleRank(resultMode = 'defeat') {
 
   updateLocalRank(row);
   renderSingleRank();
-  setRankStatus(`로컬 랭킹 반영 · Stage ${row.stage} / Kills ${row.kills}`);
+  setRankStatus(`Local saved · Stage ${row.stage} / Kills ${row.kills}`);
 
   if (singleRankState.connected && singleRankState.ws && singleRankState.ws.readyState === WebSocket.OPEN) {
     singleRankState.ws.send(JSON.stringify({
@@ -936,7 +894,7 @@ function initSingleRank() {
     rankRefreshEl.addEventListener('click', () => {
       if (singleRankState.connected && singleRankState.ws && singleRankState.ws.readyState === WebSocket.OPEN) {
         singleRankState.ws.send(JSON.stringify({ type: 'single_rank_list', limit: SINGLE_RANK.showCount }));
-        setRankStatus('온라인 랭킹 새로고침 요청');
+        setRankStatus('Refreshing online leaderboard...');
       } else {
         openRankSocket(true);
       }
@@ -946,7 +904,7 @@ function initSingleRank() {
   syncRankInputs();
   saveRankProfile();
   setRankScope('LOCAL');
-  setRankStatus(singleRankState.playerName ? '프로필 로드 완료' : '닉네임 입력 후 등록/저장');
+  setRankStatus(singleRankState.playerName ? 'Profile loaded' : 'Set name and Save');
   renderSingleRank();
   openRankSocket(false);
 }
@@ -1193,7 +1151,7 @@ function makeTower(kind, c, r, spec = null) {
 
 function upgradeCost(tower) {
   const base = tower.baseCost || TOWER_TYPES[tower.kind].cost;
-  // 레벨이 오를수록 비용이 가파르게 증가하도록 후반 구간(4+, 6+) 가중치를 추가한다.
+  // Late levels (4+, 6+) apply extra weight so upgrade cost ramps harder.
   const lv = Math.max(1, tower.level);
   const mid = Math.max(0, lv - 3);
   const late = Math.max(0, lv - 5);
@@ -1288,7 +1246,7 @@ function upgradeTower(tower) {
     sum + upgradeCost({ level: lv, baseCost: TOWER_TYPES[kind]?.cost || tower.baseCost || 0 })
   ), 0);
   if (state.gold < cost) {
-    flashBanner('Gold 부족', 0.9, true);
+    flashBanner('Need Gold', 0.9, true);
     return false;
   }
 
@@ -1306,7 +1264,7 @@ function upgradeTower(tower) {
   tower.maxHp *= 1.34;
   tower.hp = Math.min(tower.maxHp, tower.hp + tower.maxHp * 0.25);
 
-  flashBanner(`UPGRADE Lv.${tower.level} (합산)`, 0.75);
+  flashBanner(`UPGRADE Lv.${tower.level} (Fused)`, 0.75);
   sfx(660, 0.07, 'triangle', 0.022);
   return true;
 }
@@ -1322,18 +1280,18 @@ function tryPlaceTower(c, r) {
   if (!placement) return;
 
   if (state.selectedTower === 'choSunken' && !state.choLottoActive) {
-    flashBanner('Cho Lotto 당첨 필요', 0.7, true);
+    flashBanner('Win Cho Lotto first', 0.7, true);
     return;
   }
 
   if (state.gold < placement.cost) {
-    flashBanner('Gold 부족', 0.9, true);
+    flashBanner('Need Gold', 0.9, true);
     return;
   }
 
   const footprintCells = getFootprintCells(c, r, placement.footprint);
   if (!canUseFootprint(footprintCells)) {
-    flashBanner('배치 불가(범위/지점)', 0.85, true);
+    flashBanner('Invalid spot', 0.85, true);
     sfx(180, 0.06, 'sawtooth', 0.02);
     return;
   }
@@ -1347,7 +1305,7 @@ function tryPlaceTower(c, r) {
       state.blocked.delete(keyOf(cell.c, cell.r));
     }
     buildDistanceMap();
-    flashBanner('길이 막혀 배치 불가', 1.1, true);
+    flashBanner('Path blocked', 1.1, true);
     sfx(170, 0.08, 'sawtooth', 0.03);
     return;
   }
@@ -1386,7 +1344,7 @@ function makeEnemy(type) {
   const earlyStageIndex = Math.min(stageIndex, 9);
   const lateIndex = Math.max(0, s - 10);
   const nightmareIndex = Math.max(0, s - 20);
-  // Stage 21+ 구간은 별도 가중치를 더해 체감 난이도를 확실히 끌어올린다.
+  // Stage 21+ applies extra scaling to make the late game clearly harder.
   const stageSpeedMul = (
     1
     + earlyStageIndex * 0.12
@@ -1691,10 +1649,10 @@ function setDefeat() {
   overlayEl.classList.remove('hidden');
   overlayEl.innerHTML = `
     <div class="modal">
-      <h2>수비 실패</h2>
+      <h2>Defeat</h2>
       <p>Stage ${state.stage} · Kills ${state.kills} · Gold ${state.gold}</p>
       <div class="actions">
-        <button type="button" data-action="restart">다시 도전</button>
+        <button type="button" data-action="restart">Retry</button>
       </div>
     </div>
   `;
@@ -1710,10 +1668,10 @@ function setVictory() {
   overlayEl.classList.remove('hidden');
   overlayEl.innerHTML = `
     <div class="modal">
-      <h2>Stage ${state.maxStage} 방어 성공</h2>
-      <p>성큰 길막 수비 완료 · Kills ${state.kills} · Base HP ${state.baseHp}</p>
+      <h2>Victory</h2>
+      <p>Stage ${state.maxStage} · Kills ${state.kills} · Base HP ${state.baseHp}</p>
       <div class="actions">
-        <button type="button" data-action="restart">새 게임</button>
+        <button type="button" data-action="restart">New Run</button>
       </div>
     </div>
   `;
@@ -1737,10 +1695,10 @@ function showStageReward() {
   overlayEl.classList.remove('hidden');
   overlayEl.innerHTML = `
     <div class="modal reward-modal">
-      <h2>Stage ${state.stage} 클리어</h2>
-      <p>보상 +${clearGold} Gold · 러시 대응 +25% 자동 적용 (누적 +${Math.round(state.rushDamageBonus * 100)}%)</p>
+      <h2>Stage ${state.stage} Clear</h2>
+      <p>+${clearGold} Gold · Rush +25% (Total +${Math.round(state.rushDamageBonus * 100)}%)</p>
       <div class="actions">
-        <button type="button" data-action="reward:next" disabled>다음 스테이지 시작</button>
+        <button type="button" data-action="reward:next" disabled>Next Stage</button>
       </div>
     </div>
   `;
@@ -1758,7 +1716,7 @@ function applyStageReward(kind) {
   if (state.mode !== 'reward') return;
   if (performance.now() < state.rewardUiUnlockAt) return;
   if (kind !== 'next') return;
-  flashBanner(`러시 대응 누적 +${Math.round(state.rushDamageBonus * 100)}%`, 0.9);
+  flashBanner(`Rush total +${Math.round(state.rushDamageBonus * 100)}%`, 0.9);
   sfx(620, 0.07, 'triangle', 0.028);
 
   state.mode = 'playing';
@@ -1825,7 +1783,7 @@ function setPaused(enabled) {
   const next = Boolean(enabled);
   if (next && !state.paused) {
     if (state.pauseUses >= 5) {
-      flashBanner('Pause 최대 5회', 0.7, true);
+      flashBanner('Pause limit reached', 0.7, true);
       return;
     }
     state.pauseUses += 1;
@@ -1834,9 +1792,9 @@ function setPaused(enabled) {
   if (!btnPause) return;
   btnPause.classList.toggle('active', state.paused);
   const nameEl = btnPause.querySelector('.name');
-  if (nameEl) nameEl.textContent = state.paused ? 'Paused' : 'Pause';
+  if (nameEl) nameEl.textContent = state.paused ? 'PAUSED' : 'PAUSE';
   const costEl = btnPause.querySelector('.cost');
-  if (costEl) costEl.textContent = state.paused ? `재정비 중 (${state.pauseUses}/5)` : `재정비 (${state.pauseUses}/5)`;
+  if (costEl) costEl.textContent = state.paused ? `On (${state.pauseUses}/5)` : `Use (${state.pauseUses}/5)`;
 }
 
 function getFusionTowerCount() {
@@ -1861,16 +1819,16 @@ function refreshMergeButton(selectionCount = null) {
   const costEl = btnMerge.querySelector('.cost');
   if (!costEl) return;
   if (state.mergeMode) {
-    costEl.textContent = `선택 ${selected}/2 · 합성 ${merged}/${MERGE_FUSION_MAX}`;
+    costEl.textContent = `Pick ${selected}/2 · Merge ${merged}/${MERGE_FUSION_MAX}`;
   } else {
-    costEl.textContent = `합성 ${merged}/${MERGE_FUSION_MAX}`;
+    costEl.textContent = `Merge ${merged}/${MERGE_FUSION_MAX}`;
   }
 }
 
 function setMergeMode(enabled) {
   const next = Boolean(enabled);
   if (next && getFusionTowerCount() >= MERGE_FUSION_MAX) {
-    flashBanner(`합성 성큰 한도 ${MERGE_FUSION_MAX}/${MERGE_FUSION_MAX}`, 0.75, true);
+    flashBanner(`Merge cap ${MERGE_FUSION_MAX}/${MERGE_FUSION_MAX}`, 0.75, true);
     state.mergeMode = false;
     state.mergePick = null;
     refreshMergeButton(0);
@@ -1906,36 +1864,36 @@ function refreshEmperorShieldButton() {
     btnEmperorShield.classList.add('active');
     btnEmperorShield.classList.remove('locked');
     if (nameEl) nameEl.textContent = 'SHIELD ON';
-    if (costEl) costEl.textContent = `${state.emperorShieldTimer.toFixed(1)}s · 남은 ${usesLeft}/${EMPEROR_SHIELD_MAX_USES}`;
+    if (costEl) costEl.textContent = `${state.emperorShieldTimer.toFixed(1)}s · Left ${usesLeft}/${EMPEROR_SHIELD_MAX_USES}`;
     return;
   }
   btnEmperorShield.classList.remove('active');
   if (usesLeft <= 0) {
     btnEmperorShield.classList.add('locked');
     if (nameEl) nameEl.textContent = 'SHIELD END';
-    if (costEl) costEl.textContent = `사용 완료 (${EMPEROR_SHIELD_MAX_USES}/${EMPEROR_SHIELD_MAX_USES})`;
+    if (costEl) costEl.textContent = `Used (${EMPEROR_SHIELD_MAX_USES}/${EMPEROR_SHIELD_MAX_USES})`;
     return;
   }
   const notEnoughGold = state.gold < EMPEROR_SHIELD_COST;
   btnEmperorShield.classList.toggle('locked', notEnoughGold);
   if (nameEl) nameEl.textContent = 'EMPEROR SHIELD';
-  if (costEl) costEl.textContent = `${EMPEROR_SHIELD_COST} Gold / 10s · 남은 ${usesLeft}/${EMPEROR_SHIELD_MAX_USES}`;
+  if (costEl) costEl.textContent = `${EMPEROR_SHIELD_COST} Gold / 10s · Left ${usesLeft}/${EMPEROR_SHIELD_MAX_USES}`;
 }
 
 function castEmperorShield() {
   if (state.mode !== 'playing') return;
   if (state.emperorShieldUses >= EMPEROR_SHIELD_MAX_USES) {
-    flashBanner(`황제 보호막 사용 한도 도달 (${EMPEROR_SHIELD_MAX_USES}/${EMPEROR_SHIELD_MAX_USES})`, 0.75, true);
+    flashBanner(`Shield cap ${EMPEROR_SHIELD_MAX_USES}/${EMPEROR_SHIELD_MAX_USES}`, 0.75, true);
     sfx(160, 0.09, 'sawtooth', 0.022);
     return;
   }
   if (state.emperorShieldTimer > 0.001) {
-    flashBanner('황제 보호막 활성 중', 0.45);
+    flashBanner('Shield active', 0.45);
     sfx(500, 0.04, 'triangle', 0.013);
     return;
   }
   if (state.gold < EMPEROR_SHIELD_COST) {
-    flashBanner(`Gold 부족 · ${EMPEROR_SHIELD_COST} 필요`, 0.6, true);
+    flashBanner(`Need ${EMPEROR_SHIELD_COST} Gold`, 0.6, true);
     sfx(180, 0.08, 'sawtooth', 0.022);
     return;
   }
@@ -1945,7 +1903,7 @@ function castEmperorShield() {
   state.emperorShieldTimer = EMPEROR_SHIELD_DURATION;
   state.emperorShieldFx = Math.max(state.emperorShieldFx, 0.8);
   state.emperorShieldHitCooldown = 0;
-  flashBanner(`황제 보호막 전개 · 10초 무적 (${state.emperorShieldUses}/${EMPEROR_SHIELD_MAX_USES})`, 0.95);
+  flashBanner(`Shield ON 10s (${state.emperorShieldUses}/${EMPEROR_SHIELD_MAX_USES})`, 0.95);
   impactSfx.play('build', { volume: 0.42, minGap: 0.08, rateMin: 0.88, rateMax: 0.95 });
   sfx(860, 0.12, 'triangle', 0.03);
   refreshHud();
@@ -1954,12 +1912,12 @@ function castEmperorShield() {
 function castCull() {
   if (state.mode !== 'playing') return;
   if (state.cullUses >= CULL_MAX_USES) {
-    flashBanner(`Cull 사용 완료 (${CULL_MAX_USES}/${CULL_MAX_USES})`, 0.7, true);
+    flashBanner(`Cull used (${CULL_MAX_USES}/${CULL_MAX_USES})`, 0.7, true);
     sfx(160, 0.09, 'sawtooth', 0.022);
     return;
   }
   if (state.gold < CULL_COST) {
-    flashBanner(`Gold 부족 · ${CULL_COST} 필요`, 0.6, true);
+    flashBanner(`Need ${CULL_COST} Gold`, 0.6, true);
     sfx(180, 0.08, 'sawtooth', 0.022);
     return;
   }
@@ -1968,7 +1926,7 @@ function castCull() {
   for (const enemy of state.enemies) {
     enemy.hp = Math.max(1, Math.floor(enemy.hp * CULL_HP_MULT));
   }
-  flashBanner(`적 HP ${(1 - CULL_HP_MULT) * 100 | 0}% 감소 (${state.cullUses}/${CULL_MAX_USES})`, 0.7);
+  flashBanner(`Enemy HP -${(1 - CULL_HP_MULT) * 100 | 0}% (${state.cullUses}/${CULL_MAX_USES})`, 0.7);
   impactSfx.play('enemyHitHeavy', { volume: 0.32, minGap: 0.06, rateMin: 0.9, rateMax: 1.0 });
   sfx(520, 0.08, 'triangle', 0.02);
   refreshHud();
@@ -1976,11 +1934,7 @@ function castCull() {
 
 function refreshBuildHint() {
   if (buildHintEl) {
-    const footprint = state.sunkenFootprint === 2 ? '2x2' : '1x1';
-    const sellState = state.sellMode ? 'ON' : 'OFF';
-    const mergeState = state.mergeMode ? 'ON' : 'OFF';
-    const mobileTag = isMobileView ? '모바일 큰칸' : '일반';
-    buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · M 합치기(${mergeState}) · 1/2/3/4/5/6/7/8/9 선택 · Q 성큰크기(${footprint}) · R 황제보호막(1000/10초·최대5회) · ${mobileTag} · F +0.25x · G -0.25x`;
+    buildHintEl.textContent = '';
   }
   refreshModeHelp();
   refreshTowerGuide();
@@ -1992,10 +1946,9 @@ function showChoLottoWin() {
   overlayEl.classList.remove('banner-passive');
   overlayEl.innerHTML = `
     <div class="modal">
-      <h2>Cho Sunken 당첨!</h2>
-      <p>성큰 위치를 선택하세요.</p>
+      <h2>Cho Sunken!</h2>
       <div class="actions">
-        <button type="button" data-action="cho-ack">배치 시작</button>
+        <button type="button" data-action="cho-ack">Place</button>
       </div>
     </div>
   `;
@@ -2003,11 +1956,7 @@ function showChoLottoWin() {
 
 function refreshModeHelp() {
   if (!modeHelpEl) return;
-  modeHelpEl.innerHTML = `
-    <div class="row"><span class="tag">AUDIO</span>BGM/SFX는 항상 ON으로 고정됩니다.</div>
-    <div class="row"><span class="tag">SHIELD</span>R(또는 SHIELD 버튼)로 1000 Gold를 소모해 마지막 황제 보호막을 10초 전개합니다. (한 판 최대 5회)</div>
-    <div class="row"><span class="tag">SPEED</span>F(+0.25x), G(-0.25x)로 웨이브 진행 속도를 조절할 수 있습니다.</div>
-  `;
+  modeHelpEl.textContent = '';
 }
 
 function buildTowerPerLevelChangeLine(kind) {
@@ -2015,22 +1964,22 @@ function buildTowerPerLevelChangeLine(kind) {
   const apsMul = 1 / reloadMul;
 
   const parts = [
-    `피해 +${Math.round((damageMul - 1) * 100)}%`,
-    `연사 +${Math.round((apsMul - 1) * 100)}%`,
-    `사거리 +${Math.round((rangeMul - 1) * 100)}%`,
+    `Damage +${Math.round((damageMul - 1) * 100)}%`,
+    `Rate +${Math.round((apsMul - 1) * 100)}%`,
+    `Range +${Math.round((rangeMul - 1) * 100)}%`,
   ];
 
   if (kind === 'sunkenSplash') {
-    parts.push('스플래시 반경 +15%');
+    parts.push('Splash +15%');
   } else if (kind === 'sunkenHammer') {
-    parts.push('스플래시 반경 +12%');
+    parts.push('Splash +12%');
   } else if (kind === 'choSunken') {
-    parts.push('독 지속 +15%');
-    parts.push('독 DPS +12%');
+    parts.push('Poison Time +15%');
+    parts.push('Poison DPS +12%');
   } else if (kind === 'sunkenStun') {
-    parts.push('스턴시간 +10%');
-    parts.push('스턴반경 +6%');
-    parts.push('스턴대상 +1 (Lv3/5/7)');
+    parts.push('Stun Time +10%');
+    parts.push('Stun Range +6%');
+    parts.push('Stun Count +1 (Lv3/5/7)');
   }
 
   return parts.join(' · ');
@@ -2068,18 +2017,18 @@ function refreshTowerGuide() {
   const attacksPerSec = placement.reload > 0 ? (1 / placement.reload) : 0;
   const damagePerSec = placement.reload > 0 ? placement.damage / placement.reload : placement.damage;
   const badges = [
-    `비용 ${placement.cost}`,
-    `1발 피해 ${Math.round(placement.damage)}`,
-    `초당 ${attacksPerSec.toFixed(2)}발`,
-    `초당 피해 ${Math.round(damagePerSec)}`,
-    `사거리 ${Math.round(placement.range / BALANCE_SCALE)}`,
-    `최대 Lv${MAX_TOWER_LEVEL}`,
+    `Cost ${placement.cost}`,
+    `Damage/Shot ${Math.round(placement.damage)}`,
+    `Shots/s ${attacksPerSec.toFixed(2)}`,
+    `Damage/s ${Math.round(damagePerSec)}`,
+    `Range ${Math.round(placement.range / BALANCE_SCALE)}`,
+    `Max Lv${MAX_TOWER_LEVEL}`,
   ];
 
-  if (placement.pierce > 0) badges.push(`관통 ${placement.pierce}`);
-  if (placement.splashRadius > 0) badges.push(`스플래시 ${Math.round(placement.splashRadius / BALANCE_SCALE)}`);
-  if (tower.snareDuration && tower.snareSlow) badges.push(`둔화 ${Math.round((1 - tower.snareSlow) * 100)}%`);
-  if (tower.stunDuration && tower.stunChain) badges.push(`스턴 ${tower.stunChain}명`);
+  if (placement.pierce > 0) badges.push(`Pierce ${placement.pierce}`);
+  if (placement.splashRadius > 0) badges.push(`Splash ${Math.round(placement.splashRadius / BALANCE_SCALE)}`);
+  if (tower.snareDuration && tower.snareSlow) badges.push(`Slow ${Math.round((1 - tower.snareSlow) * 100)}%`);
+  if (tower.stunDuration && tower.stunChain) badges.push(`Stun ${tower.stunChain}`);
 
   const perLevelSummary = buildTowerPerLevelChangeLine(state.selectedTower);
   const upgradeCostSummary = buildTowerUpgradeCostLine(placement.cost);
@@ -2089,8 +2038,8 @@ function refreshTowerGuide() {
       <span class="name">${tower.name}</span>
       ${badges.map((label) => `<span class="badge">${label}</span>`).join('')}
     </div>
-    <div class="growth">레벨 +1당 변화: ${perLevelSummary}</div>
-    <div class="growth">업그레이드 비용(+1): ${upgradeCostSummary}</div>
+    <div class="growth">Per Lv +1: ${perLevelSummary}</div>
+    <div class="growth">Upgrade Cost (+1): ${upgradeCostSummary}</div>
   `;
 }
 
@@ -2636,7 +2585,7 @@ function updateBullets(dt) {
       if (b.towerKind === 'sunkenStun') {
         if (!enemy.stunImmune) {
           applyStunChain(enemy, b);
-          if (Math.random() < 0.08) flashBanner('Stun 연쇄 고정', 0.42);
+          if (Math.random() < 0.08) flashBanner('Stun chain', 0.42);
         }
         hurtEnemy(enemy, b.damage, b.towerKind, false);
         state.bullets.splice(i, 1);
@@ -2652,7 +2601,7 @@ function updateBullets(dt) {
         spawnTowerHitVfx(enemy.x, enemy.y, b.towerKind, false, false);
         const damage = b.damage * 0.55;
         hurtEnemy(enemy, damage, b.towerKind, false);
-        if (Math.random() < 0.28) flashBanner('Snare: 둔화/약화', 0.45);
+        if (Math.random() < 0.28) flashBanner('Snare: slow/weaken', 0.45);
         state.bullets.splice(i, 1);
         removed = true;
       } else {
@@ -2733,7 +2682,7 @@ function stageMoveSpeedMultiplier(stage = state.stage) {
   const s = Math.max(1, Math.floor(stage || 1));
   const stageIndex = s - 1;
   const nightmareIndex = Math.max(0, s - 20);
-  // 전체 몹 이동속도는 스테이지 상승에 따라 "조금씩" 누적 상승한다.
+  // Enemy base speed increases gradually as stage goes up.
   return 1 + stageIndex * 0.008 + nightmareIndex * 0.014;
 }
 
@@ -2859,7 +2808,7 @@ function updateEnemy(enemy, dt) {
     if (state.emperorShieldTimer > 0.001) {
       state.emperorShieldFx = Math.max(state.emperorShieldFx, 0.62);
       if (state.emperorShieldHitCooldown <= 0) {
-        flashBanner('황제 보호막이 공격을 흡수함', 0.45);
+        flashBanner('Shield blocked hit', 0.45);
         impactSfx.play('towerHit', { volume: 0.35, minGap: 0.05, rateMin: 1.02, rateMax: 1.12 });
         sfx(760, 0.05, 'triangle', 0.02);
         state.emperorShieldHitCooldown = 0.12;
@@ -2972,7 +2921,7 @@ function getBattlefieldBackdrop() {
   bx.fillStyle = baseGrad;
   bx.fillRect(0, 0, W, H);
 
-  // 중앙 전투 라인(진흙길 + 전차 궤도)로 "전장" 인상을 강화.
+  // Central battle lane (mud road + tank tracks) to reinforce a battlefield feel.
   const battleLineY = cellCenter(Math.floor(GRID.cols / 2), SPAWN.r).y;
   const roadGrad = bx.createLinearGradient(0, battleLineY - GRID.cell * 1.1, 0, battleLineY + GRID.cell * 1.1);
   roadGrad.addColorStop(0, 'rgba(44, 40, 30, 0.78)');
@@ -2991,7 +2940,7 @@ function getBattlefieldBackdrop() {
     bx.stroke();
   }
 
-  // 흙 얼룩/잔해 텍스처
+  // Dirt and debris texture
   for (let i = 0; i < 220; i += 1) {
     const x = Math.random() * W;
     const y = Math.random() * H;
@@ -3004,7 +2953,7 @@ function getBattlefieldBackdrop() {
     bx.fill();
   }
 
-  // 전장 분화구
+  // Crater marks
   const craterCount = Math.max(18, Math.floor((W * H) / 32000));
   for (let i = 0; i < craterCount; i += 1) {
     const x = rand(36, W - 36);
@@ -3028,7 +2977,7 @@ function getBattlefieldBackdrop() {
     bx.stroke();
   }
 
-  // 참호 라인
+  // Trench lines
   const trenchLines = Math.max(3, Math.floor(H / 220));
   for (let i = 0; i < trenchLines; i += 1) {
     const y = ((i + 1) / (trenchLines + 1)) * H + rand(-22, 22);
@@ -3047,7 +2996,7 @@ function getBattlefieldBackdrop() {
     bx.stroke();
   }
 
-  // 상단/하단 철조망 느낌
+  // Top/bottom barbed-wire style lines
   for (const yy of [18, H - 18]) {
     bx.strokeStyle = 'rgba(78, 84, 71, 0.56)';
     bx.lineWidth = 1.3;
@@ -3073,7 +3022,7 @@ function drawBackground() {
   const backdrop = getBattlefieldBackdrop();
   ctx.drawImage(backdrop, 0, 0);
 
-  // 실시간 연기/포연 레이어
+  // Real-time smoke/fog layer
   const t = performance.now() * 0.001;
   const plumes = [
     { x: W * 0.14, y: H * 0.18, r: 70 },
@@ -3201,7 +3150,7 @@ function drawEmperorFortress(x, y, now) {
   ctx.save();
   ctx.translate(x, y);
 
-  // 그림자/바닥
+  // Shadow/base
   ctx.fillStyle = 'rgba(8, 12, 20, 0.52)';
   ctx.beginPath();
   ctx.ellipse(0, 11.5, 20, 6.5, 0, 0, TAU);
@@ -3216,14 +3165,14 @@ function drawEmperorFortress(x, y, now) {
   ctx.arc(0, 1, 28, 0, TAU);
   ctx.fill();
 
-  // 외곽 링
+  // Outer ring
   ctx.strokeStyle = `rgba(255, 204, 148, ${0.52 + pulse * 0.3})`;
   ctx.lineWidth = 2.1;
   ctx.beginPath();
   ctx.arc(0, 1, 15.5 + pulse * 0.8, 0, TAU);
   ctx.stroke();
 
-  // 요새 본체
+  // Fortress body
   const bodyGrad = ctx.createLinearGradient(0, -12, 0, 12);
   bodyGrad.addColorStop(0, '#f6d89a');
   bodyGrad.addColorStop(0.55, '#bc8e58');
@@ -3243,7 +3192,7 @@ function drawEmperorFortress(x, y, now) {
   ctx.lineWidth = 1.2;
   ctx.stroke();
 
-  // 좌우 타워
+  // Side towers
   ctx.fillStyle = '#9f6c46';
   ctx.fillRect(-13.8, -5.5, 3.6, 9.8);
   ctx.fillRect(10.2, -5.5, 3.6, 9.8);
@@ -3251,7 +3200,7 @@ function drawEmperorFortress(x, y, now) {
   ctx.fillRect(-14.6, -7.2, 5.2, 2.5);
   ctx.fillRect(9.4, -7.2, 5.2, 2.5);
 
-  // 중앙 코어
+  // Core
   const coreGrad = ctx.createRadialGradient(0, -0.6, 1, 0, -0.6, 6.3);
   coreGrad.addColorStop(0, hpRatio > 0.45 ? '#fff8d6' : '#ffe0b6');
   coreGrad.addColorStop(0.5, hpRatio > 0.45 ? '#ffcf79' : '#ff9d87');
@@ -3267,7 +3216,7 @@ function drawEmperorFortress(x, y, now) {
   ctx.arc(0, -0.6, 3.1 + pulse * 0.6, 0, TAU);
   ctx.stroke();
 
-  // 왕관 장식
+  // Crown decoration
   ctx.fillStyle = '#ffdd91';
   ctx.beginPath();
   ctx.moveTo(-6.8, -10.1);
@@ -3283,7 +3232,7 @@ function drawEmperorFortress(x, y, now) {
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  // 내구 인디케이터(텍스트 대신 5칸)
+  // Durability indicator (5 slots instead of text)
   const pipCount = 5;
   const alivePips = Math.round(hpRatio * pipCount);
   for (let i = 0; i < pipCount; i += 1) {
@@ -4270,7 +4219,7 @@ function handleControlsClick(event) {
 
   if (event.target.closest('[data-action="cho-lotto"]')) {
     if (state.gold < CHO_LOTTO_COST) {
-      flashBanner(`Gold 부족 · ${CHO_LOTTO_COST} 필요`, 0.6, true);
+      flashBanner(`Need ${CHO_LOTTO_COST} Gold`, 0.6, true);
       return;
     }
     state.gold -= CHO_LOTTO_COST;
@@ -4279,7 +4228,7 @@ function handleControlsClick(event) {
       state.choLottoActive = true;
       showChoLottoWin();
     } else {
-      flashBanner('꽝...', 0.6, true);
+      flashBanner('Miss...', 0.6, true);
     }
     refreshHud();
     return;
@@ -4321,28 +4270,28 @@ function handleCanvasAction(event) {
 
   if (state.mergeMode) {
     if (getFusionTowerCount() >= MERGE_FUSION_MAX) {
-      flashBanner(`합성 성큰 한도 ${MERGE_FUSION_MAX}/${MERGE_FUSION_MAX}`, 0.75, true);
+      flashBanner(`Merge cap ${MERGE_FUSION_MAX}/${MERGE_FUSION_MAX}`, 0.75, true);
       setMergeMode(false);
       return;
     }
 
     const tapped = getTower(cell.c, cell.r);
     if (!tapped) {
-      flashBanner('합칠 타워 선택', 0.55);
+      flashBanner('Pick tower', 0.55);
       return;
     }
 
     if (!state.mergePick) {
       state.mergePick = tapped;
       refreshMergeButton(1);
-      flashBanner('두 번째 타워 선택', 0.55);
+      flashBanner('Pick second tower', 0.55);
       return;
     }
 
     const baseTower = state.mergePick;
     const targetTower = tapped;
     if (baseTower === targetTower) {
-      flashBanner('다른 타워 선택', 0.55, true);
+      flashBanner('Pick different tower', 0.55, true);
       return;
     }
 
@@ -4350,41 +4299,41 @@ function handleCanvasAction(event) {
     const targetKinds = targetTower.fusedKinds || [targetTower.kind];
 
     if (baseKinds.includes('sunkenStun') || targetKinds.includes('sunkenStun')) {
-      flashBanner('Stun Sunken은 합치기 불가', 0.75, true);
+      flashBanner('Stun Sunken cannot merge', 0.75, true);
       return;
     }
 
     if (baseKinds.includes('sunkenNova') || targetKinds.includes('sunkenNova')) {
-      flashBanner('Nova Sunken은 합치기 불가', 0.75, true);
+      flashBanner('Nova Sunken cannot merge', 0.75, true);
       return;
     }
 
     if (baseKinds.includes('choSunken') || targetKinds.includes('choSunken')) {
-      flashBanner('Cho Sunken은 합치기 불가', 0.75, true);
+      flashBanner('Cho Sunken cannot merge', 0.75, true);
       return;
     }
 
     const overlap = targetKinds.some((k) => baseKinds.includes(k));
     if (overlap) {
       refreshMergeButton(1);
-      flashBanner('같은 타입은 합치기 불가', 0.7, true);
+      flashBanner('Same type blocked', 0.7, true);
       return;
     }
 
     if ((baseTower.footprint || 1) > 1 || (targetTower.footprint || 1) > 1) {
-      flashBanner('합치기는 1x1만 가능', 0.7, true);
+      flashBanner('Merge only 1x1', 0.7, true);
       return;
     }
 
     if (baseKinds.length + targetKinds.length > 5) {
-      flashBanner('단일 Fusion은 최대 5종까지', 0.7, true);
+      flashBanner('One Fusion max 5 types', 0.7, true);
       return;
     }
 
     const mergeCost = Math.floor(baseTower.spent * 0.5);
     const totalCost = mergeCost + targetTower.spent;
     if (state.gold < totalCost) {
-      flashBanner('Gold 부족', 0.9, true);
+      flashBanner('Not enough Gold', 0.9, true);
       return;
     }
 
@@ -4420,7 +4369,7 @@ function handleCanvasAction(event) {
       enemy.repath = 0;
     }
 
-    flashBanner(`합치기 성공`, 0.7);
+    flashBanner(`Merge done`, 0.7);
     impactSfx.play('build', { volume: 0.32, minGap: 0.05, rateMin: 0.96, rateMax: 1.06 });
     state.mergePick = null;
     setMergeMode(false);
@@ -4572,9 +4521,8 @@ function showMenu() {
   overlayEl.innerHTML = `
     <div class="modal">
       <h2>Sunken Sixway Defense</h2>
-      <p>건물을 배치해 길을 유도하고, 몰려오는 웨이브를 Stage ${state.maxStage}까지 막아내세요.</p>
       <div class="actions">
-        <button type="button" data-action="start">시작</button>
+        <button type="button" data-action="start">Start</button>
       </div>
     </div>
   `;
