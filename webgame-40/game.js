@@ -3265,15 +3265,41 @@ function drawTowerSunken(tower, now) {
   }
 
   if (tower.kind === 'fusion') {
+    const starR1 = ringR * 0.45;
+    const starR2 = ringR * 0.75;
     ctx.strokeStyle = 'rgba(200, 255, 255, 0.95)';
-    ctx.lineWidth = 2.2;
+    ctx.lineWidth = 2.4;
     ctx.beginPath();
-    for (let i = 0; i < 5; i += 1) {
-      const a = (i / 5) * TAU + now * 0.5;
-      const r = ringR * 0.65;
+    for (let i = 0; i < 10; i += 1) {
+      const a = (i / 10) * TAU + now * 0.9;
+      const r = i % 2 === 0 ? starR2 : starR1;
       ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
     }
     ctx.closePath();
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(120, 255, 230, 0.65)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(0, 0, ringR * 0.9, 0, TAU);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(0, 0, ringR * 1.15, 0, TAU);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    for (let i = 0; i < 6; i += 1) {
+      const a = (i / 6) * TAU + now * 1.3;
+      const r1 = ringR * 0.2;
+      const r2 = ringR * 1.0;
+      ctx.moveTo(Math.cos(a) * r1, Math.sin(a) * r1);
+      ctx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2);
+    }
     ctx.stroke();
   }
 
