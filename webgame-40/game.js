@@ -203,7 +203,7 @@ const GRID = {
 
 const SPAWN = { c: 0, r: Math.floor(GRID.rows / 2) };
 const GOAL = { c: GRID.cols - 1, r: Math.floor(GRID.rows / 2) };
-const MAX_TOWER_LEVEL = 7;
+const MAX_TOWER_LEVEL = 8;
 const MAX_SIM_SUBSTEP = 1 / 120;
 
 const TOWER_TYPES = {
