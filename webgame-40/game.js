@@ -1396,7 +1396,7 @@ function makeEnemy(type) {
     + lateIndex * lateIndex * 0.006
     + nightmareIndex * 0.52
     + nightmareIndex * nightmareIndex * 0.044
-  );
+  ) * 1.25;
   const radiusMul = 1 + stageIndex * 0.022;
   const threatBase = clamp(0.18 + s * 0.07 + nightmareIndex * 0.04, 0.2, 1.28);
   const typeThreat = {
@@ -1812,7 +1812,7 @@ function setMergeMode(enabled) {
   const nameEl = btnMerge.querySelector('.name');
   if (nameEl) nameEl.textContent = state.mergeMode ? 'Merging' : 'Merge';
   const costEl = btnMerge.querySelector('.cost');
-  if (costEl) costEl.textContent = state.mergeMode ? '선택 0/2' : '합치기 모드';
+  if (costEl) costEl.textContent = state.mergeMode ? '선택 0/5' : '합치기 모드';
   if (!state.mergeMode) state.mergePick = null;
 }
 
@@ -4247,7 +4247,7 @@ function handleCanvasAction(event) {
       state.mergePick = tapped;
       if (btnMerge) {
         const costEl = btnMerge.querySelector('.cost');
-        if (costEl) costEl.textContent = '선택 1/2';
+        if (costEl) costEl.textContent = '선택 1/5';
       }
       flashBanner('두 번째 타워 선택', 0.55);
       return;
@@ -4282,7 +4282,7 @@ function handleCanvasAction(event) {
     if (overlap) {
       if (btnMerge) {
         const costEl = btnMerge.querySelector('.cost');
-        if (costEl) costEl.textContent = '선택 0/2';
+        if (costEl) costEl.textContent = '선택 0/5';
       }
       flashBanner('같은 타입은 합치기 불가', 0.7, true);
       return;
