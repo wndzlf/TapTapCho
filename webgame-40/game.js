@@ -400,6 +400,7 @@ const state = {
 const EMPEROR_SHIELD_COST = 1000;
 const EMPEROR_SHIELD_DURATION = 10;
 const EMPEROR_SHIELD_MAX_USES = 5;
+const MERGE_FUSION_MAX = 5;
 
 const CULL_COST = 10000;
 const CULL_HP_MULT = 0.5;
@@ -1640,6 +1641,10 @@ function startRun() {
   state.selectedTower = 'sunken';
   state.sunkenFootprint = 1;
   state.sellMode = false;
+  state.mergeMode = false;
+  state.mergePick = null;
+  state.pauseUses = 0;
+  state.cullUses = 0;
   state.towerHpBonus = 0;
   state.rushDamageBonus = 0;
   state.pendingStage = 0;
@@ -1785,10 +1790,7 @@ function refreshHud() {
     const costEl = btnChoLotto.querySelector('.cost');
     if (costEl) costEl.textContent = `${CHO_LOTTO_COST} Gold`;
   }
-  if (btnMerge) {
-    const costEl = btnMerge.querySelector('.cost');
-    if (costEl) costEl.textContent = state.mergeMode ? '선택 0/5' : '합치기 모드';
-  }
+  refreshMergeButton();
   refreshEmperorShieldButton();
 }
 
@@ -1824,15 +1826,46 @@ function setPaused(enabled) {
   if (costEl) costEl.textContent = state.paused ? `재정비 중 (${state.pauseUses}/5)` : `재정비 (${state.pauseUses}/5)`;
 }
 
-function setMergeMode(enabled) {
-  state.mergeMode = Boolean(enabled);
+function getFusionTowerCount() {
+  let count = 0;
+  for (const tower of state.towers) {
+    if (tower.kind === 'fusion') count += 1;
+  }
+  return count;
+}
+
+function refreshMergeButton(selectionCount = null) {
   if (!btnMerge) return;
+  const merged = getFusionTowerCount();
+  const selected = selectionCount == null ? (state.mergePick ? 1 : 0) : selectionCount;
+
   btnMerge.classList.toggle('active', state.mergeMode);
+  btnMerge.classList.toggle('locked', merged >= MERGE_FUSION_MAX && !state.mergeMode);
+
   const nameEl = btnMerge.querySelector('.name');
   if (nameEl) nameEl.textContent = state.mergeMode ? 'Merging' : 'Merge';
+
   const costEl = btnMerge.querySelector('.cost');
-  if (costEl) costEl.textContent = state.mergeMode ? '선택 0/5' : '합치기 모드';
+  if (!costEl) return;
+  if (state.mergeMode) {
+    costEl.textContent = `선택 ${selected}/2 · 합성 ${merged}/${MERGE_FUSION_MAX}`;
+  } else {
+    costEl.textContent = `합성 ${merged}/${MERGE_FUSION_MAX}`;
+  }
+}
+
+function setMergeMode(enabled) {
+  const next = Boolean(enabled);
+  if (next && getFusionTowerCount() >= MERGE_FUSION_MAX) {
+    flashBanner(`합성 성큰 한도 ${MERGE_FUSION_MAX}/${MERGE_FUSION_MAX}`, 0.75, true);
+    state.mergeMode = false;
+    state.mergePick = null;
+    refreshMergeButton(0);
+    return;
+  }
+  state.mergeMode = next;
   if (!state.mergeMode) state.mergePick = null;
+  refreshMergeButton(0);
 }
 
 function setSimSpeed(nextSpeed) {
@@ -4257,6 +4290,12 @@ function handleCanvasAction(event) {
   }
 
   if (state.mergeMode) {
+    if (getFusionTowerCount() >= MERGE_FUSION_MAX) {
+      flashBanner(`합성 성큰 한도 ${MERGE_FUSION_MAX}/${MERGE_FUSION_MAX}`, 0.75, true);
+      setMergeMode(false);
+      return;
+    }
+
     const tapped = getTower(cell.c, cell.r);
     if (!tapped) {
       flashBanner('합칠 타워 선택', 0.55);
@@ -4265,10 +4304,7 @@ function handleCanvasAction(event) {
 
     if (!state.mergePick) {
       state.mergePick = tapped;
-      if (btnMerge) {
-        const costEl = btnMerge.querySelector('.cost');
-        if (costEl) costEl.textContent = '선택 1/5';
-      }
+      refreshMergeButton(1);
       flashBanner('두 번째 타워 선택', 0.55);
       return;
     }
@@ -4300,10 +4336,7 @@ function handleCanvasAction(event) {
 
     const overlap = targetKinds.some((k) => baseKinds.includes(k));
     if (overlap) {
-      if (btnMerge) {
-        const costEl = btnMerge.querySelector('.cost');
-        if (costEl) costEl.textContent = '선택 0/5';
-      }
+      refreshMergeButton(1);
       flashBanner('같은 타입은 합치기 불가', 0.7, true);
       return;
     }
@@ -4314,7 +4347,7 @@ function handleCanvasAction(event) {
     }
 
     if (baseKinds.length + targetKinds.length > 5) {
-      flashBanner('합치기 최대 5개', 0.7, true);
+      flashBanner('단일 Fusion은 최대 5종까지', 0.7, true);
       return;
     }
 
@@ -4361,6 +4394,7 @@ function handleCanvasAction(event) {
     impactSfx.play('build', { volume: 0.32, minGap: 0.05, rateMin: 0.96, rateMax: 1.06 });
     state.mergePick = null;
     setMergeMode(false);
+    refreshMergeButton(0);
     refreshBuildHint();
     return;
   }
