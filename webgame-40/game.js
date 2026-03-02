@@ -26,6 +26,7 @@ const rankStatusEl = document.getElementById('rankStatus');
 const btnSellMode = document.getElementById('btnSellMode');
 const btnSpeedUp = document.getElementById('btnSpeedUp');
 const btnPause = document.getElementById('btnPause');
+const btnMerge = document.getElementById('btnMerge');
 const btnEmperorShield = document.getElementById('btnEmperorShield');
 const btnSunken = document.getElementById('btnSunken');
 try {
@@ -372,6 +373,8 @@ const state = {
   selectedCell: null,
   sunkenFootprint: 1,
   sellMode: false,
+  mergeMode: false,
+  mergePick: null,
   paused: false,
   simSpeed: 1,
   stageTimer: 0,
@@ -1270,63 +1273,13 @@ function upgradeTower(tower) {
 
 function tryPlaceTower(c, r) {
   const existing = getTower(c, r);
-  const placement = getPlacementSpec(state.selectedTower);
-  if (!placement) return;
-
   if (existing) {
-    const existingKinds = existing.fusedKinds || [existing.kind];
-    const selectedKind = state.selectedTower;
-
-    if (existing.kind === selectedKind || existingKinds.includes(selectedKind)) {
-      upgradeTower(existing);
-      return;
-    }
-
-    if ((existing.footprint || 1) > 1 || placement.footprint > 1) {
-      flashBanner('합치기는 1x1만 가능', 0.85, true);
-      return;
-    }
-
-    if (existingKinds.length >= 7) {
-      flashBanner('합치기 최대 7개', 0.85, true);
-      return;
-    }
-
-    const mergeCost = Math.floor(existing.spent * 0.5);
-    const totalCost = mergeCost + placement.cost;
-    if (state.gold < totalCost) {
-      flashBanner('Gold 부족', 0.9, true);
-      return;
-    }
-
-    state.gold -= totalCost;
-    existing.fusedKinds = [...existingKinds, selectedKind];
-    existing.kind = 'fusion';
-    existing.spent += totalCost;
-
-    existing.range = Math.max(existing.range, placement.range);
-    existing.damage += placement.damage;
-    existing.reload = Math.min(existing.reload, placement.reload);
-    existing.bulletSpeed = Math.max(existing.bulletSpeed, placement.bulletSpeed);
-    existing.splashRadius = Math.max(existing.splashRadius || 0, placement.splashRadius || 0);
-    existing.splashFalloff = Math.max(existing.splashFalloff || 0, placement.splashFalloff || 0);
-    existing.maxHp += placement.hp;
-    existing.hp = Math.min(existing.maxHp, existing.hp + placement.hp * 0.35);
-
-    existing.snareDuration = Math.max(existing.snareDuration || 0, placement.snareDuration || 0);
-    existing.snareSlow = Math.min(existing.snareSlow || 1, placement.snareSlow || 1);
-    existing.weakenMul = Math.max(existing.weakenMul || 1, placement.weakenMul || 1);
-    existing.stunDuration = Math.max(existing.stunDuration || 0, placement.stunDuration || 0);
-    existing.stunChain = (existing.stunChain || 0) + (placement.stunChain || 0);
-    existing.stunRadius = Math.max(existing.stunRadius || 0, placement.stunRadius || 0);
-    existing.color = '#aef0ff';
-    existing.baseCost = Math.max(existing.baseCost || existing.spent, placement.cost);
-
-    impactSfx.play('build', { volume: 0.32, minGap: 0.05, rateMin: 0.96, rateMax: 1.06 });
-    flashBanner(`합치기 +${selectedKind}`, 0.6);
-    refreshBuildHint();
+    upgradeTower(existing);
     return;
   }
+
+  const placement = getPlacementSpec(state.selectedTower);
+  if (!placement) return;
 
   if (state.gold < placement.cost) {
     flashBanner('Gold 부족', 0.9, true);
@@ -1770,6 +1723,17 @@ function setPaused(enabled) {
   if (costEl) costEl.textContent = state.paused ? '재정비 중' : '재정비';
 }
 
+function setMergeMode(enabled) {
+  state.mergeMode = Boolean(enabled);
+  if (!btnMerge) return;
+  btnMerge.classList.toggle('active', state.mergeMode);
+  const nameEl = btnMerge.querySelector('.name');
+  if (nameEl) nameEl.textContent = state.mergeMode ? 'Merging' : 'Merge';
+  const costEl = btnMerge.querySelector('.cost');
+  if (costEl) costEl.textContent = state.mergeMode ? '두 개 선택' : '합치기 모드';
+  if (!state.mergeMode) state.mergePick = null;
+}
+
 function setSimSpeed(nextSpeed) {
   state.simSpeed = clamp(Math.round(nextSpeed * 100) / 100, 1, 3);
   refreshBuildHint();
@@ -1844,8 +1808,9 @@ function refreshBuildHint() {
   if (!buildHintEl) return;
   const footprint = state.sunkenFootprint === 2 ? '2x2' : '1x1';
   const sellState = state.sellMode ? 'ON' : 'OFF';
+  const mergeState = state.mergeMode ? 'ON' : 'OFF';
   const mobileTag = isMobileView ? '모바일 큰칸' : '일반';
-  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · 1/2/3/4/5/6/7/8/9 선택 · Q 성큰크기(${footprint}) · R 황제보호막(1000/10초·최대5회) · ${mobileTag} · F +0.25x · G -0.25x`;
+  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · M 합치기(${mergeState}) · 1/2/3/4/5/6/7/8/9 선택 · Q 성큰크기(${footprint}) · R 황제보호막(1000/10초·최대5회) · ${mobileTag} · F +0.25x · G -0.25x`;
   refreshModeHelp();
   refreshTowerGuide();
 }
@@ -4087,6 +4052,11 @@ function handleControlsClick(event) {
     return;
   }
 
+  if (event.target.closest('[data-action="toggle-merge"]')) {
+    setMergeMode(!state.mergeMode);
+    return;
+  }
+
   if (event.target.closest('[data-action="toggle-pause"]')) {
     setPaused(!state.paused);
     if (state.paused) flashBanner('PAUSED', 0.5);
@@ -4120,6 +4090,91 @@ function handleCanvasAction(event) {
 
   if (inBounds(cell.c, cell.r)) {
     state.selectedCell = { c: cell.c, r: cell.r, at: performance.now() };
+  }
+
+  if (state.mergeMode) {
+    const tapped = getTower(cell.c, cell.r);
+    if (!tapped) {
+      flashBanner('합칠 타워 선택', 0.55);
+      return;
+    }
+
+    if (!state.mergePick) {
+      state.mergePick = tapped;
+      flashBanner('두 번째 타워 선택', 0.55);
+      return;
+    }
+
+    const baseTower = state.mergePick;
+    const targetTower = tapped;
+    if (baseTower === targetTower) {
+      flashBanner('다른 타워 선택', 0.55, true);
+      return;
+    }
+
+    const baseKinds = baseTower.fusedKinds || [baseTower.kind];
+    const targetKinds = targetTower.fusedKinds || [targetTower.kind];
+    if (targetKinds.length !== 1) {
+      flashBanner('합쳐진 타워는 재합치기 불가', 0.7, true);
+      return;
+    }
+
+    const targetKind = targetKinds[0];
+    if (baseKinds.includes(targetKind)) {
+      flashBanner('같은 타입은 합치기 불가', 0.7, true);
+      return;
+    }
+
+    if ((baseTower.footprint || 1) > 1 || (targetTower.footprint || 1) > 1) {
+      flashBanner('합치기는 1x1만 가능', 0.7, true);
+      return;
+    }
+
+    if (baseKinds.length >= 7) {
+      flashBanner('합치기 최대 7개', 0.7, true);
+      return;
+    }
+
+    const mergeCost = Math.floor(baseTower.spent * 0.5);
+    const totalCost = mergeCost + targetTower.spent;
+    if (state.gold < totalCost) {
+      flashBanner('Gold 부족', 0.9, true);
+      return;
+    }
+
+    state.gold -= totalCost;
+    baseTower.fusedKinds = [...baseKinds, targetKind];
+    baseTower.kind = 'fusion';
+    baseTower.spent += totalCost;
+
+    baseTower.range = Math.max(baseTower.range, targetTower.range);
+    baseTower.damage += targetTower.damage;
+    baseTower.reload = Math.min(baseTower.reload, targetTower.reload);
+    baseTower.bulletSpeed = Math.max(baseTower.bulletSpeed, targetTower.bulletSpeed);
+    baseTower.splashRadius = Math.max(baseTower.splashRadius || 0, targetTower.splashRadius || 0);
+    baseTower.splashFalloff = Math.max(baseTower.splashFalloff || 0, targetTower.splashFalloff || 0);
+    baseTower.maxHp += targetTower.maxHp;
+    baseTower.hp = Math.min(baseTower.maxHp, baseTower.hp + targetTower.maxHp * 0.35);
+
+    baseTower.snareDuration = Math.max(baseTower.snareDuration || 0, targetTower.snareDuration || 0);
+    baseTower.snareSlow = Math.min(baseTower.snareSlow || 1, targetTower.snareSlow || 1);
+    baseTower.weakenMul = Math.max(baseTower.weakenMul || 1, targetTower.weakenMul || 1);
+    baseTower.stunDuration = Math.max(baseTower.stunDuration || 0, targetTower.stunDuration || 0);
+    baseTower.stunChain = (baseTower.stunChain || 0) + (targetTower.stunChain || 0);
+    baseTower.stunRadius = Math.max(baseTower.stunRadius || 0, targetTower.stunRadius || 0);
+    baseTower.color = '#aef0ff';
+    baseTower.baseCost = Math.max(baseTower.baseCost || baseTower.spent, targetTower.baseCost || targetTower.spent);
+
+    removeTower(targetTower);
+    for (const enemy of state.enemies) {
+      enemy.repath = 0;
+    }
+
+    flashBanner(`합치기 성공`, 0.7);
+    impactSfx.play('build', { volume: 0.32, minGap: 0.05, rateMin: 0.96, rateMax: 1.06 });
+    state.mergePick = null;
+    refreshBuildHint();
+    return;
   }
 
   if (event.button === 2 || state.sellMode) {
@@ -4221,6 +4276,10 @@ window.addEventListener('keydown', (event) => {
     setSellMode(!state.sellMode);
     refreshBuildHint();
     sfx(state.sellMode ? 300 : 410, 0.05, 'triangle', 0.013);
+  }
+
+  if (event.code === 'KeyM') {
+    setMergeMode(!state.mergeMode);
   }
 
   if (event.code === 'KeyF') {
