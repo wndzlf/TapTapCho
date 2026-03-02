@@ -179,9 +179,6 @@ header p {
   padding: 6px 10px;
   background: linear-gradient(180deg, rgba(64, 50, 17, 0.72), rgba(38, 28, 8, 0.72));
   color: #ffe6aa;
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .stat b {
@@ -193,39 +190,16 @@ header p {
   color: #fff1c8;
 }
 
-.gold-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 700;
-}
-
-.gold-actions {
-  display: inline-flex;
+.quick-build {
+  margin-top: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #12192b, #0e1524);
+  padding: 8px;
+  display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
-  margin-left: auto;
-}
-
-.gold-actions .build-btn {
-  min-width: 96px;
-  padding: 6px 8px;
-  gap: 2px;
-}
-
-.gold-actions .build-btn .icon {
-  width: 18px;
-  height: 18px;
-  font-size: 10px;
-}
-
-.gold-actions .build-btn .name {
-  font-size: 12px;
-}
-
-.gold-actions .build-btn .cost {
-  font-size: 10px;
 }
 
 .controls {
@@ -683,30 +657,24 @@ footer {
   .stat-gold {
     grid-column: 1 / -1;
     order: -1;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     padding: 6px 8px;
   }
 
   .stat-gold b {
-    font-size: 18px;
+    font-size: 20px;
     margin-left: 0;
     letter-spacing: 0.01em;
   }
 
-  .gold-actions {
-    width: 100%;
-    margin-left: 0;
-    justify-content: flex-start;
-  }
-
-  .gold-actions .build-btn {
-    min-width: 90px;
-    padding: 5px 7px;
+  .quick-build {
+    gap: 6px;
+    padding: 6px;
+    position: sticky;
+    top: 72px;
+    z-index: 15;
+    backdrop-filter: blur(4px);
   }
 
   .controls {

@@ -35,28 +35,19 @@
     <div class="hud" id="hud">
       <div class="stat">Stage <b id="stageText">1</b>/50</div>
       <div class="stat">Base <b id="baseText">20</b></div>
-      <div class="stat stat-gold">
-        <span class="gold-label">Gold <b id="goldText">0</b></span>
-        <div class="gold-actions">
-          <button class="build-btn" data-kind="sunken" id="btnSunken" type="button">
-            <span class="icon">S</span>
-            <span class="name">Sunken</span>
-            <span class="cost">40</span>
-          </button>
-          <button class="build-btn ult-btn" id="btnEmperorShield" data-action="emperor-shield" type="button">
-            <span class="icon">R</span>
-            <span class="name">Emperor Shield</span>
-            <span class="cost">1000 Gold / 10s</span>
-          </button>
-        </div>
-      </div>
+      <div class="stat stat-gold">Gold <b id="goldText">0</b></div>
       <div class="stat">Alive <b id="aliveText">0</b></div>
       <div class="stat">Queue <b id="queueText">0</b></div>
       <div class="stat">Kills <b id="killsText">0</b></div>
       <div class="stat">Speed <b id="speedText">1.00x</b></div>
     </div>
 
-    <div class="controls" id="controls">
+    <div class="quick-build" id="quickBuild">
+      <button class="build-btn" data-kind="sunken" id="btnSunken" type="button">
+        <span class="icon">S</span>
+        <span class="name">Sunken</span>
+        <span class="cost">40</span>
+      </button>
       <button class="build-btn" data-kind="sunkenSlow" id="btnSunkenSlow" type="button">
         <span class="icon">L</span>
         <span class="name">Slow Sunken</span>
@@ -112,6 +103,14 @@
         <span class="name">Speed -</span>
         <span class="cost">0.25x 감소</span>
       </button>
+      <button class="build-btn mode-btn ult-btn" id="btnEmperorShield" data-action="emperor-shield" type="button">
+        <span class="icon">R</span>
+        <span class="name">EMPEROR SHIELD</span>
+        <span class="cost">1000 Gold / 10s</span>
+      </button>
+    </div>
+
+    <div class="controls" id="controls">
       <div class="hint" id="buildHint">좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(OFF) · 1/2/3/4/5/6/7/8/9 선택 · Q 성큰크기(1x1) · R 황제보호막(1000/10초) · F +0.25x · G -0.25x</div>
       <div class="tower-guide" id="towerGuide"></div>
     </div>
