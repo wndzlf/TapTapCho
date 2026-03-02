@@ -262,7 +262,7 @@ const TOWER_TYPES = {
     id: 'sunkenHammer',
     name: 'Hammer Sunken',
     cost: 120,
-    color: '#d8b37a',
+    color: '#49c7ff',
     range: 84 * BALANCE_SCALE,
     damage: 46,
     reload: 0.95,
