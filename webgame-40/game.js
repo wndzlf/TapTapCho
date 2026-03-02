@@ -1973,10 +1973,7 @@ function emitBullet(tower, target) {
   const dx = target.x - tower.x;
   const dy = target.y - tower.y;
   const d = Math.hypot(dx, dy) || 1;
-  const isSnare = tower.kind === 'snare';
-  // Slow Sunken removed
   const isSplashSunken = tower.kind === 'sunkenSplash' || tower.kind === 'sunkenHammer' || (tower.splashRadius || 0) > 0;
-  // Long Sunken removed
   const isNovaSunken = tower.kind === 'sunkenNova';
   const isStunSunken = tower.kind === 'sunkenStun';
 
@@ -1986,11 +1983,11 @@ function emitBullet(tower, target) {
     y: tower.y,
     vx: (dx / d) * tower.bulletSpeed,
     vy: (dy / d) * tower.bulletSpeed,
-    r: isSplashSunken ? 5.6 : (tower.kind === 'obelisk') ? 5.2 : (isSnare || isSlowSunken || isNovaSunken || isStunSunken) ? 4.8 : 4,
+    r: isSplashSunken ? 5.6 : (isNovaSunken || isStunSunken) ? 4.8 : 4,
     damage: tower.damage,
     life: 2,
     color: tower.color,
-    pierce: (isSnare || isSlowSunken || isNovaSunken || isStunSunken) ? 0 : tower.pierce,
+    pierce: (isNovaSunken || isStunSunken) ? 0 : tower.pierce,
     towerKind: tower.kind,
     splashRadius: isSplashSunken ? tower.splashRadius : 0,
     splashFalloff: isSplashSunken ? tower.splashFalloff : 0,
@@ -2074,25 +2071,6 @@ function hurtEnemy(enemy, damage, sourceKind = '', secondary = false) {
       rateMax: 1.16,
     });
     if (!secondary && Math.random() < 0.55) sfx(468 + rand(-34, 30), 0.03, 'triangle', 0.009);
-  } else if (sourceKind === 'obelisk') {
-    impactSfx.play('enemyHitHeavy', {
-      volume: 0.34,
-      minGap: 0.055,
-      rateMin: 0.86,
-      rateMax: 0.95,
-    });
-    if (!secondary && Math.random() < 0.42) sfx(206 + rand(-18, 14), 0.05, 'sawtooth', 0.012);
-  } else if (sourceKind === 'snare') {
-    impactSfx.play('enemyHit', { volume: 0.24, minGap: 0.05, rateMin: 0.96, rateMax: 1.05 });
-    if (!secondary && Math.random() < 0.28) sfx(248 + rand(-18, 16), 0.04, 'sine', 0.01);
-  } else if (sourceKind === 'sunkenSlow') {
-    impactSfx.play('enemyHit', {
-      volume: 0.25,
-      minGap: 0.045,
-      rateMin: 0.9,
-      rateMax: 1.01,
-    });
-    if (!secondary && Math.random() < 0.35) sfx(232 + rand(-16, 12), 0.04, 'triangle', 0.011);
   } else if (sourceKind === 'sunkenNova') {
     impactSfx.play('enemyHit', {
       volume: 0.25,
