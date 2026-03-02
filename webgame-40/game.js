@@ -1122,6 +1122,7 @@ function makeTower(kind, c, r, spec = null) {
   return {
     id: state.nextTowerId++,
     kind,
+    fusedKinds: [kind],
     c,
     r,
     footprint,
@@ -1269,13 +1270,63 @@ function upgradeTower(tower) {
 
 function tryPlaceTower(c, r) {
   const existing = getTower(c, r);
-  if (existing) {
-    upgradeTower(existing);
-    return;
-  }
-
   const placement = getPlacementSpec(state.selectedTower);
   if (!placement) return;
+
+  if (existing) {
+    const existingKinds = existing.fusedKinds || [existing.kind];
+    const selectedKind = state.selectedTower;
+
+    if (existing.kind === selectedKind || existingKinds.includes(selectedKind)) {
+      upgradeTower(existing);
+      return;
+    }
+
+    if ((existing.footprint || 1) > 1 || placement.footprint > 1) {
+      flashBanner('합치기는 1x1만 가능', 0.85, true);
+      return;
+    }
+
+    if (existingKinds.length >= 7) {
+      flashBanner('합치기 최대 7개', 0.85, true);
+      return;
+    }
+
+    const mergeCost = Math.floor(existing.spent * 0.5);
+    const totalCost = mergeCost + placement.cost;
+    if (state.gold < totalCost) {
+      flashBanner('Gold 부족', 0.9, true);
+      return;
+    }
+
+    state.gold -= totalCost;
+    existing.fusedKinds = [...existingKinds, selectedKind];
+    existing.kind = 'fusion';
+    existing.spent += totalCost;
+
+    existing.range = Math.max(existing.range, placement.range);
+    existing.damage += placement.damage;
+    existing.reload = Math.min(existing.reload, placement.reload);
+    existing.bulletSpeed = Math.max(existing.bulletSpeed, placement.bulletSpeed);
+    existing.splashRadius = Math.max(existing.splashRadius || 0, placement.splashRadius || 0);
+    existing.splashFalloff = Math.max(existing.splashFalloff || 0, placement.splashFalloff || 0);
+    existing.maxHp += placement.hp;
+    existing.hp = Math.min(existing.maxHp, existing.hp + placement.hp * 0.35);
+
+    existing.snareDuration = Math.max(existing.snareDuration || 0, placement.snareDuration || 0);
+    existing.snareSlow = Math.min(existing.snareSlow || 1, placement.snareSlow || 1);
+    existing.weakenMul = Math.max(existing.weakenMul || 1, placement.weakenMul || 1);
+    existing.stunDuration = Math.max(existing.stunDuration || 0, placement.stunDuration || 0);
+    existing.stunChain = (existing.stunChain || 0) + (placement.stunChain || 0);
+    existing.stunRadius = Math.max(existing.stunRadius || 0, placement.stunRadius || 0);
+    existing.color = '#aef0ff';
+    existing.baseCost = Math.max(existing.baseCost || existing.spent, placement.cost);
+
+    impactSfx.play('build', { volume: 0.32, minGap: 0.05, rateMin: 0.96, rateMax: 1.06 });
+    flashBanner(`합치기 +${selectedKind}`, 0.6);
+    refreshBuildHint();
+    return;
+  }
 
   if (state.gold < placement.cost) {
     flashBanner('Gold 부족', 0.9, true);
@@ -2024,7 +2075,7 @@ function emitBullet(tower, target) {
   const d = Math.hypot(dx, dy) || 1;
   const isSnare = tower.kind === 'snare';
   const isSlowSunken = tower.kind === 'sunkenSlow';
-  const isSplashSunken = tower.kind === 'sunkenSplash' || tower.kind === 'sunkenHammer';
+  const isSplashSunken = tower.kind === 'sunkenSplash' || tower.kind === 'sunkenHammer' || (tower.splashRadius || 0) > 0;
   // Long Sunken removed
   const isNovaSunken = tower.kind === 'sunkenNova';
   const isStunSunken = tower.kind === 'sunkenStun';
@@ -3529,11 +3580,15 @@ function drawTowers() {
       : tower.kind === 'sunkenNova'
         ? 'rgba(198, 155, 255, 0.9)'
       : tower.kind === 'sunkenStun'
-        ? 'rgba(255, 217, 106, 0.9)'
+        ? 'rgba(124, 255, 141, 0.9)'
       : tower.kind === 'sunkenSlow'
         ? 'rgba(145, 244, 214, 0.88)'
       : tower.kind === 'sunkenSplash'
-        ? 'rgba(255, 159, 111, 0.9)'
+        ? 'rgba(255, 111, 159, 0.9)'
+      : tower.kind === 'sunkenHammer'
+        ? 'rgba(73, 199, 255, 0.9)'
+      : tower.kind === 'fusion'
+        ? 'rgba(174, 240, 255, 0.95)'
         : tower.kind === 'spine'
           ? 'rgba(185, 232, 172, 0.8)'
           : tower.kind === 'obelisk'
@@ -3550,6 +3605,7 @@ function drawTowers() {
       || tower.kind === 'sunkenNova'
       || tower.kind === 'sunkenHammer'
       || tower.kind === 'sunkenStun'
+      || tower.kind === 'fusion'
     ) {
       drawTowerSunken(tower, now);
     } else if (tower.kind === 'spine') {
