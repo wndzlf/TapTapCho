@@ -1126,6 +1126,7 @@ function makeTower(kind, c, r, spec = null) {
     id: state.nextTowerId++,
     kind,
     fusedKinds: [kind],
+    fusedLevels: { [kind]: 1 },
     c,
     r,
     footprint,
@@ -1217,57 +1218,67 @@ function getTowerUpgradeFactors(kind) {
   return { rangeMul, damageMul, reloadMul };
 }
 
-function applyTowerUpgradeScaling(tower, factors = null) {
-  const stats = factors || getTowerUpgradeFactors(tower.kind);
+function applyTowerUpgradeScaling(tower, factors = null, kindOverride = null, levelForChain = null) {
+  const kind = kindOverride || tower.kind;
+  const stats = factors || getTowerUpgradeFactors(kind);
   tower.range *= stats.rangeMul;
   tower.damage *= stats.damageMul;
   tower.reload *= stats.reloadMul;
-  tower.pierce = Math.min(3, tower.pierce + (tower.kind === 'obelisk' ? 1 : 0));
+  tower.pierce = Math.min(3, tower.pierce + (kind === 'obelisk' ? 1 : 0));
 
-  if (tower.kind === 'snare') {
+  if (kind === 'snare') {
     tower.snareDuration *= 1.13;
     tower.snareSlow = Math.max(0.32, tower.snareSlow * 0.93);
     tower.weakenMul += 0.09;
     tower.pierce = 0;
-  } else if (tower.kind === 'sunkenSlow') {
+  } else if (kind === 'sunkenSlow') {
     tower.snareDuration *= 1.12;
     tower.snareSlow = Math.max(0.38, tower.snareSlow * 0.94);
-  } else if (tower.kind === 'sunkenSplash') {
+  } else if (kind === 'sunkenSplash') {
     tower.splashRadius *= 1.15;
     tower.splashFalloff = clamp(tower.splashFalloff + 0.05, 0.3, 0.68);
-  } else if (tower.kind === 'sunkenHammer') {
+  } else if (kind === 'sunkenHammer') {
     tower.splashRadius *= 1.12;
     tower.splashFalloff = clamp(tower.splashFalloff + 0.04, 0.32, 0.7);
-  } else if (tower.kind === 'sunkenStun') {
+  } else if (kind === 'sunkenStun') {
     tower.stunDuration = Math.min(2.1, tower.stunDuration * 1.1);
     tower.stunRadius *= 1.06;
-    if (tower.level === 3 || tower.level === 5 || tower.level === 7) {
+    const chainLevel = levelForChain ?? tower.level;
+    if (chainLevel === 3 || chainLevel === 5 || chainLevel === 7) {
       tower.stunChain = Math.min(6, (tower.stunChain || 3) + 1);
     }
   }
 }
 
 function upgradeTower(tower) {
-  if (tower.level >= MAX_TOWER_LEVEL) return false;
-  const cost = upgradeCost(tower);
+  const fusedLevels = tower.fusedLevels || { [tower.kind]: tower.level };
+  const upgradeableKinds = Object.entries(fusedLevels).filter(([, lv]) => lv < MAX_TOWER_LEVEL);
+  if (upgradeableKinds.length === 0) return false;
+
+  const cost = upgradeableKinds.reduce((sum, [kind, lv]) => (
+    sum + upgradeCost({ level: lv, baseCost: TOWER_TYPES[kind]?.cost || tower.baseCost || 0 })
+  ), 0);
   if (state.gold < cost) {
     flashBanner('Gold 부족', 0.9, true);
     return false;
   }
 
-  const factors = getTowerUpgradeFactors(tower.kind);
-
   state.gold -= cost;
-  tower.level += 1;
   tower.spent += cost;
-  applyTowerUpgradeScaling(tower, factors);
+
+  for (const [kind, lv] of upgradeableKinds) {
+    const factors = getTowerUpgradeFactors(kind);
+    fusedLevels[kind] = Math.min(MAX_TOWER_LEVEL, lv + 1);
+    applyTowerUpgradeScaling(tower, factors, kind, fusedLevels[kind]);
+  }
+
+  tower.fusedLevels = fusedLevels;
+  tower.level = Math.max(...Object.values(fusedLevels));
   tower.maxHp *= 1.34;
   tower.hp = Math.min(tower.maxHp, tower.hp + tower.maxHp * 0.25);
 
-  const rangePercent = Math.round((factors.rangeMul - 1) * 100);
-  flashBanner(`UPGRADE Lv.${tower.level} · RANGE +${rangePercent}%`, 0.75);
-  const upgradePitch = factors.reloadMul < 1 ? 680 : 620;
-  sfx(upgradePitch, 0.07, 'triangle', 0.022);
+  flashBanner(`UPGRADE Lv.${tower.level} (합산)`, 0.75);
+  sfx(660, 0.07, 'triangle', 0.022);
   return true;
 }
 
@@ -4144,6 +4155,10 @@ function handleCanvasAction(event) {
 
     state.gold -= totalCost;
     baseTower.fusedKinds = [...baseKinds, targetKind];
+    baseTower.fusedLevels = {
+      ...(baseTower.fusedLevels || { [baseTower.kind]: baseTower.level || 1 }),
+      [targetKind]: targetTower.level || 1,
+    };
     baseTower.kind = 'fusion';
     baseTower.spent += totalCost;
 
