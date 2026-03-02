@@ -1770,6 +1770,10 @@ function refreshHud() {
     const costEl = btnChoLotto.querySelector('.cost');
     if (costEl) costEl.textContent = `${CHO_LOTTO_COST} Gold`;
   }
+  if (btnMerge) {
+    const costEl = btnMerge.querySelector('.cost');
+    if (costEl) costEl.textContent = state.mergeMode ? '선택 0/5' : '합치기 모드';
+  }
   refreshEmperorShieldButton();
 }
 
