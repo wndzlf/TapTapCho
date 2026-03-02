@@ -309,21 +309,7 @@ const TOWER_TYPES = {
     pierce: 1,
     hp: 320,
   },
-  snare: {
-    id: 'snare',
-    name: 'Snare',
-    cost: 90,
-    color: '#9ae8ff',
-    range: 132 * BALANCE_SCALE,
-    damage: 12,
-    reload: 0.72,
-    bulletSpeed: 340 * BALANCE_SCALE,
-    pierce: 0,
-    hp: 210,
-    snareDuration: 2.4,
-    snareSlow: 0.48,
-    weakenMul: 1.42,
-  },
+  // Snare removed
 };
 
 const TOWER_GUIDE_DETAILS = {
@@ -367,11 +353,7 @@ const TOWER_GUIDE_DETAILS = {
     summary: '명중 시 주변 최대 3마리를 잠깐 멈추게 만들어 러시 타이밍을 끊어낸다.',
     tips: '스턴 지속이 짧아 화력 타워와 같이 두면 훨씬 강력하다.',
   },
-  snare: {
-    role: '디버프/제어',
-    summary: '러시몹 포함 전체 적에게 둔화/약화 디버프를 걸어 화력을 증폭.',
-    tips: '단독 화력은 낮으므로 딜 타워와 반드시 함께 운용.',
-  },
+  // Snare removed
 };
 
 const state = {
@@ -4143,7 +4125,6 @@ window.addEventListener('keydown', (event) => {
   if (event.code === 'Digit4') chooseTower('sunkenSplash');
   if (event.code === 'Digit5') chooseTower('spine');
   if (event.code === 'Digit6') chooseTower('obelisk');
-  if (event.code === 'Digit7') chooseTower('snare');
   if (event.code === 'Digit8') chooseTower('sunkenNova');
   if (event.code === 'Digit9') chooseTower('sunkenStun');
 
