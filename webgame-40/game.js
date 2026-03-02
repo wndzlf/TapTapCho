@@ -2050,6 +2050,7 @@ function emitBullet(tower, target) {
   const isNovaSunken = tower.kind === 'sunkenNova';
   const isStunSunken = tower.kind === 'sunkenStun';
 
+  const isHammer = tower.kind === 'sunkenHammer';
   pushBullet({
     x: tower.x,
     y: tower.y,
@@ -2069,6 +2070,7 @@ function emitBullet(tower, target) {
     stunDuration: tower.stunDuration,
     stunChain: tower.stunChain,
     stunRadius: tower.stunRadius,
+    lightning: isHammer,
   });
 
   for (let i = 0; i < 3; i += 1) {
@@ -3887,6 +3889,37 @@ function drawEnemies() {
 
 function drawBullets() {
   for (const b of state.bullets) {
+    if (b.lightning) {
+      const ang = Math.atan2(b.vy, b.vx);
+      const len = 16;
+      const sx = b.x - Math.cos(ang) * len * 0.5;
+      const sy = b.y - Math.sin(ang) * len * 0.5;
+      const ex = b.x + Math.cos(ang) * len * 0.6;
+      const ey = b.y + Math.sin(ang) * len * 0.6;
+      const nx = Math.cos(ang + Math.PI / 2);
+      const ny = Math.sin(ang + Math.PI / 2);
+
+      ctx.strokeStyle = '#f7e7a6';
+      ctx.lineWidth = 2.4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(sx + nx * 3, sy + ny * 3);
+      ctx.lineTo(b.x, b.y);
+      ctx.lineTo(ex - nx * 3, ey - ny * 3);
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#fff6cc';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(b.x, b.y);
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+      continue;
+    }
+
     ctx.fillStyle = b.color;
     ctx.beginPath();
     ctx.arc(b.x, b.y, b.r, 0, TAU);
