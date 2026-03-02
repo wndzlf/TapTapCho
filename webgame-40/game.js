@@ -1396,7 +1396,7 @@ function makeEnemy(type) {
     + lateIndex * lateIndex * 0.006
     + nightmareIndex * 0.52
     + nightmareIndex * nightmareIndex * 0.044
-  ) * 1.25;
+  ) * 1.25 * (1 + s * 0.012);
   const radiusMul = 1 + stageIndex * 0.022;
   const threatBase = clamp(0.18 + s * 0.07 + nightmareIndex * 0.04, 0.2, 1.28);
   const typeThreat = {
