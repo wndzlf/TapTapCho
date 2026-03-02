@@ -4040,9 +4040,29 @@ function drawTowers() {
     }
 
     if (tower.level > 1) {
-      ctx.fillStyle = '#e8f2ff';
-      ctx.font = '12px sans-serif';
-      ctx.fillText(`L${tower.level}`, tower.x - 7, tower.y + 18 + (footprint - 1) * 4);
+      const badgeR = 7 + (footprint - 1) * 2;
+      const label = `L${tower.level}`;
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `800 ${10 + (footprint - 1) * 2}px sans-serif`;
+
+      // 밝은 이펙트 위에서도 읽히도록 중앙 배지 + 외곽선 텍스트를 고정으로 사용.
+      ctx.fillStyle = 'rgba(7, 13, 24, 0.78)';
+      ctx.strokeStyle = 'rgba(255, 209, 97, 0.92)';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(tower.x, tower.y, badgeR, 0, TAU);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = 3.2;
+      ctx.strokeStyle = 'rgba(8, 15, 27, 0.95)';
+      ctx.strokeText(label, tower.x, tower.y + 0.4);
+      ctx.fillStyle = '#ffe8a6';
+      ctx.fillText(label, tower.x, tower.y + 0.4);
+      ctx.restore();
     }
   }
 }
