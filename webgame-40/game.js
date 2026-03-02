@@ -254,7 +254,7 @@ const TOWER_TYPES = {
   },
   choSunken: {
     id: 'choSunken',
-    name: 'Cho Sunken',
+    name: 'Lotto Sunken',
     cost: 1000,
     color: '#63ff9a',
     range: 104 * BALANCE_SCALE,
@@ -297,7 +297,7 @@ const TOWER_TYPES = {
   },
   spine: {
     id: 'spine',
-    name: 'Spine',
+    name: 'Speed Sunken',
     cost: 70,
     color: '#ffffff',
     range: 124 * BALANCE_SCALE,
@@ -1280,7 +1280,7 @@ function tryPlaceTower(c, r) {
   if (!placement) return;
 
   if (state.selectedTower === 'choSunken' && !state.choLottoActive) {
-    flashBanner('Win Cho Lotto first', 0.7, true);
+    flashBanner('Win Lotto Sunken first', 0.7, true);
     return;
   }
 
@@ -1946,7 +1946,7 @@ function showChoLottoWin() {
   overlayEl.classList.remove('banner-passive');
   overlayEl.innerHTML = `
     <div class="modal">
-      <h2>Cho Sunken!</h2>
+      <h2>Lotto Sunken!</h2>
       <div class="actions">
         <button type="button" data-action="cho-ack">Place</button>
       </div>
@@ -4309,7 +4309,7 @@ function handleCanvasAction(event) {
     }
 
     if (baseKinds.includes('choSunken') || targetKinds.includes('choSunken')) {
-      flashBanner('Cho Sunken cannot merge', 0.75, true);
+      flashBanner('Lotto Sunken cannot merge', 0.75, true);
       return;
     }
 

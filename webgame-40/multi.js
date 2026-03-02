@@ -83,7 +83,7 @@ const LANE_COLOR = {
 
 const TOWER_TYPES = {
   sunken: { id: 'sunken', name: 'Sunken', cost: 60, color: '#86d9ff' },
-  spine: { id: 'spine', name: 'Spine', cost: 92, color: '#b7e8a3' },
+  spine: { id: 'spine', name: 'Speed Sunken', cost: 92, color: '#b7e8a3' },
   obelisk: { id: 'obelisk', name: 'Obelisk', cost: 138, color: '#e6b8ff' },
   snare: { id: 'snare', name: 'Snare', cost: 118, color: '#9beaff' },
 };
