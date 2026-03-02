@@ -1886,6 +1886,21 @@ function refreshBuildHint() {
   refreshTowerGuide();
 }
 
+function showChoLottoWin() {
+  overlayEl.classList.remove('hidden');
+  overlayEl.classList.remove('reward-mode');
+  overlayEl.classList.remove('banner-passive');
+  overlayEl.innerHTML = `
+    <div class="modal">
+      <h2>Cho Sunken 당첨!</h2>
+      <p>성큰 위치를 선택하세요.</p>
+      <div class="actions">
+        <button type="button" data-action="cho-ack">배치 시작</button>
+      </div>
+    </div>
+  `;
+}
+
 function refreshModeHelp() {
   if (!modeHelpEl) return;
   modeHelpEl.innerHTML = `
@@ -4140,7 +4155,7 @@ function handleControlsClick(event) {
     state.gold -= CHO_LOTTO_COST;
     if (Math.random() < CHO_LOTTO_CHANCE) {
       state.selectedTower = 'choSunken';
-      flashBanner('Cho Sunken 획득! 배치 위치 선택', 0.9);
+      showChoLottoWin();
     } else {
       flashBanner('꽝...', 0.6, true);
     }
@@ -4409,6 +4424,11 @@ overlayEl.addEventListener('click', (event) => {
   if (!action) return;
   if (action.startsWith('reward:')) {
     applyStageReward(action.split(':')[1]);
+    return;
+  }
+  if (action === 'cho-ack') {
+    overlayEl.classList.add('hidden');
+    overlayEl.innerHTML = '';
     return;
   }
   if (action === 'start' || action === 'restart') startRun();
