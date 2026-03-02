@@ -242,6 +242,7 @@ header p {
   min-height: 52px;
   padding: 5px 6px;
   cursor: pointer;
+  overflow: hidden;
 }
 
 .build-btn .icon {
@@ -285,6 +286,11 @@ header p {
   font-weight: 700;
   align-self: center;
   white-space: nowrap;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.08;
 }
 
 .build-btn .cost {
@@ -292,6 +298,11 @@ header p {
   color: #d7e4f8;
   font-size: clamp(5px, 1.7vw, 7px);
   white-space: nowrap;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.08;
 }
 
 .build-btn[data-kind="longSunken"] {
@@ -754,6 +765,11 @@ footer {
     font-size: 13px;
     margin-left: 0;
     letter-spacing: 0.01em;
+    max-width: 8.6ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    vertical-align: bottom;
   }
 
   .quick-build {
@@ -831,11 +847,11 @@ footer {
   }
 
   .build-btn .name {
-    font-size: clamp(8px, 2.4vw, 10px);
+    font-size: clamp(7px, 2.2vw, 9px);
   }
 
   .build-btn .cost {
-    font-size: clamp(7px, 2.2vw, 8px);
+    font-size: clamp(6px, 2vw, 7px);
   }
 
   canvas {
@@ -857,11 +873,16 @@ footer {
 }
 
 @media (max-width: 540px) {
-  .hud {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .stat {
+    font-size: 10px;
   }
 
-  .stat {
-    font-size: 13px;
+  .stat-gold {
+    font-size: 10px;
+  }
+
+  .stat-gold b {
+    font-size: 12px;
+    max-width: 7.2ch;
   }
 }

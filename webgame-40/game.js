@@ -1889,13 +1889,33 @@ function formatTime(seconds) {
   return `${m}:${String(r).padStart(2, '0')}`;
 }
 
+function formatCompactNumber(value, digits = 1) {
+  const n = Math.max(0, Number(value) || 0);
+  if (n < 1000) return String(Math.floor(n));
+  const units = ['K', 'M', 'B', 'T'];
+  let unitIndex = -1;
+  let compact = n;
+  while (compact >= 1000 && unitIndex < units.length - 1) {
+    compact /= 1000;
+    unitIndex += 1;
+  }
+  const precision = compact >= 100 ? 0 : digits;
+  const shown = Number(compact.toFixed(precision)).toString();
+  return `${shown}${units[unitIndex]}`;
+}
+
+function formatHudNumber(value) {
+  const n = Math.max(0, Math.floor(Number(value) || 0));
+  return isMobileView ? formatCompactNumber(n, 1) : String(n);
+}
+
 function refreshHud() {
   stageTextEl.textContent = String(state.stage);
-  baseTextEl.textContent = String(Math.max(0, state.baseHp));
-  goldTextEl.textContent = String(Math.floor(state.gold));
-  aliveTextEl.textContent = String(state.enemies.length);
-  queueTextEl.textContent = String(state.spawnQueue.length);
-  killsTextEl.textContent = String(state.kills);
+  baseTextEl.textContent = formatHudNumber(Math.max(0, state.baseHp));
+  goldTextEl.textContent = formatHudNumber(state.gold);
+  aliveTextEl.textContent = formatHudNumber(state.enemies.length);
+  queueTextEl.textContent = formatHudNumber(state.spawnQueue.length);
+  killsTextEl.textContent = formatHudNumber(state.kills);
   if (timeTextEl) timeTextEl.textContent = formatTime(state.runTime);
   if (speedTextEl) speedTextEl.textContent = `${state.simSpeed.toFixed(2)}x`;
   if (btnSunken) {
@@ -1904,12 +1924,20 @@ function refreshHud() {
     if (sunkenCostEl && spec) sunkenCostEl.textContent = `${spec.cost}`;
   }
   if (btnCull) {
+    const nameEl = btnCull.querySelector('.name');
     const costEl = btnCull.querySelector('.cost');
-    if (costEl) costEl.textContent = `${CULL_COST} Gold (${state.cullUses}/${CULL_MAX_USES})`;
+    if (nameEl && isMobileView) nameEl.textContent = '-50% ENEMY HP';
+    if (costEl) costEl.textContent = isMobileView
+      ? `${formatCompactNumber(CULL_COST)} (${state.cullUses}/${CULL_MAX_USES})`
+      : `${CULL_COST} Gold (${state.cullUses}/${CULL_MAX_USES})`;
   }
   if (btnChoLotto) {
+    const nameEl = btnChoLotto.querySelector('.name');
     const costEl = btnChoLotto.querySelector('.cost');
-    if (costEl) costEl.textContent = `${CHO_LOTTO_COST} Gold`;
+    if (nameEl && isMobileView) nameEl.textContent = 'Lotto';
+    if (costEl) costEl.textContent = isMobileView
+      ? formatCompactNumber(CHO_LOTTO_COST)
+      : `${CHO_LOTTO_COST} Gold`;
   }
   refreshMergeButton();
   refreshEmperorShieldButton();
@@ -1927,6 +1955,8 @@ function setSellMode(enabled) {
   btnSellMode.classList.toggle('active', state.sellMode);
   const nameEl = btnSellMode.querySelector('.name');
   if (nameEl) nameEl.textContent = state.sellMode ? 'SELL ON' : 'SELL OFF';
+  const costEl = btnSellMode.querySelector('.cost');
+  if (costEl && isMobileView) costEl.textContent = 'Sell';
 }
 
 function setPaused(enabled) {
@@ -2032,9 +2062,13 @@ function refreshMergeButton(selectionCount = null) {
   const costEl = btnMerge.querySelector('.cost');
   if (!costEl) return;
   if (state.mergeMode) {
-    costEl.textContent = `Pick ${selected}/2 · Merge ${merged}/${MERGE_FUSION_MAX}`;
+    costEl.textContent = isMobileView
+      ? `${selected}/2 · ${merged}/${MERGE_FUSION_MAX}`
+      : `Pick ${selected}/2 · Merge ${merged}/${MERGE_FUSION_MAX}`;
   } else {
-    costEl.textContent = `Merge ${merged}/${MERGE_FUSION_MAX}`;
+    costEl.textContent = isMobileView
+      ? `${merged}/${MERGE_FUSION_MAX}`
+      : `Merge ${merged}/${MERGE_FUSION_MAX}`;
   }
 }
 
@@ -2077,20 +2111,26 @@ function refreshEmperorShieldButton() {
     btnEmperorShield.classList.add('active');
     btnEmperorShield.classList.remove('locked');
     if (nameEl) nameEl.textContent = 'SHIELD ON';
-    if (costEl) costEl.textContent = `${state.emperorShieldTimer.toFixed(1)}s · Left ${usesLeft}/${EMPEROR_SHIELD_MAX_USES}`;
+    if (costEl) costEl.textContent = isMobileView
+      ? `${state.emperorShieldTimer.toFixed(1)}s · ${usesLeft}/${EMPEROR_SHIELD_MAX_USES}`
+      : `${state.emperorShieldTimer.toFixed(1)}s · Left ${usesLeft}/${EMPEROR_SHIELD_MAX_USES}`;
     return;
   }
   btnEmperorShield.classList.remove('active');
   if (usesLeft <= 0) {
     btnEmperorShield.classList.add('locked');
     if (nameEl) nameEl.textContent = 'SHIELD END';
-    if (costEl) costEl.textContent = `Used (${EMPEROR_SHIELD_MAX_USES}/${EMPEROR_SHIELD_MAX_USES})`;
+    if (costEl) costEl.textContent = isMobileView
+      ? `${EMPEROR_SHIELD_MAX_USES}/${EMPEROR_SHIELD_MAX_USES}`
+      : `Used (${EMPEROR_SHIELD_MAX_USES}/${EMPEROR_SHIELD_MAX_USES})`;
     return;
   }
   const notEnoughGold = state.gold < EMPEROR_SHIELD_COST;
   btnEmperorShield.classList.toggle('locked', notEnoughGold);
-  if (nameEl) nameEl.textContent = 'EMPEROR SHIELD';
-  if (costEl) costEl.textContent = `${EMPEROR_SHIELD_COST} Gold / 10s · Left ${usesLeft}/${EMPEROR_SHIELD_MAX_USES}`;
+  if (nameEl) nameEl.textContent = isMobileView ? 'SHIELD' : 'EMPEROR SHIELD';
+  if (costEl) costEl.textContent = isMobileView
+    ? `${formatCompactNumber(EMPEROR_SHIELD_COST)} /10s · ${usesLeft}/${EMPEROR_SHIELD_MAX_USES}`
+    : `${EMPEROR_SHIELD_COST} Gold / 10s · Left ${usesLeft}/${EMPEROR_SHIELD_MAX_USES}`;
 }
 
 function castEmperorShield() {
