@@ -221,31 +221,31 @@ header p {
   background: linear-gradient(180deg, #1b2640, #151f34);
   color: var(--text);
   border-radius: 10px;
-  min-width: 114px;
-  padding: 8px 9px;
+  min-width: 104px;
+  padding: 7px 8px;
   cursor: pointer;
 }
 
 .build-btn .icon {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 11px;
   background: rgba(255, 255, 255, 0.13);
 }
 
 .build-btn .name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
 }
 
 .build-btn .cost {
   color: #d7e4f8;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .build-btn[data-kind="longSunken"] {
@@ -669,10 +669,10 @@ footer {
   }
 
   .quick-build {
-    gap: 6px;
-    padding: 6px;
+    gap: 5px;
+    padding: 5px;
     position: sticky;
-    top: 72px;
+    top: 70px;
     z-index: 15;
     backdrop-filter: blur(4px);
   }
@@ -719,23 +719,23 @@ footer {
   }
 
   .build-btn {
-    min-width: 92px;
-    padding: 6px 7px;
+    min-width: 84px;
+    padding: 5px 6px;
     gap: 2px;
   }
 
   .build-btn .icon {
-    width: 18px;
-    height: 18px;
-    font-size: 10px;
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
   }
 
   .build-btn .name {
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .build-btn .cost {
-    font-size: 11px;
+    font-size: 10px;
   }
 
   canvas {
