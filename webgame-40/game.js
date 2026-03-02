@@ -25,6 +25,7 @@ const rankStatusEl = document.getElementById('rankStatus');
 
 const btnSellMode = document.getElementById('btnSellMode');
 const btnSpeedUp = document.getElementById('btnSpeedUp');
+const btnPause = document.getElementById('btnPause');
 const btnEmperorShield = document.getElementById('btnEmperorShield');
 const btnSunken = document.getElementById('btnSunken');
 try {
@@ -385,6 +386,7 @@ const state = {
   selectedCell: null,
   sunkenFootprint: 1,
   sellMode: false,
+  paused: false,
   simSpeed: 1,
   stageTimer: 0,
   spawnQueue: [],
@@ -1718,6 +1720,16 @@ function setSellMode(enabled) {
   btnSellMode.classList.toggle('active', state.sellMode);
   const nameEl = btnSellMode.querySelector('.name');
   if (nameEl) nameEl.textContent = state.sellMode ? 'SELL ON' : 'SELL OFF';
+}
+
+function setPaused(enabled) {
+  state.paused = Boolean(enabled);
+  if (!btnPause) return;
+  btnPause.classList.toggle('active', state.paused);
+  const nameEl = btnPause.querySelector('.name');
+  if (nameEl) nameEl.textContent = state.paused ? 'Paused' : 'Pause';
+  const costEl = btnPause.querySelector('.cost');
+  if (costEl) costEl.textContent = state.paused ? '재정비 중' : '재정비';
 }
 
 function setSimSpeed(nextSpeed) {
@@ -3940,6 +3952,12 @@ function step(dt) {
     return;
   }
 
+  if (state.paused) {
+    draw();
+    refreshHud();
+    return;
+  }
+
   const simDt = dt * state.simSpeed;
 
   state.banner.ttl = Math.max(0, state.banner.ttl - dt);
@@ -4001,6 +4019,12 @@ function handleControlsClick(event) {
 
   if (event.target.closest('[data-action="speed-down"]')) {
     changeSimSpeed(-0.25);
+    return;
+  }
+
+  if (event.target.closest('[data-action="toggle-pause"]')) {
+    setPaused(!state.paused);
+    if (state.paused) flashBanner('PAUSED', 0.5);
     return;
   }
 
@@ -4141,6 +4165,10 @@ window.addEventListener('keydown', (event) => {
 
   if (event.code === 'KeyG') {
     changeSimSpeed(-0.25);
+  }
+
+  if (event.code === 'KeyP') {
+    setPaused(!state.paused);
   }
 
   if (event.code === 'KeyR') {
