@@ -4140,7 +4140,7 @@ function handleControlsClick(event) {
     state.gold -= CHO_LOTTO_COST;
     if (Math.random() < CHO_LOTTO_CHANCE) {
       state.selectedTower = 'choSunken';
-      flashBanner('Cho Sunken 획득!', 0.8);
+      flashBanner('Cho Sunken 획득! 배치 위치 선택', 0.9);
     } else {
       flashBanner('꽝...', 0.6, true);
     }
