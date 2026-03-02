@@ -2029,19 +2029,17 @@ function buildTowerUpgradeCostLine(baseCost) {
     const cost = upgradeCost({ level: lv, baseCost });
     upgradeCosts.push(cost);
   }
-  if (upgradeCosts.length === 0) return `기본 ${baseCost}`;
+  const parts = [`${baseCost}(Lv2)`];
+  if (upgradeCosts.length <= 1) return parts.join(', ');
 
-  const increases = [];
   let prev = upgradeCosts[0];
   for (let i = 1; i < upgradeCosts.length; i += 1) {
-    increases.push(upgradeCosts[i] - prev);
+    const inc = upgradeCosts[i] - prev;
+    const targetLv = i + 2;
+    parts.push(`${inc}(Lv${targetLv})`);
     prev = upgradeCosts[i];
   }
-
-  const increaseText = increases.length > 0
-    ? increases.map((v) => `+${v}`).join(' · ')
-    : '-';
-  return `기본 ${baseCost} · +1 비용 시작 ${upgradeCosts[0]} · 단계별 증가 ${increaseText}`;
+  return parts.join(', ');
 }
 
 function refreshTowerGuide() {
