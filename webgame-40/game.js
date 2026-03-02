@@ -1962,12 +1962,13 @@ function castCull() {
 }
 
 function refreshBuildHint() {
-  if (!buildHintEl) return;
-  const footprint = state.sunkenFootprint === 2 ? '2x2' : '1x1';
-  const sellState = state.sellMode ? 'ON' : 'OFF';
-  const mergeState = state.mergeMode ? 'ON' : 'OFF';
-  const mobileTag = isMobileView ? '모바일 큰칸' : '일반';
-  buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · M 합치기(${mergeState}) · 1/2/3/4/5/6/7/8/9 선택 · Q 성큰크기(${footprint}) · R 황제보호막(1000/10초·최대5회) · ${mobileTag} · F +0.25x · G -0.25x`;
+  if (buildHintEl) {
+    const footprint = state.sunkenFootprint === 2 ? '2x2' : '1x1';
+    const sellState = state.sellMode ? 'ON' : 'OFF';
+    const mergeState = state.mergeMode ? 'ON' : 'OFF';
+    const mobileTag = isMobileView ? '모바일 큰칸' : '일반';
+    buildHintEl.textContent = `좌클릭 배치/업그레이드 · 우클릭 판매 · E 판매모드(${sellState}) · M 합치기(${mergeState}) · 1/2/3/4/5/6/7/8/9 선택 · Q 성큰크기(${footprint}) · R 황제보호막(1000/10초·최대5회) · ${mobileTag} · F +0.25x · G -0.25x`;
+  }
   refreshModeHelp();
   refreshTowerGuide();
 }
@@ -2023,12 +2024,24 @@ function buildTowerPerLevelChangeLine(kind) {
 }
 
 function buildTowerUpgradeCostLine(baseCost) {
-  const parts = [];
+  const upgradeCosts = [];
   for (let lv = 1; lv < MAX_TOWER_LEVEL; lv += 1) {
     const cost = upgradeCost({ level: lv, baseCost });
-    parts.push(`Lv${lv}→${lv + 1} ${cost}`);
+    upgradeCosts.push(cost);
   }
-  return parts.join(' · ');
+  if (upgradeCosts.length === 0) return `기본 ${baseCost}`;
+
+  const increases = [];
+  let prev = upgradeCosts[0];
+  for (let i = 1; i < upgradeCosts.length; i += 1) {
+    increases.push(upgradeCosts[i] - prev);
+    prev = upgradeCosts[i];
+  }
+
+  const increaseText = increases.length > 0
+    ? increases.map((v) => `+${v}`).join(' · ')
+    : '-';
+  return `기본 ${baseCost} · +1 비용 시작 ${upgradeCosts[0]} · 단계별 증가 ${increaseText}`;
 }
 
 function refreshTowerGuide() {
@@ -2040,12 +2053,6 @@ function refreshTowerGuide() {
     towerGuideEl.textContent = '';
     return;
   }
-
-  const guide = TOWER_GUIDE_DETAILS[state.selectedTower] || {
-    role: '전술 타워',
-    summary: '현재 상황에 맞게 운용하세요.',
-    tips: '',
-  };
 
   const attacksPerSec = placement.reload > 0 ? (1 / placement.reload) : 0;
   const damagePerSec = placement.reload > 0 ? placement.damage / placement.reload : placement.damage;
@@ -2071,8 +2078,6 @@ function refreshTowerGuide() {
       <span class="name">${tower.name}</span>
       ${badges.map((label) => `<span class="badge">${label}</span>`).join('')}
     </div>
-    <div class="meta">${guide.role}</div>
-    <div class="desc">${guide.summary} ${guide.tips}</div>
     <div class="growth">레벨 +1당 변화: ${perLevelSummary}</div>
     <div class="growth">업그레이드 비용(+1): ${upgradeCostSummary}</div>
   `;
