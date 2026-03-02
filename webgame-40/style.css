@@ -339,7 +339,8 @@ header p {
 
 .build-btn.active {
   border-color: #f0ca77;
-  box-shadow: 0 0 0 2px rgba(240, 202, 119, 0.24) inset;
+  box-shadow: 0 0 0 2px rgba(240, 202, 119, 0.24) inset, 0 0 10px rgba(240, 202, 119, 0.45);
+  animation: activePulse 1.6s ease-in-out infinite;
 }
 
 .build-btn.locked {
@@ -354,7 +355,8 @@ header p {
 
 .mode-btn.active {
   border-color: #ff9ab2;
-  box-shadow: 0 0 0 2px rgba(255, 154, 178, 0.3) inset;
+  box-shadow: 0 0 0 2px rgba(255, 154, 178, 0.3) inset, 0 0 10px rgba(255, 154, 178, 0.5);
+  animation: activePulse 1.6s ease-in-out infinite;
 }
 
 .ult-btn {
@@ -364,7 +366,8 @@ header p {
 
 .ult-btn.active {
   border-color: #ffd475;
-  box-shadow: 0 0 0 2px rgba(255, 212, 117, 0.35) inset;
+  box-shadow: 0 0 0 2px rgba(255, 212, 117, 0.35) inset, 0 0 10px rgba(255, 212, 117, 0.5);
+  animation: activePulse 1.6s ease-in-out infinite;
 }
 
 .pause-btn {
@@ -374,7 +377,20 @@ header p {
 
 .pause-btn.active {
   border-color: #f7b07a;
-  box-shadow: 0 0 0 2px rgba(247, 176, 122, 0.34) inset;
+  box-shadow: 0 0 0 2px rgba(247, 176, 122, 0.34) inset, 0 0 10px rgba(247, 176, 122, 0.5);
+  animation: activePulse 1.6s ease-in-out infinite;
+}
+
+@keyframes activePulse {
+  0% {
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.05) inset, 0 0 6px rgba(255, 255, 255, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18) inset, 0 0 12px rgba(255, 255, 255, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.05) inset, 0 0 6px rgba(255, 255, 255, 0.25);
+  }
 }
 
 .hint {
