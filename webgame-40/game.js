@@ -58,6 +58,8 @@ const ENEMY_TANK_SOURCES = {
   raider: '../assets/kenney_tanks/png/tanks_tankGrey4.png',
   crusher: '../assets/kenney_tanks/png/tanks_tankDesert5.png',
   juggernaut: '../assets/kenney_tanks/png/tanks_tankNavy5.png',
+  bulwark: '../assets/kenney_tanks/png/tanks_tankDesert5.png',
+  behemoth: '../assets/kenney_tanks/png/tanks_tankNavy5.png',
   lord: '../assets/kenney_tanks/png/tanks_tankNavy5.png',
 };
 const ENEMY_TANK_IMAGES = Object.create(null);
@@ -1021,7 +1023,7 @@ function passable(c, r) {
 function passableForEnemy(enemy, c, r) {
   if (!inBounds(c, r)) return false;
   if (isReserved(c, r)) return true;
-  if (enemy?.jumper) return true;
+  if (enemy?.jumper || enemy?.towerBreaker) return true;
   return !state.blocked.has(keyOf(c, r));
 }
 
@@ -1067,7 +1069,7 @@ function buildDistanceMap() {
 }
 
 function neighborStep(c, r, enemy = null) {
-  const distMap = enemy?.jumper ? state.distJump : state.dist;
+  const distMap = (enemy?.jumper || enemy?.towerBreaker) ? state.distJump : state.dist;
   const current = distMap[toIndex(c, r)];
   let bestC = c;
   let bestR = r;
@@ -1347,16 +1349,18 @@ function makeEnemy(type) {
   const stageIndex = s - 1;
   const earlyStageIndex = Math.min(stageIndex, 9);
   const lateIndex = Math.max(0, s - 10);
+  const pressureIndex = Math.max(0, s - 14);
   const nightmareIndex = Math.max(0, s - 20);
+  const brutalIndex = Math.max(0, s - 24);
   const overdriveIndex = Math.max(0, s - 35);
-  // Stage 21+ applies extra scaling to make the late game clearly harder.
   const stageSpeedMul = (
     1
     + earlyStageIndex * 0.12
     + lateIndex * 0.07
     + lateIndex * lateIndex * 0.0025
-    + nightmareIndex * 0.18
-    + nightmareIndex * nightmareIndex * 0.016
+    + pressureIndex * 0.045
+    + nightmareIndex * 0.2
+    + nightmareIndex * nightmareIndex * 0.018
   );
   const stageHpMul = (
     1
@@ -1367,23 +1371,37 @@ function makeEnemy(type) {
     + nightmareIndex * 0.52
     + nightmareIndex * nightmareIndex * 0.044
   ) * 1.25 * (1 + s * 0.012);
-  // Extra HP pressure so late-game fused/stun towers cannot erase waves instantly.
   const hardHpMul = (
     1
-    + lateIndex * 0.018
-    + nightmareIndex * 0.09
-    + nightmareIndex * nightmareIndex * 0.0022
-    + overdriveIndex * 0.05
+    + lateIndex * 0.02
+    + nightmareIndex * 0.1
+    + nightmareIndex * nightmareIndex * 0.0028
+    + overdriveIndex * 0.06
   );
-  const finalHpMul = stageHpMul * hardHpMul;
-  const eliteHpMul = 1 + Math.max(0, s - 22) * 0.03;
+  const hardcoreHpMul = (
+    1
+    + pressureIndex * 0.24
+    + pressureIndex * pressureIndex * 0.016
+    + brutalIndex * 0.22
+  );
+  // Stage 15+부터 난이도를 강하게 끌어올리는 추가 체력 계수.
+  const pressureWallHpMul = (
+    1
+    + pressureIndex * 0.44
+    + pressureIndex * pressureIndex * 0.028
+    + nightmareIndex * 0.52
+    + brutalIndex * 0.7
+    + overdriveIndex * 0.36
+  );
+  const finalHpMul = stageHpMul * hardHpMul * hardcoreHpMul * pressureWallHpMul;
+  const eliteHpMul = 1 + Math.max(0, s - 15) * 0.08 + brutalIndex * 0.12;
   const radiusMul = (
     1
     + stageIndex * 0.012
     + lateIndex * 0.004
     + nightmareIndex * 0.01
   );
-  const threatBase = clamp(0.18 + s * 0.07 + nightmareIndex * 0.04, 0.2, 1.28);
+  const threatBase = clamp(0.18 + s * 0.07 + nightmareIndex * 0.04, 0.2, 1.35);
   const typeThreat = {
     ghoul: 0.02,
     bat: 0.06,
@@ -1392,67 +1410,134 @@ function makeEnemy(type) {
     elder: 0.18,
     raider: 0.26,
     crusher: 0.32,
-    juggernaut: 0.38,
-    lord: 0.3,
+    juggernaut: 0.4,
+    bulwark: 0.44,
+    behemoth: 0.5,
+    lord: 0.34,
   };
   const defs = {
-    ghoul: { hp: (58 + s * 12) * finalHpMul * 1.0, speed: (36 + s * 1.6) * stageSpeedMul, reward: 7, leak: 1, r: 10, color: '#c54f72' },
-    bat: { hp: (34 + s * 7) * finalHpMul * 0.8, speed: (64 + s * 2.9) * stageSpeedMul, reward: 7, leak: 1, r: 8, color: '#d07ab4', fast: true },
-    hopper: { hp: (24 + s * 5) * finalHpMul * 0.56, speed: (98 + s * 3.6) * stageSpeedMul, reward: 10, leak: 2, r: 8.5, color: '#9ae8ff', fast: true, jumper: true },
-    brute: { hp: (150 + s * 28) * finalHpMul * 1.18 * eliteHpMul, speed: (29 + s * 1.3) * stageSpeedMul, reward: 12, leak: 2, r: 13, color: '#9e5a9c' },
-    elder: { hp: (262 + s * 46) * finalHpMul * 1.32 * eliteHpMul, speed: (37 + s * 1.5) * stageSpeedMul, reward: 25, leak: 3, r: 15, color: '#b86ec8' },
+    ghoul: { hp: (70 + s * 14) * finalHpMul * 1.2, speed: (34 + s * 1.5) * stageSpeedMul, reward: 7, leak: 1, r: 10, color: '#c54f72' },
+    bat: { hp: (42 + s * 9) * finalHpMul * 1.04, speed: (62 + s * 2.8) * stageSpeedMul, reward: 7, leak: 1, r: 8, color: '#d07ab4', fast: true },
+    hopper: { hp: (30 + s * 6) * finalHpMul * 0.72, speed: (96 + s * 3.4) * stageSpeedMul, reward: 10, leak: 2, r: 8.5, color: '#9ae8ff', fast: true, jumper: true },
+    brute: { hp: (190 + s * 38) * finalHpMul * 1.42 * eliteHpMul, speed: (27 + s * 1.2) * stageSpeedMul, reward: 14, leak: 2, r: 13, color: '#9e5a9c' },
+    elder: { hp: (320 + s * 58) * finalHpMul * 1.56 * eliteHpMul, speed: (34 + s * 1.4) * stageSpeedMul, reward: 28, leak: 3, r: 15, color: '#b86ec8' },
     raider: {
-      hp: (98 + s * 21) * finalHpMul * 0.98 * eliteHpMul,
-      speed: (56 + s * 2.2) * stageSpeedMul,
-      reward: 18,
+      hp: (132 + s * 29) * finalHpMul * 1.16 * eliteHpMul,
+      speed: (55 + s * 2.25) * stageSpeedMul,
+      reward: 20,
       leak: 2,
       r: 12,
       color: '#ff9d7f',
       fast: true,
     },
     crusher: {
-      hp: (212 + s * 38) * finalHpMul * 1.1 * eliteHpMul,
-      speed: (44 + s * 1.9) * stageSpeedMul,
-      reward: 30,
+      hp: (280 + s * 52) * finalHpMul * 1.42 * eliteHpMul,
+      speed: (40 + s * 1.7) * stageSpeedMul,
+      reward: 34,
       leak: 3,
-      r: 15,
+      r: 16,
       color: '#ffc17c',
       fast: true,
     },
     juggernaut: {
-      hp: (420 + s * 80) * finalHpMul * 1.55 * eliteHpMul,
-      speed: (22 + s * 0.6) * stageSpeedMul,
-      reward: 42,
-      leak: 4,
-      r: 18,
+      hp: (760 + s * 160) * finalHpMul * 2.2 * eliteHpMul,
+      speed: (18 + s * 0.45) * stageSpeedMul * 0.74,
+      reward: 55,
+      leak: 5,
+      r: 19,
       color: '#6f7a86',
       stunImmune: true,
+      towerBreaker: true,
+      siege: true,
+      attackMul: 8.8,
+      damageTakenMul: 0.58,
     },
-    lord: { hp: (700 + s * 140) * finalHpMul * 1.65 * eliteHpMul * (1 + nightmareIndex * 0.05), speed: (27 + s) * stageSpeedMul, reward: 58, leak: 5, r: 18, color: '#f26a84', boss: true },
+    bulwark: {
+      hp: (1400 + s * 290) * finalHpMul * 2.85 * eliteHpMul * (1 + pressureIndex * 0.07),
+      speed: (12 + s * 0.28) * stageSpeedMul * 0.44,
+      reward: 85,
+      leak: 6,
+      r: 22,
+      color: '#8f7c62',
+      stunImmune: true,
+      towerBreaker: true,
+      siege: true,
+      attackMul: 12.5,
+      damageTakenMul: 0.36,
+    },
+    behemoth: {
+      hp: (2200 + s * 420) * finalHpMul * 4.1 * eliteHpMul * (1 + pressureIndex * 0.09 + nightmareIndex * 0.04),
+      speed: (10 + s * 0.2) * stageSpeedMul * 0.36,
+      reward: 125,
+      leak: 8,
+      r: 24,
+      color: '#70798a',
+      stunImmune: true,
+      towerBreaker: true,
+      attackMul: 15.5,
+      siege: true,
+      damageTakenMul: 0.27,
+    },
+    lord: {
+      hp: (1200 + s * 240) * finalHpMul * 2.6 * eliteHpMul * (1 + nightmareIndex * 0.12),
+      speed: (24 + s * 0.8) * stageSpeedMul * 0.82,
+      reward: 88,
+      leak: 6,
+      r: 20,
+      color: '#f26a84',
+      boss: true,
+      stunImmune: true,
+      towerBreaker: true,
+      siege: true,
+      attackMul: 11.5,
+      damageTakenMul: 0.46,
+    },
   };
   const d = defs[type];
   const spawn = cellCenter(SPAWN.c, SPAWN.r);
-  const threat = clamp(threatBase + (typeThreat[type] || 0), 0.2, 1.2);
-  const leakBonus = s >= 28 ? 6 : s >= 24 ? 5 : s >= 21 ? 4 : s >= 18 ? 3 : s >= 14 ? 2 : s >= 10 ? 1 : s >= 6 ? 1 : 0;
-  const leak = d.leak + (d.boss ? leakBonus : Math.floor(leakBonus * 0.5));
+  const threat = clamp(threatBase + (typeThreat[type] || 0), 0.2, 1.25);
+  const leakBonus = s >= 28 ? 7 : s >= 24 ? 6 : s >= 21 ? 5 : s >= 18 ? 4 : s >= 14 ? 3 : s >= 10 ? 2 : s >= 6 ? 1 : 0;
+  const leak = d.leak + (d.boss ? leakBonus : Math.floor(leakBonus * 0.6));
   const radiusRaw = d.r * radiusMul * BALANCE_SCALE;
   const radiusCap = d.boss
-    ? 16.5 * BALANCE_SCALE
+    ? 20 * BALANCE_SCALE
     : d.fast
-      ? 11.8 * BALANCE_SCALE
-      : 13.8 * BALANCE_SCALE;
-  const radiusFloor = d.fast ? 6.7 * BALANCE_SCALE : 7.2 * BALANCE_SCALE;
+      ? 13.5 * BALANCE_SCALE
+      : 17.5 * BALANCE_SCALE;
+  const radiusFloor = d.fast ? 7 * BALANCE_SCALE : 8.4 * BALANCE_SCALE;
   const radius = clamp(radiusRaw, radiusFloor, radiusCap);
+  const adaptiveBreakerChance = s >= 15
+    ? clamp(0.18 + pressureIndex * 0.03 + nightmareIndex * 0.025, 0.18, 0.72)
+    : 0;
+  const canAdaptiveBreaker = !d.towerBreaker && ['raider', 'crusher', 'elder', 'brute'].includes(type);
+  const adaptiveBreaker = canAdaptiveBreaker && Math.random() < adaptiveBreakerChance;
+  const towerBreaker = Boolean(d.towerBreaker || adaptiveBreaker);
+  const siege = Boolean(d.siege || (towerBreaker && !d.fast));
+  const stunImmune = Boolean(
+    d.stunImmune
+    || (towerBreaker && s >= 20 && Math.random() < clamp(0.1 + nightmareIndex * 0.02, 0.1, 0.44))
+  );
+  const adaptiveHpMul = adaptiveBreaker ? (1.4 + pressureIndex * 0.05) : 1;
+  const adaptiveSpeedMul = adaptiveBreaker ? 0.86 : 1;
+  const damageTakenMul = clamp(
+    d.damageTakenMul || (towerBreaker ? 0.82 - pressureIndex * 0.009 : 1),
+    0.25,
+    1
+  );
+  const attackBase = (1 + s * 0.06) * (d.boss ? 3 : d.fast ? 1.4 : 1);
+  const breakerAttackMul = towerBreaker ? (2.4 + pressureIndex * 0.11 + nightmareIndex * 0.08) : 1;
+  const siegeAttackMul = siege ? 1.35 : 1;
+  const hp = Math.max(1, Math.floor(d.hp * adaptiveHpMul));
 
   return {
     type,
     x: spawn.x,
     y: spawn.y,
     r: radius,
-    hp: Math.floor(d.hp),
-    maxHp: Math.floor(d.hp),
-    speed: d.speed * BALANCE_SCALE,
-    reward: d.reward + Math.floor(s * 1.3 + nightmareIndex * 3.2),
+    hp,
+    maxHp: hp,
+    speed: d.speed * adaptiveSpeedMul * BALANCE_SCALE,
+    reward: d.reward + Math.floor(s * 1.6 + nightmareIndex * 4.4 + pressureIndex * 1.2),
     leak,
     color: d.color,
     boss: Boolean(d.boss),
@@ -1480,72 +1565,95 @@ function makeEnemy(type) {
     lastDirY: 0,
     poisonTimer: 0,
     poisonDps: 0,
-    stunImmune: Boolean(d.stunImmune),
-    attack: (1 + s * 0.06) * (d.boss ? 3 : d.fast ? 1.4 : 1),
+    stunImmune,
+    towerBreaker,
+    siege,
+    damageTakenMul,
+    attack: attackBase * (d.attackMul || 1) * breakerAttackMul * siegeAttackMul,
   };
 }
 
 function makeStageQueue(stage) {
   if (STUN_IMMUNE_BOSS_STAGES.includes(stage)) {
-    return ['juggernaut'];
+    if (stage >= 25) return ['bulwark', 'behemoth', 'juggernaut', 'behemoth'];
+    return stage >= 15 ? ['bulwark', 'behemoth', 'juggernaut'] : ['juggernaut'];
   }
   const queue = [];
   const earlyStage = Math.min(stage, 10);
   const lateIndex = Math.max(0, stage - 10);
+  const pressureIndex = Math.max(0, stage - 14);
   const nightmareIndex = Math.max(0, stage - 20);
+  const brutalIndex = Math.max(0, stage - 24);
   const baseCount = (
     22
-    + earlyStage * 9
-    + Math.floor(Math.pow(earlyStage, 1.35) * 3)
-    + lateIndex * 4
-    + Math.floor(lateIndex * lateIndex * 0.8)
-    + nightmareIndex * 4
-    + Math.floor(nightmareIndex * nightmareIndex * 0.55)
+    + earlyStage * 10
+    + Math.floor(Math.pow(earlyStage, 1.35) * 3.3)
+    + lateIndex * 5
+    + Math.floor(lateIndex * lateIndex * 1.05)
+    + pressureIndex * 12
+    + Math.floor(pressureIndex * pressureIndex * 1.65)
+    + nightmareIndex * 10
+    + brutalIndex * 14
+    + Math.floor(nightmareIndex * nightmareIndex * 1.1)
   );
 
   for (let i = 0; i < baseCount; i += 1) {
     const roll = Math.random();
     let type = 'ghoul';
     const batChance = stage >= 3
-      ? clamp(0.22 + stage * 0.004 - nightmareIndex * 0.006, 0.1, 0.34)
+      ? clamp(0.24 + stage * 0.004 - nightmareIndex * 0.01, 0.08, 0.3)
       : 0;
     const bruteChance = stage >= 4
-      ? clamp(0.14 + stage * 0.01 + nightmareIndex * 0.012, 0.14, 0.45)
+      ? clamp(0.16 + stage * 0.012 + nightmareIndex * 0.018, 0.16, 0.5)
       : 0;
     const elderChance = stage >= 7
-      ? clamp(0.08 + (stage - 7) * 0.014 + nightmareIndex * 0.018, 0.08, 0.42)
+      ? clamp(0.12 + (stage - 7) * 0.017 + nightmareIndex * 0.024, 0.12, 0.6)
       : 0;
     const raiderChance = stage >= 5
-      ? clamp(0.1 + (stage - 5) * 0.012 + nightmareIndex * 0.022, 0.1, 0.42)
+      ? clamp(0.14 + (stage - 5) * 0.015 + nightmareIndex * 0.028, 0.14, 0.55)
       : 0;
     const crusherChance = stage >= 8
-      ? clamp(0.06 + (stage - 8) * 0.011 + nightmareIndex * 0.024, 0.06, 0.38)
+      ? clamp(0.1 + (stage - 8) * 0.014 + nightmareIndex * 0.03, 0.1, 0.52)
       : 0;
     const hopperChance = stage >= 13
-      ? clamp(0.05 + (stage - 13) * 0.012 + nightmareIndex * 0.018, 0.05, 0.28)
+      ? clamp(0.04 + (stage - 13) * 0.006 + nightmareIndex * 0.012, 0.04, 0.24)
       : 0;
-    const juggernautChance = stage >= 20
-      ? clamp(0.05 + (stage - 20) * 0.008 + nightmareIndex * 0.01, 0.05, 0.28)
+    const juggernautChance = stage >= 15
+      ? clamp(0.08 + (stage - 15) * 0.013 + nightmareIndex * 0.022, 0.08, 0.44)
+      : 0;
+    const bulwarkChance = stage >= 15
+      ? clamp(0.04 + (stage - 15) * 0.012 + nightmareIndex * 0.02, 0.04, 0.38)
+      : 0;
+    const behemothChance = stage >= 15
+      ? clamp(0.03 + (stage - 15) * 0.014 + nightmareIndex * 0.024, 0.03, 0.44)
       : 0;
 
-    let threshold = juggernautChance;
-    if (roll < threshold) type = 'juggernaut';
+    let threshold = behemothChance;
+    if (roll < threshold) type = 'behemoth';
     else {
-      threshold += crusherChance;
-      if (roll < threshold) type = 'crusher';
+      threshold += bulwarkChance;
+      if (roll < threshold) type = 'bulwark';
       else {
-        threshold += elderChance;
-        if (roll < threshold) type = 'elder';
+        threshold += juggernautChance;
+        if (roll < threshold) type = 'juggernaut';
         else {
-          threshold += raiderChance;
-          if (roll < threshold) type = 'raider';
+          threshold += crusherChance;
+          if (roll < threshold) type = 'crusher';
           else {
-            threshold += bruteChance;
-            if (roll < threshold) type = 'brute';
+            threshold += elderChance;
+            if (roll < threshold) type = 'elder';
             else {
-              threshold += hopperChance;
-              if (roll < threshold) type = 'hopper';
-              else if (roll < threshold + batChance) type = 'bat';
+              threshold += raiderChance;
+              if (roll < threshold) type = 'raider';
+              else {
+                threshold += bruteChance;
+                if (roll < threshold) type = 'brute';
+                else {
+                  threshold += hopperChance;
+                  if (roll < threshold) type = 'hopper';
+                  else if (roll < threshold + batChance) type = 'bat';
+                }
+              }
             }
           }
         }
@@ -1554,43 +1662,69 @@ function makeStageQueue(stage) {
     queue.push(type);
   }
 
-  const elderCount = 1 + Math.floor(stage * 0.75) + Math.floor(lateIndex * 0.4) + Math.floor(nightmareIndex * 1.1);
+  const elderCount = 1 + Math.floor(stage * 0.8) + Math.floor(lateIndex * 0.55) + Math.floor(nightmareIndex * 1.4);
   for (let i = 0; i < elderCount; i += 1) {
     const pos = Math.floor(queue.length * (0.25 + Math.random() * 0.55));
     queue.splice(pos, 0, 'elder');
   }
 
-  const bruteCount = Math.max(0, stage - 4) + Math.floor(lateIndex * 0.6) + Math.floor(nightmareIndex * 1.4);
+  const bruteCount = Math.max(0, stage - 4) + Math.floor(lateIndex * 0.8) + Math.floor(nightmareIndex * 1.8);
   for (let i = 0; i < bruteCount; i += 1) {
-    const pos = Math.floor(queue.length * (0.2 + Math.random() * 0.6));
+    const pos = Math.floor(queue.length * (0.2 + Math.random() * 0.62));
     queue.splice(pos, 0, 'brute');
   }
 
   if (stage >= 8) {
-    const surgePos = Math.floor(queue.length * 0.72);
+    const surgePos = Math.floor(queue.length * 0.7);
     if (stage <= 12) {
-      queue.splice(surgePos, 0, 'elder', 'elder', 'crusher');
+      queue.splice(surgePos, 0, 'elder', 'elder', 'crusher', 'raider');
     } else {
-      queue.splice(surgePos, 0, 'elder', 'brute', Math.random() < 0.55 ? 'crusher' : 'raider', stage >= 13 ? 'hopper' : 'bat');
+      queue.splice(surgePos, 0, 'elder', 'brute', Math.random() < 0.65 ? 'crusher' : 'raider', stage >= 13 ? 'hopper' : 'bat', 'crusher');
+    }
+  }
+
+  if (stage >= 15) {
+    const siegeCount = 2 + Math.floor((stage - 15) * 0.7) + Math.floor(nightmareIndex * 1.3);
+    for (let i = 0; i < siegeCount; i += 1) {
+      const pos = Math.floor(queue.length * (0.3 + Math.random() * 0.5));
+      const roll = Math.random();
+      const pick = roll < 0.24
+        ? 'behemoth'
+        : roll < 0.56
+          ? 'bulwark'
+          : 'juggernaut';
+      queue.splice(pos, 0, pick);
     }
   }
 
   if (stage >= 21) {
-    const surgePos = Math.floor(queue.length * 0.56);
-    queue.splice(surgePos, 0, 'crusher', 'hopper', 'raider', 'elder', 'brute', 'hopper', 'crusher', 'raider');
+    const surgePos = Math.floor(queue.length * 0.55);
+    queue.splice(surgePos, 0, 'behemoth', 'bulwark', 'crusher', 'hopper', 'raider', 'elder', 'brute', 'hopper', 'crusher', 'raider', 'juggernaut', 'behemoth');
   }
 
   if (stage >= 6) {
-    const rushCount = 1 + Math.floor(stage * 0.46) + Math.floor(lateIndex * 0.38) + Math.floor(nightmareIndex * 1.6);
-    const crusherPickChance = clamp(0.32 + lateIndex * 0.01, 0.32, 0.44);
+    const rushCount = 1 + Math.floor(stage * 0.52) + Math.floor(lateIndex * 0.45) + Math.floor(nightmareIndex * 1.9);
+    const crusherPickChance = clamp(0.36 + lateIndex * 0.016 + nightmareIndex * 0.012, 0.36, 0.68);
     for (let i = 0; i < rushCount; i += 1) {
-      const pos = Math.floor(queue.length * (0.28 + Math.random() * 0.5));
-      const pick = stage >= 13 && Math.random() < 0.28
+      const pos = Math.floor(queue.length * (0.25 + Math.random() * 0.54));
+      const pick = stage >= 13 && Math.random() < 0.2
         ? 'hopper'
         : (stage >= 8 && Math.random() < crusherPickChance ? 'crusher' : 'raider');
       queue.splice(pos, 0, pick);
     }
   }
+
+  if (stage >= 15) {
+    const behemothCount = 2 + Math.floor((stage - 15) * 0.55) + Math.floor(nightmareIndex * 1.15);
+    for (let i = 0; i < behemothCount; i += 1) {
+      const pos = Math.floor(queue.length * (0.34 + Math.random() * 0.46));
+      queue.splice(pos, 0, 'behemoth');
+    }
+    queue.push('juggernaut');
+    queue.push('bulwark');
+  }
+  if (stage >= 18) queue.push('behemoth');
+  if (stage >= 24) queue.push('bulwark');
 
   if (stage >= 21) queue.push('lord');
   if (stage >= 27) queue.push('lord');
@@ -2306,7 +2440,8 @@ function emitBullet(tower, target) {
 function hurtEnemy(enemy, damage, sourceKind = '', secondary = false) {
   const weakenDamage = enemy.weakenTimer > 0 ? enemy.weakenMul : 1;
   const rushDamage = enemy.fast ? 1 + state.rushDamageBonus : 1;
-  enemy.hp -= damage * weakenDamage * rushDamage;
+  const damageTakenMul = enemy.damageTakenMul || 1;
+  enemy.hp -= damage * weakenDamage * rushDamage * damageTakenMul;
   enemy.vx += rand(-16, 16);
   enemy.vy += rand(-16, 16);
 
@@ -2867,9 +3002,14 @@ function updateEnemy(enemy, dt) {
     for (const tower of towers) {
       const dxT = tower.x - enemy.x;
       const dyT = tower.y - enemy.y;
-      const rr = enemy.r + GRID.cell * 0.45;
+      const rr = enemy.r + GRID.cell * (enemy.towerBreaker ? 0.9 : 0.45);
       if (dxT * dxT + dyT * dyT > rr * rr) continue;
-      tower.hp -= enemy.attack * dt;
+      const towerBreakMul = enemy.towerBreaker
+        ? (5.2 + Math.max(0, state.stage - 15) * 0.24 + Math.max(0, state.stage - 25) * 0.2)
+        : enemy.siege
+          ? 2.8
+          : 1;
+      tower.hp -= enemy.attack * towerBreakMul * dt;
       if (tower.hp <= 0) {
         removeTower(tower);
         flashBanner('TOWER DESTROYED', 0.6, true);
@@ -2952,7 +3092,7 @@ function spawnOne() {
   );
   state.spawnSerial += 1;
   state.enemies.push(enemy);
-  if (type === 'lord') {
+  if (type === 'lord' || type === 'behemoth') {
     flashBanner(`STAGE ${state.stage} BOSS`, 1.2, true);
     bgmAudio?.fx('fail');
   }
@@ -3980,18 +4120,23 @@ function drawEnemyTankSprite(enemy) {
     }
   }
   const ang = Math.atan2(dy, dx);
-  const sizeMul = enemy.boss
-    ? 2.4
-    : enemy.type === 'juggernaut'
-      ? 2.35
-      : enemy.fast
-        ? 2.05
-        : 2.2;
-  const size = clamp(
-    enemy.r * sizeMul,
-    18 * BALANCE_SCALE,
-    enemy.boss ? 44 * BALANCE_SCALE : 34 * BALANCE_SCALE
-  );
+  let sizeMul = 2.2;
+  let sizeCap = 34 * BALANCE_SCALE;
+  if (enemy.fast) sizeMul = 2.05;
+  if (enemy.type === 'juggernaut') sizeMul = 2.35;
+  if (enemy.type === 'bulwark') {
+    sizeMul = 2.6;
+    sizeCap = 45 * BALANCE_SCALE;
+  }
+  if (enemy.type === 'behemoth') {
+    sizeMul = 2.75;
+    sizeCap = 48 * BALANCE_SCALE;
+  }
+  if (enemy.boss) {
+    sizeMul = 2.4;
+    sizeCap = 44 * BALANCE_SCALE;
+  }
+  const size = clamp(enemy.r * sizeMul, 18 * BALANCE_SCALE, sizeCap);
 
   ctx.save();
   ctx.translate(enemy.x, enemy.y);
