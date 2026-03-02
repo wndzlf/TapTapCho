@@ -4090,6 +4090,11 @@ function handleCanvasAction(event) {
       return;
     }
 
+    if (baseKinds.includes('sunkenNova') || targetKinds.includes('sunkenNova')) {
+      flashBanner('Nova Sunken은 합치기 불가', 0.75, true);
+      return;
+    }
+
     const overlap = targetKinds.some((k) => baseKinds.includes(k));
     if (overlap) {
       flashBanner('같은 타입은 합치기 불가', 0.7, true);
