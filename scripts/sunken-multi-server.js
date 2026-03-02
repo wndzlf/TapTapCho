@@ -45,9 +45,9 @@ const TOWER_TYPES = {
     range: 0.13,
     hp: 230,
   },
-  spine: {
-    id: 'spine',
-    name: 'Spine',
+  speedSunken: {
+    id: 'speedSunken',
+    name: 'Speed Sunken',
     cost: 92,
     refund: 0.55,
     damage: 16,
@@ -79,6 +79,9 @@ const TOWER_TYPES = {
     slowSec: 1.4,
     weakMul: 1.25,
   },
+};
+const TOWER_TYPE_ALIASES = {
+  spine: 'speedSunken',
 };
 
 const rooms = new Map();
@@ -120,6 +123,14 @@ function safeRoomName(raw) {
 function safePlayerId(raw) {
   const v = String(raw || '').trim().replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 36);
   return v || `p-${randomId().replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20)}`;
+}
+
+function normalizeTowerType(raw, fallback = 'sunken') {
+  const key = String(raw || '').trim();
+  if (TOWER_TYPES[key]) return key;
+  const alias = TOWER_TYPE_ALIASES[key];
+  if (alias && TOWER_TYPES[alias]) return alias;
+  return fallback;
 }
 
 function laneLabel(lane) {
@@ -434,7 +445,7 @@ function toFiniteNumber(raw, fallback = 0) {
 
 function normalizeTowerState(raw) {
   if (!raw || typeof raw !== 'object') return null;
-  const type = TOWER_TYPES[String(raw.type || '')] ? String(raw.type) : 'sunken';
+  const type = normalizeTowerType(raw.type, 'sunken');
   const spec = TOWER_TYPES[type] || TOWER_TYPES.sunken;
   const maxHp = clamp(toFiniteInt(raw.maxHp, spec.hp), 1, 999999);
   const hp = clamp(Number(raw.hp), 0, maxHp);
@@ -1043,10 +1054,11 @@ function withPlayerRoom(ws) {
 }
 
 function createTower(towerType, ownerId) {
-  const spec = TOWER_TYPES[towerType];
+  const normalizedType = normalizeTowerType(towerType, '');
+  const spec = TOWER_TYPES[normalizedType];
   if (!spec) return null;
   return {
-    type: towerType,
+    type: normalizedType,
     owner: ownerId,
     hp: spec.hp,
     maxHp: spec.hp,
@@ -1086,7 +1098,7 @@ function applyAction(room, player, action) {
   const kind = String(action.kind || '');
 
   if (kind === 'build') {
-    const towerType = String(action.towerType || '');
+    const towerType = normalizeTowerType(action.towerType, '');
     const spec = TOWER_TYPES[towerType];
     if (!spec) return { ok: false, reason: '타워 종류 오류', actionId };
     if (slots[slot]) return { ok: false, reason: '이미 타워가 있음', actionId };
@@ -1107,7 +1119,7 @@ function applyAction(room, player, action) {
     const tower = slots[slot];
     if (!tower) return { ok: false, reason: '판매 대상 없음', actionId };
 
-    const spec = TOWER_TYPES[tower.type] || TOWER_TYPES.sunken;
+    const spec = TOWER_TYPES[normalizeTowerType(tower.type, 'sunken')] || TOWER_TYPES.sunken;
     room.teamGold += Math.round(spec.cost * spec.refund);
     slots[slot] = null;
     room.lastActiveAt = Date.now();
@@ -1176,7 +1188,7 @@ function updateTowers(room, dt) {
       const tower = slots[i];
       if (!tower) continue;
 
-      const spec = TOWER_TYPES[tower.type] || TOWER_TYPES.sunken;
+      const spec = TOWER_TYPES[normalizeTowerType(tower.type, 'sunken')] || TOWER_TYPES.sunken;
       if (tower.hp <= 0) {
         slots[i] = null;
         continue;

@@ -252,8 +252,8 @@ const TOWER_TYPES = {
     splashRadius: 74 * BALANCE_SCALE,
     splashFalloff: 0.5,
   },
-  choSunken: {
-    id: 'choSunken',
+  lottoSunken: {
+    id: 'lottoSunken',
     name: 'Lotto Sunken',
     cost: 1000,
     color: '#63ff9a',
@@ -295,8 +295,8 @@ const TOWER_TYPES = {
     stunChain: 3,
     stunRadius: 74 * BALANCE_SCALE,
   },
-  spine: {
-    id: 'spine',
+  speedSunken: {
+    id: 'speedSunken',
     name: 'Speed Sunken',
     cost: 70,
     color: '#ffffff',
@@ -1175,9 +1175,9 @@ function getTowerUpgradeFactors(kind) {
       ? 1.18
     : kind === 'sunkenHammer'
       ? 1.12
-    : kind === 'choSunken'
+    : kind === 'lottoSunken'
       ? 1.16
-    : kind === 'spine'
+    : kind === 'speedSunken'
       ? 1.16
       : 1.2;
 
@@ -1189,7 +1189,7 @@ function getTowerUpgradeFactors(kind) {
       ? 1.3
     : kind === 'sunkenHammer'
       ? 1.33
-    : kind === 'choSunken'
+    : kind === 'lottoSunken'
       ? 1.28
       : 1.34;
 
@@ -1203,7 +1203,7 @@ function getTowerUpgradeFactors(kind) {
       ? 0.92
     : kind === 'sunkenHammer'
       ? 0.92
-    : kind === 'choSunken'
+    : kind === 'lottoSunken'
       ? 0.9
       : 0.9;
 
@@ -1224,7 +1224,7 @@ function applyTowerUpgradeScaling(tower, factors = null, kindOverride = null, le
   } else if (kind === 'sunkenHammer') {
     tower.splashRadius *= 1.12;
     tower.splashFalloff = clamp(tower.splashFalloff + 0.04, 0.32, 0.7);
-  } else if (kind === 'choSunken') {
+  } else if (kind === 'lottoSunken') {
     tower.poisonDuration *= 1.15;
     tower.poisonDps *= 1.12;
   } else if (kind === 'sunkenStun') {
@@ -1279,7 +1279,7 @@ function tryPlaceTower(c, r) {
   const placement = getPlacementSpec(state.selectedTower);
   if (!placement) return;
 
-  if (state.selectedTower === 'choSunken' && !state.choLottoActive) {
+  if (state.selectedTower === 'lottoSunken' && !state.choLottoActive) {
     flashBanner('Win Lotto Sunken first', 0.7, true);
     return;
   }
@@ -1313,7 +1313,7 @@ function tryPlaceTower(c, r) {
   const tower = makeTower(state.selectedTower, c, r, placement);
   state.towers.push(tower);
   state.gold -= placement.cost;
-  if (state.selectedTower === 'choSunken') {
+  if (state.selectedTower === 'lottoSunken') {
     state.choLottoActive = false;
     state.selectedTower = 'sunken';
   }
@@ -1984,7 +1984,7 @@ function buildTowerPerLevelChangeLine(kind) {
     parts.push('Splash +15%');
   } else if (kind === 'sunkenHammer') {
     parts.push('Splash +12%');
-  } else if (kind === 'choSunken') {
+  } else if (kind === 'lottoSunken') {
     parts.push('Poison Time +15%');
     parts.push('Poison DPS +12%');
   } else if (kind === 'sunkenStun') {
@@ -2165,7 +2165,7 @@ function emitBulletForKind(tower, target, kind) {
   const dx = target.x - tower.x;
   const dy = target.y - tower.y;
   const d = Math.hypot(dx, dy) || 1;
-  const isSplash = kind === 'sunkenSplash' || kind === 'sunkenHammer' || kind === 'choSunken';
+  const isSplash = kind === 'sunkenSplash' || kind === 'sunkenHammer' || kind === 'lottoSunken';
   const isNova = kind === 'sunkenNova';
   const isStun = kind === 'sunkenStun';
   const isHammer = kind === 'sunkenHammer';
@@ -2269,7 +2269,7 @@ function hurtEnemy(enemy, damage, sourceKind = '', secondary = false) {
       rateMax: 1.02,
     });
     if (!secondary && Math.random() < 0.5) sfx(270 + rand(-16, 14), 0.04, 'square', 0.012);
-  } else if (sourceKind === 'spine') {
+  } else if (sourceKind === 'speedSunken') {
     impactSfx.play('enemyHit', {
       volume: 0.24,
       minGap: 0.03,
@@ -2440,7 +2440,7 @@ function spawnTowerHitVfx(x, y, towerKind, isUlt = false, secondary = false) {
     return;
   }
 
-  if (towerKind === 'spine') {
+  if (towerKind === 'speedSunken') {
     const shardCount = secondary ? 3 : 8;
     for (let i = 0; i < shardCount; i += 1) {
       const ang = rand(0, TAU);
@@ -3740,7 +3740,7 @@ function drawTowers() {
         ? 'rgba(255, 77, 77, 0.95)'
       : tower.kind === 'fusion'
         ? 'rgba(174, 240, 255, 0.95)'
-        : tower.kind === 'spine'
+        : tower.kind === 'speedSunken'
           ? 'rgba(255, 255, 255, 0.95)'
           : 'rgba(154, 232, 255, 0.88)';
     ctx.strokeStyle = border;
@@ -3756,7 +3756,7 @@ function drawTowers() {
       || tower.kind === 'fusion'
     ) {
       drawTowerSunken(tower, now);
-    } else if (tower.kind === 'spine') {
+    } else if (tower.kind === 'speedSunken') {
       drawTowerSpine(tower, now);
     } else if (tower.kind === 'obelisk') {
       drawTowerObelisk(tower, now);
@@ -3788,7 +3788,7 @@ function borderColorForTowerKind(kind) {
   if (kind === 'sunkenSplash') return 'rgba(30, 30, 30, 0.95)';
   if (kind === 'sunkenHammer') return 'rgba(255, 77, 77, 0.95)';
   if (kind === 'fusion') return 'rgba(174, 240, 255, 0.95)';
-  if (kind === 'spine') return 'rgba(255, 255, 255, 0.95)';
+  if (kind === 'speedSunken') return 'rgba(255, 255, 255, 0.95)';
   return 'rgba(154, 232, 255, 0.88)';
 }
 
@@ -3824,7 +3824,7 @@ function drawTowerPreviewIcon(towerKind, x, y, size, now) {
     || tower.kind === 'fusion'
   ) {
     drawTowerSunken(tower, now);
-  } else if (tower.kind === 'spine') {
+  } else if (tower.kind === 'speedSunken') {
     drawTowerSpine(tower, now);
   } else if (tower.kind === 'obelisk') {
     drawTowerObelisk(tower, now);
@@ -4340,7 +4340,7 @@ function handleControlsClick(event) {
     }
     state.gold -= CHO_LOTTO_COST;
     if (Math.random() < CHO_LOTTO_CHANCE) {
-      state.selectedTower = 'choSunken';
+      state.selectedTower = 'lottoSunken';
       state.choLottoActive = true;
       showChoLottoWin();
     } else {
@@ -4424,7 +4424,7 @@ function handleCanvasAction(event) {
       return;
     }
 
-    if (baseKinds.includes('choSunken') || targetKinds.includes('choSunken')) {
+    if (baseKinds.includes('lottoSunken') || targetKinds.includes('lottoSunken')) {
       flashBanner('Lotto Sunken cannot merge', 0.75, true);
       return;
     }
@@ -4576,7 +4576,7 @@ canvas.addEventListener('pointercancel', (event) => {
 window.addEventListener('keydown', (event) => {
   if (event.code === 'Digit1') chooseTower('sunken');
   if (event.code === 'Digit4') chooseTower('sunkenSplash');
-  if (event.code === 'Digit5') chooseTower('spine');
+  if (event.code === 'Digit5') chooseTower('speedSunken');
   if (event.code === 'Digit7') chooseTower('sunkenHammer');
   if (event.code === 'Digit8') chooseTower('sunkenNova');
   if (event.code === 'Digit9') chooseTower('sunkenStun');

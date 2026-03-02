@@ -319,7 +319,7 @@ header p {
   background: linear-gradient(180deg, #151516, #0b0b0c);
 }
 
-.build-btn[data-kind="spine"] {
+.build-btn[data-kind="speedSunken"] {
   border-color: #ffffff;
   background: linear-gradient(180deg, #2a2f3b, #1a1f2a);
 }
@@ -334,7 +334,7 @@ header p {
   background: linear-gradient(180deg, #1e3a28, #14281c);
 }
 
-.build-btn[data-kind="choSunken"] {
+.build-btn[data-kind="lottoSunken"] {
   border-color: #63ff9a;
   background: linear-gradient(180deg, #123b28, #0d2a1f);
 }

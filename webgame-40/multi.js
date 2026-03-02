@@ -26,7 +26,7 @@ const btnLeaveRoom = document.getElementById('btnLeaveRoom');
 const btnReconnect = document.getElementById('btnReconnect');
 
 const btnSunken = document.getElementById('btnSunken');
-const btnSpine = document.getElementById('btnSpine');
+const btnSpeedSunken = document.getElementById('btnSpeedSunken');
 const btnObelisk = document.getElementById('btnObelisk');
 const btnSnare = document.getElementById('btnSnare');
 const btnSellMode = document.getElementById('btnSellMode');
@@ -83,9 +83,12 @@ const LANE_COLOR = {
 
 const TOWER_TYPES = {
   sunken: { id: 'sunken', name: 'Sunken', cost: 60, color: '#86d9ff' },
-  spine: { id: 'spine', name: 'Speed Sunken', cost: 92, color: '#b7e8a3' },
+  speedSunken: { id: 'speedSunken', name: 'Speed Sunken', cost: 92, color: '#b7e8a3' },
   obelisk: { id: 'obelisk', name: 'Obelisk', cost: 138, color: '#e6b8ff' },
   snare: { id: 'snare', name: 'Snare', cost: 118, color: '#9beaff' },
+};
+const TOWER_TYPE_ALIASES = {
+  spine: 'speedSunken',
 };
 
 const ENEMY_COLORS = {
@@ -129,6 +132,14 @@ const client = {
   lastRoomsAt: 0,
   lastPingAt: 0,
 };
+
+function normalizeTowerType(towerId, fallback = 'sunken') {
+  const key = String(towerId || '').trim();
+  if (TOWER_TYPES[key]) return key;
+  const alias = TOWER_TYPE_ALIASES[key];
+  if (alias && TOWER_TYPES[alias]) return alias;
+  return fallback;
+}
 
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
@@ -311,7 +322,12 @@ function loadStorage() {
     .map((it) => ({
       actionId: String(it.actionId || randomId('a')).slice(0, 40),
       roomId: String(it.roomId || '').toUpperCase(),
-      action: it.action,
+      action: {
+        ...it.action,
+        towerType: it.action.kind === 'build'
+          ? normalizeTowerType(it.action.towerType, 'sunken')
+          : it.action.towerType,
+      },
       sentAt: Number(it.sentAt || 0),
     }));
 
@@ -645,7 +661,7 @@ function cloneLanesFromSnapshot() {
     out[lane] = src.map((tower) => {
       if (!tower) return null;
       return {
-        type: String(tower.type || 'sunken'),
+        type: normalizeTowerType(tower.type, 'sunken'),
         hp: Number(tower.hp || 0),
         maxHp: Number(tower.maxHp || 1),
         owner: String(tower.owner || ''),
@@ -668,7 +684,7 @@ function mergedLanesWithPending() {
     if (!Number.isInteger(slot) || slot < 0 || slot >= SLOT_COUNT) continue;
 
     if (action.kind === 'build') {
-      const towerType = String(action.towerType || 'sunken');
+      const towerType = normalizeTowerType(action.towerType, 'sunken');
       lanes[action.lane][slot] = {
         type: towerType,
         hp: 1,
@@ -706,11 +722,11 @@ function refreshHud() {
 }
 
 function setSelectedTower(towerId) {
-  client.selectedTower = towerId;
+  client.selectedTower = normalizeTowerType(towerId, 'sunken');
 
-  const all = [btnSunken, btnSpine, btnObelisk, btnSnare];
+  const all = [btnSunken, btnSpeedSunken, btnObelisk, btnSnare];
   for (const btn of all) {
-    btn.classList.toggle('active', btn.dataset.tower === towerId);
+    btn.classList.toggle('active', btn.dataset.tower === client.selectedTower);
   }
 }
 
@@ -930,7 +946,7 @@ function drawSlots(lanes) {
         if (tower.type === 'obelisk') {
           ctx.fillStyle = '#0e1730';
           ctx.fillRect(pos.x - 2.2, pos.y - 9, 4.4, 18);
-        } else if (tower.type === 'spine') {
+        } else if (tower.type === 'speedSunken') {
           ctx.fillStyle = '#17311f';
           ctx.beginPath();
           ctx.moveTo(pos.x, pos.y - 9);
@@ -1117,7 +1133,7 @@ function setupEvents() {
   btnReconnect.addEventListener('click', () => connect());
 
   btnSunken.addEventListener('click', () => setSelectedTower('sunken'));
-  btnSpine.addEventListener('click', () => setSelectedTower('spine'));
+  btnSpeedSunken.addEventListener('click', () => setSelectedTower('speedSunken'));
   btnObelisk.addEventListener('click', () => setSelectedTower('obelisk'));
   btnSnare.addEventListener('click', () => setSelectedTower('snare'));
   btnSellMode.addEventListener('click', () => setSellMode(!client.sellMode));
@@ -1128,7 +1144,7 @@ function setupEvents() {
 
   window.addEventListener('keydown', (event) => {
     if (event.code === 'Digit1') setSelectedTower('sunken');
-    if (event.code === 'Digit2') setSelectedTower('spine');
+    if (event.code === 'Digit2') setSelectedTower('speedSunken');
     if (event.code === 'Digit3') setSelectedTower('obelisk');
     if (event.code === 'Digit4') setSelectedTower('snare');
     if (event.code === 'KeyE') {
