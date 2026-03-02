@@ -352,6 +352,9 @@ const state = {
   emperorShieldFx: 0,
   emperorShieldHitCooldown: 0,
   emperorShieldUses: 0,
+  mergeCheckVersion: 0,
+  mergeCheckSnapshotVersion: -1,
+  mergeCheckResult: false,
   banner: { text: '', ttl: 0, warn: false },
 };
 
@@ -1312,6 +1315,7 @@ function tryPlaceTower(c, r) {
 
   const tower = makeTower(state.selectedTower, c, r, placement);
   state.towers.push(tower);
+  invalidateMergeCache();
   state.gold -= placement.cost;
   if (state.selectedTower === 'lottoSunken') {
     state.choLottoActive = false;
@@ -1614,6 +1618,7 @@ function startRun() {
   state.spawnQueue = [];
   state.enemies = [];
   state.towers = [];
+  invalidateMergeCache();
   state.nextTowerId = 1;
   state.spawnSerial = 0;
   state.bullets = [];
@@ -1816,13 +1821,76 @@ function getFusionTowerCount() {
   return count;
 }
 
+function invalidateMergeCache() {
+  state.mergeCheckVersion += 1;
+}
+
+function getTowerKindsForMerge(tower) {
+  if (Array.isArray(tower?.fusedKinds) && tower.fusedKinds.length) return tower.fusedKinds;
+  return [tower?.kind].filter(Boolean);
+}
+
+function hasBlockedMergeKind(kinds) {
+  return kinds.includes('sunkenStun')
+    || kinds.includes('sunkenNova')
+    || kinds.includes('lottoSunken');
+}
+
+function projectedFusionCountAfterMerge(baseTower, targetTower, currentFusionCount = null) {
+  const current = currentFusionCount == null ? getFusionTowerCount() : currentFusionCount;
+  let next = current;
+  if (baseTower.kind !== 'fusion') next += 1;
+  if (targetTower.kind === 'fusion') next -= 1;
+  return next;
+}
+
+function canMergePair(baseTower, targetTower, currentFusionCount = null) {
+  if (!baseTower || !targetTower || baseTower === targetTower) return false;
+  if ((baseTower.footprint || 1) > 1 || (targetTower.footprint || 1) > 1) return false;
+
+  const baseKinds = getTowerKindsForMerge(baseTower);
+  const targetKinds = getTowerKindsForMerge(targetTower);
+  if (!baseKinds.length || !targetKinds.length) return false;
+  if (hasBlockedMergeKind(baseKinds) || hasBlockedMergeKind(targetKinds)) return false;
+  if (targetKinds.some((kind) => baseKinds.includes(kind))) return false;
+  if (baseKinds.length + targetKinds.length > 5) return false;
+
+  const projectedCount = projectedFusionCountAfterMerge(baseTower, targetTower, currentFusionCount);
+  return projectedCount <= MERGE_FUSION_MAX;
+}
+
+function hasAnyValidMergePair() {
+  if (state.mergeCheckSnapshotVersion === state.mergeCheckVersion) {
+    return state.mergeCheckResult;
+  }
+
+  const fusionCount = getFusionTowerCount();
+  const towers = state.towers;
+  let canMerge = false;
+  for (let i = 0; i < towers.length && !canMerge; i += 1) {
+    const baseTower = towers[i];
+    for (let j = 0; j < towers.length; j += 1) {
+      if (i === j) continue;
+      if (canMergePair(baseTower, towers[j], fusionCount)) {
+        canMerge = true;
+        break;
+      }
+    }
+  }
+
+  state.mergeCheckSnapshotVersion = state.mergeCheckVersion;
+  state.mergeCheckResult = canMerge;
+  return canMerge;
+}
+
 function refreshMergeButton(selectionCount = null) {
   if (!btnMerge) return;
   const merged = getFusionTowerCount();
   const selected = selectionCount == null ? (state.mergePick ? 1 : 0) : selectionCount;
+  const lockedByCap = merged >= MERGE_FUSION_MAX && !hasAnyValidMergePair();
 
   btnMerge.classList.toggle('active', state.mergeMode);
-  btnMerge.classList.toggle('locked', merged >= MERGE_FUSION_MAX && !state.mergeMode);
+  btnMerge.classList.toggle('locked', lockedByCap && !state.mergeMode);
 
   const nameEl = btnMerge.querySelector('.name');
   if (nameEl) nameEl.textContent = state.mergeMode ? 'Merging' : 'Merge';
@@ -1838,7 +1906,7 @@ function refreshMergeButton(selectionCount = null) {
 
 function setMergeMode(enabled) {
   const next = Boolean(enabled);
-  if (next && getFusionTowerCount() >= MERGE_FUSION_MAX) {
+  if (next && getFusionTowerCount() >= MERGE_FUSION_MAX && !hasAnyValidMergePair()) {
     flashBanner(`Merge cap ${MERGE_FUSION_MAX}/${MERGE_FUSION_MAX}`, 0.75, true);
     state.mergeMode = false;
     state.mergePick = null;
@@ -2096,6 +2164,7 @@ function removeTower(tower) {
   const idx = state.towers.indexOf(tower);
   if (idx < 0) return false;
   state.towers.splice(idx, 1);
+  invalidateMergeCache();
   const footprint = tower.footprint || 1;
   for (let ry = 0; ry < footprint; ry += 1) {
     for (let rx = 0; rx < footprint; rx += 1) {
@@ -4385,7 +4454,7 @@ function handleCanvasAction(event) {
   }
 
   if (state.mergeMode) {
-    if (getFusionTowerCount() >= MERGE_FUSION_MAX) {
+    if (getFusionTowerCount() >= MERGE_FUSION_MAX && !hasAnyValidMergePair()) {
       flashBanner(`Merge cap ${MERGE_FUSION_MAX}/${MERGE_FUSION_MAX}`, 0.75, true);
       setMergeMode(false);
       return;
@@ -4446,6 +4515,12 @@ function handleCanvasAction(event) {
       return;
     }
 
+    const projectedFusionCount = projectedFusionCountAfterMerge(baseTower, targetTower);
+    if (projectedFusionCount > MERGE_FUSION_MAX) {
+      flashBanner(`Merge cap ${MERGE_FUSION_MAX}/${MERGE_FUSION_MAX}`, 0.75, true);
+      return;
+    }
+
     const mergeCost = Math.floor(baseTower.spent * 0.5);
     const totalCost = mergeCost + targetTower.spent;
     if (state.gold < totalCost) {
@@ -4479,6 +4554,7 @@ function handleCanvasAction(event) {
     baseTower.stunRadius = Math.max(baseTower.stunRadius || 0, targetTower.stunRadius || 0);
     baseTower.color = '#aef0ff';
     baseTower.baseCost = Math.max(baseTower.baseCost || baseTower.spent, targetTower.baseCost || targetTower.spent);
+    invalidateMergeCache();
 
     removeTower(targetTower);
     for (const enemy of state.enemies) {
