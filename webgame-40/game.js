@@ -414,6 +414,9 @@ const EMPEROR_SHIELD_COST = 1000;
 const EMPEROR_SHIELD_DURATION = 10;
 const EMPEROR_SHIELD_MAX_USES = 5;
 
+const TURN_SLOW_DURATION = 0.35;
+const TURN_SLOW_MUL = 0.82;
+
 const MAX_PARTICLES = isMobileView ? 420 : 900;
 const MAX_BULLETS = isMobileView ? 420 : 900;
 const MAX_ENEMIES = isMobileView ? 160 : 260;
@@ -1410,6 +1413,9 @@ function makeEnemy(type) {
     weakenMul: 1,
     stunTimer: 0,
     stunFx: 0,
+    turnSlowTimer: 0,
+    lastDirX: 0,
+    lastDirY: 0,
   };
 }
 
@@ -2560,6 +2566,7 @@ function stageMoveSpeedMultiplier(stage = state.stage) {
 function updateEnemy(enemy, dt) {
   enemy.repath -= dt;
   enemy.snareTimer = Math.max(0, enemy.snareTimer - dt);
+  enemy.turnSlowTimer = Math.max(0, (enemy.turnSlowTimer || 0) - dt);
   enemy.slowHitFx = Math.max(0, (enemy.slowHitFx || 0) - dt);
   enemy.weakenTimer = Math.max(0, enemy.weakenTimer - dt);
   enemy.stunTimer = Math.max(0, (enemy.stunTimer || 0) - dt);
@@ -2576,7 +2583,8 @@ function updateEnemy(enemy, dt) {
     return;
   }
 
-  const speed = enemy.speed * stageMoveSpeedMultiplier(state.stage) * (enemy.snareTimer > 0 ? enemy.snareSlowMul : 1);
+  const turnSlowMul = enemy.turnSlowTimer > 0 ? TURN_SLOW_MUL : 1;
+  const speed = enemy.speed * stageMoveSpeedMultiplier(state.stage) * (enemy.snareTimer > 0 ? enemy.snareSlowMul : 1) * turnSlowMul;
 
   function keepEnemyInPassableCell(prevX, prevY) {
     const nowCell = worldToCell(enemy.x, enemy.y);
@@ -2622,6 +2630,12 @@ function updateEnemy(enemy, dt) {
   const prevY = enemy.y;
   const nx = dx / d;
   const ny = dy / d;
+  if (enemy.lastDirX !== 0 || enemy.lastDirY !== 0) {
+    const dot = nx * enemy.lastDirX + ny * enemy.lastDirY;
+    if (dot < 0.1 && enemy.turnSlowTimer <= 0) {
+      enemy.turnSlowTimer = TURN_SLOW_DURATION;
+    }
+  }
   const travel = speed * dt;
 
   if (travel >= d) {
@@ -2636,6 +2650,8 @@ function updateEnemy(enemy, dt) {
     enemy.vx = nx * speed;
     enemy.vy = ny * speed;
   }
+  enemy.lastDirX = nx;
+  enemy.lastDirY = ny;
   keepEnemyInPassableCell(prevX, prevY);
 
   const goalCenter = cellCenter(GOAL.c, GOAL.r);
