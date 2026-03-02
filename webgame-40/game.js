@@ -211,27 +211,13 @@ const TOWER_TYPES = {
     id: 'sunken',
     name: 'Sunken',
     cost: 40,
-    color: '#8dd9ff',
+    color: '#ff7ad6',
     range: 105 * BALANCE_SCALE,
     damage: 30,
     reload: 0.5,
     bulletSpeed: 360 * BALANCE_SCALE,
     pierce: 0,
     hp: 250,
-  },
-  sunkenSlow: {
-    id: 'sunkenSlow',
-    name: 'Slow Sunken',
-    cost: 85,
-    color: '#91f4d6',
-    range: 108 * BALANCE_SCALE,
-    damage: 20,
-    reload: 0.58,
-    bulletSpeed: 350 * BALANCE_SCALE,
-    pierce: 0,
-    hp: 240,
-    snareDuration: 1.45,
-    snareSlow: 0.62,
   },
   // Long Sunken removed
   sunkenSplash: {
@@ -252,7 +238,7 @@ const TOWER_TYPES = {
     id: 'sunkenHammer',
     name: 'Hammer Sunken',
     cost: 120,
-    color: '#49c7ff',
+    color: '#ffd04a',
     range: 84 * BALANCE_SCALE,
     damage: 46,
     reload: 0.95,
@@ -301,18 +287,7 @@ const TOWER_TYPES = {
     pierce: 0,
     hp: 190,
   },
-  obelisk: {
-    id: 'obelisk',
-    name: 'Obelisk',
-    cost: 110,
-    color: '#e2b1ff',
-    range: 150 * BALANCE_SCALE,
-    damage: 52,
-    reload: 1.1,
-    bulletSpeed: 330 * BALANCE_SCALE,
-    pierce: 1,
-    hp: 320,
-  },
+  // Obelisk removed
   // Snare removed
 };
 
@@ -322,22 +297,14 @@ const TOWER_GUIDE_DETAILS = {
     summary: '저비용/고연사 단일 공격. 초반 길목을 빠르게 채우는 핵심 타워.',
     tips: '다수 배치에 강하지만, 후반 고체력 적은 단독 처리력이 낮음.',
   },
-  sunkenSlow: {
-    role: '단일 감속 제어',
-    summary: '한 발마다 한 마리를 정확히 둔화시키는 제어형 성큰. 빠른 몹 카운터에 특화.',
-    tips: '단일 타겟 제어이므로 군집 대응은 Splash/Spine과 함께 배치해야 효율이 높음.',
-  },
+  // Slow Sunken removed
   // Long Sunken removed
   spine: {
     role: '지속 화력 특화',
     summary: '중거리에서 빠른 탄막으로 잔몹과 러시 웨이브를 쓸어내는 타워.',
     tips: '한 방이 약해 보스는 Obelisk 계열과 조합해야 안정적.',
   },
-  obelisk: {
-    role: '장거리 중장갑 포격',
-    summary: '긴 사거리와 높은 일격 대미지, 관통으로 탱커/보스 대응에 특화.',
-    tips: '비용이 높고 연사력이 낮아 초반 과투자 시 라인이 무너질 수 있음.',
-  },
+  // Obelisk removed
   sunkenSplash: {
     role: '광역 압축 화력',
     summary: '피격 지점 주변에 스플래시 대미지를 주는 중후반 핵심 광역 타워.',
@@ -1173,8 +1140,6 @@ function upgradeCost(tower) {
 function getTowerUpgradeFactors(kind) {
   const rangeMul = kind === 'sunken'
     ? 1.24
-    : kind === 'sunkenSlow'
-      ? 1.19
     : kind === 'sunkenNova'
       ? 1.15
     : kind === 'sunkenStun'
@@ -1185,16 +1150,12 @@ function getTowerUpgradeFactors(kind) {
       ? 1.12
     : kind === 'spine'
       ? 1.16
-      : kind === 'obelisk'
-        ? 1.15
-        : 1.2;
+      : 1.2;
 
   const damageMul = kind === 'sunkenNova'
     ? 1.24
     : kind === 'sunkenStun'
       ? 1.22
-    : kind === 'sunkenSlow'
-      ? 1.28
     : kind === 'sunkenSplash'
       ? 1.3
     : kind === 'sunkenHammer'
@@ -1207,8 +1168,6 @@ function getTowerUpgradeFactors(kind) {
       ? 0.9
     : kind === 'sunkenStun'
       ? 0.92
-    : kind === 'sunkenSlow'
-      ? 0.9
     : kind === 'sunkenSplash'
       ? 0.92
     : kind === 'sunkenHammer'
@@ -1226,15 +1185,7 @@ function applyTowerUpgradeScaling(tower, factors = null, kindOverride = null, le
   tower.reload *= stats.reloadMul;
   tower.pierce = Math.min(3, tower.pierce + (kind === 'obelisk' ? 1 : 0));
 
-  if (kind === 'snare') {
-    tower.snareDuration *= 1.13;
-    tower.snareSlow = Math.max(0.32, tower.snareSlow * 0.93);
-    tower.weakenMul += 0.09;
-    tower.pierce = 0;
-  } else if (kind === 'sunkenSlow') {
-    tower.snareDuration *= 1.12;
-    tower.snareSlow = Math.max(0.38, tower.snareSlow * 0.94);
-  } else if (kind === 'sunkenSplash') {
+  if (kind === 'sunkenSplash') {
     tower.splashRadius *= 1.15;
     tower.splashFalloff = clamp(tower.splashFalloff + 0.05, 0.3, 0.68);
   } else if (kind === 'sunkenHammer') {
@@ -1845,19 +1796,10 @@ function buildTowerPerLevelChangeLine(kind) {
     `사거리 +${Math.round((rangeMul - 1) * 100)}%`,
   ];
 
-  if (kind === 'obelisk') {
-    parts.push('관통 +1 (최대 3)');
-  } else if (kind === 'sunkenSplash') {
+  if (kind === 'sunkenSplash') {
     parts.push('스플래시 반경 +15%');
   } else if (kind === 'sunkenHammer') {
     parts.push('스플래시 반경 +12%');
-  } else if (kind === 'sunkenSlow') {
-    parts.push('둔화시간 +12%');
-    parts.push('둔화강도 강화');
-  } else if (kind === 'snare') {
-    parts.push('둔화시간 +13%');
-    parts.push('둔화강도 강화');
-    parts.push('약화 +9%p');
   } else if (kind === 'sunkenStun') {
     parts.push('스턴시간 +10%');
     parts.push('스턴반경 +6%');
@@ -1958,24 +1900,6 @@ function fastestEnemyFiltered(x, y, range, predicate) {
 }
 
 function pickTowerTarget(tower) {
-  if (tower.kind === 'snare' || tower.kind === 'sunkenSlow') {
-    const refreshWindow = tower.kind === 'snare' ? 0.35 : 0.28;
-    const unsnaredFast = fastestEnemyFiltered(
-      tower.x,
-      tower.y,
-      tower.range,
-      (enemy) => enemy.fast && enemy.snareTimer <= refreshWindow
-    );
-    if (unsnaredFast) return unsnaredFast;
-    const unsnaredAny = fastestEnemyFiltered(
-      tower.x,
-      tower.y,
-      tower.range,
-      (enemy) => enemy.snareTimer <= refreshWindow
-    );
-    if (unsnaredAny) return unsnaredAny;
-    return nearestEnemy(tower.x, tower.y, tower.range);
-  }
   return nearestEnemy(tower.x, tower.y, tower.range);
 }
 
@@ -2050,7 +1974,7 @@ function emitBullet(tower, target) {
   const dy = target.y - tower.y;
   const d = Math.hypot(dx, dy) || 1;
   const isSnare = tower.kind === 'snare';
-  const isSlowSunken = tower.kind === 'sunkenSlow';
+  // Slow Sunken removed
   const isSplashSunken = tower.kind === 'sunkenSplash' || tower.kind === 'sunkenHammer' || (tower.splashRadius || 0) > 0;
   // Long Sunken removed
   const isNovaSunken = tower.kind === 'sunkenNova';
@@ -2096,9 +2020,6 @@ function emitBullet(tower, target) {
   } else if (tower.kind === 'sunkenSplash') {
     impactSfx.play('enemyHitHeavy', { volume: 0.26, minGap: 0.08, rateMin: 0.95, rateMax: 1.03 });
     if (Math.random() < 0.6) sfx(290 + rand(-18, 14), 0.04, 'square', 0.012);
-  } else if (tower.kind === 'sunkenSlow') {
-    impactSfx.play('enemyHit', { volume: 0.23, minGap: 0.045, rateMin: 0.92, rateMax: 1.02 });
-    if (Math.random() < 0.55) sfx(258 + rand(-14, 14), 0.035, 'sine', 0.011);
   } else if (tower.kind === 'sunkenNova') {
     impactSfx.play('enemyHit', { volume: 0.26, minGap: 0.05, rateMin: 1.0, rateMax: 1.11 });
     if (Math.random() < 0.52) sfx(352 + rand(-20, 20), 0.04, 'square', 0.012);
@@ -2417,34 +2338,6 @@ function spawnTowerHitVfx(x, y, towerKind, isUlt = false, secondary = false) {
     return;
   }
 
-  if (towerKind === 'sunkenSlow') {
-    push({
-      x,
-      y,
-      vx: 0,
-      vy: 0,
-      life: secondary ? 0.11 : 0.18,
-      size: secondary ? 4.8 : 6.8,
-      expand: secondary ? 8 : 14,
-      lineWidth: 1.8,
-      color: '#90f4d2',
-      render: 'ring',
-    });
-    const shardCount = secondary ? 2 : 5;
-    for (let i = 0; i < shardCount; i += 1) {
-      const ang = rand(0, TAU);
-      const speed = rand(90, 170);
-      push({
-        x,
-        y,
-        vx: Math.cos(ang) * speed,
-        vy: Math.sin(ang) * speed,
-        life: rand(0.1, 0.2),
-        size: rand(1.6, 2.8),
-        color: '#97ffe2',
-      });
-    }
-  }
 }
 
 function updateTowers(dt) {
