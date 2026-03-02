@@ -1920,10 +1920,12 @@ function removeTower(tower) {
   return true;
 }
 
-function emitNovaBurst(tower) {
+function emitNovaBurst(tower, colorOverride = null, kindOverride = null) {
   const burstCount = 8 + Math.floor((tower.level - 1) / 2) * 2;
   const spinOffset = performance.now() * 0.0018 + tower.id * 0.37;
   const perShotDamage = tower.damage * 0.55;
+  const shotColor = colorOverride || tower.color;
+  const shotKind = kindOverride || tower.kind;
 
   for (let i = 0; i < burstCount; i += 1) {
     const ang = spinOffset + (i / burstCount) * TAU;
@@ -1935,9 +1937,9 @@ function emitNovaBurst(tower) {
       r: 4.9,
       damage: perShotDamage,
       life: 1.6,
-      color: tower.color,
+      color: shotColor,
       pierce: 0,
-      towerKind: tower.kind,
+      towerKind: shotKind,
       splashRadius: 0,
       splashFalloff: 0,
       snareDuration: 0,
@@ -1964,33 +1966,34 @@ function emitNovaBurst(tower) {
   if (Math.random() < 0.65) sfx(346 + rand(-24, 22), 0.045, 'square', 0.012);
 }
 
-function emitBullet(tower, target) {
-  if (tower.kind === 'sunkenNova') {
-    emitNovaBurst(tower);
+function emitBulletForKind(tower, target, kind) {
+  const baseColor = TOWER_TYPES[kind]?.color || tower.color;
+  if (kind === 'sunkenNova') {
+    emitNovaBurst(tower, baseColor, 'sunkenNova');
     return;
   }
 
   const dx = target.x - tower.x;
   const dy = target.y - tower.y;
   const d = Math.hypot(dx, dy) || 1;
-  const isSplashSunken = tower.kind === 'sunkenSplash' || tower.kind === 'sunkenHammer' || (tower.splashRadius || 0) > 0;
-  const isNovaSunken = tower.kind === 'sunkenNova';
-  const isStunSunken = tower.kind === 'sunkenStun';
+  const isSplash = kind === 'sunkenSplash' || kind === 'sunkenHammer';
+  const isNova = kind === 'sunkenNova';
+  const isStun = kind === 'sunkenStun';
+  const isHammer = kind === 'sunkenHammer';
 
-  const isHammer = tower.kind === 'sunkenHammer';
   pushBullet({
     x: tower.x,
     y: tower.y,
     vx: (dx / d) * tower.bulletSpeed,
     vy: (dy / d) * tower.bulletSpeed,
-    r: isSplashSunken ? 5.6 : (isNovaSunken || isStunSunken) ? 4.8 : 4,
+    r: isSplash ? 5.6 : (isNova || isStun) ? 4.8 : 4,
     damage: tower.damage,
     life: 2,
-    color: tower.color,
-    pierce: (isNovaSunken || isStunSunken) ? 0 : tower.pierce,
-    towerKind: tower.kind,
-    splashRadius: isSplashSunken ? tower.splashRadius : 0,
-    splashFalloff: isSplashSunken ? tower.splashFalloff : 0,
+    color: baseColor,
+    pierce: (isNova || isStun) ? 0 : tower.pierce,
+    towerKind: kind,
+    splashRadius: isSplash ? tower.splashRadius : 0,
+    splashFalloff: isSplash ? tower.splashFalloff : 0,
     snareDuration: tower.snareDuration,
     snareSlow: tower.snareSlow,
     weakenMul: tower.weakenMul,
@@ -1999,6 +2002,46 @@ function emitBullet(tower, target) {
     stunRadius: tower.stunRadius,
     lightning: isHammer,
   });
+
+  for (let i = 0; i < 3; i += 1) {
+    pushParticle({
+      x: tower.x,
+      y: tower.y,
+      vx: rand(-80, 80),
+      vy: rand(-80, 80),
+      life: rand(0.08, 0.2),
+      size: rand(1.8, 3.2),
+      color: baseColor,
+    });
+  }
+
+  if (kind === 'sunken') {
+    if (Math.random() < 0.4) sfx(330 + rand(-24, 18), 0.03, 'triangle', 0.011);
+  } else if (kind === 'sunkenSplash') {
+    impactSfx.play('enemyHitHeavy', { volume: 0.26, minGap: 0.08, rateMin: 0.95, rateMax: 1.03 });
+    if (Math.random() < 0.6) sfx(290 + rand(-18, 14), 0.04, 'square', 0.012);
+  } else if (kind === 'sunkenNova') {
+    impactSfx.play('enemyHit', { volume: 0.26, minGap: 0.05, rateMin: 1.0, rateMax: 1.11 });
+    if (Math.random() < 0.52) sfx(352 + rand(-20, 20), 0.04, 'square', 0.012);
+  } else if (kind === 'sunkenStun') {
+    impactSfx.play('enemyHitHeavy', { volume: 0.28, minGap: 0.05, rateMin: 0.96, rateMax: 1.05 });
+    if (Math.random() < 0.58) sfx(316 + rand(-20, 18), 0.04, 'square', 0.012);
+  } else if (Math.random() < 0.35) {
+    sfx(430 + rand(-26, 28), 0.03, 'square', 0.01);
+  }
+}
+
+function emitBullet(tower, target) {
+  if (tower.kind === 'fusion') {
+    const kinds = tower.fusedKinds || [];
+    for (const kind of kinds) {
+      emitBulletForKind(tower, target, kind);
+    }
+    return;
+  }
+
+  emitBulletForKind(tower, target, tower.kind);
+}
 
   for (let i = 0; i < 3; i += 1) {
     pushParticle({
@@ -2156,7 +2199,7 @@ function spawnTowerHitVfx(x, y, towerKind, isUlt = false, secondary = false) {
         vy: Math.sin(ang) * speed,
         life: rand(0.12, 0.26),
         size: rand(2.2, 4.2),
-        color: '#f1d39a',
+        color: '#ffb36b',
       });
     }
     push({
@@ -2168,7 +2211,7 @@ function spawnTowerHitVfx(x, y, towerKind, isUlt = false, secondary = false) {
       size: 8,
       expand: 22,
       lineWidth: 2.2,
-      color: '#d7a96b',
+      color: '#ff6b6b',
       render: 'ring',
     });
     return;
@@ -3268,6 +3311,19 @@ function drawTowerSunken(tower, now) {
     ctx.stroke();
     ctx.beginPath();
     ctx.arc(0, 0, ringR * 0.28, 0, TAU);
+    ctx.stroke();
+  }
+
+  if (tower.kind === 'fusion') {
+    ctx.strokeStyle = 'rgba(200, 255, 255, 0.95)';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    for (let i = 0; i < 5; i += 1) {
+      const a = (i / 5) * TAU + now * 0.5;
+      const r = ringR * 0.65;
+      ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    ctx.closePath();
     ctx.stroke();
   }
 

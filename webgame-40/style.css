@@ -282,14 +282,34 @@ header p {
   color: #d6e7ff;
 }
 
-.build-btn[data-kind="sunkenSplash"] {
-  border-color: #93604a;
-  background: linear-gradient(180deg, #2f241d, #251d18);
+.build-btn[data-kind="sunken"] {
+  border-color: #4da3ff;
+  background: linear-gradient(180deg, #1b2b48, #14223a);
 }
 
-.build-btn[data-kind="sunkenSplash"] .icon {
-  background: rgba(255, 159, 111, 0.24);
-  color: #ffd9c5;
+.build-btn[data-kind="sunkenHammer"] {
+  border-color: #ff4d4d;
+  background: linear-gradient(180deg, #3a1a1a, #2b1313);
+}
+
+.build-btn[data-kind="sunkenSplash"] {
+  border-color: #111214;
+  background: linear-gradient(180deg, #151516, #0b0b0c);
+}
+
+.build-btn[data-kind="spine"] {
+  border-color: #ffffff;
+  background: linear-gradient(180deg, #2a2f3b, #1a1f2a);
+}
+
+.build-btn[data-kind="sunkenNova"] {
+  border-color: #c69bff;
+  background: linear-gradient(180deg, #2b1f3f, #221933);
+}
+
+.build-btn[data-kind="sunkenStun"] {
+  border-color: #7cff8d;
+  background: linear-gradient(180deg, #1e3a28, #14281c);
 }
 
 .build-btn[data-kind="sunkenNova"] {
