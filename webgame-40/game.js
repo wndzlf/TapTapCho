@@ -258,6 +258,20 @@ const TOWER_TYPES = {
     splashRadius: 66 * BALANCE_SCALE,
     splashFalloff: 0.42,
   },
+  sunkenHammer: {
+    id: 'sunkenHammer',
+    name: 'Hammer Sunken',
+    cost: 120,
+    color: '#d8b37a',
+    range: 84 * BALANCE_SCALE,
+    damage: 46,
+    reload: 0.95,
+    bulletSpeed: 300 * BALANCE_SCALE,
+    pierce: 0,
+    hp: 320,
+    splashRadius: 74 * BALANCE_SCALE,
+    splashFalloff: 0.5,
+  },
   sunkenNova: {
     id: 'sunkenNova',
     name: 'Nova Sunken',
@@ -342,6 +356,11 @@ const TOWER_GUIDE_DETAILS = {
     role: '광역 압축 화력',
     summary: '피격 지점 주변에 스플래시 대미지를 주는 중후반 핵심 광역 타워.',
     tips: '좁은 길목, 몹이 뭉치는 구간에 배치하면 효율이 크게 상승.',
+  },
+  sunkenHammer: {
+    role: '근거리 스플래시 타격',
+    summary: '짧은 사거리에서 망치처럼 한 방으로 광역 피해를 주는 근접 타워.',
+    tips: '코너/길목 앞에 두면 꺾이는 몹을 강하게 눌러줌. 사거리가 짧아 전면 배치 필수.',
   },
   sunkenNova: {
     role: '360도 방사 화력',
@@ -1174,16 +1193,16 @@ function getTowerUpgradeFactors(kind) {
       ? 1.14
     : kind === 'sunkenSplash'
       ? 1.18
+    : kind === 'sunkenHammer'
+      ? 1.12
     : kind === 'spine'
       ? 1.16
       : kind === 'obelisk'
         ? 1.15
         : 1.2;
 
-  const damageMul = kind === 'snare'
-    ? 1.26
-    : kind === 'longSunken'
-      ? 1.32
+  const damageMul = kind === 'longSunken'
+    ? 1.32
     : kind === 'sunkenNova'
       ? 1.24
     : kind === 'sunkenStun'
@@ -1192,6 +1211,8 @@ function getTowerUpgradeFactors(kind) {
       ? 1.28
     : kind === 'sunkenSplash'
       ? 1.3
+    : kind === 'sunkenHammer'
+      ? 1.33
       : 1.34;
 
   const reloadMul = kind === 'sunken'
@@ -1205,6 +1226,8 @@ function getTowerUpgradeFactors(kind) {
     : kind === 'sunkenSlow'
       ? 0.9
     : kind === 'sunkenSplash'
+      ? 0.92
+    : kind === 'sunkenHammer'
       ? 0.92
       : 0.9;
 
@@ -1229,6 +1252,9 @@ function applyTowerUpgradeScaling(tower, factors = null) {
   } else if (tower.kind === 'sunkenSplash') {
     tower.splashRadius *= 1.15;
     tower.splashFalloff = clamp(tower.splashFalloff + 0.05, 0.3, 0.68);
+  } else if (tower.kind === 'sunkenHammer') {
+    tower.splashRadius *= 1.12;
+    tower.splashFalloff = clamp(tower.splashFalloff + 0.04, 0.32, 0.7);
   } else if (tower.kind === 'sunkenStun') {
     tower.stunDuration = Math.min(2.1, tower.stunDuration * 1.1);
     tower.stunRadius *= 1.06;
@@ -1817,6 +1843,8 @@ function buildTowerPerLevelChangeLine(kind) {
     parts.push('관통 +1 (최대 3)');
   } else if (kind === 'sunkenSplash') {
     parts.push('스플래시 반경 +15%');
+  } else if (kind === 'sunkenHammer') {
+    parts.push('스플래시 반경 +12%');
   } else if (kind === 'sunkenSlow') {
     parts.push('둔화시간 +12%');
     parts.push('둔화강도 강화');
@@ -2017,7 +2045,7 @@ function emitBullet(tower, target) {
   const d = Math.hypot(dx, dy) || 1;
   const isSnare = tower.kind === 'snare';
   const isSlowSunken = tower.kind === 'sunkenSlow';
-  const isSplashSunken = tower.kind === 'sunkenSplash';
+  const isSplashSunken = tower.kind === 'sunkenSplash' || tower.kind === 'sunkenHammer';
   const isLongSunken = tower.kind === 'longSunken';
   const isNovaSunken = tower.kind === 'sunkenNova';
   const isStunSunken = tower.kind === 'sunkenStun';
@@ -2215,6 +2243,36 @@ function spawnTowerHitVfx(x, y, towerKind, isUlt = false, secondary = false) {
       expand: isUlt ? 26 : 18,
       lineWidth: isUlt ? 2.5 : 1.8,
       color: isUlt ? '#ffd681' : '#90e9ff',
+      render: 'ring',
+    });
+    return;
+  }
+
+  if (towerKind === 'sunkenHammer') {
+    const burstCount = secondary ? 3 : 6;
+    for (let i = 0; i < burstCount; i += 1) {
+      const ang = rand(0, TAU);
+      const speed = rand(70, 190);
+      push({
+        x,
+        y,
+        vx: Math.cos(ang) * speed,
+        vy: Math.sin(ang) * speed,
+        life: rand(0.12, 0.26),
+        size: rand(2.2, 4.2),
+        color: '#f1d39a',
+      });
+    }
+    push({
+      x,
+      y,
+      vx: 0,
+      vy: 0,
+      life: secondary ? 0.16 : 0.26,
+      size: 8,
+      expand: 22,
+      lineWidth: 2.2,
+      color: '#d7a96b',
       render: 'ring',
     });
     return;
@@ -4125,6 +4183,7 @@ window.addEventListener('keydown', (event) => {
   if (event.code === 'Digit4') chooseTower('sunkenSplash');
   if (event.code === 'Digit5') chooseTower('spine');
   if (event.code === 'Digit6') chooseTower('obelisk');
+  if (event.code === 'Digit7') chooseTower('sunkenHammer');
   if (event.code === 'Digit8') chooseTower('sunkenNova');
   if (event.code === 'Digit9') chooseTower('sunkenStun');
 
