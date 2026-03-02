@@ -406,6 +406,8 @@ const CULL_MAX_USES = 5;
 const CHO_LOTTO_COST = 1000;
 const CHO_LOTTO_CHANCE = 0.1;
 
+const STUN_IMMUNE_BOSS_STAGES = [5, 15, 25, 35, 45];
+
 const TURN_SLOW_DURATION = 0.35;
 const TURN_SLOW_MUL = 0.82;
 
@@ -1491,7 +1493,7 @@ function makeEnemy(type) {
 }
 
 function makeStageQueue(stage) {
-  if ([5, 15, 25, 35, 45].includes(stage)) {
+  if (STUN_IMMUNE_BOSS_STAGES.includes(stage)) {
     return ['juggernaut'];
   }
   const queue = [];
