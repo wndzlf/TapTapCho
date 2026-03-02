@@ -343,6 +343,7 @@ const state = {
   mergeMode: false,
   mergePick: null,
   paused: false,
+  pauseUses: 0,
   simSpeed: 1,
   stageTimer: 0,
   spawnQueue: [],
@@ -1701,13 +1702,21 @@ function setSellMode(enabled) {
 }
 
 function setPaused(enabled) {
-  state.paused = Boolean(enabled);
+  const next = Boolean(enabled);
+  if (next && !state.paused) {
+    if (state.pauseUses >= 5) {
+      flashBanner('Pause 최대 5회', 0.7, true);
+      return;
+    }
+    state.pauseUses += 1;
+  }
+  state.paused = next;
   if (!btnPause) return;
   btnPause.classList.toggle('active', state.paused);
   const nameEl = btnPause.querySelector('.name');
   if (nameEl) nameEl.textContent = state.paused ? 'Paused' : 'Pause';
   const costEl = btnPause.querySelector('.cost');
-  if (costEl) costEl.textContent = state.paused ? '재정비 중' : '재정비';
+  if (costEl) costEl.textContent = state.paused ? `재정비 중 (${state.pauseUses}/5)` : `재정비 (${state.pauseUses}/5)`;
 }
 
 function setMergeMode(enabled) {
@@ -4075,6 +4084,11 @@ function handleCanvasAction(event) {
 
     const baseKinds = baseTower.fusedKinds || [baseTower.kind];
     const targetKinds = targetTower.fusedKinds || [targetTower.kind];
+
+    if (baseKinds.includes('sunkenStun') || targetKinds.includes('sunkenStun')) {
+      flashBanner('Stun Sunken은 합치기 불가', 0.75, true);
+      return;
+    }
 
     const overlap = targetKinds.some((k) => baseKinds.includes(k));
     if (overlap) {
