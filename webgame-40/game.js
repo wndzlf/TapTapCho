@@ -1812,7 +1812,7 @@ function setMergeMode(enabled) {
   const nameEl = btnMerge.querySelector('.name');
   if (nameEl) nameEl.textContent = state.mergeMode ? 'Merging' : 'Merge';
   const costEl = btnMerge.querySelector('.cost');
-  if (costEl) costEl.textContent = state.mergeMode ? '두 개 선택' : '합치기 모드';
+  if (costEl) costEl.textContent = state.mergeMode ? '선택 0/2' : '합치기 모드';
   if (!state.mergeMode) state.mergePick = null;
 }
 
@@ -4245,6 +4245,10 @@ function handleCanvasAction(event) {
 
     if (!state.mergePick) {
       state.mergePick = tapped;
+      if (btnMerge) {
+        const costEl = btnMerge.querySelector('.cost');
+        if (costEl) costEl.textContent = '선택 1/2';
+      }
       flashBanner('두 번째 타워 선택', 0.55);
       return;
     }
@@ -4276,6 +4280,10 @@ function handleCanvasAction(event) {
 
     const overlap = targetKinds.some((k) => baseKinds.includes(k));
     if (overlap) {
+      if (btnMerge) {
+        const costEl = btnMerge.querySelector('.cost');
+        if (costEl) costEl.textContent = '선택 0/2';
+      }
       flashBanner('같은 타입은 합치기 불가', 0.7, true);
       return;
     }
