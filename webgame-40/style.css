@@ -160,17 +160,22 @@ header p {
 
 .hud {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 10px 12px;
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding: 6px 10px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 10px;
   background: linear-gradient(180deg, var(--panel), #0d1320);
+  align-items: center;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .stat {
-  min-width: 108px;
+  min-width: 0;
   color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .stat-gold {
@@ -639,10 +644,10 @@ footer {
   }
 
   .hud {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: nowrap;
     gap: 6px;
-    padding: 8px 10px;
+    padding: 5px 6px;
     position: sticky;
     top: 8px;
     z-index: 16;
@@ -651,19 +656,18 @@ footer {
 
   .stat {
     min-width: 0;
-    font-size: 14px;
+    font-size: 11px;
+    white-space: nowrap;
   }
 
   .stat-gold {
-    grid-column: 1 / -1;
-    order: -1;
-    font-size: 14px;
+    font-size: 11px;
     font-weight: 700;
-    padding: 6px 8px;
+    padding: 2px 5px;
   }
 
   .stat-gold b {
-    font-size: 20px;
+    font-size: 13px;
     margin-left: 0;
     letter-spacing: 0.01em;
   }
