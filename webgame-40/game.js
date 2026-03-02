@@ -11,6 +11,7 @@ const goldTextEl = document.getElementById('goldText');
 const aliveTextEl = document.getElementById('aliveText');
 const queueTextEl = document.getElementById('queueText');
 const killsTextEl = document.getElementById('killsText');
+const timeTextEl = document.getElementById('timeText');
 const speedTextEl = document.getElementById('speedText');
 const buildHintEl = document.getElementById('buildHint');
 const modeHelpEl = document.getElementById('modeHelp');
@@ -370,6 +371,7 @@ const state = {
   pauseUses: 0,
   cullUses: 0,
   choLottoActive: false,
+  runTime: 0,
   simSpeed: 1,
   stageTimer: 0,
   spawnQueue: [],
@@ -523,6 +525,7 @@ function normalizeRankRow(raw) {
   const stage = clamp(Math.floor(Number(raw.stage) || 0), 1, 999);
   const kills = clamp(Math.floor(Number(raw.kills) || 0), 0, 999999);
   const score = clamp(Math.floor(Number(raw.score) || 0), 0, 999999999);
+  const timeSec = Math.max(0, Math.floor(Number(raw.timeSec) || 0));
   const updatedAt = Math.floor(Number(raw.updatedAt || Date.now()));
   const playerId = String(raw.playerId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 36);
   if (!playerId) return null;
@@ -532,6 +535,7 @@ function normalizeRankRow(raw) {
     stage,
     kills,
     score,
+    timeSec,
     updatedAt: Number.isFinite(updatedAt) ? updatedAt : Date.now(),
   };
 }
@@ -613,7 +617,7 @@ function renderSingleRank() {
     const li = document.createElement('li');
     if (idx === 0) li.classList.add('top1');
     const meTag = row.playerId === singleRankState.playerId ? ' · YOU' : '';
-    li.textContent = `${idx + 1}. ${row.playerName} · Stage ${row.stage} · Kills ${row.kills}${meTag}`;
+    li.textContent = `${idx + 1}. ${row.playerName} · Stage ${row.stage} · Kills ${row.kills} · Time ${formatTime(row.timeSec)}${meTag}`;
     rankListEl.appendChild(li);
   });
 }
@@ -872,6 +876,7 @@ function submitSingleRank(resultMode = 'defeat') {
     stage,
     kills: state.kills,
     score: state.score,
+    timeSec: Math.floor(state.runTime || 0),
     updatedAt: Date.now(),
   });
   if (!row) return;
@@ -888,6 +893,7 @@ function submitSingleRank(resultMode = 'defeat') {
       stage: row.stage,
       kills: row.kills,
       score: row.score,
+      timeSec: row.timeSec,
       limit: SINGLE_RANK.showCount,
     }));
   }
@@ -1726,6 +1732,7 @@ function showStageReward() {
     for (const btn of overlayEl.querySelectorAll('[data-action=\"reward:next\"][disabled]')) {
       btn.disabled = false;
     }
+    applyStageReward('next');
   }, 230);
 }
 
@@ -1749,6 +1756,13 @@ function applyStageReward(kind) {
   startStage(nextStage);
 }
 
+function formatTime(seconds) {
+  const s = Math.max(0, Math.floor(seconds));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${String(r).padStart(2, '0')}`;
+}
+
 function refreshHud() {
   stageTextEl.textContent = String(state.stage);
   baseTextEl.textContent = String(Math.max(0, state.baseHp));
@@ -1756,6 +1770,7 @@ function refreshHud() {
   aliveTextEl.textContent = String(state.enemies.length);
   queueTextEl.textContent = String(state.spawnQueue.length);
   killsTextEl.textContent = String(state.kills);
+  if (timeTextEl) timeTextEl.textContent = formatTime(state.runTime);
   if (speedTextEl) speedTextEl.textContent = `${state.simSpeed.toFixed(2)}x`;
   if (btnSunken) {
     const sunkenCostEl = btnSunken.querySelector('.cost');
@@ -4114,6 +4129,7 @@ function step(dt) {
   }
 
   const simDt = dt * state.simSpeed;
+  state.runTime += dt;
 
   state.banner.ttl = Math.max(0, state.banner.ttl - dt);
   if (state.banner.ttl <= 0 && overlayEl.querySelector('.banner')) {
