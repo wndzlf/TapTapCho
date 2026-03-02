@@ -463,6 +463,30 @@ function pushBullet(b) {
   state.bullets.push(b);
 }
 
+function buildEnemyBuckets() {
+  const buckets = new Map();
+  for (const enemy of state.enemies) {
+    const cell = worldToCell(enemy.x, enemy.y);
+    const key = `${cell.c},${cell.r}`;
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(enemy);
+  }
+  return buckets;
+}
+
+function collectNearbyEnemies(buckets, c, r, radiusCells = 1) {
+  const list = [];
+  for (let dc = -radiusCells; dc <= radiusCells; dc += 1) {
+    for (let dr = -radiusCells; dr <= radiusCells; dr += 1) {
+      const key = `${c + dc},${r + dr}`;
+      const bucket = buckets.get(key);
+      if (!bucket) continue;
+      list.push(...bucket);
+    }
+  }
+  return list;
+}
+
 function randomPlayerId() {
   return `p-${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
 }
@@ -2445,6 +2469,7 @@ function applyStunChain(primaryEnemy, bullet) {
 }
 
 function updateBullets(dt) {
+  const buckets = buildEnemyBuckets();
   for (let i = state.bullets.length - 1; i >= 0; i -= 1) {
     const b = state.bullets[i];
     b.x += b.vx * dt;
@@ -2457,7 +2482,9 @@ function updateBullets(dt) {
     }
 
     let removed = false;
-    for (const enemy of state.enemies) {
+    const bulletCell = worldToCell(b.x, b.y);
+    const candidates = collectNearbyEnemies(buckets, bulletCell.c, bulletCell.r, 1);
+    for (const enemy of candidates) {
       const dx = enemy.x - b.x;
       const dy = enemy.y - b.y;
       const rr = enemy.r + b.r;
@@ -2510,7 +2537,10 @@ function updateBullets(dt) {
         if (b.splashRadius > 0) {
           const splashRadius = b.splashRadius;
           const splashSq = splashRadius * splashRadius;
-          for (const other of [...state.enemies]) {
+          const splashCell = worldToCell(enemy.x, enemy.y);
+          const radiusCells = Math.ceil((splashRadius + GRID.cell) / GRID.cell);
+          const splashCandidates = collectNearbyEnemies(buckets, splashCell.c, splashCell.r, radiusCells);
+          for (const other of splashCandidates) {
             if (other === enemy) continue;
             const sdx = other.x - enemy.x;
             const sdy = other.y - enemy.y;
