@@ -309,6 +309,20 @@ const TOWER_TYPES = {
     pierce: 0,
     hp: 190,
   },
+  tankerSunken: {
+    id: 'tankerSunken',
+    name: 'Tanker Sunken',
+    cost: 95,
+    color: '#7fe0a7',
+    range: 92 * BALANCE_SCALE,
+    damage: 12,
+    reload: 0.96,
+    bulletSpeed: 300 * BALANCE_SCALE,
+    pierce: 0,
+    hp: 760,
+    tauntRadius: 44 * BALANCE_SCALE,
+    damageMitigation: 0.42,
+  },
   // Obelisk removed
   // Snare removed
 };
@@ -971,6 +985,8 @@ function getPlacementSpec(kind) {
       color: base.color,
       splashRadius: base.splashRadius || 0,
       splashFalloff: base.splashFalloff || 0,
+      tauntRadius: base.tauntRadius || 0,
+      damageMitigation: base.damageMitigation || 0,
     };
   }
 
@@ -992,6 +1008,8 @@ function getPlacementSpec(kind) {
     color: base.color,
     splashRadius: base.splashRadius || 0,
     splashFalloff: base.splashFalloff || 0,
+    tauntRadius: base.tauntRadius || 0,
+    damageMitigation: base.damageMitigation || 0,
   };
 }
 
@@ -1151,6 +1169,8 @@ function makeTower(kind, c, r, spec = null) {
     stunRadius: base.stunRadius || 0,
     poisonDuration: base.poisonDuration || 0,
     poisonDps: base.poisonDps || 0,
+    tauntRadius: placement.tauntRadius || 0,
+    damageMitigation: clamp(placement.damageMitigation || 0, 0, 0.8),
   };
 }
 
@@ -1172,6 +1192,8 @@ function upgradeCost(tower) {
 function getTowerUpgradeFactors(kind) {
   const rangeMul = kind === 'sunken'
     ? 1.24
+    : kind === 'tankerSunken'
+      ? 1.08
     : kind === 'sunkenNova'
       ? 1.15
     : kind === 'sunkenStun'
@@ -1188,6 +1210,8 @@ function getTowerUpgradeFactors(kind) {
 
   const damageMul = kind === 'sunkenNova'
     ? 1.24
+    : kind === 'tankerSunken'
+      ? 1.16
     : kind === 'sunkenStun'
       ? 1.22
     : kind === 'sunkenSplash'
@@ -1200,6 +1224,8 @@ function getTowerUpgradeFactors(kind) {
 
   const reloadMul = kind === 'sunken'
     ? 0.88
+    : kind === 'tankerSunken'
+      ? 0.95
     : kind === 'sunkenNova'
       ? 0.9
     : kind === 'sunkenStun'
@@ -1232,6 +1258,9 @@ function applyTowerUpgradeScaling(tower, factors = null, kindOverride = null, le
   } else if (kind === 'lottoSunken') {
     tower.poisonDuration *= 1.15;
     tower.poisonDps *= 1.12;
+  } else if (kind === 'tankerSunken') {
+    tower.tauntRadius *= 1.08;
+    tower.damageMitigation = clamp((tower.damageMitigation || 0) + 0.03, 0, 0.8);
   } else if (kind === 'sunkenStun') {
     tower.stunDuration = Math.min(2.1, tower.stunDuration * 1.1);
     tower.stunRadius *= 1.06;
@@ -1997,7 +2026,21 @@ function getTowerKindsForMerge(tower) {
 function hasBlockedMergeKind(kinds) {
   return kinds.includes('sunkenStun')
     || kinds.includes('sunkenNova')
-    || kinds.includes('lottoSunken');
+    || kinds.includes('lottoSunken')
+    || kinds.includes('tankerSunken');
+}
+
+function isTowerKindMergeable(kind) {
+  if (!kind) return false;
+  return !hasBlockedMergeKind([kind]);
+}
+
+function refreshMergeableTowerBadge() {
+  for (const btn of document.querySelectorAll('.build-btn[data-kind]')) {
+    const kind = btn.dataset.kind || '';
+    const mergeable = isTowerKindMergeable(kind);
+    btn.classList.toggle('mergeable', mergeable);
+  }
 }
 
 function projectedFusionCountAfterMerge(baseTower, targetTower, currentFusionCount = null) {
@@ -2243,6 +2286,9 @@ function buildTowerPerLevelChangeLine(kind) {
     parts.push('Splash +15%');
   } else if (kind === 'sunkenHammer') {
     parts.push('Splash +12%');
+  } else if (kind === 'tankerSunken') {
+    parts.push('Taunt +8%');
+    parts.push('DR +3%');
   } else if (kind === 'lottoSunken') {
     parts.push('Poison Time +15%');
     parts.push('Poison DPS +12%');
@@ -2297,6 +2343,8 @@ function refreshTowerGuide() {
 
   if (placement.pierce > 0) badges.push(`Pierce ${placement.pierce}`);
   if (placement.splashRadius > 0) badges.push(`Splash ${Math.round(placement.splashRadius / BALANCE_SCALE)}`);
+  if (placement.tauntRadius > 0) badges.push(`Taunt ${Math.round(placement.tauntRadius / BALANCE_SCALE)}`);
+  if (placement.damageMitigation > 0) badges.push(`DR ${Math.round(placement.damageMitigation * 100)}%`);
   if (tower.snareDuration && tower.snareSlow) badges.push(`Slow ${Math.round((1 - tower.snareSlow) * 100)}%`);
   if (tower.stunDuration && tower.stunChain) badges.push(`Stun ${tower.stunChain}`);
 
@@ -3056,25 +3104,45 @@ function updateEnemy(enemy, dt) {
   if (currentTowerBuckets) {
     const cell = worldToCell(enemy.x, enemy.y);
     const towers = collectNearbyTowers(currentTowerBuckets, cell.c, cell.r, 1);
+    let targetTower = null;
+    let targetDistSq = Infinity;
+    let targetPriority = -1;
+
     for (const tower of towers) {
       const dxT = tower.x - enemy.x;
       const dyT = tower.y - enemy.y;
-      const rr = enemy.r + GRID.cell * (enemy.towerBreaker ? 0.9 : 0.45);
-      if (dxT * dxT + dyT * dyT > rr * rr) continue;
+      const d2 = dxT * dxT + dyT * dyT;
+      const isTanker = tower.kind === 'tankerSunken';
+      const tauntBonus = isTanker ? (tower.tauntRadius || 0) : 0;
+      const rr = enemy.r + GRID.cell * (enemy.towerBreaker ? 0.9 : 0.45) + tauntBonus;
+      if (d2 > rr * rr) continue;
+
+      const priority = isTanker ? 2 : 1;
+      if (
+        priority > targetPriority
+        || (priority === targetPriority && d2 < targetDistSq)
+      ) {
+        targetTower = tower;
+        targetDistSq = d2;
+        targetPriority = priority;
+      }
+    }
+
+    if (targetTower) {
       const towerBreakMul = enemy.towerBreaker
         ? (5.2 + Math.max(0, state.stage - 15) * 0.24 + Math.max(0, state.stage - 25) * 0.2)
         : enemy.siege
           ? 2.8
           : 1;
-      tower.hp -= enemy.attack * towerBreakMul * dt;
-      if (tower.hp <= 0) {
-        removeTower(tower);
+      const mitigation = clamp(targetTower.damageMitigation || 0, 0, 0.8);
+      targetTower.hp -= enemy.attack * towerBreakMul * (1 - mitigation) * dt;
+      if (targetTower.hp <= 0) {
+        removeTower(targetTower);
         flashBanner('TOWER DESTROYED', 0.6, true);
         impactSfx.play('enemyHitHeavy', { volume: 0.32, minGap: 0.05, rateMin: 0.9, rateMax: 1.02 });
         sfx(220, 0.06, 'sawtooth', 0.02);
         for (const e of state.enemies) e.repath = 0;
       }
-      break;
     }
   }
 
@@ -3577,6 +3645,7 @@ function drawTowerSunken(tower, now) {
   const isNova = tower.kind === 'sunkenNova';
   const isStun = tower.kind === 'sunkenStun';
   const isHammer = tower.kind === 'sunkenHammer';
+  const isTanker = tower.kind === 'tankerSunken';
   const scale = 1 + ((tower.footprint || 1) - 1) * 0.86;
   const pulse = 0.5 + 0.5 * Math.sin(now * 4 + tower.c * 0.31 + tower.r * 0.17);
   const ringR = (8.4 + tower.level * 1.3) * scale;
@@ -3598,6 +3667,8 @@ function drawTowerSunken(tower, now) {
       ? `rgba(204, 163, 255, ${0.34 + pulse * 0.24})`
     : isStun
       ? `rgba(255, 215, 112, ${0.34 + pulse * 0.24})`
+    : isTanker
+      ? `rgba(170, 255, 201, ${0.34 + pulse * 0.24})`
     : `rgba(147, 225, 255, ${0.34 + pulse * 0.24})`;
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -3621,6 +3692,10 @@ function drawTowerSunken(tower, now) {
     aura.addColorStop(0, 'rgba(255, 232, 157, 0.46)');
     aura.addColorStop(0.58, 'rgba(255, 196, 84, 0.26)');
     aura.addColorStop(1, 'rgba(146, 91, 24, 0)');
+  } else if (isTanker) {
+    aura.addColorStop(0, 'rgba(188, 255, 210, 0.46)');
+    aura.addColorStop(0.58, 'rgba(100, 205, 156, 0.27)');
+    aura.addColorStop(1, 'rgba(29, 86, 66, 0)');
   } else {
     aura.addColorStop(0, 'rgba(188, 245, 255, 0.4)');
     aura.addColorStop(0.58, 'rgba(122, 214, 255, 0.24)');
@@ -3650,6 +3725,10 @@ function drawTowerSunken(tower, now) {
     vortex.addColorStop(0, '#ffe9b0');
     vortex.addColorStop(0.65, '#c08933');
     vortex.addColorStop(1, '#35230d');
+  } else if (isTanker) {
+    vortex.addColorStop(0, '#c6ffd7');
+    vortex.addColorStop(0.65, '#4f9f78');
+    vortex.addColorStop(1, '#112d24');
   } else {
     vortex.addColorStop(0, '#7ee8ff');
     vortex.addColorStop(0.65, '#3e8ab5');
@@ -3668,6 +3747,8 @@ function drawTowerSunken(tower, now) {
       ? 'rgba(225, 208, 255, 0.68)'
     : isStun
       ? 'rgba(255, 230, 163, 0.68)'
+    : isTanker
+      ? 'rgba(205, 255, 219, 0.72)'
       : 'rgba(196, 242, 255, 0.62)';
   ctx.lineWidth = 1.6;
   for (let i = 0; i < 2 + tower.level; i += 1) {
@@ -3687,6 +3768,8 @@ function drawTowerSunken(tower, now) {
         ? 'rgba(222, 204, 255, 0.86)'
       : isStun
         ? 'rgba(255, 226, 152, 0.86)'
+      : isTanker
+        ? 'rgba(205, 255, 224, 0.88)'
         : 'rgba(197, 242, 255, 0.84)';
     for (let i = 0; i < orbitCount; i += 1) {
       const orbitA = now * (1.2 + i * 0.07) + i * (TAU / orbitCount);
@@ -3707,6 +3790,8 @@ function drawTowerSunken(tower, now) {
       ? 'rgba(205, 179, 255, 0.82)'
     : isStun
       ? 'rgba(255, 219, 140, 0.82)'
+    : isTanker
+      ? 'rgba(179, 245, 203, 0.84)'
       : 'rgba(198, 246, 255, 0.78)';
   for (let i = 0; i < teeth; i += 1) {
     const a = (i / teeth) * TAU + now * 0.3;
@@ -3750,6 +3835,17 @@ function drawTowerSunken(tower, now) {
     ctx.lineTo(2, -2);
     ctx.lineTo(-1, 2);
     ctx.lineTo(5, 6);
+    ctx.stroke();
+  }
+
+  if (isTanker) {
+    ctx.strokeStyle = 'rgba(198, 255, 214, 0.92)';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(-5, 0);
+    ctx.lineTo(5, 0);
+    ctx.moveTo(0, -5);
+    ctx.lineTo(0, 5);
     ctx.stroke();
   }
 
@@ -3812,6 +3908,8 @@ function drawTowerSunken(tower, now) {
         ? `rgba(188, 146, 255, ${0.66 + pulse * 0.2})`
       : isStun
         ? `rgba(255, 204, 99, ${0.66 + pulse * 0.2})`
+      : isTanker
+        ? `rgba(172, 255, 199, ${0.66 + pulse * 0.2})`
         : `rgba(162, 236, 255, ${0.66 + pulse * 0.2})`;
     ctx.lineWidth = 1.8;
     for (let i = 0; i < 4; i += 1) {
@@ -3823,13 +3921,15 @@ function drawTowerSunken(tower, now) {
     }
   }
 
-  if (isSplash || isLong || isNova || isStun) {
+  if (isSplash || isLong || isNova || isStun || isTanker) {
     ctx.strokeStyle = isSplash
       ? `rgba(255, 169, 86, ${0.52 + pulse * 0.24})`
       : isLong
         ? `rgba(118, 170, 255, ${0.52 + pulse * 0.24})`
       : isNova
         ? `rgba(169, 117, 255, ${0.52 + pulse * 0.24})`
+      : isTanker
+        ? `rgba(113, 214, 154, ${0.52 + pulse * 0.24})`
       : `rgba(255, 195, 74, ${0.52 + pulse * 0.24})`;
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -3996,6 +4096,8 @@ function drawTowers() {
 
     const border = tower.kind === 'sunken'
       ? 'rgba(77, 163, 255, 0.9)'
+      : tower.kind === 'tankerSunken'
+        ? 'rgba(127, 224, 167, 0.95)'
       : tower.kind === 'sunkenNova'
         ? 'rgba(198, 155, 255, 0.9)'
       : tower.kind === 'sunkenStun'
@@ -4019,6 +4121,7 @@ function drawTowers() {
       || tower.kind === 'sunkenNova'
       || tower.kind === 'sunkenHammer'
       || tower.kind === 'sunkenStun'
+      || tower.kind === 'tankerSunken'
       || tower.kind === 'fusion'
     ) {
       drawTowerSunken(tower, now);
@@ -4069,6 +4172,7 @@ function drawTowers() {
 
 function borderColorForTowerKind(kind) {
   if (kind === 'sunken') return 'rgba(77, 163, 255, 0.9)';
+  if (kind === 'tankerSunken') return 'rgba(127, 224, 167, 0.95)';
   if (kind === 'sunkenNova') return 'rgba(198, 155, 255, 0.9)';
   if (kind === 'sunkenStun') return 'rgba(124, 255, 141, 0.9)';
   if (kind === 'sunkenSplash') return 'rgba(30, 30, 30, 0.95)';
@@ -4107,6 +4211,7 @@ function drawTowerPreviewIcon(towerKind, x, y, size, now) {
     || tower.kind === 'sunkenNova'
     || tower.kind === 'sunkenHammer'
     || tower.kind === 'sunkenStun'
+    || tower.kind === 'tankerSunken'
     || tower.kind === 'fusion'
   ) {
     drawTowerSunken(tower, now);
@@ -4720,6 +4825,11 @@ function handleCanvasAction(event) {
       return;
     }
 
+    if (baseKinds.includes('tankerSunken') || targetKinds.includes('tankerSunken')) {
+      flashBanner('Tanker Sunken cannot merge', 0.75, true);
+      return;
+    }
+
     const overlap = targetKinds.some((k) => baseKinds.includes(k));
     if (overlap) {
       refreshMergeButton(1);
@@ -4875,6 +4985,7 @@ window.addEventListener('keydown', (event) => {
   if (event.code === 'Digit1') chooseTower('sunken');
   if (event.code === 'Digit4') chooseTower('sunkenSplash');
   if (event.code === 'Digit5') chooseTower('speedSunken');
+  if (event.code === 'Digit6') chooseTower('tankerSunken');
   if (event.code === 'Digit7') chooseTower('sunkenHammer');
   if (event.code === 'Digit8') chooseTower('sunkenNova');
   if (event.code === 'Digit9') chooseTower('sunkenStun');
@@ -4944,6 +5055,7 @@ function showMenu() {
 
 showMenu();
 renderBuildButtonIcons();
+refreshMergeableTowerBadge();
 setSelectedButton();
 setSellMode(false);
 refreshBuildHint();

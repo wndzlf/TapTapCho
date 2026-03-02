@@ -264,6 +264,26 @@ header p {
     "icon name"
     "icon cost";
   column-gap: 6px;
+  position: relative;
+}
+
+.build-btn[data-kind].mergeable::after {
+  content: 'M';
+  position: absolute;
+  top: 3px;
+  right: 4px;
+  min-width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(252, 224, 148, 0.85);
+  background: rgba(31, 24, 8, 0.82);
+  color: #ffe5a5;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 12px;
+  text-align: center;
+  pointer-events: none;
+  box-shadow: 0 0 6px rgba(255, 212, 117, 0.25);
 }
 
 .build-btn[data-kind] .icon {
@@ -333,6 +353,11 @@ header p {
 .build-btn[data-kind="speedSunken"] {
   border-color: #ffffff;
   background: linear-gradient(180deg, #2a2f3b, #1a1f2a);
+}
+
+.build-btn[data-kind="tankerSunken"] {
+  border-color: #7fe0a7;
+  background: linear-gradient(180deg, #1a3b2c, #132a20);
 }
 
 .build-btn[data-kind="sunkenNova"] {
@@ -844,6 +869,15 @@ footer {
   .build-btn[data-kind] .icon {
     width: 20px;
     height: 20px;
+  }
+
+  .build-btn[data-kind].mergeable::after {
+    top: 2px;
+    right: 3px;
+    min-width: 11px;
+    height: 11px;
+    font-size: 7px;
+    line-height: 11px;
   }
 
   .build-btn .name {
