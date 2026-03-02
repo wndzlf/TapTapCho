@@ -257,6 +257,28 @@ header p {
   background: rgba(255, 255, 255, 0.13);
 }
 
+.build-btn[data-kind] {
+  grid-template-columns: 24px 1fr;
+  grid-template-areas:
+    "icon name"
+    "icon cost";
+  column-gap: 6px;
+}
+
+.build-btn[data-kind] .icon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid rgba(183, 213, 255, 0.26);
+  background-color: rgba(7, 12, 22, 0.45);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 94% 94%;
+  font-size: 0;
+  color: transparent;
+}
+
 .build-btn .name {
   grid-area: name;
   font-size: clamp(6px, 1.9vw, 9px);
@@ -796,6 +818,16 @@ footer {
     width: 14px;
     height: 14px;
     font-size: 8px;
+  }
+
+  .build-btn[data-kind] {
+    grid-template-columns: 20px 1fr;
+    column-gap: 4px;
+  }
+
+  .build-btn[data-kind] .icon {
+    width: 20px;
+    height: 20px;
   }
 
   .build-btn .name {

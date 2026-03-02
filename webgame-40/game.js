@@ -3781,6 +3781,111 @@ function drawTowers() {
   }
 }
 
+function borderColorForTowerKind(kind) {
+  if (kind === 'sunken') return 'rgba(77, 163, 255, 0.9)';
+  if (kind === 'sunkenNova') return 'rgba(198, 155, 255, 0.9)';
+  if (kind === 'sunkenStun') return 'rgba(124, 255, 141, 0.9)';
+  if (kind === 'sunkenSplash') return 'rgba(30, 30, 30, 0.95)';
+  if (kind === 'sunkenHammer') return 'rgba(255, 77, 77, 0.95)';
+  if (kind === 'fusion') return 'rgba(174, 240, 255, 0.95)';
+  if (kind === 'spine') return 'rgba(255, 255, 255, 0.95)';
+  return 'rgba(154, 232, 255, 0.88)';
+}
+
+function drawTowerPreviewIcon(towerKind, x, y, size, now) {
+  const placement = getPlacementSpec(towerKind);
+  if (!placement) return;
+
+  const tower = makeTower(towerKind, 0, 0, placement);
+  tower.c = 0;
+  tower.r = 0;
+  tower.x = x;
+  tower.y = y;
+  tower.level = Math.min(3, MAX_TOWER_LEVEL);
+  tower.cooldown = 0;
+
+  const boxX = x - size * 0.5 + 2;
+  const boxY = y - size * 0.5 + 2;
+  const boxW = size - 4;
+  const boxH = size - 4;
+
+  ctx.fillStyle = '#0f1727';
+  ctx.fillRect(boxX, boxY, boxW, boxH);
+  ctx.strokeStyle = borderColorForTowerKind(towerKind);
+  ctx.lineWidth = 2;
+  ctx.strokeRect(boxX + 1, boxY + 1, boxW - 2, boxH - 2);
+
+  if (
+    tower.kind === 'sunken'
+    || tower.kind === 'sunkenSplash'
+    || tower.kind === 'sunkenNova'
+    || tower.kind === 'sunkenHammer'
+    || tower.kind === 'sunkenStun'
+    || tower.kind === 'fusion'
+  ) {
+    drawTowerSunken(tower, now);
+  } else if (tower.kind === 'spine') {
+    drawTowerSpine(tower, now);
+  } else if (tower.kind === 'obelisk') {
+    drawTowerObelisk(tower, now);
+  } else {
+    drawTowerSnare(tower, now);
+  }
+}
+
+function setBuildButtonIcon(kind, dataUrl) {
+  const btn = document.querySelector(`.build-btn[data-kind="${kind}"]`);
+  if (!btn) return;
+  const iconEl = btn.querySelector('.icon');
+  if (!iconEl) return;
+  iconEl.textContent = '';
+  iconEl.style.backgroundImage = `url("${dataUrl}")`;
+}
+
+function renderBuildButtonIcons() {
+  const towerButtons = [...document.querySelectorAll('.build-btn[data-kind]')];
+  if (!towerButtons.length) return;
+
+  const iconSize = 58;
+  const gap = 12;
+  const startX = 10;
+  const startY = 10;
+  const neededW = startX * 2 + towerButtons.length * iconSize + (towerButtons.length - 1) * gap;
+  const neededH = startY * 2 + iconSize;
+  if (neededW > W || neededH > H) return;
+
+  const snap = document.createElement('canvas');
+  snap.width = iconSize;
+  snap.height = iconSize;
+  const snapCtx = snap.getContext('2d');
+  if (!snapCtx) return;
+
+  const prevNextTowerId = state.nextTowerId;
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  const now = performance.now() * 0.001;
+  for (let i = 0; i < towerButtons.length; i += 1) {
+    const kind = towerButtons[i].dataset.kind;
+    if (!kind || !TOWER_TYPES[kind]) continue;
+
+    const left = startX + i * (iconSize + gap);
+    const top = startY;
+    const centerX = left + iconSize * 0.5;
+    const centerY = top + iconSize * 0.5;
+    drawTowerPreviewIcon(kind, centerX, centerY, iconSize, now + i * 0.13);
+
+    snapCtx.clearRect(0, 0, iconSize, iconSize);
+    snapCtx.drawImage(canvas, left, top, iconSize, iconSize, 0, 0, iconSize, iconSize);
+    setBuildButtonIcon(kind, snap.toDataURL('image/png'));
+  }
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.restore();
+  state.nextTowerId = prevNextTowerId;
+}
+
 function loadEnemySprites() {
   for (const [type, src] of Object.entries(ENEMY_TANK_SOURCES)) {
     const img = new Image();
@@ -4540,6 +4645,7 @@ function showMenu() {
 }
 
 showMenu();
+renderBuildButtonIcons();
 setSelectedButton();
 setSellMode(false);
 refreshBuildHint();
