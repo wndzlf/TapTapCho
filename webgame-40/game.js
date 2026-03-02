@@ -345,6 +345,7 @@ const state = {
   mergePick: null,
   paused: false,
   pauseUses: 0,
+  cullUses: 0,
   simSpeed: 1,
   stageTimer: 0,
   spawnQueue: [],
@@ -375,7 +376,8 @@ const EMPEROR_SHIELD_DURATION = 10;
 const EMPEROR_SHIELD_MAX_USES = 5;
 
 const CULL_COST = 10000;
-const CULL_HP_MULT = 0.65;
+const CULL_HP_MULT = 0.5;
+const CULL_MAX_USES = 5;
 
 const TURN_SLOW_DURATION = 0.35;
 const TURN_SLOW_MUL = 0.82;
@@ -1690,7 +1692,7 @@ function refreshHud() {
   }
   if (btnCull) {
     const costEl = btnCull.querySelector('.cost');
-    if (costEl) costEl.textContent = `${CULL_COST} Gold`;
+    if (costEl) costEl.textContent = `${CULL_COST} Gold (${state.cullUses}/${CULL_MAX_USES})`;
   }
   refreshEmperorShieldButton();
 }
@@ -1810,16 +1812,22 @@ function castEmperorShield() {
 
 function castCull() {
   if (state.mode !== 'playing') return;
+  if (state.cullUses >= CULL_MAX_USES) {
+    flashBanner(`Cull 사용 완료 (${CULL_MAX_USES}/${CULL_MAX_USES})`, 0.7, true);
+    sfx(160, 0.09, 'sawtooth', 0.022);
+    return;
+  }
   if (state.gold < CULL_COST) {
     flashBanner(`Gold 부족 · ${CULL_COST} 필요`, 0.6, true);
     sfx(180, 0.08, 'sawtooth', 0.022);
     return;
   }
   state.gold -= CULL_COST;
+  state.cullUses += 1;
   for (const enemy of state.enemies) {
     enemy.hp = Math.max(1, Math.floor(enemy.hp * CULL_HP_MULT));
   }
-  flashBanner(`적 HP ${(1 - CULL_HP_MULT) * 100 | 0}% 감소`, 0.7);
+  flashBanner(`적 HP ${(1 - CULL_HP_MULT) * 100 | 0}% 감소 (${state.cullUses}/${CULL_MAX_USES})`, 0.7);
   impactSfx.play('enemyHitHeavy', { volume: 0.32, minGap: 0.06, rateMin: 0.9, rateMax: 1.0 });
   sfx(520, 0.08, 'triangle', 0.02);
   refreshHud();
