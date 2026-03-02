@@ -210,7 +210,7 @@ header p {
   background: linear-gradient(180deg, #12192b, #0e1524);
   padding: 6px;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 6px;
   align-items: center;
 }
@@ -259,7 +259,7 @@ header p {
 
 .build-btn .name {
   grid-area: name;
-  font-size: clamp(7px, 2.1vw, 10px);
+  font-size: clamp(6px, 1.9vw, 9px);
   font-weight: 700;
   align-self: center;
   white-space: nowrap;
@@ -268,7 +268,7 @@ header p {
 .build-btn .cost {
   grid-area: cost;
   color: #d7e4f8;
-  font-size: clamp(6px, 1.9vw, 8px);
+  font-size: clamp(5px, 1.7vw, 7px);
   white-space: nowrap;
 }
 
@@ -700,7 +700,7 @@ footer {
     top: 50px;
     z-index: 15;
     backdrop-filter: blur(4px);
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .controls {
