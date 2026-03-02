@@ -1384,46 +1384,62 @@ function makeEnemy(type) {
   const overdriveIndex = Math.max(0, s - 35);
   const stageSpeedMul = (
     1
-    + earlyStageIndex * 0.12
-    + lateIndex * 0.07
-    + lateIndex * lateIndex * 0.0025
-    + pressureIndex * 0.045
-    + nightmareIndex * 0.2
-    + nightmareIndex * nightmareIndex * 0.018
+    + earlyStageIndex * 0.045
+    + lateIndex * 0.03
+    + lateIndex * lateIndex * 0.0014
+    + pressureIndex * 0.02
+    + nightmareIndex * 0.05
+    + nightmareIndex * nightmareIndex * 0.006
   );
   const stageHpMul = (
     1
-    + earlyStageIndex * 0.2
-    + earlyStageIndex * earlyStageIndex * 0.013
-    + lateIndex * 0.13
-    + lateIndex * lateIndex * 0.006
-    + nightmareIndex * 0.52
-    + nightmareIndex * nightmareIndex * 0.044
-  ) * 1.25 * (1 + s * 0.012);
+    + earlyStageIndex * 0.12
+    + earlyStageIndex * earlyStageIndex * 0.006
+    + lateIndex * 0.08
+    + lateIndex * lateIndex * 0.0032
+    + pressureIndex * 0.08
+    + pressureIndex * pressureIndex * 0.004
+    + nightmareIndex * 0.16
+    + nightmareIndex * nightmareIndex * 0.012
+  ) * 1.02 * (1 + s * 0.006);
   const hardHpMul = (
     1
-    + lateIndex * 0.02
-    + nightmareIndex * 0.1
-    + nightmareIndex * nightmareIndex * 0.0028
-    + overdriveIndex * 0.06
+    + lateIndex * 0.01
+    + pressureIndex * 0.018
+    + nightmareIndex * 0.045
+    + nightmareIndex * nightmareIndex * 0.0015
+    + overdriveIndex * 0.055
   );
   const hardcoreHpMul = (
     1
-    + pressureIndex * 0.24
-    + pressureIndex * pressureIndex * 0.016
-    + brutalIndex * 0.22
+    + pressureIndex * 0.16
+    + pressureIndex * pressureIndex * 0.009
+    + brutalIndex * 0.16
   );
-  // Stage 15+부터 난이도를 강하게 끌어올리는 추가 체력 계수.
   const pressureWallHpMul = (
     1
-    + pressureIndex * 0.44
-    + pressureIndex * pressureIndex * 0.028
-    + nightmareIndex * 0.52
-    + brutalIndex * 0.7
-    + overdriveIndex * 0.36
+    + pressureIndex * 0.18
+    + pressureIndex * pressureIndex * 0.01
+    + nightmareIndex * 0.24
+    + brutalIndex * 0.34
+    + overdriveIndex * 0.28
   );
-  const finalHpMul = stageHpMul * hardHpMul * hardcoreHpMul * pressureWallHpMul;
-  const eliteHpMul = 1 + Math.max(0, s - 15) * 0.08 + brutalIndex * 0.12;
+  const stageBandMul = s <= 8
+    ? 0.72
+    : s <= 15
+      ? 0.86
+      : s <= 25
+        ? 1
+        : s <= 35
+          ? 1.12
+          : 1.26;
+  const endgameHpRamp = (
+    1
+    + Math.max(0, s - 28) * 0.045
+    + Math.max(0, s - 40) * Math.max(0, s - 40) * 0.012
+  );
+  const finalHpMul = stageHpMul * hardHpMul * hardcoreHpMul * pressureWallHpMul * stageBandMul * endgameHpRamp;
+  const eliteHpMul = 1 + Math.max(0, s - 14) * 0.065 + brutalIndex * 0.1 + nightmareIndex * 0.04;
   const radiusMul = (
     1
     + stageIndex * 0.012
@@ -1479,6 +1495,7 @@ function makeEnemy(type) {
       siege: true,
       attackMul: 8.8,
       damageTakenMul: 0.58,
+      stunResist: 0.35,
     },
     bulwark: {
       hp: (1400 + s * 290) * finalHpMul * 2.85 * eliteHpMul * (1 + pressureIndex * 0.07),
@@ -1491,6 +1508,7 @@ function makeEnemy(type) {
       siege: true,
       attackMul: 12.5,
       damageTakenMul: 0.36,
+      stunResist: 0.55,
     },
     behemoth: {
       hp: (2200 + s * 420) * finalHpMul * 4.1 * eliteHpMul * (1 + pressureIndex * 0.09 + nightmareIndex * 0.04),
@@ -1503,16 +1521,17 @@ function makeEnemy(type) {
       attackMul: 15.5,
       siege: true,
       damageTakenMul: 0.27,
+      stunResist: 0.7,
     },
     lord: {
-      hp: (420 + s * 95) * finalHpMul * (
-        s >= 45 ? 2.9
-          : s >= 35 ? 2.2
-            : s >= 25 ? 1.7
-              : s >= 15 ? 1.25
-                : 0.95
+      hp: (190 + s * 45) * finalHpMul * (
+        s >= 45 ? 1.8
+          : s >= 35 ? 1.35
+            : s >= 25 ? 1
+              : s >= 15 ? 0.7
+                : 0.4
       ),
-      speed: (22 + s * 0.5) * stageSpeedMul * 0.86,
+      speed: (20 + s * 0.45) * stageSpeedMul * 0.8,
       reward: 72,
       leak: 6,
       r: 20,
@@ -1521,7 +1540,7 @@ function makeEnemy(type) {
       stunImmune: true,
       towerBreaker: true,
       siege: true,
-      attackMul: 11.5,
+      attackMul: 9.2,
       damageTakenMul: 0.46,
     },
   };
@@ -1538,8 +1557,8 @@ function makeEnemy(type) {
       : 17.5 * BALANCE_SCALE;
   const radiusFloor = d.fast ? 7 * BALANCE_SCALE : 8.4 * BALANCE_SCALE;
   const radius = clamp(radiusRaw, radiusFloor, radiusCap);
-  const adaptiveBreakerChance = s >= 15
-    ? clamp(0.18 + pressureIndex * 0.03 + nightmareIndex * 0.025, 0.18, 0.72)
+  const adaptiveBreakerChance = s >= 20
+    ? clamp(0.05 + Math.max(0, s - 20) * 0.018 + nightmareIndex * 0.024, 0.05, 0.56)
     : 0;
   const canAdaptiveBreaker = !d.towerBreaker && ['raider', 'crusher', 'elder', 'brute'].includes(type);
   const adaptiveBreaker = canAdaptiveBreaker && Math.random() < adaptiveBreakerChance;
@@ -1548,14 +1567,19 @@ function makeEnemy(type) {
   const stunImmune = Boolean(d.stunImmune);
   const adaptiveHpMul = adaptiveBreaker ? (1.4 + pressureIndex * 0.05) : 1;
   const adaptiveSpeedMul = adaptiveBreaker ? 0.86 : 1;
+  const stunResist = clamp(
+    (d.stunResist || 0) + Math.max(0, s - 15) * 0.008 + nightmareIndex * 0.006,
+    0,
+    d.boss ? 1 : 0.9
+  );
   const damageTakenMul = clamp(
     d.damageTakenMul || (towerBreaker ? 0.82 - pressureIndex * 0.009 : 1),
     0.25,
     1
   );
-  const attackBase = (1 + s * 0.06) * (d.boss ? 3 : d.fast ? 1.4 : 1);
-  const breakerAttackMul = towerBreaker ? (2.4 + pressureIndex * 0.11 + nightmareIndex * 0.08) : 1;
-  const siegeAttackMul = siege ? 1.35 : 1;
+  const attackBase = (1 + s * 0.035 + Math.max(0, s - 18) * 0.02) * (d.boss ? 2.2 : d.fast ? 1.25 : 1);
+  const breakerAttackMul = towerBreaker ? (1.35 + pressureIndex * 0.06 + nightmareIndex * 0.05 + brutalIndex * 0.07) : 1;
+  const siegeAttackMul = siege ? 1.15 : 1;
   const hp = Math.max(1, Math.floor(d.hp * adaptiveHpMul));
 
   return {
@@ -1595,6 +1619,7 @@ function makeEnemy(type) {
     poisonTimer: 0,
     poisonDps: 0,
     stunImmune,
+    stunResist,
     towerBreaker,
     siege,
     damageTakenMul,
@@ -1606,51 +1631,51 @@ function makeStageQueue(stage) {
   const queue = [];
   const earlyStage = Math.min(stage, 10);
   const lateIndex = Math.max(0, stage - 10);
-  const pressureIndex = Math.max(0, stage - 14);
-  const nightmareIndex = Math.max(0, stage - 20);
-  const brutalIndex = Math.max(0, stage - 24);
+  const hardIndex = Math.max(0, stage - 20);
+  const brutalIndex = Math.max(0, stage - 30);
+  const nightmareIndex = Math.max(0, stage - 40);
   const baseCount = (
-    22
-    + earlyStage * 10
-    + Math.floor(Math.pow(earlyStage, 1.35) * 3.3)
-    + lateIndex * 5
-    + Math.floor(lateIndex * lateIndex * 1.05)
-    + pressureIndex * 12
-    + Math.floor(pressureIndex * pressureIndex * 1.65)
-    + nightmareIndex * 10
-    + brutalIndex * 14
-    + Math.floor(nightmareIndex * nightmareIndex * 1.1)
+    14
+    + earlyStage * 5
+    + Math.floor(Math.pow(earlyStage, 1.25) * 1.6)
+    + lateIndex * 2.6
+    + Math.floor(lateIndex * lateIndex * 0.33)
+    + hardIndex * 4.4
+    + Math.floor(hardIndex * hardIndex * 0.56)
+    + brutalIndex * 8
+    + Math.floor(brutalIndex * brutalIndex * 0.9)
+    + nightmareIndex * 11
   );
 
   for (let i = 0; i < baseCount; i += 1) {
     const roll = Math.random();
     let type = 'ghoul';
     const batChance = stage >= 3
-      ? clamp(0.24 + stage * 0.004 - nightmareIndex * 0.01, 0.08, 0.3)
+      ? clamp(0.18 + stage * 0.003 - hardIndex * 0.004, 0.08, 0.28)
       : 0;
     const bruteChance = stage >= 4
-      ? clamp(0.16 + stage * 0.012 + nightmareIndex * 0.018, 0.16, 0.5)
+      ? clamp(0.13 + stage * 0.008 + hardIndex * 0.01, 0.13, 0.4)
       : 0;
     const elderChance = stage >= 7
-      ? clamp(0.12 + (stage - 7) * 0.017 + nightmareIndex * 0.024, 0.12, 0.6)
+      ? clamp(0.08 + (stage - 7) * 0.01 + hardIndex * 0.015, 0.08, 0.38)
       : 0;
     const raiderChance = stage >= 5
-      ? clamp(0.14 + (stage - 5) * 0.015 + nightmareIndex * 0.028, 0.14, 0.55)
+      ? clamp(0.12 + (stage - 5) * 0.01 + hardIndex * 0.015, 0.12, 0.42)
       : 0;
-    const crusherChance = stage >= 8
-      ? clamp(0.1 + (stage - 8) * 0.014 + nightmareIndex * 0.03, 0.1, 0.52)
+    const crusherChance = stage >= 9
+      ? clamp(0.06 + (stage - 9) * 0.01 + hardIndex * 0.012 + brutalIndex * 0.008, 0.06, 0.42)
       : 0;
-    const hopperChance = stage >= 13
-      ? clamp(0.04 + (stage - 13) * 0.006 + nightmareIndex * 0.012, 0.04, 0.24)
+    const hopperChance = stage >= 12
+      ? clamp(0.03 + (stage - 12) * 0.006 + hardIndex * 0.01, 0.03, 0.24)
       : 0;
     const juggernautChance = stage >= 15
-      ? clamp(0.08 + (stage - 15) * 0.013 + nightmareIndex * 0.022, 0.08, 0.44)
+      ? clamp(0.02 + (stage - 15) * 0.009 + hardIndex * 0.008 + brutalIndex * 0.012, 0.02, 0.36)
       : 0;
-    const bulwarkChance = stage >= 15
-      ? clamp(0.04 + (stage - 15) * 0.012 + nightmareIndex * 0.02, 0.04, 0.38)
+    const bulwarkChance = stage >= 22
+      ? clamp(0.01 + (stage - 22) * 0.009 + brutalIndex * 0.014 + nightmareIndex * 0.012, 0.01, 0.32)
       : 0;
-    const behemothChance = stage >= 15
-      ? clamp(0.03 + (stage - 15) * 0.014 + nightmareIndex * 0.024, 0.03, 0.44)
+    const behemothChance = stage >= 30
+      ? clamp(0.008 + (stage - 30) * 0.012 + nightmareIndex * 0.022, 0.008, 0.34)
       : 0;
 
     let threshold = behemothChance;
@@ -1687,60 +1712,60 @@ function makeStageQueue(stage) {
     queue.push(type);
   }
 
-  const elderCount = 1 + Math.floor(stage * 0.8) + Math.floor(lateIndex * 0.55) + Math.floor(nightmareIndex * 1.4);
+  const elderCount = 1 + Math.floor(stage * 0.45) + Math.floor(hardIndex * 0.7) + Math.floor(brutalIndex * 0.4);
   for (let i = 0; i < elderCount; i += 1) {
     const pos = Math.floor(queue.length * (0.25 + Math.random() * 0.55));
     queue.splice(pos, 0, 'elder');
   }
 
-  const bruteCount = Math.max(0, stage - 4) + Math.floor(lateIndex * 0.8) + Math.floor(nightmareIndex * 1.8);
+  const bruteCount = Math.max(0, stage - 5) + Math.floor(hardIndex * 0.9) + Math.floor(brutalIndex * 1.4);
   for (let i = 0; i < bruteCount; i += 1) {
     const pos = Math.floor(queue.length * (0.2 + Math.random() * 0.62));
     queue.splice(pos, 0, 'brute');
   }
 
-  if (stage >= 8) {
+  if (stage >= 10) {
     const surgePos = Math.floor(queue.length * 0.7);
-    if (stage <= 12) {
+    if (stage <= 16) {
       queue.splice(surgePos, 0, 'elder', 'elder', 'crusher', 'raider');
     } else {
       queue.splice(surgePos, 0, 'elder', 'brute', Math.random() < 0.65 ? 'crusher' : 'raider', stage >= 13 ? 'hopper' : 'bat', 'crusher');
     }
   }
 
-  if (stage >= 15) {
-    const siegeCount = 2 + Math.floor((stage - 15) * 0.7) + Math.floor(nightmareIndex * 1.3);
+  if (stage >= 22) {
+    const siegeCount = 1 + Math.floor((stage - 22) * 0.55) + Math.floor(brutalIndex * 0.9) + Math.floor(nightmareIndex * 0.5);
     for (let i = 0; i < siegeCount; i += 1) {
       const pos = Math.floor(queue.length * (0.3 + Math.random() * 0.5));
       const roll = Math.random();
-      const pick = roll < 0.24
+      const pick = roll < 0.2
         ? 'behemoth'
-        : roll < 0.56
+        : roll < 0.5
           ? 'bulwark'
           : 'juggernaut';
       queue.splice(pos, 0, pick);
     }
   }
 
-  if (stage >= 21) {
+  if (stage >= 30) {
     const surgePos = Math.floor(queue.length * 0.55);
     queue.splice(surgePos, 0, 'behemoth', 'bulwark', 'crusher', 'hopper', 'raider', 'elder', 'brute', 'hopper', 'crusher', 'raider', 'juggernaut', 'behemoth');
   }
 
-  if (stage >= 6) {
-    const rushCount = 1 + Math.floor(stage * 0.52) + Math.floor(lateIndex * 0.45) + Math.floor(nightmareIndex * 1.9);
-    const crusherPickChance = clamp(0.36 + lateIndex * 0.016 + nightmareIndex * 0.012, 0.36, 0.68);
+  if (stage >= 8) {
+    const rushCount = 1 + Math.floor(stage * 0.36) + Math.floor(hardIndex * 0.62) + Math.floor(brutalIndex * 1.35) + Math.floor(nightmareIndex * 0.9);
+    const crusherPickChance = clamp(0.26 + lateIndex * 0.012 + hardIndex * 0.014, 0.26, 0.62);
     for (let i = 0; i < rushCount; i += 1) {
       const pos = Math.floor(queue.length * (0.25 + Math.random() * 0.54));
-      const pick = stage >= 13 && Math.random() < 0.2
+      const pick = stage >= 14 && Math.random() < 0.18
         ? 'hopper'
         : (stage >= 8 && Math.random() < crusherPickChance ? 'crusher' : 'raider');
       queue.splice(pos, 0, pick);
     }
   }
 
-  if (stage >= 15) {
-    const behemothCount = 2 + Math.floor((stage - 15) * 0.55) + Math.floor(nightmareIndex * 1.15);
+  if (stage >= 30) {
+    const behemothCount = 1 + Math.floor((stage - 30) * 0.58) + Math.floor(nightmareIndex * 1.1);
     for (let i = 0; i < behemothCount; i += 1) {
       const pos = Math.floor(queue.length * (0.34 + Math.random() * 0.46));
       queue.splice(pos, 0, 'behemoth');
@@ -1748,8 +1773,9 @@ function makeStageQueue(stage) {
     queue.push('juggernaut');
     queue.push('bulwark');
   }
-  if (stage >= 18) queue.push('behemoth');
-  if (stage >= 24) queue.push('bulwark');
+  if (stage >= 24) queue.push('juggernaut');
+  if (stage >= 32) queue.push('bulwark');
+  if (stage >= 40) queue.push('behemoth');
 
   if (STUN_IMMUNE_BOSS_STAGES.includes(stage)) {
     // 지정 스테이지에만 스턴 면역 보스를 1마리만 추가.
@@ -2866,7 +2892,9 @@ function applyStunChain(primaryEnemy, bullet) {
   for (let i = 0; i < victims.length; i += 1) {
     const victim = victims[i];
     if (victim.stunImmune) continue;
-    victim.stunTimer = Math.max(victim.stunTimer || 0, stunDuration);
+    const resist = clamp(victim.stunResist || 0, 0, 0.95);
+    const appliedDuration = Math.max(0.12, stunDuration * (1 - resist));
+    victim.stunTimer = Math.max(victim.stunTimer || 0, appliedDuration);
     victim.stunFx = Math.max(victim.stunFx || 0, 0.45);
     spawnTowerHitVfx(victim.x, victim.y, 'sunkenStun', false, i > 0);
   }
@@ -2998,9 +3026,16 @@ function updateBullets(dt) {
 function stageMoveSpeedMultiplier(stage = state.stage) {
   const s = Math.max(1, Math.floor(stage || 1));
   const stageIndex = s - 1;
-  const nightmareIndex = Math.max(0, s - 20);
-  // Enemy base speed increases gradually as stage goes up.
-  return 1 + stageIndex * 0.008 + nightmareIndex * 0.014;
+  const midIndex = Math.max(0, s - 15);
+  const hardIndex = Math.max(0, s - 30);
+  const extremeIndex = Math.max(0, s - 40);
+  return (
+    1
+    + Math.min(stageIndex, 10) * 0.003
+    + midIndex * 0.008
+    + hardIndex * 0.018
+    + extremeIndex * 0.032
+  );
 }
 
 function updateEnemy(enemy, dt) {
@@ -3027,7 +3062,14 @@ function updateEnemy(enemy, dt) {
     return;
   }
 
-  const turnSlowMul = enemy.turnSlowTimer > 0 ? TURN_SLOW_MUL : 1;
+  const dynamicTurnSlowMul = clamp(
+    0.68
+    + state.stage * 0.005
+    + Math.max(0, state.stage - 25) * 0.005,
+    0.7,
+    0.95
+  );
+  const turnSlowMul = enemy.turnSlowTimer > 0 ? dynamicTurnSlowMul : 1;
   const speed = enemy.speed * stageMoveSpeedMultiplier(state.stage) * (enemy.snareTimer > 0 ? enemy.snareSlowMul : 1) * turnSlowMul;
 
   function keepEnemyInPassableCell(prevX, prevY) {
@@ -3127,9 +3169,9 @@ function updateEnemy(enemy, dt) {
 
     if (targetTower) {
       const towerBreakMul = enemy.towerBreaker
-        ? (5.2 + Math.max(0, state.stage - 15) * 0.24 + Math.max(0, state.stage - 25) * 0.2)
+        ? (2.2 + Math.max(0, state.stage - 20) * 0.14 + Math.max(0, state.stage - 35) * 0.2)
         : enemy.siege
-          ? 2.8
+          ? 1.7
           : 1;
       const mitigation = clamp(targetTower.damageMitigation || 0, 0, 0.8);
       targetTower.hp -= enemy.attack * towerBreakMul * (1 - mitigation) * dt;
