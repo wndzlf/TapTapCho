@@ -219,7 +219,7 @@ const TOWER_TYPES = {
     id: 'sunken',
     name: 'Sunken',
     cost: 40,
-    color: '#4da3ff',
+    color: '#8f5bff',
     range: 105 * BALANCE_SCALE,
     damage: 30,
     reload: 0.5,
