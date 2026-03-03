@@ -2543,15 +2543,31 @@ function emitBulletForKind(tower, target, kind) {
       hurtEnemy(enemy, tower.damage, kind, false);
     }
 
+    const glowWidth = Math.max(12, width * 1.9);
+    const coreWidth = Math.max(4.8, width * 0.9);
+    const innerWidth = Math.max(2.2, width * 0.45);
+
     pushParticle({
       x: tower.x,
       y: tower.y,
       rot: ang,
       length: range,
-      lineWidth: Math.max(5, width * 1.1),
-      life: 0.28,
-      ttl: 0.28,
-      color: 'rgba(255, 60, 60, 0.45)',
+      lineWidth: glowWidth,
+      life: 0.34,
+      ttl: 0.34,
+      color: 'rgba(255, 70, 70, 0.55)',
+      render: 'ray',
+      alphaMul: 1.45,
+    });
+    pushParticle({
+      x: tower.x,
+      y: tower.y,
+      rot: ang,
+      length: range,
+      lineWidth: coreWidth,
+      life: 0.24,
+      ttl: 0.24,
+      color: 'rgba(255, 20, 20, 0.95)',
       render: 'ray',
       alphaMul: 1.3,
     });
@@ -2560,25 +2576,54 @@ function emitBulletForKind(tower, target, kind) {
       y: tower.y,
       rot: ang,
       length: range,
-      lineWidth: Math.max(3.2, width * 0.7),
-      life: 0.2,
-      ttl: 0.2,
-      color: 'rgba(255, 40, 40, 0.95)',
+      lineWidth: innerWidth,
+      life: 0.18,
+      ttl: 0.18,
+      color: '#fff5f5',
       render: 'ray',
       alphaMul: 1.2,
     });
+
     pushParticle({
       x: tower.x,
       y: tower.y,
-      rot: ang,
-      length: range,
-      lineWidth: 1.6,
-      life: 0.14,
-      ttl: 0.14,
-      color: '#ffffff',
-      render: 'ray',
-      alphaMul: 1.1,
+      vx: 0,
+      vy: 0,
+      life: 0.18,
+      size: 4.2,
+      expand: 10,
+      lineWidth: 2.1,
+      color: '#ff6b6b',
+      render: 'ring',
     });
+
+    pushParticle({
+      x: target.x,
+      y: target.y,
+      vx: 0,
+      vy: 0,
+      life: 0.18,
+      size: 5.2,
+      expand: 14,
+      lineWidth: 2.4,
+      color: '#ff3b3b',
+      render: 'ring',
+    });
+
+    for (let i = 0; i < 6; i += 1) {
+      const sparkAng = ang + rand(-0.25, 0.25);
+      pushParticle({
+        x: target.x,
+        y: target.y,
+        vx: Math.cos(sparkAng) * rand(80, 160),
+        vy: Math.sin(sparkAng) * rand(80, 160),
+        life: rand(0.1, 0.2),
+        length: rand(6, 12),
+        lineWidth: rand(1.2, 2.2),
+        color: '#ffd1d1',
+        render: 'shard',
+      });
+    }
 
     impactSfx.play('enemyHitHeavy', { volume: 0.28, minGap: 0.06, rateMin: 0.92, rateMax: 1.04 });
     sfx(680 + rand(-20, 20), 0.05, 'triangle', 0.012);
