@@ -5303,9 +5303,14 @@ refreshBuildHint();
 buildDistanceMap();
 refreshHud();
 if (rankToggleBtn && rankPanelEl) {
+  const setRankVisible = (show) => {
+    rankPanelEl.classList.toggle('rank-hidden', !show);
+    rankToggleBtn.classList.toggle('active', show);
+  };
+  setRankVisible(false);
   rankToggleBtn.addEventListener('click', () => {
-    const hidden = rankPanelEl.classList.toggle('rank-hidden');
-    rankToggleBtn.classList.toggle('active', !hidden);
+    const show = rankPanelEl.classList.contains('rank-hidden');
+    setRankVisible(show);
   });
 }
 initSingleRank();
