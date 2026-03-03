@@ -2075,7 +2075,6 @@ function getTowerKindsForMerge(tower) {
 
 function hasBlockedMergeKind(kinds) {
   return kinds.includes('sunkenStun')
-    || kinds.includes('sunkenNova')
     || kinds.includes('lottoSunken')
     || kinds.includes('tankerSunken');
 }
@@ -5124,6 +5123,12 @@ function handleCanvasAction(event) {
     baseTower.stunDuration = Math.max(baseTower.stunDuration || 0, targetTower.stunDuration || 0);
     baseTower.stunChain = (baseTower.stunChain || 0) + (targetTower.stunChain || 0);
     baseTower.stunRadius = Math.max(baseTower.stunRadius || 0, targetTower.stunRadius || 0);
+
+    // Fusion balance: overall nerf so merged sunken isn't overpowering
+    baseTower.damage *= 0.8;
+    baseTower.reload *= 1.15;
+    baseTower.range *= 0.95;
+
     baseTower.color = '#aef0ff';
     baseTower.baseCost = Math.max(baseTower.baseCost || baseTower.spent, targetTower.baseCost || targetTower.spent);
     invalidateMergeCache();
