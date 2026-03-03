@@ -23,6 +23,8 @@ const rankRefreshEl = document.getElementById('rankRefresh');
 const rankListEl = document.getElementById('rankList');
 const rankScopeEl = document.getElementById('rankScope');
 const rankStatusEl = document.getElementById('rankStatus');
+const rankPanelEl = document.getElementById('singleRankPanel');
+const rankToggleBtn = document.getElementById('btnRankToggle');
 
 const btnSellMode = document.getElementById('btnSellMode');
 const btnSpeedUp = document.getElementById('btnSpeedUp');
@@ -5170,6 +5172,12 @@ setSellMode(false);
 refreshBuildHint();
 buildDistanceMap();
 refreshHud();
+if (rankToggleBtn && rankPanelEl) {
+  rankToggleBtn.addEventListener('click', () => {
+    const hidden = rankPanelEl.classList.toggle('rank-hidden');
+    rankToggleBtn.classList.toggle('active', !hidden);
+  });
+}
 initSingleRank();
 loadEnemySprites();
 requestAnimationFrame(frame);

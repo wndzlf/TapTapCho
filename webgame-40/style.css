@@ -53,6 +53,15 @@ body {
   background: linear-gradient(180deg, #151f33, #101a2d);
 }
 
+.mode-tab.rank-toggle {
+  border: 0;
+  cursor: pointer;
+}
+
+.rank-hidden {
+  display: none;
+}
+
 .mode-tab:last-child {
   border-right: 0;
 }
