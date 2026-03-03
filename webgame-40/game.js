@@ -218,7 +218,7 @@ const TOWER_TYPES = {
   sunken: {
     id: 'sunken',
     name: 'Sunken',
-    cost: 35,
+    cost: 40,
     color: '#8f5bff',
     range: 105 * BALANCE_SCALE,
     damage: 30,
