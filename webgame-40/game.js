@@ -2548,22 +2548,36 @@ function emitBulletForKind(tower, target, kind) {
       y: tower.y,
       rot: ang,
       length: range,
-      lineWidth: Math.max(2, width * 0.5),
-      life: 0.12,
-      ttl: 0.12,
-      color: baseColor,
+      lineWidth: Math.max(4, width * 0.9),
+      life: 0.18,
+      ttl: 0.18,
+      color: 'rgba(255, 120, 255, 0.55)',
       render: 'ray',
+      alphaMul: 1.2,
     });
     pushParticle({
       x: tower.x,
       y: tower.y,
       rot: ang,
       length: range,
-      lineWidth: 1.2,
-      life: 0.08,
-      ttl: 0.08,
+      lineWidth: Math.max(2.6, width * 0.55),
+      life: 0.14,
+      ttl: 0.14,
+      color: baseColor,
+      render: 'ray',
+      alphaMul: 1.1,
+    });
+    pushParticle({
+      x: tower.x,
+      y: tower.y,
+      rot: ang,
+      length: range,
+      lineWidth: 1.4,
+      life: 0.1,
+      ttl: 0.1,
       color: '#ffffff',
       render: 'ray',
+      alphaMul: 1.05,
     });
 
     impactSfx.play('enemyHitHeavy', { volume: 0.28, minGap: 0.06, rateMin: 0.92, rateMax: 1.04 });
