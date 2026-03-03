@@ -2551,7 +2551,7 @@ function emitBulletForKind(tower, target, kind) {
       lineWidth: Math.max(4, width * 0.9),
       life: 0.18,
       ttl: 0.18,
-      color: 'rgba(255, 120, 255, 0.55)',
+      color: 'rgba(255, 80, 80, 0.55)',
       render: 'ray',
       alphaMul: 1.2,
     });
@@ -2563,7 +2563,7 @@ function emitBulletForKind(tower, target, kind) {
       lineWidth: Math.max(2.6, width * 0.55),
       life: 0.14,
       ttl: 0.14,
-      color: baseColor,
+      color: 'rgba(255, 60, 60, 0.9)',
       render: 'ray',
       alphaMul: 1.1,
     });
