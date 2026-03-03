@@ -1404,7 +1404,7 @@ function makeEnemy(type) {
     + pressureIndex * pressureIndex * 0.004
     + nightmareIndex * 0.16
     + nightmareIndex * nightmareIndex * 0.012
-  ) * 1.02 * (1 + s * 0.006);
+  ) * 1.2 * (1 + s * 0.006);
   const hardHpMul = (
     1
     + lateIndex * 0.01
