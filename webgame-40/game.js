@@ -5054,11 +5054,6 @@ function handleCanvasAction(event) {
       return;
     }
 
-    if (baseKinds.includes('sunkenNova') || targetKinds.includes('sunkenNova')) {
-      flashBanner('Nova Sunken cannot merge', 0.75, true);
-      return;
-    }
-
     if (baseKinds.includes('lottoSunken') || targetKinds.includes('lottoSunken')) {
       flashBanner('Lotto Sunken cannot merge', 0.75, true);
       return;
