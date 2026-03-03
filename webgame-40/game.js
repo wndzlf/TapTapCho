@@ -299,6 +299,19 @@ const TOWER_TYPES = {
     stunChain: 3,
     stunRadius: 74 * BALANCE_SCALE,
   },
+  laserSunken: {
+    id: 'laserSunken',
+    name: 'Laser Sunken',
+    cost: 180,
+    color: '#ff5cff',
+    range: 150 * BALANCE_SCALE,
+    damage: 34,
+    reload: 1.4,
+    bulletSpeed: 0,
+    pierce: 0,
+    hp: 280,
+    laserWidth: 18 * BALANCE_SCALE,
+  },
   speedSunken: {
     id: 'speedSunken',
     name: 'Speed Sunken',
@@ -1171,6 +1184,7 @@ function makeTower(kind, c, r, spec = null) {
     stunRadius: base.stunRadius || 0,
     poisonDuration: base.poisonDuration || 0,
     poisonDps: base.poisonDps || 0,
+    laserWidth: base.laserWidth || 0,
     tauntRadius: placement.tauntRadius || 0,
     damageMitigation: clamp(placement.damageMitigation || 0, 0, 0.8),
     guardHitFx: 0,
@@ -1209,6 +1223,8 @@ function getTowerUpgradeFactors(kind) {
       ? 1.12
     : kind === 'lottoSunken'
       ? 1.16
+    : kind === 'laserSunken'
+      ? 1.12
     : kind === 'speedSunken'
       ? 1.16
       : 1.2;
@@ -1225,6 +1241,8 @@ function getTowerUpgradeFactors(kind) {
       ? 1.33
     : kind === 'lottoSunken'
       ? 1.28
+    : kind === 'laserSunken'
+      ? 1.3
       : 1.34;
 
   const reloadMul = kind === 'sunken'
@@ -1241,6 +1259,8 @@ function getTowerUpgradeFactors(kind) {
       ? 0.92
     : kind === 'lottoSunken'
       ? 0.9
+    : kind === 'laserSunken'
+      ? 0.94
       : 0.9;
 
   return { rangeMul, damageMul, reloadMul };
@@ -1263,6 +1283,8 @@ function applyTowerUpgradeScaling(tower, factors = null, kindOverride = null, le
   } else if (kind === 'lottoSunken') {
     tower.poisonDuration *= 1.15;
     tower.poisonDps *= 1.12;
+  } else if (kind === 'laserSunken') {
+    tower.laserWidth = (tower.laserWidth || 12) * 1.08;
   } else if (kind === 'tankerSunken') {
     tower.tauntRadius *= 1.08;
     tower.damageMitigation = clamp((tower.damageMitigation || 0) + 0.03, 0, 0.8);
@@ -2320,6 +2342,8 @@ function buildTowerPerLevelChangeLine(kind) {
   } else if (kind === 'lottoSunken') {
     parts.push('Poison Time +15%');
     parts.push('Poison DPS +12%');
+  } else if (kind === 'laserSunken') {
+    parts.push('Beam Width +8%');
   } else if (kind === 'sunkenStun') {
     parts.push('Stun Time +10%');
     parts.push('Stun Range +6%');
@@ -2501,6 +2525,52 @@ function emitBulletForKind(tower, target, kind) {
   const dx = target.x - tower.x;
   const dy = target.y - tower.y;
   const d = Math.hypot(dx, dy) || 1;
+
+  if (kind === 'laserSunken') {
+    const ang = Math.atan2(dy, dx);
+    const range = tower.range;
+    const width = (tower.laserWidth || 14) * 0.5;
+    const cos = Math.cos(ang);
+    const sin = Math.sin(ang);
+
+    for (const enemy of state.enemies) {
+      const ex = enemy.x - tower.x;
+      const ey = enemy.y - tower.y;
+      const proj = ex * cos + ey * sin;
+      if (proj < 0 || proj > range) continue;
+      const perp = Math.abs(-sin * ex + cos * ey);
+      if (perp > width + enemy.r) continue;
+      hurtEnemy(enemy, tower.damage, kind, false);
+    }
+
+    pushParticle({
+      x: tower.x,
+      y: tower.y,
+      rot: ang,
+      length: range,
+      lineWidth: Math.max(2, width * 0.5),
+      life: 0.12,
+      ttl: 0.12,
+      color: baseColor,
+      render: 'ray',
+    });
+    pushParticle({
+      x: tower.x,
+      y: tower.y,
+      rot: ang,
+      length: range,
+      lineWidth: 1.2,
+      life: 0.08,
+      ttl: 0.08,
+      color: '#ffffff',
+      render: 'ray',
+    });
+
+    impactSfx.play('enemyHitHeavy', { volume: 0.28, minGap: 0.06, rateMin: 0.92, rateMax: 1.04 });
+    sfx(680 + rand(-20, 20), 0.05, 'triangle', 0.012);
+    return;
+  }
+
   const isSplash = kind === 'sunkenSplash' || kind === 'sunkenHammer' || kind === 'lottoSunken';
   const isNova = kind === 'sunkenNova';
   const isStun = kind === 'sunkenStun';
@@ -5094,6 +5164,7 @@ canvas.addEventListener('pointercancel', (event) => {
 
 window.addEventListener('keydown', (event) => {
   if (event.code === 'Digit1') chooseTower('sunken');
+  if (event.code === 'Digit3') chooseTower('laserSunken');
   if (event.code === 'Digit4') chooseTower('sunkenSplash');
   if (event.code === 'Digit5') chooseTower('speedSunken');
   if (event.code === 'Digit6') chooseTower('tankerSunken');
