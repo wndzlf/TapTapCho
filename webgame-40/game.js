@@ -1990,7 +1990,7 @@ function formatHudNumber(value) {
 
 function refreshHud() {
   stageTextEl.textContent = String(state.stage);
-  baseTextEl.textContent = formatHudNumber(Math.max(0, state.baseHp));
+  baseTextEl.textContent = `${formatHudNumber(Math.max(0, state.baseHp))}/20`;
   goldTextEl.textContent = formatHudNumber(state.gold);
   aliveTextEl.textContent = formatHudNumber(state.enemies.length);
   queueTextEl.textContent = formatHudNumber(state.spawnQueue.length);
