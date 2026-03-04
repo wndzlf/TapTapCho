@@ -54,7 +54,8 @@ body {
   background: linear-gradient(180deg, #151f33, #101a2d);
 }
 
-.mode-tab.rank-toggle {
+.mode-tab.rank-toggle,
+.mode-tab.detail-toggle {
   border: 0;
   cursor: pointer;
 }
@@ -94,6 +95,54 @@ header p {
   gap: 7px;
 }
 
+.sunken-detail {
+  width: min(840px, 100%);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #141d31, #10182a);
+  padding: 10px 12px;
+  display: none;
+  gap: 10px;
+}
+
+.detail-head {
+  font-size: 14px;
+  font-weight: 800;
+  color: #f3f7ff;
+}
+
+.detail-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.detail-card {
+  border: 1px solid rgba(90, 120, 166, 0.45);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: rgba(12, 18, 32, 0.6);
+  display: grid;
+  gap: 6px;
+}
+
+.detail-card h3 {
+  margin: 0;
+  font-size: 13px;
+  color: #f7fbff;
+}
+
+.detail-stats {
+  font-size: 12px;
+  color: #c6d7ef;
+}
+
+.detail-card p {
+  margin: 0;
+  font-size: 12px;
+  color: #d6e2f3;
+  line-height: 1.36;
+}
+
 body.rank-mode header h1,
 body.rank-mode header p,
 body.rank-mode .hud,
@@ -107,6 +156,21 @@ body.rank-mode footer {
 body.rank-mode .single-rank {
   display: grid;
   width: min(520px, 100%);
+}
+
+body.detail-mode header h1,
+body.detail-mode header p,
+body.detail-mode .hud,
+body.detail-mode .quick-build,
+body.detail-mode .controls,
+body.detail-mode .arena,
+body.detail-mode footer,
+body.detail-mode .single-rank {
+  display: none;
+}
+
+body.detail-mode .sunken-detail {
+  display: grid;
 }
 
 body.rank-mode .top-row {
@@ -804,6 +868,20 @@ footer {
     width: 100%;
     padding: 7px 8px;
     gap: 5px;
+  }
+
+  .sunken-detail {
+    width: 100%;
+    padding: 8px 9px;
+  }
+
+  .detail-card h3 {
+    font-size: 12px;
+  }
+
+  .detail-stats,
+  .detail-card p {
+    font-size: 11px;
   }
 
   .rank-head strong {

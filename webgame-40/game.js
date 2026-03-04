@@ -25,8 +25,10 @@ const rankScopeEl = document.getElementById('rankScope');
 const rankStatusEl = document.getElementById('rankStatus');
 const rankPanelEl = document.getElementById('singleRankPanel');
 const rankToggleBtn = document.getElementById('btnRankToggle');
+const detailToggleBtn = document.getElementById('btnDetailToggle');
 const singleTabEl = document.getElementById('tabSingle');
 const rankAdsEl = document.getElementById('rankAds');
+const detailPanelEl = document.getElementById('detailPanel');
 
 const btnSellMode = document.getElementById('btnSellMode');
 const btnSpeedUp = document.getElementById('btnSpeedUp');
@@ -5308,13 +5310,33 @@ if (rankToggleBtn && rankPanelEl) {
   const setRankVisible = (show) => {
     rankPanelEl.classList.toggle('rank-hidden', !show);
     rankToggleBtn.classList.toggle('active', show);
+    if (detailToggleBtn) detailToggleBtn.classList.toggle('active', false);
+    if (detailPanelEl) detailPanelEl.classList.toggle('detail-hidden', true);
     if (singleTabEl) singleTabEl.classList.toggle('active', !show);
     document.body.classList.toggle('rank-mode', show);
+    document.body.classList.toggle('detail-mode', false);
   };
   setRankVisible(false);
   rankToggleBtn.addEventListener('click', () => {
     const show = rankPanelEl.classList.contains('rank-hidden');
     setRankVisible(show);
+  });
+}
+
+if (detailToggleBtn && detailPanelEl) {
+  const setDetailVisible = (show) => {
+    detailPanelEl.classList.toggle('detail-hidden', !show);
+    detailToggleBtn.classList.toggle('active', show);
+    if (rankToggleBtn) rankToggleBtn.classList.toggle('active', false);
+    if (rankPanelEl) rankPanelEl.classList.toggle('rank-hidden', true);
+    if (singleTabEl) singleTabEl.classList.toggle('active', !show);
+    document.body.classList.toggle('detail-mode', show);
+    document.body.classList.toggle('rank-mode', false);
+  };
+  setDetailVisible(false);
+  detailToggleBtn.addEventListener('click', () => {
+    const show = detailPanelEl.classList.contains('detail-hidden');
+    setDetailVisible(show);
   });
 }
 initSingleRank();
