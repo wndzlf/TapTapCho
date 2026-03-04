@@ -5306,6 +5306,7 @@ if (rankToggleBtn && rankPanelEl) {
   const setRankVisible = (show) => {
     rankPanelEl.classList.toggle('rank-hidden', !show);
     rankToggleBtn.classList.toggle('active', show);
+    document.body.classList.toggle('rank-mode', show);
   };
   setRankVisible(false);
   rankToggleBtn.addEventListener('click', () => {
