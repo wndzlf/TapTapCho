@@ -46,11 +46,13 @@ function difficulty() {
 }
 
 function gimmickForStage() {
-  const mod = state.runStage % 4;
+  const mod = state.runStage % 6;
   if (mod === 1) return 'Moving safe zone';
   if (mod === 2) return 'Double-tap poop';
   if (mod === 3) return 'Blinking guard';
-  return 'Classic';
+  if (mod === 4) return 'Fake roll';
+  if (mod === 5) return 'Slippery wipe';
+  return 'Noisy run';
 }
 
 function setStage(index) {
@@ -173,6 +175,9 @@ function updatePaper(dt) {
       nextStage();
     } else {
       roll.hits += 1;
+      if (state.gimmick === 'Fake roll') {
+        roll.x = 60 + Math.random() * (DESIGN.w - 120);
+      }
       if (roll.hits >= 3) setMode('fail');
     }
     POINTER.down = false;
@@ -205,7 +210,8 @@ function updateWipe(dt) {
       w.lastDir = dir;
     }
   }
-  w.meter = clamp(w.meter - dt * (0.05 + difficulty() * 0.02), 0, 1);
+  const slip = state.gimmick === 'Slippery wipe' ? 0.06 : 0;
+  w.meter = clamp(w.meter - dt * (0.05 + difficulty() * 0.02 + slip), 0, 1);
   if (w.meter >= 1) {
     state.success = true;
     nextStage();
@@ -231,7 +237,9 @@ function updateEscape(dt) {
   if (state.gimmick === 'Blinking guard') g.blink = (Math.sin(now() * 0.006) + 1) * 0.5;
   else g.blink = 1;
 
-  const inCone = g.blink > 0.35 && isInCone(p.x, p.y, g);
+  const noisy = state.gimmick === 'Noisy run';
+  const rangeMul = noisy ? (0.85 + 0.3 * Math.sin(now() * 0.004)) : 1;
+  const inCone = g.blink > 0.35 && isInCone(p.x, p.y, { ...g, range: g.range * rangeMul });
   if (inCone) {
     setMode('fail');
     return;
@@ -338,7 +346,7 @@ function drawPaperStage() {
   ctx.arc(roll.x, roll.y, 10, 0, Math.PI * 2);
   ctx.fill();
 
-  drawHint('Tap the roll in the green zone.', DESIGN.h * 0.82);
+  drawHint(state.gimmick === 'Fake roll' ? 'Tap roll in zone. Wrong tap teleports it.' : 'Tap the roll in the green zone.', DESIGN.h * 0.82);
 }
 
 function drawPoopStage() {
@@ -350,7 +358,7 @@ function drawPoopStage() {
 function drawWipeStage() {
   const w = state.wipe;
   drawBar(60, 240, 240, 18, w.meter, '#8ff8bf');
-  drawHint('Swipe left/right fast.', DESIGN.h * 0.82);
+  drawHint(state.gimmick === 'Slippery wipe' ? 'Swipe fast. It slips away.' : 'Swipe left/right fast.', DESIGN.h * 0.82);
 }
 
 function drawEscapeStage() {
@@ -364,7 +372,7 @@ function drawEscapeStage() {
   ctx.beginPath();
   ctx.arc(p.x, p.y, 10, 0, Math.PI * 2);
   ctx.fill();
-  drawHint('Drag to exit. Avoid the cone.', DESIGN.h * 0.82);
+  drawHint(state.gimmick === 'Noisy run' ? 'Run. Cone pulses.' : 'Drag to exit. Avoid the cone.', DESIGN.h * 0.82);
 }
 
 function drawCone(g) {
