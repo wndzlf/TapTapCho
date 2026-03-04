@@ -26,6 +26,7 @@ const rankStatusEl = document.getElementById('rankStatus');
 const rankPanelEl = document.getElementById('singleRankPanel');
 const rankToggleBtn = document.getElementById('btnRankToggle');
 const singleTabEl = document.getElementById('tabSingle');
+const rankAdsEl = document.getElementById('rankAds');
 
 const btnSellMode = document.getElementById('btnSellMode');
 const btnSpeedUp = document.getElementById('btnSpeedUp');
@@ -5317,5 +5318,24 @@ if (rankToggleBtn && rankPanelEl) {
   });
 }
 initSingleRank();
+
+const rankAdUrls = {
+  1: '',
+  2: '',
+  3: '',
+  4: '',
+  5: '',
+};
+
+if (rankAdsEl) {
+  rankAdsEl.addEventListener('click', (event) => {
+    const slot = event.target.closest('.ad-slot');
+    if (!slot) return;
+    const key = slot.getAttribute('data-ad-slot');
+    const url = key ? (rankAdUrls[key] || '') : '';
+    if (url) window.open(url, '_blank', 'noopener');
+  });
+}
+
 loadEnemySprites();
 requestAnimationFrame(frame);
