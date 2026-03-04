@@ -124,7 +124,7 @@ header p {
   display: grid;
   grid-template-columns: 52px 1fr;
   gap: 8px;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .detail-icon {
@@ -140,6 +140,10 @@ header p {
 .detail-body {
   display: grid;
   gap: 6px;
+}
+
+.detail-body p {
+  display: block;
 }
 
 .detail-card h3 {
