@@ -384,6 +384,11 @@ const state = {
   pendingStageBonusGold: 0,
   rewardUiUnlockAt: 0,
   emperorShieldTimer: 0,
+  onboarding: {
+    firstBuild: false,
+    firstUpgrade: false,
+    firstClear: false,
+  },
   emperorShieldFx: 0,
   emperorShieldHitCooldown: 0,
   emperorShieldUses: 0,
@@ -1329,7 +1334,14 @@ function upgradeTower(tower) {
   tower.maxHp *= 1.34;
   tower.hp = Math.min(tower.maxHp, tower.hp + tower.maxHp * 0.25);
 
-  flashBanner(`UPGRADE Lv.${tower.level} (Fused)`, 0.75);
+  let banner = `UPGRADE Lv.${tower.level} (Fused)`;
+  if (!state.onboarding.firstUpgrade) {
+    state.onboarding.firstUpgrade = true;
+    const bonus = 40;
+    state.gold += bonus;
+    banner = `UPGRADE Lv.${tower.level} +${bonus} GOLD`;
+  }
+  flashBanner(banner, 0.75);
   sfx(660, 0.07, 'triangle', 0.022);
   return true;
 }
@@ -1385,6 +1397,14 @@ function tryPlaceTower(c, r) {
   }
 
   impactSfx.play('build', { volume: 0.28, minGap: 0.045, rateMin: 0.96, rateMax: 1.04 });
+
+  if (!state.onboarding.firstBuild) {
+    state.onboarding.firstBuild = true;
+    const bonus = 80;
+    state.gold += bonus;
+    flashBanner(`FIRST BUILD +${bonus} GOLD`, 0.9);
+    sfx(520, 0.07, 'triangle', 0.02);
+  }
 
   for (const enemy of state.enemies) {
     enemy.repath = 0;
@@ -1858,6 +1878,11 @@ function startRun() {
   state.emperorShieldFx = 0;
   state.emperorShieldHitCooldown = 0;
   state.emperorShieldUses = 0;
+  state.onboarding = {
+    firstBuild: false,
+    firstUpgrade: false,
+    firstClear: false,
+  };
   setSelectedButton();
   setSellMode(false);
   refreshBuildHint();
@@ -1914,7 +1939,14 @@ function setVictory() {
 
 function showStageReward() {
   const nightmareIndex = Math.max(0, state.stage - 20);
-  const clearGold = 70 + state.stage * 14 + nightmareIndex * 28 + Math.floor(nightmareIndex * nightmareIndex * 3);
+  let clearGold = 70 + state.stage * 14 + nightmareIndex * 28 + Math.floor(nightmareIndex * nightmareIndex * 3);
+  let bonusTag = '';
+  if (state.stage === 1 && !state.onboarding.firstClear) {
+    state.onboarding.firstClear = true;
+    const bonus = 120;
+    clearGold += bonus;
+    bonusTag = ` · First Clear +${bonus}`;
+  }
   const autoRushBonus = 0.25;
   state.pendingStage = state.stage + 1;
   state.pendingStageBonusGold = clearGold;
@@ -1929,7 +1961,7 @@ function showStageReward() {
   overlayEl.innerHTML = `
     <div class="modal reward-modal">
       <h2>Stage ${state.stage} Clear</h2>
-      <p>+${clearGold} Gold · Rush +25% (Total +${Math.round(state.rushDamageBonus * 100)}%)</p>
+      <p>+${clearGold} Gold${bonusTag} · Rush +25% (Total +${Math.round(state.rushDamageBonus * 100)}%)</p>
       <div class="actions">
         <button type="button" data-action="reward:next" disabled>Next Stage</button>
       </div>
