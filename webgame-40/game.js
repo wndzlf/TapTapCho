@@ -5320,7 +5320,7 @@ if (rankToggleBtn && rankPanelEl) {
 initSingleRank();
 
 const rankAdUrls = {
-  1: '',
+  1: 'https://iksu-cheers.com/',
   2: '',
   3: '',
   4: '',
