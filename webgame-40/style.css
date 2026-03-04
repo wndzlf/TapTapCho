@@ -950,10 +950,10 @@ footer {
     flex-wrap: nowrap;
     gap: 6px;
     padding: 5px 6px;
-    position: static;
-    top: auto;
-    z-index: auto;
-    backdrop-filter: none;
+    position: sticky;
+    top: 8px;
+    z-index: 16;
+    backdrop-filter: blur(4px);
     margin-bottom: 4px;
   }
 
@@ -984,10 +984,10 @@ footer {
   .quick-build {
     gap: 4px;
     padding: 4px;
-    position: static;
-    top: auto;
-    z-index: auto;
-    backdrop-filter: none;
+    position: sticky;
+    top: 50px;
+    z-index: 15;
+    backdrop-filter: blur(4px);
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
@@ -1073,7 +1073,7 @@ footer {
   }
 
   canvas {
-    max-height: 82vh;
+    max-height: calc(100vh - 260px);
   }
 
   .reward-grid {
