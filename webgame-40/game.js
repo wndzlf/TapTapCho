@@ -222,7 +222,7 @@ const TOWER_TYPES = {
   sunken: {
     id: 'sunken',
     name: 'Sunken',
-    cost: 35,
+    cost: 40,
     color: '#8f5bff',
     range: 105 * BALANCE_SCALE,
     damage: 30,
@@ -1016,9 +1016,6 @@ function getPlacementSpec(kind) {
   }
 
   let cost = base.cost;
-  if (kind === 'sunken' && state.stage <= 3) {
-    cost = Math.max(10, base.cost - 10);
-  }
 
   return {
     kind,
