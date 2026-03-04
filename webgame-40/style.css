@@ -1073,7 +1073,7 @@ footer {
   }
 
   canvas {
-    max-height: calc(100vh - 360px);
+    max-height: 82vh;
   }
 
   .reward-grid {
