@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Poop Escape</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div class="title">Poop Escape</div>
+      <div class="subtitle">Steal paper → Poop fast → Wipe fast → Run away</div>
+    </header>
+
+    <div class="hud">
+      <div class="chip" id="stageLabel">Stage 1/4</div>
+      <div class="chip" id="timerLabel">Time 0:00</div>
+      <div class="chip" id="goalLabel">Goal: Steal paper</div>
+      <button class="btn" id="btnStart">Start</button>
+    </div>
+
+    <canvas id="game" width="360" height="640"></canvas>
+
+    <footer class="foot">
+      <small>Tap / Swipe. No instructions, just vibes.</small>
+    </footer>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
