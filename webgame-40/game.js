@@ -5401,5 +5401,11 @@ if (rankAdsEl) {
   });
 }
 
+const onScroll = () => {
+  document.body.classList.toggle('scrolled', window.scrollY > 4);
+};
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+
 loadEnemySprites();
 requestAnimationFrame(frame);
