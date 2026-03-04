@@ -6,59 +6,75 @@ const goalLabel = document.getElementById('goalLabel');
 const btnStart = document.getElementById('btnStart');
 
 const DESIGN = { w: 360, h: 640 };
-const POINTER = { x: 0, y: 0, down: false, dx: 0, dy: 0, lastX: 0, lastY: 0 };
+const POINTER = { x: 0, y: 0, down: false, dx: 0, dy: 0, lastX: 0, lastY: 0, taps: 0, tapAt: 0 };
 
-const STAGES = [
-  { name: 'Steal Paper', goal: 'Tap the roll in the green zone', time: 8 },
-  { name: 'Poop Fast', goal: 'Mash to fill the bar', time: 8 },
-  { name: 'Wipe Fast', goal: 'Swipe left/right fast', time: 8 },
-  { name: 'Run Away', goal: 'Reach the exit, avoid the cone', time: 10 },
+const MINI = [
+  { name: 'Steal Paper', baseTime: 8, goal: 'Tap the roll in the green zone' },
+  { name: 'Poop Fast', baseTime: 8, goal: 'Mash to fill the bar' },
+  { name: 'Wipe Fast', baseTime: 8, goal: 'Swipe left/right fast' },
+  { name: 'Run Away', baseTime: 10, goal: 'Reach the exit, avoid the cone' },
 ];
 
 let state = {
   mode: 'menu',
   stageIndex: 0,
+  runStage: 1,
   stageStart: 0,
   timeLeft: 0,
   success: false,
-  paper: { x: 60, y: 160, vx: 120, targetX: 0, hits: 0 },
-  poop: { meter: 0 },
+  paper: { x: 60, y: 160, vx: 120, zoneX: 0, zoneW: 0, hits: 0 },
+  poop: { meter: 0, shake: 0 },
   wipe: { meter: 0, lastDir: 0 },
   escape: { x: 40, y: 520, tx: 40, ty: 520, speed: 140 },
-  guard: { x: 240, y: 420, ang: 0, angSpeed: 0.8, fov: 0.7, range: 160 },
+  guard: { x: 240, y: 420, ang: 0, angSpeed: 0.8, fov: 0.7, range: 160, blink: 0 },
+  guy: { x: 110, y: 520, mood: 0 },
+  gimmick: '',
 };
 
 function resize() {
-  const ratio = DESIGN.w / DESIGN.h;
-  const maxW = canvas.clientWidth || DESIGN.w;
-  const maxH = canvas.clientHeight || (maxW / ratio);
-  const h = Math.min(maxH, maxW / ratio);
-  const w = h * ratio;
   canvas.width = DESIGN.w;
   canvas.height = DESIGN.h;
-  canvas.style.height = `${(w / ratio).toFixed(0)}px`;
 }
-
 window.addEventListener('resize', resize);
 resize();
 
 function now() { return performance.now(); }
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
+function difficulty() {
+  return Math.min(2.2, 1 + (state.runStage - 1) * 0.08);
+}
+
+function gimmickForStage() {
+  const mod = state.runStage % 4;
+  if (mod === 1) return 'Moving safe zone';
+  if (mod === 2) return 'Double-tap poop';
+  if (mod === 3) return 'Blinking guard';
+  return 'Classic';
+}
+
 function setStage(index) {
   state.stageIndex = index;
   state.stageStart = now();
-  state.timeLeft = STAGES[index].time;
   state.success = false;
 
-  state.paper = { x: 60, y: 160, vx: 150, hits: 0 };
-  state.poop = { meter: 0 };
-  state.wipe = { meter: 0, lastDir: 0 };
-  state.escape = { x: 40, y: 520, tx: 40, ty: 520, speed: 150 };
-  state.guard = { x: 250, y: 420, ang: 0, angSpeed: 0.8, fov: 0.75, range: 170 };
+  const diff = difficulty();
+  const mini = MINI[index];
+  const timeBoost = Math.max(0.6, 1 - (state.runStage - 1) * 0.03);
+  state.timeLeft = Math.max(4, mini.baseTime * timeBoost);
 
-  stageLabel.textContent = `Stage ${index + 1}/4`;
-  goalLabel.textContent = `Goal: ${STAGES[index].goal}`;
+  const zoneW = clamp(90 - (state.runStage - 1) * 3, 50, 90);
+  state.paper = { x: 60, y: 160, vx: 120 * diff, zoneX: DESIGN.w * 0.35, zoneW, hits: 0 };
+  state.poop = { meter: 0, shake: 0 };
+  state.wipe = { meter: 0, lastDir: 0 };
+  state.escape = { x: 40, y: 520, tx: 40, ty: 520, speed: 120 + diff * 40 };
+  state.guard = { x: 250, y: 420, ang: 0, angSpeed: 0.8 + diff * 0.35, fov: 0.7 + diff * 0.05, range: 150 + diff * 20, blink: 0 };
+  state.guy = { x: 110, y: 520, mood: 0 };
+
+  state.gimmick = gimmickForStage();
+
+  stageLabel.textContent = `Stage ${state.runStage} - ${mini.name}`;
+  goalLabel.textContent = `Goal: ${mini.goal} (${state.gimmick})`;
 }
 
 function setMode(mode) {
@@ -66,13 +82,12 @@ function setMode(mode) {
 }
 
 function startGame() {
+  state.runStage = 1;
   setStage(0);
   setMode('playing');
 }
 
-btnStart.addEventListener('click', () => {
-  startGame();
-});
+btnStart.addEventListener('click', startGame);
 
 function formatTime(s) {
   const m = Math.floor(s / 60);
@@ -94,6 +109,9 @@ function onPointerDown(e) {
   POINTER.y = p.y;
   POINTER.lastX = p.x;
   POINTER.lastY = p.y;
+  const t = now();
+  if (t - POINTER.tapAt < 260) POINTER.taps += 1; else POINTER.taps = 1;
+  POINTER.tapAt = t;
 }
 
 function onPointerMove(e) {
@@ -122,7 +140,7 @@ function update(dt) {
   if (state.mode !== 'playing') return;
 
   const t = (now() - state.stageStart) / 1000;
-  state.timeLeft = Math.max(0, STAGES[state.stageIndex].time - t);
+  state.timeLeft = Math.max(0, state.timeLeft - dt);
   timerLabel.textContent = `Time ${formatTime(state.timeLeft)}`;
 
   if (state.timeLeft <= 0 && !state.success) {
@@ -138,12 +156,16 @@ function update(dt) {
 
 function updatePaper(dt) {
   const roll = state.paper;
+  if (state.gimmick === 'Moving safe zone') {
+    roll.zoneX += Math.sin(now() * 0.002) * dt * 40;
+    roll.zoneX = clamp(roll.zoneX, 60, DESIGN.w - 60 - roll.zoneW);
+  }
   roll.x += roll.vx * dt;
   if (roll.x > DESIGN.w - 50 || roll.x < 50) roll.vx *= -1;
 
   if (POINTER.down) {
-    const zoneLeft = DESIGN.w * 0.35;
-    const zoneRight = DESIGN.w * 0.65;
+    const zoneLeft = roll.zoneX;
+    const zoneRight = roll.zoneX + roll.zoneW;
     const inZone = roll.x > zoneLeft && roll.x < zoneRight;
     const dist = Math.hypot(POINTER.x - roll.x, POINTER.y - roll.y);
     if (dist < 40 && inZone) {
@@ -159,11 +181,15 @@ function updatePaper(dt) {
 
 function updatePoop(dt) {
   const p = state.poop;
+  const needDouble = state.gimmick === 'Double-tap poop';
   if (POINTER.down) {
-    p.meter = clamp(p.meter + 0.22, 0, 1);
+    const bonus = needDouble ? (POINTER.taps >= 2 ? 0.22 : 0.08) : 0.22;
+    p.meter = clamp(p.meter + bonus, 0, 1);
+    p.shake = 0.6;
     POINTER.down = false;
   }
-  p.meter = clamp(p.meter - dt * 0.08, 0, 1);
+  p.meter = clamp(p.meter - dt * (0.08 + difficulty() * 0.02), 0, 1);
+  p.shake = Math.max(0, p.shake - dt * 1.2);
   if (p.meter >= 1) {
     state.success = true;
     nextStage();
@@ -175,11 +201,11 @@ function updateWipe(dt) {
   if (POINTER.down) {
     const dir = Math.sign(POINTER.dx || 0);
     if (dir !== 0 && dir !== w.lastDir) {
-      w.meter = clamp(w.meter + 0.18, 0, 1);
+      w.meter = clamp(w.meter + 0.16, 0, 1);
       w.lastDir = dir;
     }
   }
-  w.meter = clamp(w.meter - dt * 0.05, 0, 1);
+  w.meter = clamp(w.meter - dt * (0.05 + difficulty() * 0.02), 0, 1);
   if (w.meter >= 1) {
     state.success = true;
     nextStage();
@@ -202,8 +228,10 @@ function updateEscape(dt) {
 
   const g = state.guard;
   g.ang += g.angSpeed * dt;
+  if (state.gimmick === 'Blinking guard') g.blink = (Math.sin(now() * 0.006) + 1) * 0.5;
+  else g.blink = 1;
 
-  const inCone = isInCone(p.x, p.y, g);
+  const inCone = g.blink > 0.35 && isInCone(p.x, p.y, g);
   if (inCone) {
     setMode('fail');
     return;
@@ -227,16 +255,18 @@ function isInCone(px, py, g) {
 }
 
 function nextStage() {
-  if (state.stageIndex < STAGES.length - 1) {
+  if (state.stageIndex < MINI.length - 1) {
     setStage(state.stageIndex + 1);
   } else {
-    setMode('success');
+    state.runStage += 1;
+    setStage(0);
   }
 }
 
 function draw() {
   ctx.clearRect(0, 0, DESIGN.w, DESIGN.h);
   drawBackground();
+  drawGuy();
 
   if (state.mode === 'menu') {
     drawCenterText('Tap Start', DESIGN.h * 0.5, 22);
@@ -273,10 +303,29 @@ function drawBackground() {
   }
 }
 
+function drawGuy() {
+  const baseX = 70;
+  const baseY = 510;
+  const shake = state.stageIndex === 1 ? Math.sin(now() * 0.03) * 2 * state.poop.shake : 0;
+  ctx.save();
+  ctx.translate(baseX + shake, baseY);
+  ctx.fillStyle = '#ffd1a8';
+  ctx.beginPath();
+  ctx.arc(0, 0, 14, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#3a2f2a';
+  ctx.fillRect(-6, 14, 12, 18);
+  ctx.fillStyle = '#ff8c8c';
+  ctx.beginPath();
+  ctx.arc(5, -2, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 function drawPaperStage() {
   const roll = state.paper;
-  const zoneLeft = DESIGN.w * 0.35;
-  const zoneRight = DESIGN.w * 0.65;
+  const zoneLeft = roll.zoneX;
+  const zoneRight = roll.zoneX + roll.zoneW;
   ctx.fillStyle = 'rgba(80, 200, 120, 0.15)';
   ctx.fillRect(zoneLeft, 110, zoneRight - zoneLeft, 90);
 
@@ -295,7 +344,7 @@ function drawPaperStage() {
 function drawPoopStage() {
   const p = state.poop;
   drawBar(60, 240, 240, 18, p.meter, '#ffcc66');
-  drawHint('Mash tap to fill the bar.', DESIGN.h * 0.82);
+  drawHint(state.gimmick === 'Double-tap poop' ? 'Double-tap to fill fast.' : 'Mash tap to fill the bar.', DESIGN.h * 0.82);
 }
 
 function drawWipeStage() {
@@ -322,7 +371,7 @@ function drawCone(g) {
   ctx.save();
   ctx.translate(g.x, g.y);
   ctx.rotate(g.ang);
-  ctx.fillStyle = 'rgba(255, 120, 120, 0.18)';
+  ctx.fillStyle = `rgba(255, 120, 120, ${0.08 + g.blink * 0.2})`;
   ctx.beginPath();
   ctx.moveTo(0, 0);
   ctx.arc(0, 0, g.range, -g.fov, g.fov);
@@ -370,12 +419,10 @@ function gameLoop() {
 }
 
 canvas.addEventListener('pointerdown', () => {
-  if (state.mode === 'fail' || state.mode === 'success') {
-    startGame();
-  }
+  if (state.mode === 'fail') startGame();
 });
 
-// BGM/SFX hook examples:
+// BGM/SFX hooks
 // playBgm('poop-escape-theme')
 // playSfx('tap')
 
