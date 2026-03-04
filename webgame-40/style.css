@@ -164,6 +164,7 @@ header p {
   color: #d6e2f3;
   line-height: 1.36;
   display: block;
+  white-space: normal;
 }
 
 body.rank-mode header h1,
