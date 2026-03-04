@@ -367,6 +367,7 @@ const state = {
   runTime: 0,
   simSpeed: 1,
   stageTimer: 0,
+  stageStartAt: 0,
   spawnQueue: [],
   spawnTimer: 0,
   enemies: [],
@@ -1840,6 +1841,7 @@ function startStage(stage) {
   state.stageTimer = Math.max(0.2, 1.2 - stage * 0.05 - Math.max(0, stage - 10) * 0.025);
   state.spawnQueue = makeStageQueue(stage);
   state.spawnTimer = 0.45;
+  state.stageStartAt = performance.now();
   flashBanner(`STAGE ${stage}`, 1.4);
   bgmAudio?.fx('success');
 }
@@ -1852,6 +1854,7 @@ function startRun() {
   state.kills = 0;
   state.score = 0;
   state.stageTimer = 0;
+  state.stageStartAt = 0;
   state.spawnQueue = [];
   state.enemies = [];
   state.towers = [];
@@ -1955,13 +1958,16 @@ function showStageReward() {
   state.mode = 'reward';
   state.rewardUiUnlockAt = performance.now() + 220;
 
+  const stageTimeSec = Math.max(1, Math.floor((performance.now() - (state.stageStartAt || performance.now())) / 1000));
+  const towerCount = state.towers.length;
   overlayEl.classList.remove('banner-passive');
   overlayEl.classList.add('reward-mode');
   overlayEl.classList.remove('hidden');
   overlayEl.innerHTML = `
     <div class="modal reward-modal">
-      <h2>Stage ${state.stage} Clear</h2>
-      <p>+${clearGold} Gold${bonusTag} · Rush +25% (Total +${Math.round(state.rushDamageBonus * 100)}%)</p>
+      <h2>Mission Success</h2>
+      <p>Stage ${state.stage} · Time ${formatTime(stageTimeSec)} · Kills ${state.kills}</p>
+      <p>Towers ${towerCount} · +${clearGold} Gold${bonusTag}</p>
       <div class="actions">
         <button type="button" data-action="reward:next" disabled>Next Stage</button>
       </div>
@@ -1973,7 +1979,6 @@ function showStageReward() {
     for (const btn of overlayEl.querySelectorAll('[data-action=\"reward:next\"][disabled]')) {
       btn.disabled = false;
     }
-    applyStageReward('next');
   }, 230);
 }
 
