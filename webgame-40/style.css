@@ -212,8 +212,11 @@ body.rank-mode .top-row {
 .ad-slot[data-ad-slot="1"] {
   background: #0c1220 url('./assets/ads/slot-1.jpg?v=3') center/contain no-repeat;
   border-style: solid;
-  color: rgba(255, 255, 255, 0.7);
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.ad-slot[data-has-image="true"] {
+  color: transparent;
+  text-shadow: none;
 }
 
 .ad-slot:hover {
