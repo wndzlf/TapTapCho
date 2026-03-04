@@ -924,6 +924,10 @@ footer {
     font-size: 11px;
   }
 
+  .tower-guide {
+    display: none;
+  }
+
   .rank-head strong {
     font-size: 12px;
   }
