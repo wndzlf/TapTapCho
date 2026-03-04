@@ -1883,6 +1883,7 @@ function startRun() {
     firstUpgrade: false,
     firstClear: false,
   };
+  document.body.classList.add('playing');
   setSelectedButton();
   setSellMode(false);
   refreshBuildHint();
@@ -1902,6 +1903,7 @@ function startRun() {
 function setDefeat() {
   submitSingleRank('defeat');
   state.mode = 'defeat';
+  document.body.classList.remove('playing');
   overlayEl.classList.remove('banner-passive');
   overlayEl.classList.remove('reward-mode');
   overlayEl.classList.remove('hidden');
@@ -1921,6 +1923,7 @@ function setDefeat() {
 function setVictory() {
   submitSingleRank('victory');
   state.mode = 'victory';
+  document.body.classList.remove('playing');
   overlayEl.classList.remove('banner-passive');
   overlayEl.classList.remove('reward-mode');
   overlayEl.classList.remove('hidden');
@@ -5327,6 +5330,7 @@ overlayEl.addEventListener('click', (event) => {
 });
 
 function showMenu() {
+  document.body.classList.remove('playing');
   overlayEl.classList.remove('banner-passive');
   overlayEl.classList.remove('reward-mode');
   overlayEl.classList.remove('hidden');

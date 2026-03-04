@@ -924,7 +924,8 @@ footer {
     font-size: 11px;
   }
 
-  body.scrolled .tower-guide {
+  body.scrolled .tower-guide,
+  body.playing .tower-guide {
     display: none;
   }
 
