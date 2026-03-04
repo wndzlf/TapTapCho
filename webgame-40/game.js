@@ -25,6 +25,7 @@ const rankScopeEl = document.getElementById('rankScope');
 const rankStatusEl = document.getElementById('rankStatus');
 const rankPanelEl = document.getElementById('singleRankPanel');
 const rankToggleBtn = document.getElementById('btnRankToggle');
+const singleTabEl = document.getElementById('tabSingle');
 
 const btnSellMode = document.getElementById('btnSellMode');
 const btnSpeedUp = document.getElementById('btnSpeedUp');
@@ -5306,6 +5307,7 @@ if (rankToggleBtn && rankPanelEl) {
   const setRankVisible = (show) => {
     rankPanelEl.classList.toggle('rank-hidden', !show);
     rankToggleBtn.classList.toggle('active', show);
+    if (singleTabEl) singleTabEl.classList.toggle('active', !show);
     document.body.classList.toggle('rank-mode', show);
   };
   setRankVisible(false);
