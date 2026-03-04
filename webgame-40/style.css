@@ -157,11 +157,13 @@ header p {
   color: #c6d7ef;
 }
 
-.detail-card p {
+.detail-card p,
+.detail-story {
   margin: 0;
   font-size: 12px;
   color: #d6e2f3;
   line-height: 1.36;
+  display: block;
 }
 
 body.rank-mode header h1,
