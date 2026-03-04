@@ -4476,6 +4476,12 @@ function setBuildButtonIcon(kind, dataUrl) {
   iconEl.style.backgroundImage = `url("${dataUrl}")`;
 }
 
+function setDetailIcon(kind, dataUrl) {
+  const iconEl = document.querySelector(`.detail-icon[data-kind="${kind}"]`);
+  if (!iconEl) return;
+  iconEl.style.backgroundImage = `url("${dataUrl}")`;
+}
+
 function renderBuildButtonIcons() {
   const towerButtons = [...document.querySelectorAll('.build-btn[data-kind]')];
   if (!towerButtons.length) return;
@@ -4512,7 +4518,9 @@ function renderBuildButtonIcons() {
 
     snapCtx.clearRect(0, 0, iconSize, iconSize);
     snapCtx.drawImage(canvas, left, top, iconSize, iconSize, 0, 0, iconSize, iconSize);
-    setBuildButtonIcon(kind, snap.toDataURL('image/png'));
+    const iconUrl = snap.toDataURL('image/png');
+    setBuildButtonIcon(kind, iconUrl);
+    setDetailIcon(kind, iconUrl);
   }
 
   ctx.clearRect(0, 0, W, H);

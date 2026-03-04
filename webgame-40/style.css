@@ -122,6 +122,23 @@ header p {
   padding: 8px 10px;
   background: rgba(12, 18, 32, 0.6);
   display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.detail-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid rgba(150, 190, 240, 0.35);
+  background: rgba(18, 26, 44, 0.7);
+  background-size: cover;
+  background-position: center;
+}
+
+.detail-body {
+  display: grid;
   gap: 6px;
 }
 
@@ -873,6 +890,15 @@ footer {
   .sunken-detail {
     width: 100%;
     padding: 8px 9px;
+  }
+
+  .detail-card {
+    grid-template-columns: 44px 1fr;
+  }
+
+  .detail-icon {
+    width: 40px;
+    height: 40px;
   }
 
   .detail-card h3 {
