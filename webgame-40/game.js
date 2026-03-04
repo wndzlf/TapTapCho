@@ -303,19 +303,6 @@ const TOWER_TYPES = {
     stunChain: 3,
     stunRadius: 74 * BALANCE_SCALE,
   },
-  laserSunken: {
-    id: 'laserSunken',
-    name: 'Laser Sunken',
-    cost: 180,
-    color: '#ff4040',
-    range: 150 * BALANCE_SCALE,
-    damage: 24,
-    reload: 1.6,
-    bulletSpeed: 0,
-    pierce: 0,
-    hp: 280,
-    laserWidth: 14 * BALANCE_SCALE,
-  },
   speedSunken: {
     id: 'speedSunken',
     name: 'Speed Sunken',
@@ -1230,8 +1217,6 @@ function getTowerUpgradeFactors(kind) {
       ? 1.12
     : kind === 'lottoSunken'
       ? 1.16
-    : kind === 'laserSunken'
-      ? 1.12
     : kind === 'speedSunken'
       ? 1.16
       : 1.2;
@@ -1248,8 +1233,6 @@ function getTowerUpgradeFactors(kind) {
       ? 1.33
     : kind === 'lottoSunken'
       ? 1.28
-    : kind === 'laserSunken'
-      ? 1.3
       : 1.34;
 
   const reloadMul = kind === 'sunken'
@@ -1266,8 +1249,6 @@ function getTowerUpgradeFactors(kind) {
       ? 0.92
     : kind === 'lottoSunken'
       ? 0.9
-    : kind === 'laserSunken'
-      ? 0.94
       : 0.9;
 
   return { rangeMul, damageMul, reloadMul };
@@ -1290,8 +1271,6 @@ function applyTowerUpgradeScaling(tower, factors = null, kindOverride = null, le
   } else if (kind === 'lottoSunken') {
     tower.poisonDuration *= 1.15;
     tower.poisonDps *= 1.12;
-  } else if (kind === 'laserSunken') {
-    tower.laserWidth = (tower.laserWidth || 12) * 1.08;
   } else if (kind === 'tankerSunken') {
     tower.tauntRadius *= 1.08;
     tower.damageMitigation = clamp((tower.damageMitigation || 0) + 0.03, 0, 0.8);
@@ -2382,8 +2361,6 @@ function buildTowerPerLevelChangeLine(kind) {
   } else if (kind === 'lottoSunken') {
     parts.push('Poison Time +15%');
     parts.push('Poison DPS +12%');
-  } else if (kind === 'laserSunken') {
-    parts.push('Beam Width +8%');
   } else if (kind === 'sunkenStun') {
     parts.push('Stun Time +10%');
     parts.push('Stun Range +6%');
@@ -2565,110 +2542,6 @@ function emitBulletForKind(tower, target, kind) {
   const dx = target.x - tower.x;
   const dy = target.y - tower.y;
   const d = Math.hypot(dx, dy) || 1;
-
-  if (kind === 'laserSunken') {
-    const ang = Math.atan2(dy, dx);
-    const range = tower.range;
-    const width = (tower.laserWidth || 14) * 0.5;
-    const cos = Math.cos(ang);
-    const sin = Math.sin(ang);
-
-    for (const enemy of state.enemies) {
-      const ex = enemy.x - tower.x;
-      const ey = enemy.y - tower.y;
-      const proj = ex * cos + ey * sin;
-      if (proj < 0 || proj > range) continue;
-      const perp = Math.abs(-sin * ex + cos * ey);
-      if (perp > width + enemy.r) continue;
-      hurtEnemy(enemy, tower.damage, kind, false);
-    }
-
-    const glowWidth = Math.max(12, width * 1.9);
-    const coreWidth = Math.max(4.8, width * 0.9);
-    const innerWidth = Math.max(2.2, width * 0.45);
-
-    pushParticle({
-      x: tower.x,
-      y: tower.y,
-      rot: ang,
-      length: range,
-      lineWidth: glowWidth,
-      life: 0.34,
-      ttl: 0.34,
-      color: 'rgba(255, 70, 70, 0.55)',
-      render: 'ray',
-      alphaMul: 1.45,
-    });
-    pushParticle({
-      x: tower.x,
-      y: tower.y,
-      rot: ang,
-      length: range,
-      lineWidth: coreWidth,
-      life: 0.24,
-      ttl: 0.24,
-      color: 'rgba(255, 20, 20, 0.95)',
-      render: 'ray',
-      alphaMul: 1.3,
-    });
-    pushParticle({
-      x: tower.x,
-      y: tower.y,
-      rot: ang,
-      length: range,
-      lineWidth: innerWidth,
-      life: 0.18,
-      ttl: 0.18,
-      color: '#fff5f5',
-      render: 'ray',
-      alphaMul: 1.2,
-    });
-
-    pushParticle({
-      x: tower.x,
-      y: tower.y,
-      vx: 0,
-      vy: 0,
-      life: 0.18,
-      size: 4.2,
-      expand: 10,
-      lineWidth: 2.1,
-      color: '#ff6b6b',
-      render: 'ring',
-    });
-
-    pushParticle({
-      x: target.x,
-      y: target.y,
-      vx: 0,
-      vy: 0,
-      life: 0.18,
-      size: 5.2,
-      expand: 14,
-      lineWidth: 2.4,
-      color: '#ff3b3b',
-      render: 'ring',
-    });
-
-    for (let i = 0; i < 6; i += 1) {
-      const sparkAng = ang + rand(-0.25, 0.25);
-      pushParticle({
-        x: target.x,
-        y: target.y,
-        vx: Math.cos(sparkAng) * rand(80, 160),
-        vy: Math.sin(sparkAng) * rand(80, 160),
-        life: rand(0.1, 0.2),
-        length: rand(6, 12),
-        lineWidth: rand(1.2, 2.2),
-        color: '#ffd1d1',
-        render: 'shard',
-      });
-    }
-
-    impactSfx.play('enemyHitHeavy', { volume: 0.28, minGap: 0.06, rateMin: 0.92, rateMax: 1.04 });
-    sfx(680 + rand(-20, 20), 0.05, 'triangle', 0.012);
-    return;
-  }
 
   const isSplash = kind === 'sunkenSplash' || kind === 'sunkenHammer' || kind === 'lottoSunken';
   const isNova = kind === 'sunkenNova';
@@ -5272,7 +5145,6 @@ canvas.addEventListener('pointercancel', (event) => {
 
 window.addEventListener('keydown', (event) => {
   if (event.code === 'Digit1') chooseTower('sunken');
-  if (event.code === 'Digit3') chooseTower('laserSunken');
   if (event.code === 'Digit4') chooseTower('sunkenSplash');
   if (event.code === 'Digit5') chooseTower('speedSunken');
   if (event.code === 'Digit6') chooseTower('tankerSunken');
