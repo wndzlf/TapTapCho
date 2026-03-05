@@ -39,6 +39,12 @@ header p {
   border: 1px solid #2a3b5f;
   border-radius: 12px;
   padding: 8px;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.stat.hot {
+  border-color: rgba(125, 227, 255, 0.75);
+  box-shadow: 0 0 12px rgba(125, 227, 255, 0.35);
 }
 
 .label {

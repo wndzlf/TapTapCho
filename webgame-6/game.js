@@ -305,6 +305,8 @@ function updateHud() {
   comboEl.textContent = `x${(1 + Math.min(1.5, combo / 4)).toFixed(1)}`;
   bestComboEl.textContent = `x${(1 + Math.min(1.5, bestCombo / 4)).toFixed(1)}`;
 
+  comboEl.parentElement?.classList.toggle('hot', combo >= 3);
+
   drawPreview(queue[0], nextCtx, nextCanvas);
   drawPreview(holdType, holdCtx, holdCanvas);
 }
