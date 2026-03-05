@@ -9,6 +9,7 @@ const resultEl = document.getElementById('result');
 const historyEl = document.getElementById('history');
 
 const scoreEl = document.getElementById('score');
+const bestScoreEl = document.getElementById('bestScore');
 const streakEl = document.getElementById('streak');
 const bestStreakEl = document.getElementById('bestStreak');
 const roundEl = document.getElementById('round');
@@ -19,6 +20,7 @@ const btnReset = document.getElementById('btnReset');
 const btnSound = document.getElementById('btnSound');
 
 const BEST_STREAK_KEY = 'party-roulette-best-streak-v2';
+const BEST_SCORE_KEY = 'party-roulette-best-score';
 const SOUND_KEY = 'party-roulette-sound-v2';
 
 let angle = 0;
@@ -27,6 +29,7 @@ let spinning = false;
 let score = 0;
 let streak = 0;
 let bestStreak = Number(localStorage.getItem(BEST_STREAK_KEY) || 0);
+let bestScore = Number(localStorage.getItem(BEST_SCORE_KEY) || 0);
 let round = 1;
 let lastPicked = '';
 let history = [];
@@ -36,6 +39,7 @@ let tickCooldown = 0;
 let parsedItems = [];
 
 bestStreakEl.textContent = String(bestStreak);
+bestScoreEl.textContent = String(bestScore);
 
 function rand(min, max) {
   return min + Math.random() * (max - min);
@@ -139,6 +143,7 @@ function updateSoundButton() {
 
 function updateHud() {
   scoreEl.textContent = String(score);
+  bestScoreEl.textContent = String(bestScore);
   streakEl.textContent = String(streak);
   bestStreakEl.textContent = String(bestStreak);
   roundEl.textContent = String(round);
@@ -204,6 +209,10 @@ function spinResult(index) {
   if (repeated) gain -= 30;
 
   score += gain;
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem(BEST_SCORE_KEY, String(bestScore));
+  }
   round += 1;
 
   if (streak > bestStreak) {
