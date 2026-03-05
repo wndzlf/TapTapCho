@@ -52,6 +52,12 @@ header p {
   border-radius: 10px;
   padding: 4px 8px;
   font-size: 14px;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.hud > div.hot {
+  border-color: rgba(125, 227, 255, 0.75);
+  box-shadow: 0 0 10px rgba(125, 227, 255, 0.35);
 }
 
 button {

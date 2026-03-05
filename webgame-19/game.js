@@ -127,6 +127,10 @@ function hasMoves() {
   return false;
 }
 
+function updateStreakHud() {
+  streakEl.parentElement?.classList.toggle('hot', streak >= 3);
+}
+
 function move(dir) {
   if (state !== 'running') {
     startGame();
@@ -166,6 +170,7 @@ function move(dir) {
 
   scoreEl.textContent = String(score);
   streakEl.textContent = String(streak);
+  updateStreakHud();
   spawnTile();
 
   if (!hasMoves()) {
@@ -182,6 +187,7 @@ function resetGame() {
   resetBoard();
   scoreEl.textContent = '0';
   streakEl.textContent = '0';
+  updateStreakHud();
 }
 
 function startGame() {
@@ -198,6 +204,7 @@ function endGame() {
   localStorage.setItem(STORAGE_KEY, String(best));
   streak = 0;
   streakEl.textContent = '0';
+  updateStreakHud();
 }
 
 function drawBoard() {
