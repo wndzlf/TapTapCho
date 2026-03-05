@@ -1,6 +1,7 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const leftEl = document.getElementById('left');
+const bestEl = document.getElementById('best');
 const btnNew = document.getElementById('btnNew');
 const hudEl = document.querySelector('.hud');
 
@@ -23,6 +24,7 @@ let timeLeft = 90;
 let timerId = null;
 let lastMatchAt = 0;
 let bestCombo = Number(localStorage.getItem('webgame-26-best-combo') || 1);
+let bestScore = Number(localStorage.getItem('webgame-26-best-score') || 0);
 
 const levelEl = addHudStat('Level', 'level', '1');
 const scoreEl = addHudStat('Score', 'score', '0');
@@ -69,6 +71,7 @@ function updateHud() {
   leftEl.textContent = String(pairsLeft);
   levelEl.textContent = String(level);
   scoreEl.textContent = String(score);
+  bestEl.textContent = String(bestScore);
   comboEl.textContent = `x${combo}`;
   bestComboEl.textContent = `x${bestCombo}`;
   timeEl.textContent = String(timeLeft);
@@ -78,6 +81,7 @@ function init(roundReset = false) {
   if (roundReset) {
     score = 0;
     level = 1;
+    bestScore = Number(localStorage.getItem('webgame-26-best-score') || 0);
   }
 
   size = Math.min(8, 6 + Math.floor((level - 1) / 2));
@@ -179,6 +183,10 @@ function onMatch() {
   lastMatchAt = now;
 
   score += 30 + combo * 10 + level * 4;
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem('webgame-26-best-score', String(bestScore));
+  }
   if (combo > bestCombo) {
     bestCombo = combo;
     localStorage.setItem('webgame-26-best-combo', String(bestCombo));
