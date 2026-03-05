@@ -7,6 +7,8 @@ const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
 const levelEl = document.getElementById('level');
 const comboEl = document.getElementById('combo');
+const lengthEl = document.getElementById('length');
+const bestLengthEl = document.getElementById('bestLength');
 const shieldEl = document.getElementById('shield');
 const challengeTextEl = document.getElementById('challengeText');
 const challengeFillEl = document.getElementById('challengeFill');
@@ -28,6 +30,7 @@ const offsetX = Math.floor((canvas.width - gridW) / 2);
 const offsetY = Math.floor((canvas.height - gridH) / 2);
 
 const BEST_KEY = 'neon-snake-best-v3';
+const BEST_LENGTH_KEY = 'neon-snake-best-length';
 const SOUND_KEY = 'neon-snake-sound-v3';
 
 let state = 'idle'; // idle | running | paused | gameover
@@ -42,6 +45,7 @@ let particles = [];
 
 let score = 0;
 let best = Number(localStorage.getItem(BEST_KEY) || 0);
+let bestLength = Number(localStorage.getItem(BEST_LENGTH_KEY) || 4);
 let level = 1;
 let shield = 0;
 let combo = 0;
@@ -144,6 +148,8 @@ function updateHud() {
   bestEl.textContent = String(best);
   levelEl.textContent = String(level);
   comboEl.textContent = `x${(1 + Math.min(1.6, combo / 5)).toFixed(1)}`;
+  lengthEl.textContent = String(snake.length);
+  bestLengthEl.textContent = String(bestLength);
   shieldEl.textContent = String(shield);
 }
 
@@ -256,6 +262,7 @@ function reset() {
   score = 0;
   level = 1;
   shield = 0;
+  bestLength = Number(localStorage.getItem(BEST_LENGTH_KEY) || snake.length);
   combo = 0;
   comboTimer = 0;
   elapsed = 0;
@@ -378,6 +385,10 @@ function advanceOneCell() {
     placeFood();
     sfx.eat();
     addParticles(offsetX + head.x * cell, offsetY + head.y * cell, '#ff9fe0', 14);
+    if (snake.length > bestLength) {
+      bestLength = snake.length;
+      localStorage.setItem(BEST_LENGTH_KEY, String(bestLength));
+    }
     if (Math.random() < 0.28) spawnPickup();
   }
 
