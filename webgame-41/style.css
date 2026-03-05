@@ -59,6 +59,13 @@ body {
   font-size: 12px;
   color: #cfe0ff;
   background: var(--panel);
+  transition: border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chip.danger {
+  border-color: #ff7a7a;
+  color: #ffe1e1;
+  box-shadow: 0 0 0 2px rgba(255, 122, 122, 0.2);
 }
 
 .btn {

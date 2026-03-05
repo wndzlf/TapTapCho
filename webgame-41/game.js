@@ -150,6 +150,7 @@ function update(dt) {
   const t = (now() - state.stageStart) / 1000;
   state.timeLeft = Math.max(0, state.timeLeft - dt);
   timerLabel.textContent = `Time ${formatTime(state.timeLeft)}`;
+  timerLabel.classList.toggle('danger', state.timeLeft <= 2.5);
 
   if (state.timeLeft <= 0 && !state.success) {
     setMode('fail');
@@ -346,6 +347,11 @@ function drawPaperStage() {
   const zoneRight = roll.zoneX + roll.zoneW;
   ctx.fillStyle = 'rgba(80, 200, 120, 0.15)';
   ctx.fillRect(zoneLeft, 110, zoneRight - zoneLeft, 90);
+  ctx.strokeStyle = 'rgba(130, 255, 170, 0.6)';
+  ctx.setLineDash([6, 6]);
+  ctx.lineWidth = 2;
+  ctx.strokeRect(zoneLeft + 2, 112, zoneRight - zoneLeft - 4, 86);
+  ctx.setLineDash([]);
 
   ctx.fillStyle = '#f5f5f5';
   ctx.beginPath();
