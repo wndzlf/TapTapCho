@@ -18,10 +18,12 @@ let level = 1;
 let timeLeft = 100;
 let timerId = null;
 let bestLevel = Number(localStorage.getItem('webgame-31-best-level') || 1);
+let streak = 0;
 
 const levelEl = addHudStat('Level', 'level', '1');
 const timeEl = addHudStat('Time', 'time', '100');
 const bestEl = addHudStat('Best', 'best', String(bestLevel));
+const streakEl = addHudStat('Streak', 'streak', '0');
 
 function addHudStat(label, id, initialValue) {
   const box = document.createElement('div');
@@ -50,6 +52,7 @@ function updateHud() {
   levelEl.textContent = String(level);
   timeEl.textContent = String(timeLeft);
   bestEl.textContent = String(bestLevel);
+  streakEl.textContent = String(streak);
 }
 
 function init(resetProgress = false) {
@@ -75,6 +78,7 @@ function init(resetProgress = false) {
   }
 
   moves = 0;
+  streak = 0;
   timeLeft = Math.max(35, 102 - level * 5);
   updateHud();
   startTimer();
@@ -120,6 +124,7 @@ function onClear() {
   level += 1;
   bestLevel = Math.max(bestLevel, level);
   localStorage.setItem('webgame-31-best-level', String(bestLevel));
+  streak = 0;
   setTimeout(() => init(false), 650);
 }
 
@@ -138,13 +143,22 @@ function handleClick(x, y) {
 
   const adjacent = Math.abs(r - emptyPos.r) + Math.abs(c - emptyPos.c) === 1;
   if (!adjacent) {
+    streak = 0;
     audio?.fx('fail');
+    updateHud();
     return;
   }
 
   swapTiles({ r, c }, emptyPos);
   emptyPos = { r, c };
   moves += 1;
+  const dist = Math.abs(r - (size - 1)) + Math.abs(c - (size - 1));
+  if (dist <= Math.max(1, Math.floor(size / 2))) {
+    streak += 1;
+    timeLeft = Math.min(120, timeLeft + 1);
+  } else {
+    streak = 0;
+  }
   updateHud();
   audio?.fx('ui');
 
