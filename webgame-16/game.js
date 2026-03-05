@@ -5,6 +5,7 @@ const ctx = canvas.getContext('2d');
 
 const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
+const streakEl = document.getElementById('streak');
 const btnStart = document.getElementById('btnStart');
 
 const W = canvas.width;
@@ -21,6 +22,7 @@ let score = 0;
 let best = Number(localStorage.getItem(STORAGE_KEY) || 0);
 let timeLeft = 60;
 let tick = 0;
+let streak = 0;
 
 let board = [];
 let emptyIndex = 15;
@@ -104,12 +106,14 @@ function isSolved() {
 function resetGame() {
   state = 'idle';
   score = 0;
+  streak = 0;
   timeLeft = 60;
   tick = 0;
   flash = 0;
   particles.length = 0;
   resetBoard();
   scoreEl.textContent = '0';
+  streakEl.textContent = '0';
 }
 
 function startGame() {
@@ -125,6 +129,8 @@ function endGame() {
   best = Math.max(best, score);
   bestEl.textContent = String(best);
   localStorage.setItem(STORAGE_KEY, String(best));
+  streak = 0;
+  streakEl.textContent = '0';
 }
 
 function tryMove(index) {
@@ -149,8 +155,10 @@ function tryMove(index) {
 
   if (isSolved()) {
     score += 1;
+    streak += 1;
     scoreEl.textContent = String(score);
-    timeLeft = Math.min(99, timeLeft + 18);
+    streakEl.textContent = String(streak);
+    timeLeft = Math.min(99, timeLeft + 18 + Math.min(6, streak * 2));
     flash = 28;
     beep(980, 0.08, 0.03);
     resetBoard();
