@@ -22,10 +22,12 @@ let target = 450;
 let combo = 1;
 let timeLeft = 75;
 let timerId = null;
+let bestCombo = Number(localStorage.getItem('webgame-25-best-combo') || 1);
 
 const levelEl = addHudStat('Level', 'level', '1');
 const targetEl = addHudStat('Target', 'target', '450');
 const comboEl = addHudStat('Combo', 'combo', 'x1');
+const bestComboEl = addHudStat('Best Combo', 'bestCombo', `x${bestCombo}`);
 const timeEl = addHudStat('Time', 'time', '75');
 const btnShuffle = document.createElement('button');
 btnShuffle.textContent = 'Shuffle';
@@ -61,6 +63,7 @@ function updateHud() {
   levelEl.textContent = String(level);
   targetEl.textContent = String(target);
   comboEl.textContent = `x${combo}`;
+  bestComboEl.textContent = `x${bestCombo}`;
   timeEl.textContent = String(timeLeft);
 }
 
@@ -154,7 +157,14 @@ function resolveMatches(allowCombo = true) {
   const cleared = set.size;
   const chainScore = cleared * (10 + level * 2) * combo;
   score += chainScore;
-  if (allowCombo) combo = Math.min(9, combo + 1);
+  if (allowCombo) {
+    combo = Math.min(9, combo + 1);
+    if (combo > bestCombo) {
+      bestCombo = combo;
+      localStorage.setItem('webgame-25-best-combo', String(bestCombo));
+    }
+    timeLeft = Math.min(120, timeLeft + (combo >= 3 ? 1 : 0));
+  }
   audio?.fx('success');
 
   for (let c = 0; c < size; c++) {
