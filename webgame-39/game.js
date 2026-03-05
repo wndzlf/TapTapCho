@@ -1080,6 +1080,8 @@ function refreshHUD() {
   bestEssenceTextEl.textContent = String(bestEssence);
   killTextEl.textContent = String(state.kills);
 
+  bestEssenceTextEl.parentElement.classList.toggle('highlight', state.essence >= bestEssence && bestEssence > 0);
+
   updateSkillButton(btnDashEl, p.dashCdLeft, p.dashCd * state.mods.dashMul, '#6dd6ff');
   updateSkillButton(btnSigEl, p.signatureCdLeft, p.signatureCd * state.mods.signatureMul, '#ffd88f');
 }

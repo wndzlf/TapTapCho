@@ -94,6 +94,11 @@ header p {
   margin-left: 4px;
 }
 
+.stat.highlight b {
+  color: var(--accent);
+  text-shadow: 0 0 10px rgba(249, 210, 100, 0.35);
+}
+
 .arena {
   position: relative;
   border: 1px solid var(--line);
