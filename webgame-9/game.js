@@ -312,6 +312,10 @@ function updateHud() {
   if (reverseTimer > 0) modeEl.textContent = '반전';
   else modeEl.textContent = weirdEnabled ? 'Chaos' : '안정';
 
+  comboEl.parentElement?.classList.toggle('hot', combo >= 3);
+  modeEl.parentElement?.classList.toggle('warn', reverseTimer > 0);
+  modeEl.parentElement?.classList.toggle('hot', weirdEnabled && reverseTimer <= 0);
+
   drawPreview(queue[0], nextCtx, nextCanvas);
   drawPreview(holdType, holdCtx, holdCanvas);
 }
