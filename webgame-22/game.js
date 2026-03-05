@@ -151,10 +151,23 @@ function flaggedCount() {
   return total;
 }
 
+function updateHud() {
+  const minesLeft = Math.max(0, mineCount - flaggedCount());
+  scoreEl.textContent = String(score);
+  bestEl.textContent = String(best);
+  streakEl.textContent = String(streak);
+  bestStreakEl.textContent = String(bestStreak);
+  minesLeftEl.textContent = String(minesLeft);
+
+  streakEl.parentElement?.classList.toggle('hot', streak >= 3);
+  minesLeftEl.parentElement?.classList.toggle('warn', minesLeft <= 2);
+}
+
 function refreshMinesLeft() {
   if (!minesLeftEl) return;
   const minesLeft = Math.max(0, mineCount - flaggedCount());
   minesLeftEl.textContent = String(minesLeft);
+  minesLeftEl.parentElement?.classList.toggle('warn', minesLeft <= 2);
 }
 
 function setMode(nextMode) {
@@ -170,9 +183,7 @@ function nextRound() {
     bestStreak = streak;
     localStorage.setItem(BEST_STREAK_KEY, String(bestStreak));
   }
-  scoreEl.textContent = String(score);
-  streakEl.textContent = String(streak);
-  bestStreakEl.textContent = String(bestStreak);
+  updateHud();
   mineCount = Math.min(22, BASE_MINES + Math.floor(score * 0.7));
   buildBoard(mineCount);
   flash = 18;
@@ -213,7 +224,7 @@ function endGame() {
   bestEl.textContent = String(best);
   localStorage.setItem(STORAGE_KEY, String(best));
   streak = 0;
-  streakEl.textContent = '0';
+  updateHud();
 }
 
 function revealCell(r, c) {
@@ -279,8 +290,7 @@ function resetGame() {
   tick = 0;
   flash = 0;
   mineCount = BASE_MINES;
-  scoreEl.textContent = '0';
-  streakEl.textContent = '0';
+  updateHud();
   bestStreakEl.textContent = String(bestStreak);
   setMode('reveal');
   buildBoard(mineCount);
@@ -399,7 +409,7 @@ function render() {
   }
 
   const minesLeft = mineCount - flaggedCount();
-  ctx.fillStyle = '#e8effb';
+  ctx.fillStyle = minesLeft <= 2 ? '#ff8f7a' : '#e8effb';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
   ctx.font = 'bold 18px system-ui';
