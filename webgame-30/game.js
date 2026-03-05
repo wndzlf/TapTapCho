@@ -18,10 +18,13 @@ let bestLevel = Number(localStorage.getItem('webgame-30-best-level') || 1);
 let timeLeft = 75;
 let timerId = null;
 let solutionMoves = [];
+let streak = 0;
 
 const levelEl = addHudStat('Level', 'level', '1');
 const bestEl = addHudStat('Best', 'best', String(bestLevel));
 const timeEl = addHudStat('Time', 'time', '75');
+const leftEl = addHudStat('Left', 'left', '0');
+const streakEl = addHudStat('Streak', 'streak', '0');
 const btnHint = document.createElement('button');
 btnHint.textContent = 'Hint';
 hudEl.appendChild(btnHint);
@@ -48,11 +51,23 @@ function startTimer() {
   }, 1000);
 }
 
+function countOn() {
+  let total = 0;
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      if (grid[r]?.[c]) total += 1;
+    }
+  }
+  return total;
+}
+
 function updateHud() {
   movesEl.textContent = String(moves);
   levelEl.textContent = String(level);
   bestEl.textContent = String(bestLevel);
   timeEl.textContent = String(timeLeft);
+  leftEl.textContent = String(countOn());
+  streakEl.textContent = String(streak);
 }
 
 function toggle(r, c) {
@@ -80,7 +95,10 @@ function randomMoveList(count) {
 }
 
 function init(resetProgress = false) {
-  if (resetProgress) level = 1;
+  if (resetProgress) {
+    level = 1;
+    streak = 0;
+  }
 
   size = Math.min(7, 4 + Math.floor((level - 1) / 2));
   refreshGeometry();
@@ -91,7 +109,9 @@ function init(resetProgress = false) {
   solutionMoves.forEach((m) => applyMove(m.r, m.c));
 
   moves = 0;
-  timeLeft = Math.max(35, 78 - level * 4);
+  const baseTime = Math.max(35, 78 - level * 4);
+  const bonusTime = Math.min(12, streak * 2);
+  timeLeft = baseTime + bonusTime;
   updateHud();
   startTimer();
 }
@@ -104,6 +124,7 @@ function onClear() {
   clearInterval(timerId);
   audio?.fx('win');
   level += 1;
+  streak += 1;
   bestLevel = Math.max(bestLevel, level);
   localStorage.setItem('webgame-30-best-level', String(bestLevel));
   setTimeout(() => init(false), 700);
@@ -113,6 +134,7 @@ function onFail() {
   clearInterval(timerId);
   audio?.fx('fail');
   level = Math.max(1, level - 1);
+  streak = 0;
   setTimeout(() => init(false), 450);
 }
 
