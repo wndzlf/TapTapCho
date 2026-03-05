@@ -1,6 +1,7 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const foundEl = document.getElementById('found');
+const bestScoreEl = document.getElementById('bestScore');
 const listEl = document.getElementById('list');
 const btnNew = document.getElementById('btnNew');
 const hudEl = document.querySelector('.hud');
@@ -27,6 +28,7 @@ let timeLeft = 90;
 let timerId = null;
 let streak = 0;
 let bestStreak = Number(localStorage.getItem('webgame-32-best-streak') || 0);
+let bestScore = Number(localStorage.getItem('webgame-32-best-score') || 0);
 
 const levelEl = addHudStat('Level', 'level', '1');
 const scoreEl = addHudStat('Score', 'score', '0');
@@ -117,6 +119,7 @@ function updateHud() {
   foundEl.textContent = String(found.size);
   levelEl.textContent = String(level);
   scoreEl.textContent = String(score);
+  bestScoreEl.textContent = String(bestScore);
   streakEl.textContent = String(streak);
   bestStreakEl.textContent = String(bestStreak);
   timeEl.textContent = String(timeLeft);
@@ -126,6 +129,7 @@ function init(resetProgress = false) {
   if (resetProgress) {
     level = 1;
     score = 0;
+    bestScore = Number(localStorage.getItem('webgame-32-best-score') || 0);
   }
 
   grid = Array.from({ length: size }, () => Array(size).fill(''));
@@ -227,6 +231,10 @@ function handleClick(x, y) {
       localStorage.setItem('webgame-32-best-streak', String(bestStreak));
     }
     score += 70 + level * 10 + streak * 6;
+    if (score > bestScore) {
+      bestScore = score;
+      localStorage.setItem('webgame-32-best-score', String(bestScore));
+    }
     timeLeft = Math.min(120, timeLeft + 3 + Math.floor(streak / 2));
     renderList();
     updateHud();
