@@ -210,6 +210,9 @@ function updateHud() {
   bestComboEl.textContent = `x${(1 + Math.min(2.4, Math.floor(bestCombo / 4) * 0.2)).toFixed(1)}`;
   shieldEl.textContent = String(shield);
   dashEl.textContent = `${Math.round(dashCharge)}%`;
+
+  comboEl.parentElement?.classList.toggle('hot', comboCount >= 3);
+  dashEl.parentElement?.classList.toggle('warn', dashCharge < 35);
 }
 
 function setChallenge() {

@@ -50,6 +50,17 @@ header p {
   border-radius: 10px;
   padding: 7px 10px;
   min-width: 84px;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.hud > div.hot {
+  border-color: rgba(124, 244, 255, 0.75);
+  box-shadow: 0 0 10px rgba(124, 244, 255, 0.35);
+}
+
+.hud > div.warn {
+  border-color: rgba(255, 177, 111, 0.8);
+  box-shadow: 0 0 10px rgba(255, 177, 111, 0.35);
 }
 
 button {
