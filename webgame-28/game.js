@@ -35,10 +35,12 @@ let levelStartScore = 0;
 let targetScore = 420;
 let combo = 1;
 let best = Number(localStorage.getItem('webgame-28-best') || 0);
+let bestCombo = Number(localStorage.getItem('webgame-28-best-combo') || 1);
 
 const levelEl = addHudStat('Level', 'level', '1');
 const targetEl = addHudStat('Target', 'target', '420');
 const comboEl = addHudStat('Combo', 'combo', 'x1');
+const bestComboEl = addHudStat('Best Combo', 'bestCombo', `x${bestCombo}`);
 const bestEl = addHudStat('Best', 'best', String(best));
 const btnRotate = document.createElement('button');
 btnRotate.textContent = 'Rotate';
@@ -81,6 +83,7 @@ function updateHud() {
   levelEl.textContent = String(level);
   targetEl.textContent = String(targetScore);
   comboEl.textContent = `x${combo}`;
+  bestComboEl.textContent = `x${bestCombo}`;
   bestEl.textContent = String(best);
 }
 
@@ -163,6 +166,10 @@ function place(shapeObj, r0, c0) {
   const linesCleared = clearLines();
   if (linesCleared > 0) {
     combo = Math.min(8, combo + 1);
+    if (combo > bestCombo) {
+      bestCombo = combo;
+      localStorage.setItem('webgame-28-best-combo', String(bestCombo));
+    }
     score += linesCleared * 90 * combo;
     audio?.fx('success');
   } else {
