@@ -1,6 +1,8 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const scoreEl = document.getElementById('score');
+const bestEl = document.getElementById('best');
+const leftEl = document.getElementById('left');
 const btnNew = document.getElementById('btnNew');
 
 const cols = 8;
@@ -13,14 +15,27 @@ const colors = ['#6df3ff', '#7cffc5', '#ffd86d', '#ff7bd0', '#8c7bff'];
 let grid = [];
 let shooter = null;
 let score = 0;
+let best = Number(localStorage.getItem('webgame-33-best-score') || 0);
 
 function randColor() { return Math.floor(Math.random() * colors.length); }
+
+function countBubbles() {
+  let total = 0;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (grid[r][c] !== -1) total += 1;
+    }
+  }
+  return total;
+}
 
 function init() {
   grid = Array.from({ length: rows }, () => Array.from({ length: cols }, () => (Math.random() > 0.5 ? randColor() : -1)));
   shooter = { x: canvas.width / 2, y: canvas.height - 40, color: randColor(), vy: 0, active: false };
   score = 0;
   scoreEl.textContent = score;
+  bestEl.textContent = String(best);
+  leftEl.textContent = String(countBubbles());
 }
 
 function cellToPos(r, c) {
@@ -64,8 +79,14 @@ function attachBubble() {
   if (cluster.length >= 3) {
     cluster.forEach(p => grid[p.r][p.c] = -1);
     score += cluster.length * 10;
+    if (score > best) {
+      best = score;
+      localStorage.setItem('webgame-33-best-score', String(best));
+    }
     scoreEl.textContent = score;
+    bestEl.textContent = String(best);
   }
+  leftEl.textContent = String(countBubbles());
   shooter.active = false;
   shooter.y = canvas.height - 40;
   shooter.x = canvas.width / 2;
