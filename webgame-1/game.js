@@ -153,6 +153,7 @@ function updateHud() {
   bestComboEl.textContent = String(bestCombo);
 
   comboEl.parentElement?.classList.toggle('hot', combo >= 3);
+  bestComboEl.parentElement?.classList.toggle('warn', comboTimer > 0 && combo < 3);
 }
 
 function resetChallenge() {

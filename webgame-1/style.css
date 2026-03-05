@@ -41,6 +41,11 @@ header p { margin: 0 0 12px; opacity: .8; }
   border-color: rgba(102, 240, 255, 0.85);
   box-shadow: 0 0 10px rgba(102, 240, 255, 0.35);
 }
+
+.hud div.warn {
+  border-color: rgba(255, 151, 102, 0.85);
+  box-shadow: 0 0 10px rgba(255, 151, 102, 0.35);
+}
 button {
   border: 0;
   background: linear-gradient(135deg, var(--neon), #6aa9ff);
