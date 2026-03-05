@@ -5,6 +5,7 @@ const ctx = canvas.getContext('2d');
 
 const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
+const streakEl = document.getElementById('streak');
 const btnStart = document.getElementById('btnStart');
 
 const W = canvas.width;
@@ -17,6 +18,7 @@ const ORBIT_R = 126;
 let state = 'idle'; // idle | running | gameover
 let score = 0;
 let best = Number(localStorage.getItem(STORAGE_KEY) || 0);
+let streak = 0;
 let tick = 0;
 let shake = 0;
 
@@ -83,6 +85,7 @@ function spawnProjectile() {
 function resetGame() {
   state = 'idle';
   score = 0;
+  streak = 0;
   tick = 0;
   shake = 0;
 
@@ -93,6 +96,7 @@ function resetGame() {
   projectiles.length = 0;
   particles.length = 0;
   scoreEl.textContent = '0';
+  streakEl.textContent = '0';
 }
 
 function startGame() {
@@ -113,6 +117,8 @@ function endGame() {
   best = Math.max(best, score);
   bestEl.textContent = String(best);
   localStorage.setItem(STORAGE_KEY, String(best));
+  streak = 0;
+  streakEl.textContent = '0';
 }
 
 function action() {
@@ -162,8 +168,10 @@ function update() {
     const dc = Math.hypot(s.x - center.x, s.y - center.y);
     if (dc < 12 && !s.passed) {
       s.passed = true;
-      score += 1;
+      streak += 1;
+      score += 1 + Math.floor(streak / 4);
       scoreEl.textContent = String(score);
+      streakEl.textContent = String(streak);
       addBurst(s.x, s.y, '#7de3ff', 10);
       beep(780 + Math.min(200, score * 6), 0.03, 0.015);
     }
