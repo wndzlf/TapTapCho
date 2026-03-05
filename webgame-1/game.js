@@ -151,6 +151,8 @@ function updateHud() {
   bestEl.textContent = String(best);
   comboEl.textContent = String(combo);
   bestComboEl.textContent = String(bestCombo);
+
+  comboEl.parentElement?.classList.toggle('hot', combo >= 3);
 }
 
 function resetChallenge() {
