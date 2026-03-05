@@ -902,6 +902,16 @@ function initSingleRank() {
     || normalizeRankServerUrl(profile.serverUrl || savedServerUrl || defaultRankServerUrl())
     || defaultRankServerUrl();
   singleRankState.localRows = loadLocalRankRows();
+  const seededRow = normalizeRankRow({
+    playerId: 'p-yujaeyoung',
+    playerName: '유재영',
+    stage: 35,
+    kills: 34500,
+    score: 28500000,
+    timeSec: 620,
+    updatedAt: Date.now(),
+  });
+  if (seededRow) updateLocalRank(seededRow);
 
   if (rankNameEl) {
     rankNameEl.addEventListener('blur', () => {
