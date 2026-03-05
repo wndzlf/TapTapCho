@@ -44,6 +44,7 @@ function resetBoard(keepScore) {
   streakEl.textContent = String(streak);
   bestStreakEl.textContent = String(bestStreak);
   leftEl.textContent = String(countBubbles());
+  streakEl.parentElement?.classList.toggle('hot', streak >= 3);
 }
 
 function init() {
@@ -161,6 +162,19 @@ function draw() {
       ctx.fill();
       ctx.shadowBlur = 0;
     }
+  }
+
+  // aim guide
+  if (!shooter.active) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(109, 243, 255, 0.35)';
+    ctx.setLineDash([6, 8]);
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(shooter.x, shooter.y - radius);
+    ctx.lineTo(shooter.x, offsetY - 6);
+    ctx.stroke();
+    ctx.restore();
   }
 
   // shooter
