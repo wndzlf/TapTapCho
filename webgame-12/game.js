@@ -184,6 +184,9 @@ function updateHud() {
   bestComboEl.textContent = `x${(1 + Math.min(1.6, bestCombo / 5)).toFixed(1)}`;
   shieldEl.textContent = String(shield);
   leftEl.textContent = String(knivesLeft);
+
+  comboEl.parentElement?.classList.toggle('hot', combo >= 3);
+  leftEl.parentElement?.classList.toggle('warn', knivesLeft <= 2);
 }
 
 function setChallenge() {
