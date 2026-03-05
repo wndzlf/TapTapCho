@@ -204,6 +204,9 @@ function updateHud() {
   comboEl.textContent = `x${scoreMultiplier().toFixed(1)}`;
   bestComboEl.textContent = `x${(1 + Math.min(2.2, Math.floor(bestCombo / 4) * 0.2 + 0)).toFixed(1)}`;
   shieldEl.textContent = String(shield);
+
+  comboEl.parentElement?.classList.toggle('hot', comboCount >= 3);
+  shieldEl.parentElement?.classList.toggle('warn', shield <= 0);
 }
 
 function setChallenge() {
