@@ -4326,7 +4326,7 @@ function borderColorForTowerKind(kind) {
   if (kind === 'sunken') return 'rgba(77, 163, 255, 0.9)';
   if (kind === 'tankerSunken') return 'rgba(127, 224, 167, 0.95)';
   if (kind === 'sunkenNova') return 'rgba(198, 155, 255, 0.9)';
-  if (kind === 'sunkenStun') return 'rgba(124, 255, 141, 0.9)';
+  if (kind === 'sunkenStun') return 'rgba(255, 205, 92, 0.95)';
   if (kind === 'sunkenSplash') return 'rgba(30, 30, 30, 0.95)';
   if (kind === 'sunkenHammer') return 'rgba(255, 77, 77, 0.95)';
   if (kind === 'fusion') return 'rgba(174, 240, 255, 0.95)';

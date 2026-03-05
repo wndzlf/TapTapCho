@@ -524,8 +524,8 @@ body.rank-mode .top-row {
 }
 
 .build-btn[data-kind="sunkenStun"] {
-  border-color: #7cff8d;
-  background: linear-gradient(180deg, #1e3a28, #14281c);
+  border-color: #ffcd5c;
+  background: repeating-linear-gradient(135deg, #3a2b0f 0 6px, #231909 6px 12px);
 }
 
 .build-btn[data-kind="lottoSunken"] {
@@ -544,13 +544,13 @@ body.rank-mode .top-row {
 }
 
 .build-btn[data-kind="sunkenStun"] {
-  border-color: #9f7a2f;
-  background: linear-gradient(180deg, #34280f, #281f0c);
+  border-color: #ffcd5c;
+  background: repeating-linear-gradient(135deg, #3a2b0f 0 6px, #231909 6px 12px);
 }
 
 .build-btn[data-kind="sunkenStun"] .icon {
-  background: rgba(255, 217, 106, 0.24);
-  color: #fff0c8;
+  background: rgba(255, 205, 92, 0.28);
+  color: #fff3d6;
 }
 
 .build-btn.active {
