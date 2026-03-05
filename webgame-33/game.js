@@ -34,16 +34,20 @@ function countBubbles() {
   return total;
 }
 
-function init() {
+function resetBoard(keepScore) {
   grid = Array.from({ length: rows }, () => Array.from({ length: cols }, () => (Math.random() > 0.5 ? randColor() : -1)));
   shooter = { x: canvas.width / 2, y: canvas.height - 40, color: randColor(), vy: 0, active: false };
-  score = 0;
+  if (!keepScore) score = 0;
   streak = 0;
   scoreEl.textContent = score;
   bestEl.textContent = String(best);
   streakEl.textContent = String(streak);
   bestStreakEl.textContent = String(bestStreak);
   leftEl.textContent = String(countBubbles());
+}
+
+function init() {
+  resetBoard(false);
 }
 
 function cellToPos(r, c) {
@@ -104,7 +108,19 @@ function attachBubble() {
     streak = 0;
     streakEl.textContent = String(streak);
   }
-  leftEl.textContent = String(countBubbles());
+  const left = countBubbles();
+  leftEl.textContent = String(left);
+  if (left === 0) {
+    score += 50;
+    if (score > best) {
+      best = score;
+      localStorage.setItem('webgame-33-best-score', String(best));
+    }
+    scoreEl.textContent = score;
+    bestEl.textContent = String(best);
+    resetBoard(true);
+    return;
+  }
   shooter.active = false;
   shooter.y = canvas.height - 40;
   shooter.x = canvas.width / 2;
