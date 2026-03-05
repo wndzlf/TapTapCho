@@ -554,10 +554,11 @@ body.rank-mode .top-row {
 }
 
 #btnChoLotto .icon {
+  display: flex;
   font-size: 0;
   width: 22px;
   height: 22px;
-  background: url('../assets/dollar-icon.svg?v=1') center/contain no-repeat;
+  background: url('../assets/dollar-icon.svg?v=2') center/contain no-repeat;
 }
 
 .build-btn.active {
