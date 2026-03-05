@@ -183,6 +183,9 @@ function updateHud() {
   livesEl.textContent = String(lives);
   comboEl.textContent = String(combo);
   bestComboEl.textContent = String(bestCombo);
+
+  comboEl.parentElement?.classList.toggle('hot', combo >= 5);
+  livesEl.parentElement?.classList.toggle('warn', lives <= 1);
 }
 
 function resetGame() {
