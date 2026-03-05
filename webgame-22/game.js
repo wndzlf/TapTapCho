@@ -42,6 +42,7 @@ let safeLeft = 0;
 let firstMove = true;
 
 bestEl.textContent = String(best);
+bestStreakEl.textContent = String(bestStreak);
 
 const audioCtx = window.AudioContext ? new AudioContext() : null;
 
