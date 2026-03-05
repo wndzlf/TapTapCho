@@ -5,11 +5,14 @@ const ctx = canvas.getContext('2d');
 
 const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
+const comboEl = document.getElementById('combo');
+const bestComboEl = document.getElementById('bestCombo');
 const btnStart = document.getElementById('btnStart');
 
 const W = canvas.width;
 const H = canvas.height;
 const BEST_KEY = 'neon-dodge-best-v2';
+const BEST_COMBO_KEY = 'neon-dodge-best-combo';
 const SFX_KEY = 'neon-dodge-sfx-v2';
 
 const player = {
@@ -33,6 +36,7 @@ let flash = 0;
 let shake = 0;
 let combo = 0;
 let comboTimer = 0;
+let bestCombo = Number(localStorage.getItem(BEST_COMBO_KEY) || 0);
 let nearCount = 0;
 let coinCount = 0;
 let magnet = 0;
@@ -145,6 +149,8 @@ function addParticles(x, y, color, count = 12, spread = 3.2) {
 function updateHud() {
   scoreEl.textContent = String(score);
   bestEl.textContent = String(best);
+  comboEl.textContent = String(combo);
+  bestComboEl.textContent = String(bestCombo);
 }
 
 function resetChallenge() {
@@ -336,6 +342,10 @@ function updateObstacles(dt) {
         nearCount += 1;
         combo += 1;
         comboTimer = 2.0;
+        if (combo > bestCombo) {
+          bestCombo = combo;
+          localStorage.setItem(BEST_COMBO_KEY, String(bestCombo));
+        }
         score += Math.floor(12 * (1 + Math.min(1.2, combo / 8)));
         challengeAdd('near', 1);
         sfx.near();
@@ -365,6 +375,10 @@ function updatePickups(dt) {
         score += 30;
         combo += 1;
         comboTimer = 2.4;
+        if (combo > bestCombo) {
+          bestCombo = combo;
+          localStorage.setItem(BEST_COMBO_KEY, String(bestCombo));
+        }
         challengeAdd('coin', 1);
       } else {
         player.shield = Math.min(2, player.shield + 1);
