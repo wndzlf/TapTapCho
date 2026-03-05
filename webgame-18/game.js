@@ -82,6 +82,10 @@ function spawnProjectile() {
   });
 }
 
+function updateStreakHud() {
+  streakEl.parentElement?.classList.toggle('hot', streak >= 3);
+}
+
 function resetGame() {
   state = 'idle';
   score = 0;
@@ -97,6 +101,7 @@ function resetGame() {
   particles.length = 0;
   scoreEl.textContent = '0';
   streakEl.textContent = '0';
+  updateStreakHud();
 }
 
 function startGame() {
@@ -119,6 +124,7 @@ function endGame() {
   localStorage.setItem(STORAGE_KEY, String(best));
   streak = 0;
   streakEl.textContent = '0';
+  updateStreakHud();
 }
 
 function action() {
@@ -172,6 +178,7 @@ function update() {
       score += 1 + Math.floor(streak / 4);
       scoreEl.textContent = String(score);
       streakEl.textContent = String(streak);
+      updateStreakHud();
       addBurst(s.x, s.y, '#7de3ff', 10);
       beep(780 + Math.min(200, score * 6), 0.03, 0.015);
     }
@@ -233,6 +240,18 @@ function render() {
   ctx.arc(px, py, 10, 0, Math.PI * 2);
   ctx.fill();
   ctx.shadowBlur = 0;
+
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.rotate(orbitAngle + (orbitDir > 0 ? Math.PI / 2 : -Math.PI / 2));
+  ctx.fillStyle = 'rgba(125, 227, 255, 0.7)';
+  ctx.beginPath();
+  ctx.moveTo(14, 0);
+  ctx.lineTo(4, -5);
+  ctx.lineTo(4, 5);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
 
   for (const p of particles) {
     ctx.fillStyle = p.color;
