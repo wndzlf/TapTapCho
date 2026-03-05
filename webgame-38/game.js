@@ -6,6 +6,7 @@ const ctx = canvas.getContext('2d');
 const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
 const lengthEl = document.getElementById('length');
+const bestLengthEl = document.getElementById('bestLength');
 const aliveEl = document.getElementById('alive');
 const serverUrlEl = document.getElementById('serverUrl');
 const roomCodeEl = document.getElementById('roomCode');
@@ -20,6 +21,7 @@ const H = canvas.height;
 
 const DEFAULT_WORLD = { w: 2600, h: 2600 };
 const STORAGE_BEST = 'worm-arena-lan-best';
+const STORAGE_BEST_LENGTH = 'worm-arena-lan-best-length';
 const STORAGE_SERVER = 'worm-arena-lan-server';
 const STORAGE_ROOM = 'worm-arena-lan-room';
 const STORAGE_NAME = 'worm-arena-lan-name';
@@ -37,6 +39,7 @@ const lan = {
 let tick = 0;
 let flash = 0;
 let best = Number(localStorage.getItem(STORAGE_BEST) || 0);
+let bestLength = Number(localStorage.getItem(STORAGE_BEST_LENGTH) || 0);
 let camera = { x: 0, y: 0 };
 
 const pointer = { x: W * 0.5, y: H * 0.5, moved: false };
@@ -420,6 +423,12 @@ function render() {
   scoreEl.textContent = String(score);
   lengthEl.textContent = String(length);
   aliveEl.textContent = String(alive);
+
+  if (length > bestLength) {
+    bestLength = length;
+    bestLengthEl.textContent = String(bestLength);
+    localStorage.setItem(STORAGE_BEST_LENGTH, String(bestLength));
+  }
 
   if (me && score > best) {
     best = score;
