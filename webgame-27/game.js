@@ -21,10 +21,12 @@ let score = 0;
 let streak = 0;
 let timeLeft = 95;
 let timerId = null;
+let bestStreak = Number(localStorage.getItem('webgame-27-best-streak') || 0);
 
 const levelEl = addHudStat('Level', 'level', '1');
 const scoreEl = addHudStat('Score', 'score', '0');
 const streakEl = addHudStat('Streak', 'streak', '0');
+const bestEl = addHudStat('Best', 'best', String(bestStreak));
 const timeEl = addHudStat('Time', 'time', '95');
 const btnHint = document.createElement('button');
 btnHint.textContent = 'Hint';
@@ -67,6 +69,7 @@ function updateHud() {
   levelEl.textContent = String(level);
   scoreEl.textContent = String(score);
   streakEl.textContent = String(streak);
+  bestEl.textContent = String(bestStreak);
   timeEl.textContent = String(timeLeft);
 }
 
@@ -181,7 +184,12 @@ function onFail() {
 
 function handleMatch() {
   streak += 1;
+  if (streak > bestStreak) {
+    bestStreak = streak;
+    localStorage.setItem('webgame-27-best-streak', String(bestStreak));
+  }
   score += 35 + level * 5 + Math.min(6, streak) * 6;
+  timeLeft = Math.min(120, timeLeft + Math.floor(streak / 2));
   pairsLeft -= 1;
   audio?.fx('success');
   if (pairsLeft <= 0) {
