@@ -6,6 +6,8 @@ const ctx = canvas.getContext('2d');
 const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
 const btnStart = document.getElementById('btnStart');
+const leftEl = document.getElementById('left');
+const streakEl = document.getElementById('streak');
 
 const W = canvas.width;
 const H = canvas.height;
@@ -23,6 +25,7 @@ let best = Number(localStorage.getItem(STORAGE_KEY) || 0);
 let tick = 0;
 let timeLeft = 45;
 let flash = 0;
+let streak = 0;
 
 let board = Array(SIZE * SIZE).fill(false);
 let cursor = { r: 2, c: 2 };
@@ -63,11 +66,23 @@ function applyMove(r, c) {
   toggle(r, c + 1);
 }
 
-function allOff() {
+function countOn() {
+  let total = 0;
   for (const cell of board) {
-    if (cell) return false;
+    if (cell) total += 1;
   }
-  return true;
+  return total;
+}
+
+function allOff() {
+  return countOn() === 0;
+}
+
+function updateHud() {
+  scoreEl.textContent = String(score);
+  bestEl.textContent = String(best);
+  leftEl.textContent = String(countOn());
+  streakEl.textContent = String(streak);
 }
 
 function scramble() {
@@ -93,9 +108,10 @@ function resetGame() {
   tick = 0;
   timeLeft = 45;
   flash = 0;
+  streak = 0;
   cursor = { r: 2, c: 2 };
   scramble();
-  scoreEl.textContent = '0';
+  updateHud();
 }
 
 function startGame() {
@@ -107,9 +123,10 @@ function startGame() {
 function endGame() {
   state = 'gameover';
   beep(170, 0.22, 0.06);
+  streak = 0;
   best = Math.max(best, score);
-  bestEl.textContent = String(best);
   localStorage.setItem(STORAGE_KEY, String(best));
+  updateHud();
 }
 
 function playCell(r, c) {
@@ -120,14 +137,17 @@ function playCell(r, c) {
 
   applyMove(r, c);
   beep(520, 0.03, 0.015);
+  updateHud();
 
   if (allOff()) {
     score += 1;
-    scoreEl.textContent = String(score);
-    timeLeft = Math.min(99, timeLeft + 12);
+    streak += 1;
+    const bonus = 10 + Math.min(6, streak * 2);
+    timeLeft = Math.min(99, timeLeft + bonus);
     flash = 24;
     beep(960, 0.08, 0.03);
     scramble();
+    updateHud();
   }
 }
 
@@ -142,8 +162,9 @@ function update() {
     if (timeLeft <= 0) {
       timeLeft = 0;
       endGame();
-    } else if (timeLeft <= 8) {
-      beep(230, 0.04, 0.02);
+    } else {
+      if (timeLeft <= 8) beep(230, 0.04, 0.02);
+      updateHud();
     }
   }
 }
