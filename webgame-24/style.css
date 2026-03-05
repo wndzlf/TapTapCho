@@ -105,6 +105,11 @@ button:hover {
   transform: scale(1.02);
 }
 
+.cell.same {
+  background: rgba(109, 243, 255, 0.12);
+  border-color: rgba(109, 243, 255, 0.4);
+}
+
 .cell.error {
   color: var(--danger);
   box-shadow: 0 0 10px rgba(255, 123, 144, 0.4);

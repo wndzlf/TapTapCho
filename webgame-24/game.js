@@ -144,16 +144,33 @@ function buildBoard() {
   }
 }
 
+function clearSameHighlights() {
+  boardEl.querySelectorAll('.cell.same').forEach((cell) => cell.classList.remove('same'));
+}
+
+function highlightSameValues(value) {
+  if (!value) return;
+  boardEl.querySelectorAll('.cell').forEach((cell) => {
+    if (cell.textContent === value) cell.classList.add('same');
+  });
+}
+
 function selectCell(cell) {
   if (selected) selected.classList.remove('selected');
   selected = cell;
   selected.classList.add('selected');
+  clearSameHighlights();
+  highlightSameValues(selected.textContent);
 }
 
 function setCellValue(cell, value) {
   if (!cell || cell.classList.contains('prefill')) return;
   cell.textContent = value === '0' ? '' : value;
   cell.classList.remove('error');
+  if (selected === cell) {
+    clearSameHighlights();
+    highlightSameValues(cell.textContent);
+  }
 }
 
 function checkConflicts() {
@@ -168,6 +185,8 @@ function checkConflicts() {
       cell.classList.remove('error');
     }
   });
+  clearSameHighlights();
+  if (selected) highlightSameValues(selected.textContent);
   if (wrong > 0) {
     errors += wrong;
     audio?.fx('fail');
