@@ -68,6 +68,10 @@ function updateHud() {
   bestComboEl.textContent = `x${bestCombo}`;
   bestEl.textContent = String(bestScore);
   timeEl.textContent = String(timeLeft);
+
+  comboEl.parentElement?.classList.toggle('hot', combo >= 3);
+  movesEl.parentElement?.classList.toggle('warn', moves <= 5);
+  timeEl.parentElement?.classList.toggle('warn', timeLeft <= 10);
 }
 
 function startTimer() {
