@@ -28,6 +28,7 @@ const levelEl = addHudStat('Level', 'level', '1');
 const hintsEl = addHudStat('Hints', 'hints', '3');
 const scoreEl = addHudStat('Score', 'score', '0');
 const bestEl = addHudStat('Best', 'best', String(bestScore));
+const leftEl = addHudStat('Left', 'left', '0');
 const btnHint = document.createElement('button');
 btnHint.id = 'btnHint';
 btnHint.textContent = 'Hint';
@@ -71,12 +72,17 @@ function startTimer() {
   }, 1000);
 }
 
+function countEmpty() {
+  return Array.from(boardEl.children).filter((cell) => !cell.textContent).length;
+}
+
 function updateHud() {
   levelEl.textContent = String(level);
   hintsEl.textContent = String(hints);
   scoreEl.textContent = String(score);
   bestEl.textContent = String(bestScore);
   errorsEl.textContent = String(errors);
+  leftEl.textContent = String(countEmpty());
 }
 
 function startRound(useCurrentLevel = true) {
