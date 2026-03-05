@@ -12,6 +12,7 @@ const bestEl = document.getElementById('best');
 const linesEl = document.getElementById('lines');
 const levelEl = document.getElementById('level');
 const comboEl = document.getElementById('combo');
+const bestComboEl = document.getElementById('bestCombo');
 const modeEl = document.getElementById('mode');
 
 const btnLeft = document.getElementById('btnLeft');
@@ -34,6 +35,7 @@ const COLS = 10;
 const ROWS = 20;
 const BLOCK = 24;
 const BEST_KEY = 'weird-tetris-best-v3';
+const BEST_COMBO_KEY = 'weird-tetris-best-combo';
 const SOUND_KEY = 'weird-tetris-sound-v3';
 
 const COLORS = {
@@ -104,6 +106,7 @@ let level = 1;
 let combo = 0;
 let comboTimer = 0;
 let backToBack = false;
+let bestCombo = Number(localStorage.getItem(BEST_COMBO_KEY) || 0);
 
 let dropCounter = 0;
 let lastTime = 0;
@@ -305,6 +308,7 @@ function updateHud() {
   linesEl.textContent = String(lines);
   levelEl.textContent = String(level);
   comboEl.textContent = `x${(1 + Math.min(1.5, combo / 4)).toFixed(1)}`;
+  bestComboEl.textContent = `x${(1 + Math.min(1.5, bestCombo / 4)).toFixed(1)}`;
   if (reverseTimer > 0) modeEl.textContent = '반전';
   else modeEl.textContent = weirdEnabled ? 'Chaos' : '안정';
 
@@ -345,6 +349,10 @@ function arenaSweep() {
   backToBack = rowCount === 4;
 
   combo += 1;
+  if (combo > bestCombo) {
+    bestCombo = combo;
+    localStorage.setItem(BEST_COMBO_KEY, String(bestCombo));
+  }
   comboTimer = 2.5;
   gained = Math.floor(gained * (1 + Math.min(1.5, combo / 5)));
 
