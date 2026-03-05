@@ -82,6 +82,10 @@ function resetPlayer() {
   player.r = ROWS - 1;
 }
 
+function updateStreakHud() {
+  streakEl.parentElement?.classList.toggle('hot', streak >= 3);
+}
+
 function resetGame() {
   state = 'idle';
   score = 0;
@@ -93,6 +97,7 @@ function resetGame() {
   makeLanes();
   scoreEl.textContent = '0';
   streakEl.textContent = '0';
+  updateStreakHud();
 }
 
 function startGame() {
@@ -111,6 +116,7 @@ function endGame() {
   localStorage.setItem(STORAGE_KEY, String(best));
   streak = 0;
   streakEl.textContent = '0';
+  updateStreakHud();
 }
 
 function movePlayer(dc, dr) {
@@ -135,6 +141,7 @@ function movePlayer(dc, dr) {
     score += Math.floor(streak / 3);
     scoreEl.textContent = String(score);
     streakEl.textContent = String(streak);
+    updateStreakHud();
     beep(980, 0.08, 0.03);
     addBurst(px, py, '#ffe08a', 22);
     resetPlayer();
@@ -216,6 +223,15 @@ function render() {
   ctx.shadowBlur = 14;
   ctx.fillRect(px - 14, py - 14, 28, 28);
   ctx.shadowBlur = 0;
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(px, py - 18);
+  ctx.lineTo(px - 6, py - 8);
+  ctx.lineTo(px + 6, py - 8);
+  ctx.closePath();
+  ctx.stroke();
 
   for (const p of particles) {
     ctx.fillStyle = p.color;
