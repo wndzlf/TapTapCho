@@ -16,6 +16,7 @@ const BEST_DISTANCE_KEY = 'retro-village-best-distance';
 let totalDistance = 0;
 let bestDistance = Number(localStorage.getItem(BEST_DISTANCE_KEY) || 0);
 let lastPos = new THREE.Vector3();
+let bestFlash = 0;
 scene.background = new THREE.Color(0x0b1020);
 
 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 200);
@@ -197,7 +198,10 @@ window.addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
 function updateMovement(delta) {
   const sprinting = keys.has('shift');
   const speed = 6 * delta * (sprinting ? 1.6 : 1);
-  if (sprintEl) sprintEl.textContent = sprinting ? 'ON' : 'OFF';
+  if (sprintEl) {
+    sprintEl.textContent = sprinting ? 'ON' : 'OFF';
+    sprintEl.classList.toggle('on', sprinting);
+  }
   const forward = new THREE.Vector3();
   camera.getWorldDirection(forward);
   forward.y = 0;
@@ -225,9 +229,16 @@ function updateDistance() {
     if (totalDistance > bestDistance) {
       bestDistance = totalDistance;
       localStorage.setItem(BEST_DISTANCE_KEY, String(bestDistance));
+      bestFlash = 60;
     }
     distanceEl.textContent = String(Math.floor(totalDistance));
     bestDistanceEl.textContent = String(Math.floor(bestDistance));
+  }
+  if (bestFlash > 0) {
+    bestFlash -= 1;
+    bestDistanceEl?.classList.add('hot');
+  } else {
+    bestDistanceEl?.classList.remove('hot');
   }
   lastPos.copy(pos);
 }

@@ -28,6 +28,19 @@ html, body {
   border: 1px solid #2a3242;
   background: rgba(11, 16, 32, 0.7);
   color: #e8eaf0;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.hint span.on {
+  border-color: rgba(125, 227, 255, 0.8);
+  color: #e9f6ff;
+  box-shadow: 0 0 10px rgba(125, 227, 255, 0.35);
+}
+
+.hint span.hot {
+  border-color: rgba(255, 209, 115, 0.85);
+  color: #fff2cc;
+  box-shadow: 0 0 12px rgba(255, 209, 115, 0.4);
 }
 
 .start {
