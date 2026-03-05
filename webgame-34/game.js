@@ -1,6 +1,7 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const movesEl = document.getElementById('moves');
+const bestScoreEl = document.getElementById('bestScore');
 const btnNew = document.getElementById('btnNew');
 const hudEl = document.querySelector('.hud');
 
@@ -19,6 +20,7 @@ let combo = 1;
 let timeLeft = 100;
 let timerId = null;
 let bestCombo = Number(localStorage.getItem('webgame-34-best-combo') || 1);
+let bestScore = Number(localStorage.getItem('webgame-34-best-score') || 0);
 
 const levelEl = addHudStat('Level', 'level', '1');
 const scoreEl = addHudStat('Score', 'score', '0');
@@ -64,6 +66,7 @@ function updateHud() {
   movesEl.textContent = String(moves);
   levelEl.textContent = String(level);
   scoreEl.textContent = String(score);
+  bestScoreEl.textContent = String(bestScore);
   comboEl.textContent = `x${combo}`;
   bestComboEl.textContent = `x${bestCombo}`;
   timeEl.textContent = String(timeLeft);
@@ -73,6 +76,7 @@ function init(resetProgress = false) {
   if (resetProgress) {
     level = 1;
     score = 0;
+    bestScore = Number(localStorage.getItem('webgame-34-best-score') || 0);
   }
 
   deck = buildDeck();
@@ -181,6 +185,10 @@ function handleTableauClick(x, y) {
       localStorage.setItem('webgame-34-best-combo', String(bestCombo));
     }
     score += 25 + combo * 6 + level * 2;
+    if (score > bestScore) {
+      bestScore = score;
+      localStorage.setItem('webgame-34-best-score', String(bestScore));
+    }
     timeLeft = Math.min(130, timeLeft + 1);
     audio?.fx('success');
     updateHud();
