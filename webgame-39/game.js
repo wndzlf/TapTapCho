@@ -8,6 +8,7 @@ const hpTextEl = document.getElementById('hpText');
 const trialTextEl = document.getElementById('trialText');
 const waveTextEl = document.getElementById('waveText');
 const essenceTextEl = document.getElementById('essenceText');
+const bestEssenceTextEl = document.getElementById('bestEssenceText');
 const killTextEl = document.getElementById('killText');
 
 const stickZoneEl = document.getElementById('stickZone');
@@ -120,6 +121,8 @@ const input = {
 };
 
 const sfxCtx = window.AudioContext ? new AudioContext() : null;
+const BEST_ESSENCE_KEY = 'crimson-hunter-best-essence';
+let bestEssence = Number(localStorage.getItem(BEST_ESSENCE_KEY) || 0);
 
 function sfx(freq, duration = 0.08, type = 'triangle', gain = 0.03) {
   if (!sfxCtx) return;
@@ -661,6 +664,10 @@ function killEnemy(enemy) {
   const essence = enemy.type === 'boss' ? 45 + state.trial * 20 : 5 + state.trial;
   state.essence += essence;
   state.score += essence * 10;
+  if (state.essence > bestEssence) {
+    bestEssence = state.essence;
+    localStorage.setItem(BEST_ESSENCE_KEY, String(bestEssence));
+  }
 
   if (state.mods.onKillHeal > 0) {
     state.player.hp = Math.min(state.player.maxHp, state.player.hp + state.mods.onKillHeal);
@@ -904,6 +911,10 @@ function updatePickups(dt) {
     if (d < p.r + orb.r + 3) {
       state.essence += orb.value;
       state.score += orb.value * 2;
+      if (state.essence > bestEssence) {
+        bestEssence = state.essence;
+        localStorage.setItem(BEST_ESSENCE_KEY, String(bestEssence));
+      }
       state.pickups.splice(i, 1);
       if (Math.random() < 0.3) sfx(860, 0.02, 'triangle', 0.01);
     }
@@ -1066,6 +1077,7 @@ function refreshHUD() {
   trialTextEl.textContent = String(state.trial);
   waveTextEl.textContent = state.isBossWave ? `${state.wave} (BOSS)` : String(state.wave);
   essenceTextEl.textContent = String(Math.floor(state.essence));
+  bestEssenceTextEl.textContent = String(bestEssence);
   killTextEl.textContent = String(state.kills);
 
   updateSkillButton(btnDashEl, p.dashCdLeft, p.dashCd * state.mods.dashMul, '#6dd6ff');
