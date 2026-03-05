@@ -22,10 +22,12 @@ let timerId = null;
 let level = 1;
 let hints = 3;
 let score = 0;
+let bestScore = Number(localStorage.getItem('webgame-24-best-score') || 0);
 
 const levelEl = addHudStat('Level', 'level', '1');
 const hintsEl = addHudStat('Hints', 'hints', '3');
 const scoreEl = addHudStat('Score', 'score', '0');
+const bestEl = addHudStat('Best', 'best', String(bestScore));
 const btnHint = document.createElement('button');
 btnHint.id = 'btnHint';
 btnHint.textContent = 'Hint';
@@ -73,6 +75,7 @@ function updateHud() {
   levelEl.textContent = String(level);
   hintsEl.textContent = String(hints);
   scoreEl.textContent = String(score);
+  bestEl.textContent = String(bestScore);
   errorsEl.textContent = String(errors);
 }
 
@@ -175,8 +178,13 @@ function isComplete() {
 
 function onRoundClear() {
   clearInterval(timerId);
-  const bonus = Math.max(220, 1300 - timeSec * 4 - errors * 30 + level * 90);
+  let bonus = Math.max(220, 1300 - timeSec * 4 - errors * 30 + level * 90);
+  if (errors === 0) bonus += 160;
   score += bonus;
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem('webgame-24-best-score', String(bestScore));
+  }
   level += 1;
   updateHud();
   audio?.fx('win');
@@ -246,6 +254,7 @@ btnNew.addEventListener('click', () => {
   score = 0;
   level = 1;
   startRound(false);
+  updateHud();
   audio?.fx('ui');
 });
 
