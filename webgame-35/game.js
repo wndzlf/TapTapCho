@@ -22,9 +22,12 @@ let message = 'Find a way out.';
 let code = [1, 2, 3];
 let dials = [0, 0, 0];
 
+let bestLevel = Number(localStorage.getItem('webgame-35-best-level') || 1);
+
 const levelEl = addHudStat('Level', 'level', '1');
 const scoreEl = addHudStat('Score', 'score', '0');
 const timeEl = addHudStat('Time', 'time', '95');
+const bestEl = addHudStat('Best', 'best', String(bestLevel));
 
 const door = { x: 290, y: 120, w: 90, h: 220 };
 const painting = { x: 72, y: 92, w: 120, h: 84 };
@@ -49,6 +52,7 @@ function updateHud() {
   levelEl.textContent = String(level);
   scoreEl.textContent = String(score);
   timeEl.textContent = String(timeLeft);
+  bestEl.textContent = String(bestLevel);
   const items = [];
   if (hasKeycard) items.push('Keycard');
   if (hasKey) items.push('Key');
@@ -106,6 +110,10 @@ function onClear() {
   clearInterval(timerId);
   score += Math.max(140, timeLeft * 3 + level * 25);
   level += 1;
+  if (level > bestLevel) {
+    bestLevel = level;
+    localStorage.setItem('webgame-35-best-level', String(bestLevel));
+  }
   audio?.fx('win');
   updateHud();
   setTimeout(() => resetRound(false), 900);
@@ -124,7 +132,9 @@ function handleClick(x, y) {
       message = 'Door unlocked. Escaped!';
       onClear();
     } else {
-      message = 'Door requires a key and keycard.';
+      if (!hasKey && !hasKeycard) message = 'Need a key and keycard.';
+      else if (!hasKey) message = 'Need a key.';
+      else message = 'Need a keycard.';
       audio?.fx('fail');
     }
     return;
