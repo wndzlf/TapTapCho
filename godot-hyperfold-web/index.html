@@ -26,7 +26,7 @@
       display: grid;
       gap: 8px;
     }
-    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; font-size: 12px; }
+    .stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; font-size: 12px; }
     .stats div { background: #111f43; border: 1px solid #29406f; border-radius: 8px; padding: 6px 8px; }
     .controls { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; }
     input[type='range'] { width: 100%; }
@@ -86,6 +86,7 @@
     <div class="hud">
       <div class="stats">
         <div id="sTime">Time: 0.0s</div>
+        <div id="sBest">Best: --</div>
         <div id="sLayer">Layer: W0</div>
         <div id="sShield">Shield: 0</div>
         <div id="sState">State: RUN</div>
@@ -118,6 +119,7 @@
     const sLayer = document.getElementById('sLayer');
     const sShield = document.getElementById('sShield');
     const sState = document.getElementById('sState');
+    const sBest = document.getElementById('sBest');
     const layerSlider = document.getElementById('layerSlider');
     const btnRewind = document.getElementById('btnRewind');
     const btnRestart = document.getElementById('btnRestart');
@@ -229,6 +231,9 @@
     let weaponPlan;
     let currentLayer;
     let timeSec;
+    const BEST_TIME_KEY = 'hyperfold-best-time';
+    let bestTime = Number(localStorage.getItem(BEST_TIME_KEY) || 0);
+
     let status;
     let msg;
     let msgLeft;
@@ -294,6 +299,7 @@
       timeSec = 0;
       status = 'running';
       msg = '골든 웨폰 시그널 추적 시작';
+      bestTime = Number(localStorage.getItem(BEST_TIME_KEY) || 0);
       msgLeft = 1.5;
       hitCooldown = 0;
       sampleAcc = 0;
@@ -567,6 +573,10 @@
           weapon.claimed = true;
           weapon.active = false;
           status = 'win';
+          if (!bestTime || timeSec < bestTime) {
+            bestTime = timeSec;
+            localStorage.setItem(BEST_TIME_KEY, String(bestTime));
+          }
           setMessage('승리: 골든 웨폰 확보!', 2.4);
         }
       }
@@ -748,6 +758,7 @@
       sTime.textContent = `Time: ${timeSec.toFixed(1)}s`;
       sLayer.textContent = `Layer: W${currentLayer}`;
       sShield.textContent = `Shield: ${player.shield}`;
+      sBest.textContent = bestTime ? `Best: ${bestTime.toFixed(1)}s` : 'Best: --';
       if (rewind.active) sState.textContent = 'State: REWIND';
       else if (status === 'win') sState.textContent = 'State: WIN';
       else if (status === 'lose') sState.textContent = 'State: LOSE';
