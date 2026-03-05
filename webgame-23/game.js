@@ -151,6 +151,10 @@ function updateHud() {
   lengthEl.textContent = String(snake.length);
   bestLengthEl.textContent = String(bestLength);
   shieldEl.textContent = String(shield);
+
+  comboEl.parentElement?.classList.toggle('hot', combo >= 3);
+  lengthEl.parentElement?.classList.toggle('hot', snake.length >= 10);
+  shieldEl.parentElement?.classList.toggle('warn', shield === 0);
 }
 
 function addParticles(x, y, color, count = 10) {
