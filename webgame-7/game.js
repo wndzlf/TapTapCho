@@ -7,6 +7,7 @@ const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
 const levelEl = document.getElementById('level');
 const comboEl = document.getElementById('combo');
+const bestComboEl = document.getElementById('bestCombo');
 const shieldEl = document.getElementById('shield');
 const dashEl = document.getElementById('dash');
 const challengeTextEl = document.getElementById('challengeText');
@@ -23,6 +24,7 @@ const W = canvas.width;
 const H = canvas.height;
 
 const BEST_KEY = 'lane-dash-best-v4';
+const BEST_COMBO_KEY = 'lane-dash-best-combo';
 const SOUND_KEY = 'lane-dash-sound-v4';
 
 const lanes = [W * 0.23, W * 0.5, W * 0.77];
@@ -53,6 +55,7 @@ let flash = 0;
 let shake = 0;
 let comboCount = 0;
 let comboTimer = 0;
+let bestCombo = Number(localStorage.getItem(BEST_COMBO_KEY) || 0);
 let shield = 0;
 let coinCount = 0;
 let slowTimer = 0;
@@ -204,6 +207,7 @@ function updateHud() {
   bestEl.textContent = String(best);
   levelEl.textContent = String(level);
   comboEl.textContent = `x${scoreMultiplier().toFixed(1)}`;
+  bestComboEl.textContent = `x${(1 + Math.min(2.4, Math.floor(bestCombo / 4) * 0.2)).toFixed(1)}`;
   shieldEl.textContent = String(shield);
   dashEl.textContent = `${Math.round(dashCharge)}%`;
 }
@@ -500,6 +504,10 @@ function updateObstacles(dt) {
       if (dx > 44 && dx < 92 && dy < 32) {
         obstacle.nearGiven = true;
         comboCount += 1;
+        if (comboCount > bestCombo) {
+          bestCombo = comboCount;
+          localStorage.setItem(BEST_COMBO_KEY, String(bestCombo));
+        }
         comboTimer = 2.3;
         addScore(16);
         dashCharge = Math.min(100, dashCharge + 6);
@@ -512,6 +520,10 @@ function updateObstacles(dt) {
       if (dashActive > 0) {
         obstacles.splice(i, 1);
         comboCount += 1;
+        if (comboCount > bestCombo) {
+          bestCombo = comboCount;
+          localStorage.setItem(BEST_COMBO_KEY, String(bestCombo));
+        }
         dashHits += 1;
         addScore(42);
         addChallengeProgress('dash', 1);
@@ -532,6 +544,10 @@ function applyPickup(type) {
   if (type === 'coin') {
     coinCount += 1;
     comboCount += 1;
+    if (comboCount > bestCombo) {
+      bestCombo = comboCount;
+      localStorage.setItem(BEST_COMBO_KEY, String(bestCombo));
+    }
     comboTimer = 2.8;
     addScore(24);
     dashCharge = Math.min(100, dashCharge + 4);
