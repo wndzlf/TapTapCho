@@ -70,6 +70,8 @@ function updateHud() {
   bestScoreEl.textContent = String(state.bestScore);
   streakEl.textContent = String(state.streak);
   bestStreakEl.textContent = String(state.bestStreak);
+
+  streakEl.parentElement?.classList.toggle('hot', state.streak >= 3);
 }
 
 function laneX(index) {
@@ -204,6 +206,7 @@ function evaluatePrediction(traceObj) {
     state.score += 140;
     state.streak += 1;
     state.message = `예측 성공! ${state.players[traceObj.startIdx]} -> ${actualResult} (+200)`;
+    state.pulse = 1.2;
   } else {
     state.streak = 0;
     state.message = `${state.players[traceObj.startIdx]} -> ${actualResult} (+60)`;
