@@ -3,12 +3,18 @@ import { PointerLockControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
 
 const canvas = document.getElementById('c');
+const distanceEl = document.getElementById('distance');
+const bestDistanceEl = document.getElementById('bestDistance');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const scene = new THREE.Scene();
+const BEST_DISTANCE_KEY = 'retro-village-best-distance';
+let totalDistance = 0;
+let bestDistance = Number(localStorage.getItem(BEST_DISTANCE_KEY) || 0);
+let lastPos = new THREE.Vector3();
 scene.background = new THREE.Color(0x0b1020);
 
 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 200);
@@ -27,6 +33,9 @@ startOverlay.addEventListener('click', () => {
 });
 controls.addEventListener('unlock', () => {
   startOverlay.classList.remove('hidden');
+  totalDistance = 0;
+  lastPos.copy(controls.getObject().position);
+  distanceEl.textContent = String(Math.floor(totalDistance));
 });
 
 const hemi = new THREE.HemisphereLight(0xbad4ff, 0x1f2937, 1.0);
@@ -174,6 +183,9 @@ async function buildVillage() {
 
 buildVillage().then(() => {
   controls.getObject().position.set(0, 2.2, 8);
+  lastPos.copy(controls.getObject().position);
+  distanceEl.textContent = String(Math.floor(totalDistance));
+  bestDistanceEl.textContent = String(Math.floor(bestDistance));
 });
 
 // movement (1st person)
@@ -201,11 +213,28 @@ function updateMovement(delta) {
   }
 }
 
+function updateDistance() {
+  const pos = controls.getObject().position;
+  if (lastPos.lengthSq() === 0) lastPos.copy(pos);
+  const delta = pos.distanceTo(lastPos);
+  if (delta > 0) {
+    totalDistance += delta;
+    if (totalDistance > bestDistance) {
+      bestDistance = totalDistance;
+      localStorage.setItem(BEST_DISTANCE_KEY, String(bestDistance));
+    }
+    distanceEl.textContent = String(Math.floor(totalDistance));
+    bestDistanceEl.textContent = String(Math.floor(bestDistance));
+  }
+  lastPos.copy(pos);
+}
+
 let last = performance.now();
 function animate(now) {
   const delta = (now - last) / 1000;
   last = now;
   updateMovement(delta);
+  updateDistance();
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
 }
