@@ -1,6 +1,7 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const movesEl = document.getElementById('moves');
+const bestMovesEl = document.getElementById('bestMoves');
 const btnNew = document.getElementById('btnNew');
 const hudEl = document.querySelector('.hud');
 
@@ -18,6 +19,7 @@ let level = 1;
 let timeLeft = 100;
 let timerId = null;
 let bestLevel = Number(localStorage.getItem('webgame-31-best-level') || 1);
+let bestMoves = Number(localStorage.getItem('webgame-31-best-moves') || 0);
 let streak = 0;
 
 const levelEl = addHudStat('Level', 'level', '1');
@@ -52,6 +54,7 @@ function updateHud() {
   levelEl.textContent = String(level);
   timeEl.textContent = String(timeLeft);
   bestEl.textContent = String(bestLevel);
+  bestMovesEl.textContent = bestMoves > 0 ? String(bestMoves) : '-';
   streakEl.textContent = String(streak);
 }
 
@@ -79,6 +82,7 @@ function init(resetProgress = false) {
 
   moves = 0;
   streak = 0;
+  bestMoves = Number(localStorage.getItem('webgame-31-best-moves') || 0);
   timeLeft = Math.max(35, 102 - level * 5);
   updateHud();
   startTimer();
@@ -124,6 +128,10 @@ function onClear() {
   level += 1;
   bestLevel = Math.max(bestLevel, level);
   localStorage.setItem('webgame-31-best-level', String(bestLevel));
+  if (!bestMoves || moves < bestMoves) {
+    bestMoves = moves;
+    localStorage.setItem('webgame-31-best-moves', String(bestMoves));
+  }
   streak = 0;
   setTimeout(() => init(false), 650);
 }
