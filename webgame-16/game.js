@@ -103,6 +103,10 @@ function isSolved() {
   return board[15] === 0;
 }
 
+function updateStreakHud() {
+  streakEl.parentElement?.classList.toggle('hot', streak >= 3);
+}
+
 function resetGame() {
   state = 'idle';
   score = 0;
@@ -114,6 +118,7 @@ function resetGame() {
   resetBoard();
   scoreEl.textContent = '0';
   streakEl.textContent = '0';
+  updateStreakHud();
 }
 
 function startGame() {
@@ -131,6 +136,7 @@ function endGame() {
   localStorage.setItem(STORAGE_KEY, String(best));
   streak = 0;
   streakEl.textContent = '0';
+  updateStreakHud();
 }
 
 function tryMove(index) {
@@ -158,6 +164,7 @@ function tryMove(index) {
     streak += 1;
     scoreEl.textContent = String(score);
     streakEl.textContent = String(streak);
+    updateStreakHud();
     timeLeft = Math.min(99, timeLeft + 18 + Math.min(6, streak * 2));
     flash = 28;
     beep(980, 0.08, 0.03);
@@ -253,7 +260,7 @@ function render() {
   }
   ctx.globalAlpha = 1;
 
-  ctx.fillStyle = '#e7eefb';
+  ctx.fillStyle = timeLeft <= 8 ? '#ff8f7a' : '#e7eefb';
   ctx.textAlign = 'left';
   ctx.font = 'bold 20px system-ui';
   ctx.fillText(`Time: ${timeLeft}s`, 18, 60);
