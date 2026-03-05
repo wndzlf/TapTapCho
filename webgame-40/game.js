@@ -5256,6 +5256,18 @@ if (detailToggleBtn && detailPanelEl) {
     setDetailVisible(show);
   });
 }
+
+if (singleTabEl) {
+  singleTabEl.addEventListener('click', () => {
+    if (rankToggleBtn) rankToggleBtn.classList.toggle('active', false);
+    if (rankPanelEl) rankPanelEl.classList.toggle('rank-hidden', true);
+    if (detailToggleBtn) detailToggleBtn.classList.toggle('active', false);
+    if (detailPanelEl) detailPanelEl.classList.toggle('detail-hidden', true);
+    singleTabEl.classList.toggle('active', true);
+    document.body.classList.toggle('rank-mode', false);
+    document.body.classList.toggle('detail-mode', false);
+  });
+}
 initSingleRank();
 
 const rankAdUrls = {
