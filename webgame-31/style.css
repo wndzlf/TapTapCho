@@ -45,6 +45,14 @@ header p {
   margin-bottom: 12px;
 }
 
+.hud > div {
+  background: #0b1326;
+  border: 1px solid #22324e;
+  border-radius: 10px;
+  padding: 4px 8px;
+  font-size: 14px;
+}
+
 button {
   border: 1px solid #2d5b8a;
   background: #15243f;
@@ -52,6 +60,12 @@ button {
   padding: 8px 12px;
   border-radius: 10px;
   cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.2s ease;
+}
+
+button:hover {
+  box-shadow: 0 0 10px rgba(109, 243, 255, 0.25);
+  transform: translateY(-1px);
 }
 
 .board {
