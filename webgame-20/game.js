@@ -8,6 +8,7 @@ const bestEl = document.getElementById('best');
 const btnStart = document.getElementById('btnStart');
 const leftEl = document.getElementById('left');
 const streakEl = document.getElementById('streak');
+const bestStreakEl = document.getElementById('bestStreak');
 
 const W = canvas.width;
 const H = canvas.height;
@@ -22,6 +23,7 @@ const STORAGE_KEY = 'lights-out-rush-best';
 let state = 'idle'; // idle | running | gameover
 let score = 0;
 let best = Number(localStorage.getItem(STORAGE_KEY) || 0);
+let bestStreak = Number(localStorage.getItem('webgame-20-best-streak') || 0);
 let tick = 0;
 let timeLeft = 45;
 let flash = 0;
@@ -83,6 +85,7 @@ function updateHud() {
   bestEl.textContent = String(best);
   leftEl.textContent = String(countOn());
   streakEl.textContent = String(streak);
+  bestStreakEl.textContent = String(bestStreak);
 }
 
 function scramble() {
@@ -109,6 +112,7 @@ function resetGame() {
   timeLeft = 45;
   flash = 0;
   streak = 0;
+  bestStreak = Number(localStorage.getItem('webgame-20-best-streak') || 0);
   cursor = { r: 2, c: 2 };
   scramble();
   updateHud();
@@ -142,6 +146,10 @@ function playCell(r, c) {
   if (allOff()) {
     score += 1;
     streak += 1;
+    if (streak > bestStreak) {
+      bestStreak = streak;
+      localStorage.setItem('webgame-20-best-streak', String(bestStreak));
+    }
     const bonus = 10 + Math.min(6, streak * 2);
     timeLeft = Math.min(99, timeLeft + bonus);
     flash = 24;
