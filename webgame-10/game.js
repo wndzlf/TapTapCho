@@ -268,6 +268,9 @@ function updateHud() {
   bestComboEl.textContent = `x${(1 + Math.min(1.6, bestCombo / 4)).toFixed(1)}`;
   shieldEl.textContent = String(shield);
   checkpointEl.textContent = String(checkpoint);
+
+  comboEl.parentElement?.classList.toggle('hot', combo >= 3);
+  shieldEl.parentElement?.classList.toggle('warn', shield <= 1);
 }
 
 function resetGame() {
