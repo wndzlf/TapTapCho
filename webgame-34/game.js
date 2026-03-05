@@ -18,10 +18,12 @@ let score = 0;
 let combo = 1;
 let timeLeft = 100;
 let timerId = null;
+let bestCombo = Number(localStorage.getItem('webgame-34-best-combo') || 1);
 
 const levelEl = addHudStat('Level', 'level', '1');
 const scoreEl = addHudStat('Score', 'score', '0');
 const comboEl = addHudStat('Combo', 'combo', 'x1');
+const bestComboEl = addHudStat('Best Combo', 'bestCombo', `x${bestCombo}`);
 const timeEl = addHudStat('Time', 'time', '100');
 
 function addHudStat(label, id, initialValue) {
@@ -63,6 +65,7 @@ function updateHud() {
   levelEl.textContent = String(level);
   scoreEl.textContent = String(score);
   comboEl.textContent = `x${combo}`;
+  bestComboEl.textContent = `x${bestCombo}`;
   timeEl.textContent = String(timeLeft);
 }
 
@@ -173,6 +176,10 @@ function handleTableauClick(x, y) {
     slot.alive = false;
     moves += 1;
     combo = Math.min(10, combo + 1);
+    if (combo > bestCombo) {
+      bestCombo = combo;
+      localStorage.setItem('webgame-34-best-combo', String(bestCombo));
+    }
     score += 25 + combo * 6 + level * 2;
     timeLeft = Math.min(130, timeLeft + 1);
     audio?.fx('success');
