@@ -7,6 +7,7 @@ const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
 const levelEl = document.getElementById('level');
 const comboEl = document.getElementById('combo');
+const bestComboEl = document.getElementById('bestCombo');
 const shieldEl = document.getElementById('shield');
 const checkpointEl = document.getElementById('checkpoint');
 const challengeTextEl = document.getElementById('challengeText');
@@ -19,6 +20,7 @@ const btnSound = document.getElementById('btnSound');
 const W = canvas.width;
 const H = canvas.height;
 const BEST_KEY = 'zigzag-rush-best-v3';
+const BEST_COMBO_KEY = 'zigzag-rush-best-combo';
 const SOUND_KEY = 'zigzag-rush-sound-v3';
 
 const BASE_PATH_WIDTH = 62;
@@ -32,6 +34,7 @@ let best = Number(localStorage.getItem(BEST_KEY) || 0);
 let level = 1;
 let combo = 0;
 let comboTimer = 0;
+let bestCombo = Number(localStorage.getItem(BEST_COMBO_KEY) || 0);
 let shield = 1;
 let checkpoint = 0;
 let moveDir = 1;
@@ -262,6 +265,7 @@ function updateHud() {
   bestEl.textContent = String(best);
   levelEl.textContent = String(level);
   comboEl.textContent = `x${(1 + Math.min(1.6, combo / 4)).toFixed(1)}`;
+  bestComboEl.textContent = `x${(1 + Math.min(1.6, bestCombo / 4)).toFixed(1)}`;
   shieldEl.textContent = String(shield);
   checkpointEl.textContent = String(checkpoint);
 }
@@ -385,6 +389,10 @@ function update(dt) {
     s.passed = true;
     cornersPassed += 1;
     combo += 1;
+    if (combo > bestCombo) {
+      bestCombo = combo;
+      localStorage.setItem(BEST_COMBO_KEY, String(bestCombo));
+    }
     comboTimer = 2.2;
 
     if (s.kind === 'bonus') {
