@@ -19,12 +19,14 @@ let timeLeft = 75;
 let timerId = null;
 let solutionMoves = [];
 let streak = 0;
+let bestStreak = Number(localStorage.getItem('webgame-30-best-streak') || 0);
 
 const levelEl = addHudStat('Level', 'level', '1');
 const bestEl = addHudStat('Best', 'best', String(bestLevel));
 const timeEl = addHudStat('Time', 'time', '75');
 const leftEl = addHudStat('Left', 'left', '0');
 const streakEl = addHudStat('Streak', 'streak', '0');
+const bestStreakEl = addHudStat('Best Streak', 'bestStreak', String(bestStreak));
 const btnHint = document.createElement('button');
 btnHint.textContent = 'Hint';
 hudEl.appendChild(btnHint);
@@ -68,6 +70,7 @@ function updateHud() {
   timeEl.textContent = String(timeLeft);
   leftEl.textContent = String(countOn());
   streakEl.textContent = String(streak);
+  bestStreakEl.textContent = String(bestStreak);
 }
 
 function toggle(r, c) {
@@ -99,6 +102,7 @@ function init(resetProgress = false) {
     level = 1;
     streak = 0;
   }
+  bestStreak = Number(localStorage.getItem('webgame-30-best-streak') || 0);
 
   size = Math.min(7, 4 + Math.floor((level - 1) / 2));
   refreshGeometry();
@@ -125,6 +129,10 @@ function onClear() {
   audio?.fx('win');
   level += 1;
   streak += 1;
+  if (streak > bestStreak) {
+    bestStreak = streak;
+    localStorage.setItem('webgame-30-best-streak', String(bestStreak));
+  }
   bestLevel = Math.max(bestLevel, level);
   localStorage.setItem('webgame-30-best-level', String(bestLevel));
   setTimeout(() => init(false), 700);
