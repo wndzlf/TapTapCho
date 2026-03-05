@@ -12,6 +12,7 @@ const bestEl = document.getElementById('best');
 const linesEl = document.getElementById('lines');
 const levelEl = document.getElementById('level');
 const comboEl = document.getElementById('combo');
+const bestComboEl = document.getElementById('bestCombo');
 
 const btnLeft = document.getElementById('btnLeft');
 const btnRight = document.getElementById('btnRight');
@@ -32,6 +33,7 @@ const COLS = 10;
 const ROWS = 20;
 const BLOCK = 24;
 const BEST_KEY = 'taptap-tetris-best-v2';
+const BEST_COMBO_KEY = 'taptap-tetris-best-combo';
 const SOUND_KEY = 'taptap-tetris-sound-v2';
 
 const COLORS = {
@@ -101,6 +103,7 @@ let lines = 0;
 let level = 1;
 let combo = 0;
 let comboTimer = 0;
+let bestCombo = Number(localStorage.getItem(BEST_COMBO_KEY) || 0);
 let backToBack = false;
 
 let dropCounter = 0;
@@ -300,6 +303,7 @@ function updateHud() {
   linesEl.textContent = String(lines);
   levelEl.textContent = String(level);
   comboEl.textContent = `x${(1 + Math.min(1.5, combo / 4)).toFixed(1)}`;
+  bestComboEl.textContent = `x${(1 + Math.min(1.5, bestCombo / 4)).toFixed(1)}`;
 
   drawPreview(queue[0], nextCtx, nextCanvas);
   drawPreview(holdType, holdCtx, holdCanvas);
@@ -336,6 +340,10 @@ function arenaSweep() {
   backToBack = rowCount === 4;
 
   combo += 1;
+  if (combo > bestCombo) {
+    bestCombo = combo;
+    localStorage.setItem(BEST_COMBO_KEY, String(bestCombo));
+  }
   comboTimer = 2.5;
   gained = Math.floor(gained * (1 + Math.min(1.5, combo / 5)));
 
@@ -433,6 +441,7 @@ function restart() {
   level = 1;
   combo = 0;
   comboTimer = 0;
+  bestCombo = Number(localStorage.getItem(BEST_COMBO_KEY) || 0);
   backToBack = false;
   dropCounter = 0;
   flash = 0;
@@ -546,6 +555,11 @@ function update(time = 0) {
     if (score > best) {
       best = score;
       localStorage.setItem(BEST_KEY, String(best));
+    }
+
+    if (combo > bestCombo) {
+      bestCombo = combo;
+      localStorage.setItem(BEST_COMBO_KEY, String(bestCombo));
     }
 
     updateHud();
