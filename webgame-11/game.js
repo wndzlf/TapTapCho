@@ -7,6 +7,7 @@ const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
 const levelEl = document.getElementById('level');
 const comboEl = document.getElementById('combo');
+const bestComboEl = document.getElementById('bestCombo');
 const shieldEl = document.getElementById('shield');
 const perfectEl = document.getElementById('perfect');
 const challengeTextEl = document.getElementById('challengeText');
@@ -19,6 +20,7 @@ const btnSound = document.getElementById('btnSound');
 const W = canvas.width;
 const H = canvas.height;
 const BEST_KEY = 'stack-tower-best-v3';
+const BEST_COMBO_KEY = 'stack-tower-best-combo';
 const SOUND_KEY = 'stack-tower-sound-v3';
 
 const BLOCK_H = 28;
@@ -30,6 +32,7 @@ let best = Number(localStorage.getItem(BEST_KEY) || 0);
 let level = 1;
 let combo = 0;
 let comboTimer = 0;
+let bestCombo = Number(localStorage.getItem(BEST_COMBO_KEY) || 0);
 let shield = 1;
 let perfectCount = 0;
 let shake = 0;
@@ -267,6 +270,7 @@ function updateHud() {
   bestEl.textContent = String(best);
   levelEl.textContent = String(level);
   comboEl.textContent = `x${(1 + Math.min(1.6, combo / 4)).toFixed(1)}`;
+  bestComboEl.textContent = `x${(1 + Math.min(1.6, bestCombo / 4)).toFixed(1)}`;
   shieldEl.textContent = String(shield);
   perfectEl.textContent = String(perfectCount);
 }
@@ -329,6 +333,10 @@ function dropBlock() {
   if (perfect) {
     perfectCount += 1;
     combo += 1;
+    if (combo > bestCombo) {
+      bestCombo = combo;
+      localStorage.setItem(BEST_COMBO_KEY, String(bestCombo));
+    }
     comboTimer = 2.4;
     gained += 24 + combo * 3;
     addBurst(placed.x + placed.w * 0.5, placed.y + BLOCK_H * 0.5, '#ffffff', 14, 4.2);
