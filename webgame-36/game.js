@@ -30,9 +30,13 @@ let timeLeft = 80;
 let timerId = null;
 let highlightName = '';
 let highlightUntil = 0;
+let streak = 0;
+let bestStreak = Number(localStorage.getItem('webgame-36-best-streak') || 0);
 
 const levelEl = addHudStat('Level', 'level', '1');
 const scoreEl = addHudStat('Score', 'score', '0');
+const streakEl = addHudStat('Streak', 'streak', '0');
+const bestStreakEl = addHudStat('Best', 'bestStreak', String(bestStreak));
 const timeEl = addHudStat('Time', 'time', '80');
 const btnHint = document.createElement('button');
 btnHint.textContent = 'Hint';
@@ -58,6 +62,8 @@ function updateHud() {
   foundEl.textContent = String(found.size);
   levelEl.textContent = String(level);
   scoreEl.textContent = String(score);
+  streakEl.textContent = String(streak);
+  bestStreakEl.textContent = String(bestStreak);
   timeEl.textContent = String(timeLeft);
 }
 
@@ -101,6 +107,7 @@ function init(resetProgress = false) {
   found = new Set();
   highlightName = '';
   highlightUntil = 0;
+  streak = 0;
   timeLeft = Math.max(35, 82 - level * 3);
   renderList();
   updateHud();
@@ -137,14 +144,20 @@ function handleClick(x, y) {
   if (!target) {
     score = Math.max(0, score - 10);
     timeLeft = Math.max(0, timeLeft - 1);
+    streak = 0;
     audio?.fx('fail');
     updateHud();
     return;
   }
 
   found.add(target.name);
-  score += 60 + level * 8;
-  timeLeft = Math.min(120, timeLeft + 2);
+  streak += 1;
+  if (streak > bestStreak) {
+    bestStreak = streak;
+    localStorage.setItem('webgame-36-best-streak', String(bestStreak));
+  }
+  score += 60 + level * 8 + streak * 3;
+  timeLeft = Math.min(120, timeLeft + 1 + Math.floor(streak / 3));
   renderList();
   updateHud();
   audio?.fx('success');
