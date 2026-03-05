@@ -3,15 +3,20 @@ const ctx = canvas.getContext('2d');
 
 const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
+const comboEl = document.getElementById('combo');
+const bestComboEl = document.getElementById('bestCombo');
 const btnStart = document.getElementById('btnStart');
 
 const W = canvas.width;
 const H = canvas.height;
 const STORAGE_KEY = 'drift-one-tap-best';
+const BEST_COMBO_KEY = 'drift-one-tap-best-combo';
 
 let state = 'idle'; // idle | running | gameover
 let score = 0;
 let best = Number(localStorage.getItem(STORAGE_KEY) || 0);
+let combo = 0;
+let bestCombo = Number(localStorage.getItem(BEST_COMBO_KEY) || 0);
 let tick = 0;
 let shake = 0;
 let pressed = false;
@@ -27,6 +32,7 @@ let speed = 5.6;
 const particles = [];
 
 bestEl.textContent = String(best);
+bestComboEl.textContent = String(bestCombo);
 
 const audioCtx = window.AudioContext ? new AudioContext() : null;
 
@@ -67,6 +73,8 @@ function addSkid(color) {
 function resetGame() {
   state = 'idle';
   score = 0;
+  combo = 0;
+  bestCombo = Number(localStorage.getItem(BEST_COMBO_KEY) || 0);
   tick = 0;
   shake = 0;
   pressed = false;
@@ -79,6 +87,8 @@ function resetGame() {
   particles.length = 0;
 
   scoreEl.textContent = '0';
+  comboEl.textContent = '0';
+  bestComboEl.textContent = String(bestCombo);
 }
 
 function startGame() {
@@ -95,6 +105,8 @@ function endGame() {
   best = Math.max(best, score);
   bestEl.textContent = String(best);
   localStorage.setItem(STORAGE_KEY, String(best));
+  combo = 0;
+  comboEl.textContent = '0';
 }
 
 function update() {
@@ -132,7 +144,18 @@ function update() {
   }
 
   score = Math.floor(trackZ / 10);
+  if (score > 0 && score % 10 === 0) {
+    combo += 1;
+    if (combo > bestCombo) {
+      bestCombo = combo;
+      localStorage.setItem(BEST_COMBO_KEY, String(bestCombo));
+    }
+  }
   scoreEl.textContent = String(score);
+  comboEl.textContent = String(combo);
+  bestComboEl.textContent = String(bestCombo);
+  comboEl.textContent = String(combo);
+  bestComboEl.textContent = String(bestCombo);
 
   if (score > 0 && score % 60 === 0 && tick % 10 === 0) {
     beep(640, 0.03, 0.015);
