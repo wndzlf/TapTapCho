@@ -86,6 +86,10 @@ function updateHud() {
   leftEl.textContent = String(countOn());
   streakEl.textContent = String(streak);
   bestStreakEl.textContent = String(bestStreak);
+
+  streakEl.parentElement?.classList.toggle('hot', streak >= 3);
+  leftEl.parentElement?.classList.toggle('hot', countOn() > 0 && countOn() <= 3);
+  scoreEl.parentElement?.classList.toggle('warn', timeLeft <= 8);
 }
 
 function scramble() {
@@ -208,7 +212,7 @@ function render() {
     }
   }
 
-  ctx.fillStyle = '#e8effb';
+  ctx.fillStyle = timeLeft <= 8 ? '#ff8f7a' : '#e8effb';
   ctx.textAlign = 'left';
   ctx.font = 'bold 20px system-ui';
   ctx.fillText(`Time: ${timeLeft}s`, 18, 66);
