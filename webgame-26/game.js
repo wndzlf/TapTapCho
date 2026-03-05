@@ -75,6 +75,10 @@ function updateHud() {
   comboEl.textContent = `x${combo}`;
   bestComboEl.textContent = `x${bestCombo}`;
   timeEl.textContent = String(timeLeft);
+
+  comboEl.parentElement?.classList.toggle('hot', combo >= 3);
+  leftEl.parentElement?.classList.toggle('warn', pairsLeft <= 3);
+  timeEl.parentElement?.classList.toggle('warn', timeLeft <= 10);
 }
 
 function init(roundReset = false) {
