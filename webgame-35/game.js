@@ -1,6 +1,7 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const invEl = document.getElementById('inv');
+const bestTimeEl = document.getElementById('bestTime');
 const btnReset = document.getElementById('btnReset');
 const hudEl = document.querySelector('.hud');
 
@@ -10,6 +11,7 @@ let level = 1;
 let score = 0;
 let timeLeft = 95;
 let timerId = null;
+let bestTime = Number(localStorage.getItem('webgame-35-best-time') || 0);
 
 let hasKeycard = false;
 let hasKey = false;
@@ -53,6 +55,7 @@ function updateHud() {
   scoreEl.textContent = String(score);
   timeEl.textContent = String(timeLeft);
   bestEl.textContent = String(bestLevel);
+  bestTimeEl.textContent = bestTime ? `${bestTime}s` : '--';
   const items = [];
   if (hasKeycard) items.push('Keycard');
   if (hasKey) items.push('Key');
@@ -80,6 +83,7 @@ function resetRound(resetProgress = false) {
   if (resetProgress) {
     level = 1;
     score = 0;
+    bestTime = Number(localStorage.getItem('webgame-35-best-time') || 0);
   }
 
   hasKeycard = false;
@@ -109,6 +113,11 @@ function dialMatches() {
 function onClear() {
   clearInterval(timerId);
   score += Math.max(140, timeLeft * 3 + level * 25);
+  const clearTime = 95 - timeLeft;
+  if (!bestTime || clearTime < bestTime) {
+    bestTime = clearTime;
+    localStorage.setItem('webgame-35-best-time', String(bestTime));
+  }
   level += 1;
   if (level > bestLevel) {
     bestLevel = level;
