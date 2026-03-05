@@ -5,6 +5,7 @@ const ctx = canvas.getContext('2d');
 
 const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
+const streakEl = document.getElementById('streak');
 const btnStart = document.getElementById('btnStart');
 
 const W = canvas.width;
@@ -20,6 +21,7 @@ const STORAGE_KEY = 'merge-2048-tiny-best';
 let state = 'idle'; // idle | running | gameover
 let score = 0;
 let best = Number(localStorage.getItem(STORAGE_KEY) || 0);
+let streak = 0;
 let tick = 0;
 let flash = 0;
 
@@ -153,13 +155,17 @@ function move(dir) {
   }
 
   if (mergedAny) {
+    streak += 1;
+    score += Math.floor(streak / 2);
     flash = 10;
     beep(780, 0.045, 0.02);
   } else {
+    streak = 0;
     beep(520, 0.03, 0.014);
   }
 
   scoreEl.textContent = String(score);
+  streakEl.textContent = String(streak);
   spawnTile();
 
   if (!hasMoves()) {
@@ -170,10 +176,12 @@ function move(dir) {
 function resetGame() {
   state = 'idle';
   score = 0;
+  streak = 0;
   tick = 0;
   flash = 0;
   resetBoard();
   scoreEl.textContent = '0';
+  streakEl.textContent = '0';
 }
 
 function startGame() {
@@ -188,6 +196,8 @@ function endGame() {
   best = Math.max(best, score);
   bestEl.textContent = String(best);
   localStorage.setItem(STORAGE_KEY, String(best));
+  streak = 0;
+  streakEl.textContent = '0';
 }
 
 function drawBoard() {
