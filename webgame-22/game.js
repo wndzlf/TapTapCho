@@ -5,6 +5,7 @@ const ctx = canvas.getContext('2d');
 
 const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
+const streakEl = document.getElementById('streak');
 const btnStart = document.getElementById('btnStart');
 const btnMode = document.getElementById('btnMode');
 
@@ -28,6 +29,7 @@ let state = 'idle'; // idle | running | gameover
 let mode = 'reveal'; // reveal | flag
 let score = 0;
 let best = Number(localStorage.getItem(STORAGE_KEY) || 0);
+let streak = 0;
 let tick = 0;
 let flash = 0;
 
@@ -150,7 +152,10 @@ function setMode(nextMode) {
 
 function nextRound() {
   score += 1;
+  streak += 1;
+  score += Math.floor(streak / 2);
   scoreEl.textContent = String(score);
+  streakEl.textContent = String(streak);
   mineCount = Math.min(22, BASE_MINES + Math.floor(score * 0.7));
   buildBoard(mineCount);
   flash = 18;
@@ -190,6 +195,8 @@ function endGame() {
   best = Math.max(best, score);
   bestEl.textContent = String(best);
   localStorage.setItem(STORAGE_KEY, String(best));
+  streak = 0;
+  streakEl.textContent = '0';
 }
 
 function revealCell(r, c) {
@@ -248,10 +255,12 @@ function playAt(r, c, forceFlag = false) {
 function resetGame() {
   state = 'idle';
   score = 0;
+  streak = 0;
   tick = 0;
   flash = 0;
   mineCount = BASE_MINES;
   scoreEl.textContent = '0';
+  streakEl.textContent = '0';
   setMode('reveal');
   buildBoard(mineCount);
 }
