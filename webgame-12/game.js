@@ -7,6 +7,7 @@ const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
 const levelEl = document.getElementById('level');
 const comboEl = document.getElementById('combo');
+const bestComboEl = document.getElementById('bestCombo');
 const shieldEl = document.getElementById('shield');
 const leftEl = document.getElementById('left');
 const challengeTextEl = document.getElementById('challengeText');
@@ -19,6 +20,7 @@ const btnSound = document.getElementById('btnSound');
 const W = canvas.width;
 const H = canvas.height;
 const BEST_KEY = 'knife-hit-lite-best-v3';
+const BEST_COMBO_KEY = 'knife-hit-lite-best-combo';
 const SOUND_KEY = 'knife-hit-lite-sound-v3';
 const TAU = Math.PI * 2;
 
@@ -47,6 +49,7 @@ let level = 1;
 let knivesLeft = 6;
 let combo = 0;
 let comboTimer = 0;
+let bestCombo = Number(localStorage.getItem(BEST_COMBO_KEY) || 0);
 let shield = 1;
 let tick = 0;
 let shake = 0;
@@ -178,6 +181,7 @@ function updateHud() {
   bestEl.textContent = String(best);
   levelEl.textContent = String(level);
   comboEl.textContent = `x${(1 + Math.min(1.6, combo / 5)).toFixed(1)}`;
+  bestComboEl.textContent = `x${(1 + Math.min(1.6, bestCombo / 5)).toFixed(1)}`;
   shieldEl.textContent = String(shield);
   leftEl.textContent = String(knivesLeft);
 }
@@ -382,6 +386,10 @@ function stickKnife(hitAngleRelative) {
 
   streak += 1;
   combo += 1;
+  if (combo > bestCombo) {
+    bestCombo = combo;
+    localStorage.setItem(BEST_COMBO_KEY, String(bestCombo));
+  }
   comboTimer = 2.6;
 
   let gain = 10 + Math.floor(combo * 1.8);
