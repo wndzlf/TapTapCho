@@ -16,10 +16,12 @@ const btnResetScore = document.getElementById('btnResetScore');
 
 const roundEl = document.getElementById('round');
 const scoreEl = document.getElementById('score');
+const bestScoreEl = document.getElementById('bestScore');
 const streakEl = document.getElementById('streak');
 const bestStreakEl = document.getElementById('bestStreak');
 
 const BEST_STREAK_KEY = 'ladder-draw-best-streak-v2';
+const BEST_SCORE_KEY = 'ladder-draw-best-score';
 
 const state = {
   players: [],
@@ -33,6 +35,7 @@ const state = {
   round: 1,
   streak: 0,
   bestStreak: Number(localStorage.getItem(BEST_STREAK_KEY) || 0),
+  bestScore: Number(localStorage.getItem(BEST_SCORE_KEY) || 0),
   trace: null,
   traceQueue: [],
   message: '생성 후 상단 이름을 클릭하세요',
@@ -40,6 +43,7 @@ const state = {
 };
 
 bestStreakEl.textContent = String(state.bestStreak);
+bestScoreEl.textContent = String(state.bestScore);
 
 function parseList(val) {
   return val.split(',').map((s) => s.trim()).filter(Boolean);
@@ -63,6 +67,7 @@ function lerp(a, b, t) {
 function updateHud() {
   roundEl.textContent = String(state.round);
   scoreEl.textContent = String(state.score);
+  bestScoreEl.textContent = String(state.bestScore);
   streakEl.textContent = String(state.streak);
   bestStreakEl.textContent = String(state.bestStreak);
 }
@@ -207,6 +212,10 @@ function evaluatePrediction(traceObj) {
   if (state.streak > state.bestStreak) {
     state.bestStreak = state.streak;
     localStorage.setItem(BEST_STREAK_KEY, String(state.bestStreak));
+  }
+  if (state.score > state.bestScore) {
+    state.bestScore = state.score;
+    localStorage.setItem(BEST_SCORE_KEY, String(state.bestScore));
   }
 
   state.round += 1;
