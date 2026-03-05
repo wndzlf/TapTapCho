@@ -908,7 +908,7 @@ function initSingleRank() {
     stage: 35,
     kills: 34500,
     score: 28500000,
-    timeSec: 620,
+    timeSec: 754,
     updatedAt: Date.now(),
   });
   if (seededRow) updateLocalRank(seededRow);

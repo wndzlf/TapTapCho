@@ -6,6 +6,7 @@ const ctx = canvas.getContext('2d');
 const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
 const streakEl = document.getElementById('streak');
+const bestStreakEl = document.getElementById('bestStreak');
 const btnStart = document.getElementById('btnStart');
 const btnMode = document.getElementById('btnMode');
 
@@ -24,12 +25,14 @@ const BOARD_Y = 170;
 const BASE_MINES = 10;
 const AUTO_REVEAL_LIMIT = 12;
 const STORAGE_KEY = 'mine-sweep-sprint-best';
+const BEST_STREAK_KEY = 'mine-sweep-sprint-best-streak';
 
 let state = 'idle'; // idle | running | gameover
 let mode = 'reveal'; // reveal | flag
 let score = 0;
 let best = Number(localStorage.getItem(STORAGE_KEY) || 0);
 let streak = 0;
+let bestStreak = Number(localStorage.getItem(BEST_STREAK_KEY) || 0);
 let tick = 0;
 let flash = 0;
 
@@ -154,8 +157,13 @@ function nextRound() {
   score += 1;
   streak += 1;
   score += Math.floor(streak / 2);
+  if (streak > bestStreak) {
+    bestStreak = streak;
+    localStorage.setItem(BEST_STREAK_KEY, String(bestStreak));
+  }
   scoreEl.textContent = String(score);
   streakEl.textContent = String(streak);
+  bestStreakEl.textContent = String(bestStreak);
   mineCount = Math.min(22, BASE_MINES + Math.floor(score * 0.7));
   buildBoard(mineCount);
   flash = 18;
@@ -256,11 +264,13 @@ function resetGame() {
   state = 'idle';
   score = 0;
   streak = 0;
+  bestStreak = Number(localStorage.getItem(BEST_STREAK_KEY) || 0);
   tick = 0;
   flash = 0;
   mineCount = BASE_MINES;
   scoreEl.textContent = '0';
   streakEl.textContent = '0';
+  bestStreakEl.textContent = String(bestStreak);
   setMode('reveal');
   buildBoard(mineCount);
 }
