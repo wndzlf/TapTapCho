@@ -82,6 +82,19 @@ button.ghost {
   background: rgba(6, 13, 30, 0.5);
   padding: 10px 12px;
   font-weight: 700;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.result.good {
+  border-color: rgba(157, 255, 190, 0.8);
+  color: #eafff4;
+  box-shadow: 0 0 12px rgba(157, 255, 190, 0.3);
+}
+
+.result.bad {
+  border-color: rgba(255, 150, 170, 0.8);
+  color: #ffe7ee;
+  box-shadow: 0 0 12px rgba(255, 150, 170, 0.3);
 }
 
 .hud {
@@ -97,6 +110,12 @@ button.ghost {
   border-radius: 10px;
   padding: 7px 10px;
   min-width: 108px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hud > div.hot {
+  border-color: rgba(125, 227, 255, 0.75);
+  box-shadow: 0 0 10px rgba(125, 227, 255, 0.35);
 }
 
 canvas {

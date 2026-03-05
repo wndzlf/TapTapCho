@@ -147,6 +147,8 @@ function updateHud() {
   streakEl.textContent = String(streak);
   bestStreakEl.textContent = String(bestStreak);
   roundEl.textContent = String(round);
+
+  streakEl.parentElement?.classList.toggle('hot', streak >= 3);
 }
 
 function weightedAngles() {
@@ -198,7 +200,8 @@ function spinResult(index) {
   lastPicked = selected;
 
   let gain = 70 + Math.min(120, streak * 14);
-  if (selected.toLowerCase().includes('shot') || selected.toLowerCase().includes('skip')) {
+  const isBad = selected.toLowerCase().includes('shot') || selected.toLowerCase().includes('skip');
+  if (isBad) {
     gain = Math.max(30, gain - 40);
     streak = 0;
     sfx.bad();
@@ -219,6 +222,9 @@ function spinResult(index) {
     bestStreak = streak;
     localStorage.setItem(BEST_STREAK_KEY, String(bestStreak));
   }
+
+  resultEl.classList.toggle('bad', isBad);
+  resultEl.classList.toggle('good', !isBad);
 
   if (mode === 'elimination' && parsedItems.length > 2) {
     parsedItems.splice(index, 1);
@@ -273,6 +279,7 @@ function resetSession() {
   updateHud();
   historyEl.innerHTML = '';
   resultEl.textContent = '준비 완료';
+  resultEl.classList.remove('good', 'bad');
 }
 
 function drawWheel() {
@@ -388,6 +395,7 @@ btnSpin.addEventListener('click', () => {
   spinSpeed = rand(8.8, 12.8);
   tickCooldown = 0;
   resultEl.textContent = '스핀 중...';
+  resultEl.classList.remove('good', 'bad');
   sfx.spin();
 });
 
