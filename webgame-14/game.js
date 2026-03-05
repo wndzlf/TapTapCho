@@ -5,6 +5,7 @@ const ctx = canvas.getContext('2d');
 
 const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
+const streakEl = document.getElementById('streak');
 const btnStart = document.getElementById('btnStart');
 
 const W = canvas.width;
@@ -23,6 +24,8 @@ let best = Number(localStorage.getItem(STORAGE_KEY) || 0);
 let tick = 0;
 let shake = 0;
 let spinDir = 1;
+let streak = 0;
+let bestStreak = Number(localStorage.getItem('helix-fall-mini-best-streak') || 0);
 
 let worldY = 60;
 let vy = 0;
@@ -31,6 +34,7 @@ const levels = [];
 const particles = [];
 
 bestEl.textContent = String(best);
+streakEl.textContent = '0';
 
 const audioCtx = window.AudioContext ? new AudioContext() : null;
 
@@ -107,6 +111,8 @@ function hitDanger(level) {
 function bounce(level) {
   worldY = level.y - BALL_RADIUS - 1;
   vy = -5.6;
+  streak = 0;
+  streakEl.textContent = '0';
 }
 
 function resetGame() {
@@ -115,6 +121,8 @@ function resetGame() {
   tick = 0;
   shake = 0;
   spinDir = 1;
+  streak = 0;
+  streakEl.textContent = '0';
 
   worldY = 40;
   vy = 0;
@@ -141,6 +149,8 @@ function endGame() {
   best = Math.max(best, score);
   bestEl.textContent = String(best);
   localStorage.setItem(STORAGE_KEY, String(best));
+  streak = 0;
+  streakEl.textContent = '0';
 }
 
 function onAction() {
@@ -188,8 +198,15 @@ function update() {
     if (BALL_X > holeL && BALL_X < holeR) {
       if (!level.passed) {
         level.passed = true;
-        score += 1;
+        streak += 1;
+        if (streak > bestStreak) {
+          bestStreak = streak;
+          localStorage.setItem('helix-fall-mini-best-streak', String(bestStreak));
+        }
+        const bonus = Math.floor(streak / 4);
+        score += 1 + bonus;
         scoreEl.textContent = String(score);
+        streakEl.textContent = String(streak);
         addBurst(BALL_X, BASE_Y, '#7de3ff', 9);
         beep(760 + Math.min(240, score * 8), 0.035, 0.017);
       }
