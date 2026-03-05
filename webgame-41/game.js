@@ -1,6 +1,7 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const stageLabel = document.getElementById('stageLabel');
+const bestLabel = document.getElementById('bestLabel');
 const timerLabel = document.getElementById('timerLabel');
 const goalLabel = document.getElementById('goalLabel');
 const btnStart = document.getElementById('btnStart');
@@ -14,6 +15,9 @@ const MINI = [
   { name: 'Wipe Fast', baseTime: 8, goal: 'Swipe left/right fast' },
   { name: 'Run Away', baseTime: 10, goal: 'Reach the exit, avoid the cone' },
 ];
+
+const BEST_STAGE_KEY = 'poop-escape-best-stage';
+let bestStage = Number(localStorage.getItem(BEST_STAGE_KEY) || 1);
 
 let state = {
   mode: 'menu',
@@ -76,6 +80,7 @@ function setStage(index) {
   state.gimmick = gimmickForStage();
 
   stageLabel.textContent = `Stage ${state.runStage} - ${mini.name}`;
+  bestLabel.textContent = `Best Stage ${bestStage}`;
   goalLabel.textContent = `Goal: ${mini.goal} (${state.gimmick})`;
 }
 
@@ -85,6 +90,7 @@ function setMode(mode) {
 
 function startGame() {
   state.runStage = 1;
+  bestStage = Number(localStorage.getItem(BEST_STAGE_KEY) || 1);
   setStage(0);
   setMode('playing');
 }
@@ -267,6 +273,10 @@ function nextStage() {
     setStage(state.stageIndex + 1);
   } else {
     state.runStage += 1;
+    if (state.runStage > bestStage) {
+      bestStage = state.runStage;
+      localStorage.setItem(BEST_STAGE_KEY, String(bestStage));
+    }
     setStage(0);
   }
 }
