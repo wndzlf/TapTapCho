@@ -1,6 +1,7 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const winsEl = document.getElementById('wins');
+const bestWinsEl = document.getElementById('bestWins');
 const btnReset = document.getElementById('btnReset');
 const hudEl = document.querySelector('.hud');
 
@@ -53,6 +54,7 @@ function makeObstacles(levelValue) {
 
 function updateHud() {
   winsEl.textContent = String(wins);
+  bestWinsEl.textContent = String(bestWins);
   levelEl.textContent = String(level);
   targetEl.textContent = String(targetWinsForLevel());
   timeEl.textContent = String(timeLeft);
@@ -76,6 +78,7 @@ function resetRound(resetProgress = false) {
     wins = 0;
     level = 1;
     winsThisLevel = 0;
+    bestWins = Number(localStorage.getItem('webgame-29-best-wins') || 0);
   }
   obstacles = makeObstacles(level);
   goal = {
