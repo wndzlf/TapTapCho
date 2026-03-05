@@ -1,6 +1,7 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const leftEl = document.getElementById('left');
+const bestScoreEl = document.getElementById('bestScore');
 const btnNew = document.getElementById('btnNew');
 const hudEl = document.querySelector('.hud');
 
@@ -22,6 +23,7 @@ let streak = 0;
 let timeLeft = 95;
 let timerId = null;
 let bestStreak = Number(localStorage.getItem('webgame-27-best-streak') || 0);
+let bestScore = Number(localStorage.getItem('webgame-27-best-score') || 0);
 
 const levelEl = addHudStat('Level', 'level', '1');
 const scoreEl = addHudStat('Score', 'score', '0');
@@ -70,6 +72,7 @@ function updateHud() {
   scoreEl.textContent = String(score);
   streakEl.textContent = String(streak);
   bestEl.textContent = String(bestStreak);
+  bestScoreEl.textContent = String(bestScore);
   timeEl.textContent = String(timeLeft);
 }
 
@@ -78,6 +81,7 @@ function init(resetProgress = false) {
     level = 1;
     score = 0;
   }
+  bestScore = Number(localStorage.getItem('webgame-27-best-score') || 0);
 
   size = Math.min(8, 6 + Math.floor((level - 1) / 2));
   refreshGeometry();
@@ -189,6 +193,10 @@ function handleMatch() {
     localStorage.setItem('webgame-27-best-streak', String(bestStreak));
   }
   score += 35 + level * 5 + Math.min(6, streak) * 6;
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem('webgame-27-best-score', String(bestScore));
+  }
   timeLeft = Math.min(120, timeLeft + Math.floor(streak / 2));
   pairsLeft -= 1;
   audio?.fx('success');
