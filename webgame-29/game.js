@@ -14,11 +14,14 @@ let timeLeft = 55;
 let timerId = null;
 let obstacles = [];
 let goal = { x: 300, y: 470, r: 24 };
+let bestStreak = Number(localStorage.getItem('webgame-29-best-streak') || 0);
+let bestWins = Number(localStorage.getItem('webgame-29-best-wins') || 0);
 
 const levelEl = addHudStat('Level', 'level', '1');
 const targetEl = addHudStat('Target', 'target', '3');
 const timeEl = addHudStat('Time', 'time', '55');
 const streakEl = addHudStat('Streak', 'streak', '0');
+const bestEl = addHudStat('Best', 'best', String(bestStreak));
 
 function addHudStat(label, id, initialValue) {
   const box = document.createElement('div');
@@ -54,6 +57,7 @@ function updateHud() {
   targetEl.textContent = String(targetWinsForLevel());
   timeEl.textContent = String(timeLeft);
   streakEl.textContent = String(winsThisLevel);
+  bestEl.textContent = String(bestStreak);
 }
 
 function resetBall() {
@@ -106,6 +110,15 @@ function onFail() {
 function onScoreGoal() {
   wins += 1;
   winsThisLevel += 1;
+  if (winsThisLevel > bestStreak) {
+    bestStreak = winsThisLevel;
+    localStorage.setItem('webgame-29-best-streak', String(bestStreak));
+  }
+  if (wins > bestWins) {
+    bestWins = wins;
+    localStorage.setItem('webgame-29-best-wins', String(bestWins));
+  }
+  timeLeft = Math.min(90, timeLeft + 3 + Math.floor(winsThisLevel / 2));
   audio?.fx('success');
   if (winsThisLevel >= targetWinsForLevel()) {
     level += 1;
