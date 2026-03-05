@@ -6,6 +6,7 @@ const ctx = canvas.getContext('2d');
 const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
 const lengthEl = document.getElementById('length');
+const bestLengthEl = document.getElementById('bestLength');
 const aliveEl = document.getElementById('alive');
 const btnStart = document.getElementById('btnStart');
 
@@ -18,12 +19,14 @@ const FOOD_COUNT = 210;
 const BOT_COUNT = 10;
 const SEG_SPACING = 14;
 const STORAGE_KEY = 'worm-arena-rush-best';
+const BEST_LENGTH_KEY = 'worm-arena-rush-best-length';
 
 const FOOD_COLORS = ['#ff7b74', '#ffe08a', '#9df2ff', '#b8ffa2', '#f7b8ff'];
 
 let state = 'idle'; // idle | running | gameover
 let score = 0;
 let best = Number(localStorage.getItem(STORAGE_KEY) || 0);
+let bestLength = Number(localStorage.getItem(BEST_LENGTH_KEY) || 0);
 let tick = 0;
 
 let player;
@@ -176,6 +179,11 @@ function resetGame() {
 
   scoreEl.textContent = '0';
   lengthEl.textContent = String(player.segments.length);
+  if (player.segments.length > bestLength) {
+    bestLength = player.segments.length;
+    localStorage.setItem(BEST_LENGTH_KEY, String(bestLength));
+  }
+  bestLengthEl.textContent = String(bestLength);
   aliveEl.textContent = String(bots.length + 1);
 }
 
@@ -298,6 +306,11 @@ function consumeFood(worm) {
       score += food.value;
       scoreEl.textContent = String(score);
       lengthEl.textContent = String(worm.segments.length);
+      if (worm.segments.length > bestLength) {
+        bestLength = worm.segments.length;
+        localStorage.setItem(BEST_LENGTH_KEY, String(bestLength));
+        bestLengthEl.textContent = String(bestLength);
+      }
 
       if (score % 10 === 0) {
         beep(820, 0.045, 0.02);
@@ -553,6 +566,7 @@ function update(dt) {
   camera.y = clamp(player.y - H * 0.5, 0, WORLD_H - H);
 
   lengthEl.textContent = String(player.segments.length);
+  bestLengthEl.textContent = String(bestLength);
   aliveEl.textContent = String(bots.length + 1);
 }
 
