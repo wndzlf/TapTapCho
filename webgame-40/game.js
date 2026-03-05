@@ -1050,7 +1050,6 @@ function passable(c, r) {
 function passableForEnemy(enemy, c, r) {
   if (!inBounds(c, r)) return false;
   if (isReserved(c, r)) return true;
-  if (enemy?.jumper || enemy?.towerBreaker) return true;
   return !state.blocked.has(keyOf(c, r));
 }
 
