@@ -5,6 +5,7 @@ const ctx = canvas.getContext('2d');
 
 const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
+const streakEl = document.getElementById('streak');
 const btnStart = document.getElementById('btnStart');
 
 const W = canvas.width;
@@ -22,6 +23,7 @@ const BOARD_Y = 74;
 let state = 'idle'; // idle | running | gameover
 let score = 0;
 let best = Number(localStorage.getItem(STORAGE_KEY) || 0);
+let streak = 0;
 let tick = 0;
 let shake = 0;
 
@@ -83,12 +85,14 @@ function resetPlayer() {
 function resetGame() {
   state = 'idle';
   score = 0;
+  streak = 0;
   tick = 0;
   shake = 0;
   particles.length = 0;
   resetPlayer();
   makeLanes();
   scoreEl.textContent = '0';
+  streakEl.textContent = '0';
 }
 
 function startGame() {
@@ -105,6 +109,8 @@ function endGame() {
   best = Math.max(best, score);
   bestEl.textContent = String(best);
   localStorage.setItem(STORAGE_KEY, String(best));
+  streak = 0;
+  streakEl.textContent = '0';
 }
 
 function movePlayer(dc, dr) {
@@ -125,7 +131,10 @@ function movePlayer(dc, dr) {
 
   if (player.r === 0) {
     score += 1;
+    streak += 1;
+    score += Math.floor(streak / 3);
     scoreEl.textContent = String(score);
+    streakEl.textContent = String(streak);
     beep(980, 0.08, 0.03);
     addBurst(px, py, '#ffe08a', 22);
     resetPlayer();
