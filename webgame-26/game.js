@@ -22,10 +22,12 @@ let combo = 1;
 let timeLeft = 90;
 let timerId = null;
 let lastMatchAt = 0;
+let bestCombo = Number(localStorage.getItem('webgame-26-best-combo') || 1);
 
 const levelEl = addHudStat('Level', 'level', '1');
 const scoreEl = addHudStat('Score', 'score', '0');
 const comboEl = addHudStat('Combo', 'combo', 'x1');
+const bestComboEl = addHudStat('Best Combo', 'bestCombo', `x${bestCombo}`);
 const timeEl = addHudStat('Time', 'time', '90');
 const btnHint = document.createElement('button');
 btnHint.textContent = 'Hint';
@@ -68,6 +70,7 @@ function updateHud() {
   levelEl.textContent = String(level);
   scoreEl.textContent = String(score);
   comboEl.textContent = `x${combo}`;
+  bestComboEl.textContent = `x${bestCombo}`;
   timeEl.textContent = String(timeLeft);
 }
 
@@ -176,6 +179,11 @@ function onMatch() {
   lastMatchAt = now;
 
   score += 30 + combo * 10 + level * 4;
+  if (combo > bestCombo) {
+    bestCombo = combo;
+    localStorage.setItem('webgame-26-best-combo', String(bestCombo));
+  }
+  timeLeft = Math.min(99, timeLeft + 1 + Math.floor(combo / 2));
   pairsLeft -= 1;
   if (pairsLeft <= 0) {
     audio?.fx('win');
