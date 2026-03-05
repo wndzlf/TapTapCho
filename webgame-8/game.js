@@ -5,6 +5,7 @@ import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/
 const canvas = document.getElementById('c');
 const distanceEl = document.getElementById('distance');
 const bestDistanceEl = document.getElementById('bestDistance');
+const sprintEl = document.getElementById('sprint');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -194,7 +195,9 @@ window.addEventListener('keydown', (e) => keys.add(e.key.toLowerCase()));
 window.addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
 
 function updateMovement(delta) {
-  const speed = 6 * delta;
+  const sprinting = keys.has('shift');
+  const speed = 6 * delta * (sprinting ? 1.6 : 1);
+  if (sprintEl) sprintEl.textContent = sprinting ? 'ON' : 'OFF';
   const forward = new THREE.Vector3();
   camera.getWorldDirection(forward);
   forward.y = 0;

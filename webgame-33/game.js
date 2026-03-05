@@ -2,6 +2,8 @@ const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
+const streakEl = document.getElementById('streak');
+const bestStreakEl = document.getElementById('bestStreak');
 const leftEl = document.getElementById('left');
 const btnNew = document.getElementById('btnNew');
 
@@ -15,7 +17,10 @@ const colors = ['#6df3ff', '#7cffc5', '#ffd86d', '#ff7bd0', '#8c7bff'];
 let grid = [];
 let shooter = null;
 let score = 0;
+let streak = 0;
 let best = Number(localStorage.getItem('webgame-33-best-score') || 0);
+const BEST_STREAK_KEY = 'webgame-33-best-streak';
+let bestStreak = Number(localStorage.getItem(BEST_STREAK_KEY) || 0);
 
 function randColor() { return Math.floor(Math.random() * colors.length); }
 
@@ -33,8 +38,11 @@ function init() {
   grid = Array.from({ length: rows }, () => Array.from({ length: cols }, () => (Math.random() > 0.5 ? randColor() : -1)));
   shooter = { x: canvas.width / 2, y: canvas.height - 40, color: randColor(), vy: 0, active: false };
   score = 0;
+  streak = 0;
   scoreEl.textContent = score;
   bestEl.textContent = String(best);
+  streakEl.textContent = String(streak);
+  bestStreakEl.textContent = String(bestStreak);
   leftEl.textContent = String(countBubbles());
 }
 
@@ -79,12 +87,22 @@ function attachBubble() {
   if (cluster.length >= 3) {
     cluster.forEach(p => grid[p.r][p.c] = -1);
     score += cluster.length * 10;
+    streak += 1;
+    if (streak > bestStreak) {
+      bestStreak = streak;
+      localStorage.setItem(BEST_STREAK_KEY, String(bestStreak));
+    }
     if (score > best) {
       best = score;
       localStorage.setItem('webgame-33-best-score', String(best));
     }
     scoreEl.textContent = score;
     bestEl.textContent = String(best);
+    streakEl.textContent = String(streak);
+    bestStreakEl.textContent = String(bestStreak);
+  } else {
+    streak = 0;
+    streakEl.textContent = String(streak);
   }
   leftEl.textContent = String(countBubbles());
   shooter.active = false;
@@ -143,4 +161,5 @@ canvas.addEventListener('click', shoot);
 btnNew.addEventListener('click', init);
 
 init();
+bestStreakEl.textContent = String(bestStreak);
 (function loop(){ update(); draw(); requestAnimationFrame(loop); })();

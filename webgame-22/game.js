@@ -7,6 +7,7 @@ const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
 const streakEl = document.getElementById('streak');
 const bestStreakEl = document.getElementById('bestStreak');
+const minesLeftEl = document.getElementById('minesLeft');
 const btnStart = document.getElementById('btnStart');
 const btnMode = document.getElementById('btnMode');
 
@@ -123,6 +124,7 @@ function buildBoard(mines) {
   }
 
   computeCounts();
+  refreshMinesLeft();
 }
 
 function relocateMine(avoidId) {
@@ -147,6 +149,12 @@ function flaggedCount() {
     if (cell.flagged) total += 1;
   }
   return total;
+}
+
+function refreshMinesLeft() {
+  if (!minesLeftEl) return;
+  const minesLeft = Math.max(0, mineCount - flaggedCount());
+  minesLeftEl.textContent = String(minesLeft);
 }
 
 function setMode(nextMode) {
@@ -230,6 +238,7 @@ function revealCell(r, c) {
 
   safeLeft -= 1;
   beep(500 + cell.count * 70, 0.02, 0.012);
+  refreshMinesLeft();
 
   if (cell.count === 0) {
     revealFlood(r, c);
@@ -247,6 +256,7 @@ function toggleFlag(r, c) {
 
   cell.flagged = !cell.flagged;
   beep(cell.flagged ? 760 : 420, 0.03, 0.014);
+  refreshMinesLeft();
 }
 
 function playAt(r, c, forceFlag = false) {
@@ -274,6 +284,7 @@ function resetGame() {
   bestStreakEl.textContent = String(bestStreak);
   setMode('reveal');
   buildBoard(mineCount);
+  refreshMinesLeft();
 }
 
 function startGame() {
