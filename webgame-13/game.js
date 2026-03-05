@@ -7,6 +7,7 @@ const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
 const levelEl = document.getElementById('level');
 const comboEl = document.getElementById('combo');
+const bestComboEl = document.getElementById('bestCombo');
 const shieldEl = document.getElementById('shield');
 const checkpointEl = document.getElementById('checkpoint');
 const challengeTextEl = document.getElementById('challengeText');
@@ -19,6 +20,7 @@ const btnSound = document.getElementById('btnSound');
 const W = canvas.width;
 const H = canvas.height;
 const BEST_KEY = 'color-switch-dot-best-v4';
+const BEST_COMBO_KEY = 'color-switch-dot-best-combo';
 const SOUND_KEY = 'color-switch-dot-sound-v4';
 
 const TAU = Math.PI * 2;
@@ -36,6 +38,7 @@ let best = Number(localStorage.getItem(BEST_KEY) || 0);
 let level = 1;
 let combo = 0;
 let comboTimer = 0;
+let bestCombo = Number(localStorage.getItem(BEST_COMBO_KEY) || 0);
 let shield = 1;
 let checkpoint = 0;
 let tick = 0;
@@ -316,6 +319,7 @@ function updateHud() {
   bestEl.textContent = String(best);
   levelEl.textContent = String(level);
   comboEl.textContent = `x${(1 + Math.min(1.4, combo / 5)).toFixed(1)}`;
+  bestComboEl.textContent = `x${(1 + Math.min(1.4, bestCombo / 5)).toFixed(1)}`;
   shieldEl.textContent = String(shield);
   checkpointEl.textContent = String(checkpoint);
 }
@@ -374,6 +378,10 @@ function handleObstacle(obs, dt) {
   if (!obs.cleared && player.y < obs.y - obs.r - 16) {
     obs.cleared = true;
     combo += 1;
+    if (combo > bestCombo) {
+      bestCombo = combo;
+      localStorage.setItem(BEST_COMBO_KEY, String(bestCombo));
+    }
     comboTimer = 2.4;
 
     score += 1 + Math.floor(combo / 5);
