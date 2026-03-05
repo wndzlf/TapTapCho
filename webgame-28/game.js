@@ -88,6 +88,10 @@ function updateHud() {
   bestComboEl.textContent = `x${bestCombo}`;
   bestEl.textContent = String(best);
   bestScoreEl.textContent = String(bestScore);
+
+  const targetRemaining = targetScore - (score - levelStartScore);
+  comboEl.parentElement?.classList.toggle('hot', combo >= 3);
+  targetEl.parentElement?.classList.toggle('ready', targetRemaining <= 80);
 }
 
 function init(resetProgress = false) {
