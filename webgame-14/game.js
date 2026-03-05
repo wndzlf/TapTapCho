@@ -115,6 +115,10 @@ function bounce(level) {
   streakEl.textContent = '0';
 }
 
+function updateStreakHud() {
+  streakEl.parentElement?.classList.toggle('hot', streak >= 3);
+}
+
 function resetGame() {
   state = 'idle';
   score = 0;
@@ -130,6 +134,7 @@ function resetGame() {
   particles.length = 0;
   buildLevels();
   scoreEl.textContent = '0';
+  updateStreakHud();
 }
 
 function startGame() {
@@ -151,6 +156,7 @@ function endGame() {
   localStorage.setItem(STORAGE_KEY, String(best));
   streak = 0;
   streakEl.textContent = '0';
+  updateStreakHud();
 }
 
 function onAction() {
@@ -207,6 +213,7 @@ function update() {
         score += 1 + bonus;
         scoreEl.textContent = String(score);
         streakEl.textContent = String(streak);
+        updateStreakHud();
         addBurst(BALL_X, BASE_Y, '#7de3ff', 9);
         beep(760 + Math.min(240, score * 8), 0.035, 0.017);
       }
@@ -284,6 +291,12 @@ function render() {
   ctx.arc(BALL_X, BASE_Y, BALL_RADIUS, 0, Math.PI * 2);
   ctx.fill();
   ctx.shadowBlur = 0;
+
+  ctx.strokeStyle = spinDir > 0 ? 'rgba(125, 227, 255, 0.8)' : 'rgba(255, 170, 120, 0.85)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(BALL_X, BASE_Y, BALL_RADIUS + 8, -Math.PI * 0.35, Math.PI * 0.35);
+  ctx.stroke();
 
   for (const p of particles) {
     ctx.fillStyle = p.color;
