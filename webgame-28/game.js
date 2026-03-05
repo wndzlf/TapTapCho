@@ -2,6 +2,7 @@ const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const tray = document.getElementById('tray');
 const scoreEl = document.getElementById('score');
+const bestScoreEl = document.getElementById('best');
 const btnNew = document.getElementById('btnNew');
 const hudEl = document.querySelector('.hud');
 
@@ -36,6 +37,7 @@ let targetScore = 420;
 let combo = 1;
 let best = Number(localStorage.getItem('webgame-28-best') || 0);
 let bestCombo = Number(localStorage.getItem('webgame-28-best-combo') || 1);
+let bestScore = Number(localStorage.getItem('webgame-28-best-score') || 0);
 
 const levelEl = addHudStat('Level', 'level', '1');
 const targetEl = addHudStat('Target', 'target', '420');
@@ -85,6 +87,7 @@ function updateHud() {
   comboEl.textContent = `x${combo}`;
   bestComboEl.textContent = `x${bestCombo}`;
   bestEl.textContent = String(best);
+  bestScoreEl.textContent = String(bestScore);
 }
 
 function init(resetProgress = false) {
@@ -97,6 +100,7 @@ function init(resetProgress = false) {
     level = 1;
     levelStartScore = 0;
     targetScore = 420;
+    bestScore = Number(localStorage.getItem('webgame-28-best-score') || 0);
   }
 
   refillShapes();
@@ -179,6 +183,10 @@ function place(shapeObj, r0, c0) {
 
   best = Math.max(best, score);
   localStorage.setItem('webgame-28-best', String(best));
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem('webgame-28-best-score', String(bestScore));
+  }
   updateHud();
 }
 
