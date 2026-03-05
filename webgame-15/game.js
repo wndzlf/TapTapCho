@@ -70,6 +70,10 @@ function addSkid(color) {
   });
 }
 
+function updateComboHud() {
+  comboEl.parentElement?.classList.toggle('hot', combo >= 3);
+}
+
 function resetGame() {
   state = 'idle';
   score = 0;
@@ -89,6 +93,7 @@ function resetGame() {
   scoreEl.textContent = '0';
   comboEl.textContent = '0';
   bestComboEl.textContent = String(bestCombo);
+  updateComboHud();
 }
 
 function startGame() {
@@ -107,6 +112,7 @@ function endGame() {
   localStorage.setItem(STORAGE_KEY, String(best));
   combo = 0;
   comboEl.textContent = '0';
+  updateComboHud();
 }
 
 function update() {
@@ -154,8 +160,7 @@ function update() {
   scoreEl.textContent = String(score);
   comboEl.textContent = String(combo);
   bestComboEl.textContent = String(bestCombo);
-  comboEl.textContent = String(combo);
-  bestComboEl.textContent = String(bestCombo);
+  updateComboHud();
 
   if (score > 0 && score % 60 === 0 && tick % 10 === 0) {
     beep(640, 0.03, 0.015);
