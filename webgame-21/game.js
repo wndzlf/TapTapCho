@@ -34,6 +34,15 @@ const particles = [];
 
 bestEl.textContent = String(best);
 
+function updateHud() {
+  scoreEl.textContent = String(score);
+  bestEl.textContent = String(best);
+  streakEl.textContent = String(streak);
+
+  streakEl.parentElement?.classList.toggle('hot', streak >= 3);
+  scoreEl.parentElement?.classList.toggle('warn', state === 'input' && inputIndex > 0 && inputIndex < sequence.length);
+}
+
 const audioCtx = window.AudioContext ? new AudioContext() : null;
 
 function beep(freq, duration, gain = 0.02) {
@@ -115,8 +124,7 @@ function resetGame() {
   previewStep = 0;
   previewTimer = 0;
   particles.length = 0;
-  scoreEl.textContent = '0';
-  streakEl.textContent = '0';
+  updateHud();
 }
 
 function startGame() {
@@ -133,7 +141,7 @@ function endGame() {
   bestEl.textContent = String(best);
   localStorage.setItem(STORAGE_KEY, String(best));
   streak = 0;
-  streakEl.textContent = '0';
+  updateHud();
 }
 
 function inputDir(dir) {
@@ -167,8 +175,7 @@ function inputDir(dir) {
     score += 1;
     streak += 1;
     score += Math.floor(streak / 3);
-    scoreEl.textContent = String(score);
-    streakEl.textContent = String(streak);
+    updateHud();
     flash = 18;
     roundLength = Math.min(14, roundLength + 1);
     beep(980, 0.08, 0.03);
@@ -267,7 +274,7 @@ function render() {
   }
   ctx.globalAlpha = 1;
 
-  ctx.fillStyle = '#e8effb';
+  ctx.fillStyle = state === 'input' ? '#ffe2b0' : '#e8effb';
   ctx.textAlign = 'left';
   ctx.font = 'bold 19px system-ui';
   ctx.fillText(`Round Len: ${roundLength}`, 18, 62);
