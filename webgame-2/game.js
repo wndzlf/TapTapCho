@@ -7,6 +7,8 @@ const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
 const levelEl = document.getElementById('level');
 const livesEl = document.getElementById('lives');
+const comboEl = document.getElementById('combo');
+const bestComboEl = document.getElementById('bestCombo');
 
 const btnStart = document.getElementById('btnStart');
 const btnPause = document.getElementById('btnPause');
@@ -15,6 +17,7 @@ const btnSound = document.getElementById('btnSound');
 const W = canvas.width;
 const H = canvas.height;
 const BEST_KEY = 'ball-bounce-best-v2';
+const BEST_COMBO_KEY = 'ball-bounce-best-combo';
 const SFX_KEY = 'ball-bounce-sfx-v2';
 
 let state = 'idle'; // idle | running | paused | gameover
@@ -25,6 +28,7 @@ let lives = 3;
 let elapsed = 0;
 let combo = 0;
 let comboTimer = 0;
+let bestCombo = Number(localStorage.getItem(BEST_COMBO_KEY) || 0);
 let flash = 0;
 let shake = 0;
 
@@ -177,6 +181,8 @@ function updateHud() {
   bestEl.textContent = String(best);
   levelEl.textContent = String(level);
   livesEl.textContent = String(lives);
+  comboEl.textContent = String(combo);
+  bestComboEl.textContent = String(bestCombo);
 }
 
 function resetGame() {
@@ -339,6 +345,10 @@ function updateBalls(dt) {
       b.vy = -Math.abs(speed * (0.8 + Math.random() * 0.08));
       combo = Math.min(combo + 1, 24);
       comboTimer = 3;
+      if (combo > bestCombo) {
+        bestCombo = combo;
+        localStorage.setItem(BEST_COMBO_KEY, String(bestCombo));
+      }
       addScore(8);
       sfx.paddle();
     }
@@ -352,6 +362,10 @@ function updateBalls(dt) {
       brick.hp -= 1;
       combo = Math.min(combo + 1, 24);
       comboTimer = 3.2;
+      if (combo > bestCombo) {
+        bestCombo = combo;
+        localStorage.setItem(BEST_COMBO_KEY, String(bestCombo));
+      }
       addScore(brick.maxHp > 1 ? 28 : 18);
       addParticles(b.x, b.y, '#8ee7ff', 10, 2.8);
       sfx.brick();
