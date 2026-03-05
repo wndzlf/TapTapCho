@@ -5,6 +5,7 @@ const ctx = canvas.getContext('2d');
 
 const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
+const streakEl = document.getElementById('streak');
 const btnStart = document.getElementById('btnStart');
 
 const W = canvas.width;
@@ -18,6 +19,7 @@ const STEP_X = 38;
 let state = 'idle'; // idle | preview | input | gameover
 let score = 0;
 let best = Number(localStorage.getItem(STORAGE_KEY) || 0);
+let streak = 0;
 let tick = 0;
 let flash = 0;
 
@@ -104,6 +106,7 @@ function startRound() {
 function resetGame() {
   state = 'idle';
   score = 0;
+  streak = 0;
   tick = 0;
   flash = 0;
   roundLength = 4;
@@ -113,6 +116,7 @@ function resetGame() {
   previewTimer = 0;
   particles.length = 0;
   scoreEl.textContent = '0';
+  streakEl.textContent = '0';
 }
 
 function startGame() {
@@ -128,6 +132,8 @@ function endGame() {
   best = Math.max(best, score);
   bestEl.textContent = String(best);
   localStorage.setItem(STORAGE_KEY, String(best));
+  streak = 0;
+  streakEl.textContent = '0';
 }
 
 function inputDir(dir) {
@@ -159,7 +165,10 @@ function inputDir(dir) {
 
   if (inputIndex >= sequence.length) {
     score += 1;
+    streak += 1;
+    score += Math.floor(streak / 3);
     scoreEl.textContent = String(score);
+    streakEl.textContent = String(streak);
     flash = 18;
     roundLength = Math.min(14, roundLength + 1);
     beep(980, 0.08, 0.03);
