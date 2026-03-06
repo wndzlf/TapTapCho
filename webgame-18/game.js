@@ -25,6 +25,7 @@ let shake = 0;
 let orbitAngle = -Math.PI * 0.5;
 let orbitDir = 1;
 let orbitSpeed = 0.042;
+let lastActionAt = 0;
 
 const projectiles = [];
 const particles = [];
@@ -128,6 +129,10 @@ function endGame() {
 }
 
 function action() {
+  const nowTime = performance.now();
+  if (nowTime - lastActionAt < 120) return;
+  lastActionAt = nowTime;
+
   if (state !== 'running') {
     startGame();
     return;
