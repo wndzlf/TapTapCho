@@ -116,6 +116,7 @@ function buildBoard() {
     }
 
     cell.addEventListener('click', () => {
+      if (cell._lastTouch && Date.now() - cell._lastTouch < 320) return;
       audio?.unlock();
       selectCell(cell);
       audio?.fx('ui');
@@ -130,12 +131,16 @@ function buildBoard() {
       'touchstart',
       () => {
         cell._touchStart = Date.now();
+        cell._lastTouch = cell._touchStart;
+        audio?.unlock();
+        selectCell(cell);
+        audio?.fx('ui');
       },
       { passive: true }
     );
 
     cell.addEventListener('touchend', () => {
-      if (Date.now() - (cell._touchStart || 0) > 400) {
+      if (Date.now() - (cell._touchStart || 0) > 320) {
         if (!cell.classList.contains('prefill')) setCellValue(cell, '0');
       }
     });
@@ -171,6 +176,18 @@ function setCellValue(cell, value) {
     clearSameHighlights();
     highlightSameValues(cell.textContent);
   }
+}
+
+function selectNextEmpty(fromIdx) {
+  const cells = Array.from(boardEl.children);
+  for (let i = fromIdx + 1; i < cells.length; i += 1) {
+    const next = cells[i];
+    if (!next.classList.contains('prefill') && !next.textContent) {
+      selectCell(next);
+      return true;
+    }
+  }
+  return false;
 }
 
 function checkConflicts() {
@@ -259,6 +276,9 @@ padEl.addEventListener('click', (e) => {
       audio?.fx('success');
     }
     updateHud();
+    if (!selected.classList.contains('error')) {
+      selectNextEmpty(idx);
+    }
   }
 
   if (isComplete()) onRoundClear();
