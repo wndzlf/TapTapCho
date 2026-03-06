@@ -212,8 +212,15 @@ function handleMatch() {
 }
 
 function handleClick(x, y) {
-  const c = Math.floor((x - offsetX) / cell);
-  const r = Math.floor((y - offsetY) / cell);
+  const pad = 16;
+  const maxX = offsetX + size * cell - 1;
+  const maxY = offsetY + size * cell - 1;
+  if (x < offsetX - pad || x > maxX + pad || y < offsetY - pad || y > maxY + pad) return;
+
+  const clampedX = clamp(x, offsetX, maxX);
+  const clampedY = clamp(y, offsetY, maxY);
+  const c = Math.floor((clampedX - offsetX) / cell);
+  const r = Math.floor((clampedY - offsetY) / cell);
   if (r < 0 || c < 0 || r >= size || c >= size) return;
   if (isEmpty(r, c)) return;
 
@@ -239,7 +246,7 @@ function handleClick(x, y) {
     selected = null;
     handleMatch();
   } else {
-    streak = 0;
+    streak = Math.max(0, streak - 1);
     selected = b;
     updateHud();
     audio?.fx('fail');
