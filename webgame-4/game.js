@@ -394,11 +394,18 @@ function loop(ts) {
 }
 
 function hitTopLabel(x, y) {
-  if (y > state.top - 38 && y < state.top - 6) {
+  if (y > state.top - 52 && y < state.top + 8) {
+    let nearest = -1;
+    let bestDist = Infinity;
     for (let i = 0; i < state.players.length; i += 1) {
       const lx = laneX(i);
-      if (Math.abs(x - lx) < 44) return i;
+      const dist = Math.abs(x - lx);
+      if (dist < bestDist) {
+        bestDist = dist;
+        nearest = i;
+      }
     }
+    if (bestDist < 60) return nearest;
   }
   return -1;
 }
