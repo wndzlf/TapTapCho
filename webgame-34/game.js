@@ -172,7 +172,8 @@ function handleDeckClick() {
 }
 
 function handleTableauClick(x, y) {
-  const slot = tableau.find((t) => t.alive && x >= t.x && x <= t.x + t.w && y >= t.y && y <= t.y + t.h);
+  const pad = 8;
+  const slot = tableau.find((t) => t.alive && x >= t.x - pad && x <= t.x + t.w + pad && y >= t.y - pad && y <= t.y + t.h + pad);
   if (!slot) return false;
 
   if (rankNear(slot.card, waste)) {
@@ -201,7 +202,7 @@ function handleTableauClick(x, y) {
     return true;
   }
 
-  combo = 1;
+  combo = Math.max(1, combo - 1);
   audio?.fx('fail');
   updateHud();
   return false;
@@ -240,7 +241,7 @@ canvas.addEventListener('click', (e) => {
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
 
-  if (x >= 32 && x <= 82 && y >= 52 && y <= 122) {
+  if (x >= 20 && x <= 94 && y >= 40 && y <= 134) {
     handleDeckClick();
     return;
   }
