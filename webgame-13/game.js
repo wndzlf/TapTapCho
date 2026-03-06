@@ -648,7 +648,13 @@ window.addEventListener('keydown', (event) => {
   }
 });
 
-canvas.addEventListener('pointerdown', jump);
+let lastTapAt = 0;
+canvas.addEventListener('pointerdown', () => {
+  const now = performance.now();
+  if (now - lastTapAt < 120) return;
+  lastTapAt = now;
+  jump();
+});
 btnStart.addEventListener('click', startGame);
 btnPause.addEventListener('click', togglePause);
 btnSound.addEventListener('click', () => {
