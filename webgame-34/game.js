@@ -235,11 +235,12 @@ function draw() {
   }
 }
 
-canvas.addEventListener('click', (e) => {
-  audio?.unlock();
+let lastTouchAt = 0;
+
+function handleBoardInput(clientX, clientY) {
   const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
+  const x = clientX - rect.left;
+  const y = clientY - rect.top;
 
   if (x >= 20 && x <= 94 && y >= 40 && y <= 134) {
     handleDeckClick();
@@ -247,6 +248,19 @@ canvas.addEventListener('click', (e) => {
   }
 
   handleTableauClick(x, y);
+}
+
+canvas.addEventListener('click', (e) => {
+  if (lastTouchAt && performance.now() - lastTouchAt < 320) return;
+  audio?.unlock();
+  handleBoardInput(e.clientX, e.clientY);
+});
+
+canvas.addEventListener('pointerdown', (e) => {
+  if (e.pointerType !== 'touch') return;
+  lastTouchAt = performance.now();
+  audio?.unlock();
+  handleBoardInput(e.clientX, e.clientY);
 });
 
 btnNew.addEventListener('click', () => {
