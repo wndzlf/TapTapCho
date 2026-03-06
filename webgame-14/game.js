@@ -329,7 +329,13 @@ window.addEventListener('keydown', (event) => {
   if (event.key === ' ') onAction();
 });
 
-canvas.addEventListener('pointerdown', onAction);
+let lastTapAt = 0;
+canvas.addEventListener('pointerdown', () => {
+  const now = performance.now();
+  if (now - lastTapAt < 120) return;
+  lastTapAt = now;
+  onAction();
+});
 btnStart.addEventListener('click', startGame);
 
 resetGame();
