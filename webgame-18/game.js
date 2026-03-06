@@ -62,23 +62,55 @@ function addBurst(x, y, color, amount = 12) {
   }
 }
 
+function pickMissileType() {
+  const tier = Math.min(3, Math.floor(score / 45));
+  const roll = Math.random();
+  if (tier >= 2 && roll < 0.18) return 'accel';
+  if (tier >= 1 && roll < 0.45) return 'weave';
+  if (tier >= 1 && roll < 0.7) return 'fast';
+  return 'straight';
+}
+
 function spawnProjectile() {
   const angle = Math.random() * Math.PI * 2;
   const dist = 250 + Math.random() * 120;
-  const speed = 2.1 + Math.random() * 1.6 + Math.min(1.4, score / 160);
+  const baseSpeed = 2.1 + Math.random() * 1.6 + Math.min(1.6, score / 140);
 
   const sx = center.x + Math.cos(angle) * dist;
   const sy = center.y + Math.sin(angle) * dist;
   const dx = center.x - sx;
   const dy = center.y - sy;
-  const len = Math.hypot(dx, dy);
+  const len = Math.hypot(dx, dy) || 1;
+  const dirX = dx / len;
+  const dirY = dy / len;
+
+  const type = pickMissileType();
+  const fastMul = type === 'fast' ? 1.35 : 1;
+  const speed = baseSpeed * fastMul;
+  const size = type === 'fast'
+    ? 7 + Math.random() * 4
+    : 8 + Math.random() * 6;
+
+  const color = type === 'accel'
+    ? '#7cffc5'
+    : (type === 'weave' ? '#ffd86d' : (type === 'fast' ? '#ff6b6b' : '#ff8a65'));
 
   projectiles.push({
     x: sx,
     y: sy,
-    vx: (dx / len) * speed,
-    vy: (dy / len) * speed,
-    size: 8 + Math.random() * 6,
+    dirX,
+    dirY,
+    speed,
+    speedMax: speed + 1.6 + Math.min(1.2, score / 120),
+    accel: type === 'accel' ? (0.02 + Math.min(0.035, score / 1800)) : 0,
+    weaveAmp: type === 'weave' ? (5 + Math.min(7, score / 70)) : 0,
+    weavePhase: Math.random() * Math.PI * 2,
+    weaveSpeed: 0.12 + Math.random() * 0.08,
+    perpX: -dirY,
+    perpY: dirX,
+    size,
+    color,
+    type,
     passed: false,
   });
 }
@@ -159,16 +191,30 @@ function update() {
   orbitAngle += orbitDir * orbitSpeed;
   orbitSpeed = Math.min(0.075, 0.042 + score * 0.00006);
 
-  if (tick % Math.max(22, 52 - Math.floor(score / 35)) === 0) {
+  const spawnInterval = Math.max(18, 52 - Math.floor(score / 28));
+  if (tick % spawnInterval === 0) {
     spawnProjectile();
+    if (score > 120 && Math.random() < 0.22) spawnProjectile();
   }
 
   const px = center.x + Math.cos(orbitAngle) * ORBIT_R;
   const py = center.y + Math.sin(orbitAngle) * ORBIT_R;
 
   for (const s of projectiles) {
-    s.x += s.vx;
-    s.y += s.vy;
+    if (s.accel) {
+      s.speed = Math.min(s.speedMax, s.speed + s.accel);
+    }
+    const vx = s.dirX * s.speed;
+    const vy = s.dirY * s.speed;
+    if (s.weaveAmp) {
+      s.weavePhase += s.weaveSpeed;
+      const w = Math.sin(s.weavePhase) * s.weaveAmp;
+      s.x += vx + s.perpX * w;
+      s.y += vy + s.perpY * w;
+    } else {
+      s.x += vx;
+      s.y += vy;
+    }
 
     const d = Math.hypot(s.x - px, s.y - py);
     if (d < s.size + 10) {
@@ -226,9 +272,17 @@ function render() {
   ctx.fill();
 
   for (const s of projectiles) {
-    ctx.fillStyle = '#ff8a65';
-    ctx.shadowColor = '#ff8a65';
-    ctx.shadowBlur = 12;
+    const tail = 14 + s.size * 1.2;
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 2.2;
+    ctx.shadowColor = s.color;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.moveTo(s.x - s.dirX * tail, s.y - s.dirY * tail);
+    ctx.lineTo(s.x, s.y);
+    ctx.stroke();
+
+    ctx.fillStyle = s.color;
     ctx.beginPath();
     ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
     ctx.fill();
