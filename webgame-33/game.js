@@ -16,6 +16,8 @@ const colors = ['#6df3ff', '#7cffc5', '#ffd86d', '#ff7bd0', '#8c7bff'];
 
 let grid = [];
 let shooter = null;
+let lane = null;
+let laneDir = 1;
 let score = 0;
 let streak = 0;
 let best = Number(localStorage.getItem('webgame-33-best-score') || 0);
@@ -37,6 +39,8 @@ function countBubbles() {
 function resetBoard(keepScore) {
   grid = Array.from({ length: rows }, () => Array.from({ length: cols }, () => (Math.random() > 0.5 ? randColor() : -1)));
   shooter = { x: canvas.width / 2, y: canvas.height - 40, color: randColor(), vy: 0, active: false };
+  lane = { x: canvas.width / 2, t: 0 };
+  laneDir = 1;
   if (!keepScore) score = 0;
   streak = 0;
   scoreEl.textContent = score;
@@ -57,6 +61,7 @@ function cellToPos(r, c) {
 
 function shoot() {
   if (shooter.active) return;
+  if (lane) shooter.x = lane.x;
   shooter.vy = -6;
   shooter.active = true;
 }
@@ -129,7 +134,17 @@ function attachBubble() {
 }
 
 function update() {
-  if (!shooter.active) return;
+  if (!shooter.active) {
+    if (lane) {
+      lane.t += 0.018 * laneDir;
+      if (lane.t > 1 || lane.t < 0) laneDir *= -1;
+      const t = clamp(lane.t, 0, 1);
+      const minX = offsetX + radius * 0.6;
+      const maxX = offsetX + (cols - 1) * radius * 2 - radius * 0.6;
+      lane.x = minX + (maxX - minX) * t;
+    }
+    return;
+  }
   shooter.y += shooter.vy;
   if (shooter.y < offsetY) {
     attachBubble();
@@ -166,23 +181,25 @@ function draw() {
 
   // aim guide
   if (!shooter.active) {
+    const guideX = lane ? lane.x : shooter.x;
     ctx.save();
     ctx.strokeStyle = 'rgba(109, 243, 255, 0.35)';
     ctx.setLineDash([6, 8]);
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(shooter.x, shooter.y - radius);
-    ctx.lineTo(shooter.x, offsetY - 6);
+    ctx.moveTo(guideX, shooter.y - radius);
+    ctx.lineTo(guideX, offsetY - 6);
     ctx.stroke();
     ctx.restore();
   }
 
   // shooter
+  const drawX = shooter.active ? shooter.x : (lane ? lane.x : shooter.x);
   ctx.fillStyle = colors[shooter.color];
   ctx.shadowColor = colors[shooter.color];
   ctx.shadowBlur = 10;
   ctx.beginPath();
-  ctx.arc(shooter.x, shooter.y, radius - 2, 0, Math.PI * 2);
+  ctx.arc(drawX, shooter.y, radius - 2, 0, Math.PI * 2);
   ctx.fill();
   ctx.shadowBlur = 0;
 }
