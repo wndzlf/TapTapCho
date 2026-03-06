@@ -268,23 +268,43 @@ window.addEventListener('keydown', (event) => {
   if (event.key === ' ') startGame();
 });
 
+const swipeState = { active: false, startX: 0, startY: 0 };
+
 canvas.addEventListener('pointerdown', (event) => {
   const rect = canvas.getBoundingClientRect();
   const x = (event.clientX - rect.left) * (W / rect.width);
   const y = (event.clientY - rect.top) * (H / rect.height);
 
+  swipeState.active = true;
+  swipeState.startX = x;
+  swipeState.startY = y;
+
   if (state !== 'running') {
     startGame();
+  }
+});
+
+canvas.addEventListener('pointerup', (event) => {
+  if (!swipeState.active) return;
+  swipeState.active = false;
+
+  const rect = canvas.getBoundingClientRect();
+  const x = (event.clientX - rect.left) * (W / rect.width);
+  const y = (event.clientY - rect.top) * (H / rect.height);
+  const dx = x - swipeState.startX;
+  const dy = y - swipeState.startY;
+  const absX = Math.abs(dx);
+  const absY = Math.abs(dy);
+
+  if (state !== 'running') return;
+
+  if (absX < 16 && absY < 16) {
     return;
   }
 
-  const px = BOARD_X + player.c * CELL + CELL * 0.5;
-  const py = BOARD_Y + player.r * CELL + CELL * 0.5;
-  const dx = x - px;
-  const dy = y - py;
-  if (Math.abs(dx) > Math.abs(dy)) {
+  if (absX > absY * 1.15) {
     movePlayer(dx > 0 ? 1 : -1, 0);
-  } else {
+  } else if (absY > absX * 1.15) {
     movePlayer(0, dy > 0 ? 1 : -1);
   }
 });
