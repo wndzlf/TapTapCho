@@ -610,6 +610,7 @@ bindHoldButton(btnHold, holdSwap);
 canvas.addEventListener('pointerdown', (event) => {
   if (event.pointerType !== 'touch') return;
   if (state !== 'running') return;
+  event.preventDefault();
   swipeStart = { x: event.clientX, y: event.clientY, at: performance.now() };
 });
 

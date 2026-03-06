@@ -3542,7 +3542,8 @@ function drawPathPreview() {
   const start = cellCenter(c, r);
   ctx.moveTo(start.x, start.y);
 
-  for (let i = 0; i < 140; i += 1) {
+  const maxSteps = GRID.cols * GRID.rows;
+  for (let i = 0; i < maxSteps; i += 1) {
     if (c === GOAL.c && r === GOAL.r) break;
     const next = neighborStep(c, r);
     if (!next.valid || (next.c === c && next.r === r)) break;
