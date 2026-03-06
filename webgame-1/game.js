@@ -649,6 +649,16 @@ canvas.addEventListener('pointerdown', (e) => {
   }
 });
 
+canvas.addEventListener('pointerup', (e) => {
+  if (state !== 'running') return;
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (W / rect.width);
+  const y = (e.clientY - rect.top) * (H / rect.height);
+  if (y < H * 0.68) {
+    player.targetX = x;
+  }
+});
+
 canvas.addEventListener('pointermove', (e) => {
   if (!pointerActive || state !== 'running') return;
   const rect = canvas.getBoundingClientRect();
