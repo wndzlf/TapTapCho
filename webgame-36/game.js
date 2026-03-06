@@ -8,6 +8,10 @@ const hudEl = document.querySelector('.hud');
 
 const audio = window.TapTapNeonAudio?.create('webgame-36', hudEl);
 
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
 const objectPool = [
   { name: 'Key', w: 40, h: 14, color: '#ffd86d' },
   { name: 'Gem', w: 22, h: 22, color: '#7cffc5' },
@@ -129,6 +133,7 @@ function onRoundClear() {
   score += Math.max(100, timeLeft * 2 + level * 20);
   level += 1;
   audio?.fx('win');
+  vibrate([20, 30, 20]);
   updateHud();
   setTimeout(() => init(false), 820);
 }
@@ -136,6 +141,7 @@ function onRoundClear() {
 function onFail() {
   level = Math.max(1, level - 1);
   audio?.fx('fail');
+  vibrate([40, 40, 40]);
   setTimeout(() => init(false), 450);
 }
 
@@ -151,6 +157,7 @@ function handleClick(x, y) {
     timeLeft = Math.max(0, timeLeft - 1);
     streak = Math.max(0, streak - 1);
     audio?.fx('fail');
+    vibrate(30);
     updateHud();
     return;
   }
@@ -170,6 +177,7 @@ function handleClick(x, y) {
   renderList();
   updateHud();
   audio?.fx('success');
+  vibrate(15);
 
   if (found.size === items.length) onRoundClear();
 }
@@ -205,6 +213,14 @@ function drawItem(item) {
   ctx.globalAlpha = 1;
 }
 
+function getPointerPos(event) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (event.clientX - rect.left) * (canvas.width / rect.width),
+    y: (event.clientY - rect.top) * (canvas.height / rect.height)
+  };
+}
+
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -231,10 +247,10 @@ function draw() {
   }
 }
 
-canvas.addEventListener('click', (e) => {
+canvas.addEventListener('pointerdown', (event) => {
   audio?.unlock();
-  const rect = canvas.getBoundingClientRect();
-  handleClick(e.clientX - rect.left, e.clientY - rect.top);
+  const pos = getPointerPos(event);
+  handleClick(pos.x, pos.y);
 });
 
 btnHint.addEventListener('click', () => {
