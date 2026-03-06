@@ -111,6 +111,7 @@ let lastTime = 0;
 let flash = 0;
 let shake = 0;
 let softDrop = false;
+let swipeStart = null;
 
 bestEl.textContent = String(best);
 
@@ -605,6 +606,41 @@ btnDown.addEventListener('touchend', () => {
 });
 bindHoldButton(btnDrop, hardDrop);
 bindHoldButton(btnHold, holdSwap);
+
+canvas.addEventListener('pointerdown', (event) => {
+  if (event.pointerType !== 'touch') return;
+  if (state !== 'running') return;
+  swipeStart = { x: event.clientX, y: event.clientY, at: performance.now() };
+});
+
+canvas.addEventListener('pointerup', (event) => {
+  if (event.pointerType !== 'touch') return;
+  if (!swipeStart || state !== 'running') {
+    swipeStart = null;
+    return;
+  }
+  const dx = event.clientX - swipeStart.x;
+  const dy = event.clientY - swipeStart.y;
+  const absX = Math.abs(dx);
+  const absY = Math.abs(dy);
+  const dist = Math.hypot(dx, dy);
+  swipeStart = null;
+
+  if (dist < 14) {
+    playerRotate(1);
+    return;
+  }
+
+  if (absX > absY * 1.1) {
+    playerMove(dx > 0 ? 1 : -1);
+    return;
+  }
+
+  if (dy > 0) {
+    if (absY > 70) hardDrop();
+    else playerDrop();
+  }
+});
 
 btnPause.addEventListener('click', togglePause);
 btnRestart.addEventListener('click', restart);
