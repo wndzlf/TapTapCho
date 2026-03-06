@@ -20,6 +20,7 @@ let bestCombo = Number(localStorage.getItem(BEST_COMBO_KEY) || 0);
 let tick = 0;
 let shake = 0;
 let pressed = false;
+let offRoadTime = 0;
 
 const player = {
   x: W * 0.5,
@@ -82,6 +83,7 @@ function resetGame() {
   tick = 0;
   shake = 0;
   pressed = false;
+  offRoadTime = 0;
 
   player.x = W * 0.5;
   player.angle = 0;
@@ -115,7 +117,7 @@ function endGame() {
   updateComboHud();
 }
 
-function update() {
+function update(dt) {
   tick += 1;
 
   for (const p of particles) {
@@ -145,8 +147,13 @@ function update() {
   if (!pressed && tick % 5 === 0) addSkid('#89a9d6');
 
   if (dist > halfW) {
-    endGame();
-    return;
+    offRoadTime += dt;
+    if (offRoadTime > 0.25) {
+      endGame();
+      return;
+    }
+  } else {
+    offRoadTime = 0;
   }
 
   score = Math.floor(trackZ / 10);
@@ -270,8 +277,12 @@ function render() {
   ctx.restore();
 }
 
+let lastTime = performance.now();
 function loop() {
-  update();
+  const now = performance.now();
+  const dt = Math.min(0.05, (now - lastTime) / 1000);
+  lastTime = now;
+  update(dt);
   render();
   requestAnimationFrame(loop);
 }
