@@ -220,7 +220,12 @@ function updatePlayerTarget() {
 
   const tx = camera.x + pointer.x;
   const ty = camera.y + pointer.y;
-  player.targetAngle = Math.atan2(ty - player.y, tx - player.x);
+  const dx = tx - player.x;
+  const dy = ty - player.y;
+  const dist = Math.hypot(dx, dy);
+
+  if (dist < 22) return;
+  player.targetAngle = Math.atan2(dy, dx);
 }
 
 function updateBotTarget(bot, dt) {
@@ -257,7 +262,7 @@ function moveWorm(worm, dt) {
 
   let speed = worm.baseSpeed;
   if (worm.isPlayer && (keys.ShiftLeft || keys.ShiftRight || keys.Space)) {
-    speed += 92;
+    speed += 70;
   }
   if (!worm.isPlayer) {
     speed += Math.sin((tick + worm.seed) * 0.035) * 14;
