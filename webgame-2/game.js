@@ -723,6 +723,7 @@ canvas.addEventListener('pointerdown', (e) => {
 
   const rect = canvas.getBoundingClientRect();
   const x = (e.clientX - rect.left) * (W / rect.width);
+  const y = (e.clientY - rect.top) * (H / rect.height);
   paddle.targetX = x;
 
   if (state === 'idle' || state === 'gameover') {
@@ -730,7 +731,7 @@ canvas.addEventListener('pointerdown', (e) => {
     return;
   }
 
-  if (state === 'running') launchBall();
+  if (state === 'running' && y < H * 0.62) launchBall();
 });
 
 canvas.addEventListener('pointermove', (e) => {
