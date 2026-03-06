@@ -640,7 +640,13 @@ window.addEventListener('keydown', (event) => {
   }
 });
 
-canvas.addEventListener('pointerdown', onPrimaryAction);
+let lastTapAt = 0;
+canvas.addEventListener('pointerdown', (event) => {
+  const now = performance.now();
+  if (now - lastTapAt < 140) return;
+  lastTapAt = now;
+  onPrimaryAction();
+});
 btnStart.addEventListener('click', startGame);
 btnPause.addEventListener('click', togglePause);
 btnSound.addEventListener('click', () => {
