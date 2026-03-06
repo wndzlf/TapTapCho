@@ -560,11 +560,11 @@ body.rank-mode .top-row {
 #btnChoLotto::before {
   content: '';
   position: absolute;
-  top: 8px;
-  left: 8px;
+  top: 7px;
+  left: 10px;
   width: 18px;
   height: 18px;
-  background: url('../assets/dollar-icon.svg?v=4') center/contain no-repeat;
+  background: url('../assets/dollar-icon.svg?v=5') center/contain no-repeat;
 }
 
 #btnChoLotto .icon {
