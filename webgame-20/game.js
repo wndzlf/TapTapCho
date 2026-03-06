@@ -243,22 +243,63 @@ window.addEventListener('keydown', (event) => {
   if (event.key === ' ' || event.key === 'Enter') playCell(cursor.r, cursor.c);
 });
 
+const swipeState = { active: false, startX: 0, startY: 0 };
+
+function getCellFromPoint(x, y, pad = 10) {
+  const maxX = BOARD_X + BOARD_SIZE - 1;
+  const maxY = BOARD_Y + BOARD_SIZE - 1;
+  if (x < BOARD_X - pad || x > maxX + pad || y < BOARD_Y - pad || y > maxY + pad) return null;
+  const clampedX = clamp(x, BOARD_X, maxX);
+  const clampedY = clamp(y, BOARD_Y, maxY);
+  const c = Math.floor((clampedX - BOARD_X) / (CELL + GAP));
+  const r = Math.floor((clampedY - BOARD_Y) / (CELL + GAP));
+  if (r < 0 || c < 0 || r >= SIZE || c >= SIZE) return null;
+  return { r, c };
+}
+
 canvas.addEventListener('pointerdown', (event) => {
   const rect = canvas.getBoundingClientRect();
   const x = (event.clientX - rect.left) * (W / rect.width);
   const y = (event.clientY - rect.top) * (H / rect.height);
 
+  swipeState.active = true;
+  swipeState.startX = x;
+  swipeState.startY = y;
+
   if (state !== 'running') {
     startGame();
-    return;
+  }
+});
+
+canvas.addEventListener('pointerup', (event) => {
+  if (!swipeState.active) return;
+  swipeState.active = false;
+
+  const rect = canvas.getBoundingClientRect();
+  const x = (event.clientX - rect.left) * (W / rect.width);
+  const y = (event.clientY - rect.top) * (H / rect.height);
+  const dx = x - swipeState.startX;
+  const dy = y - swipeState.startY;
+  const absX = Math.abs(dx);
+  const absY = Math.abs(dy);
+
+  if (state !== 'running') return;
+
+  if (absX > 18 || absY > 18) {
+    if (absX > absY * 1.15) {
+      cursor.c = clamp(cursor.c + (dx > 0 ? 1 : -1), 0, SIZE - 1);
+      return;
+    }
+    if (absY > absX * 1.15) {
+      cursor.r = clamp(cursor.r + (dy > 0 ? 1 : -1), 0, SIZE - 1);
+      return;
+    }
   }
 
-  if (x < BOARD_X || x > BOARD_X + BOARD_SIZE || y < BOARD_Y || y > BOARD_Y + BOARD_SIZE) return;
-
-  const c = Math.floor((x - BOARD_X) / (CELL + GAP));
-  const r = Math.floor((y - BOARD_Y) / (CELL + GAP));
-  cursor = { r, c };
-  playCell(r, c);
+  const cellPos = getCellFromPoint(x, y, 12);
+  if (!cellPos) return;
+  cursor = { r: cellPos.r, c: cellPos.c };
+  playCell(cellPos.r, cellPos.c);
 });
 
 btnStart.addEventListener('click', startGame);
