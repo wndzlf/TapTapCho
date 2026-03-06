@@ -433,7 +433,14 @@ function getMoveVector() {
 
 function getAimAngle(player, moveVec) {
   if (input.pointer.hasAim) {
-    return Math.atan2(input.pointer.y - player.y, input.pointer.x - player.x);
+    const dx = input.pointer.x - player.x;
+    const dy = input.pointer.y - player.y;
+    const d = Math.hypot(dx, dy);
+    if (d < 32) {
+      const near = nearestEnemy(player.x, player.y);
+      if (near) return Math.atan2(near.y - player.y, near.x - player.x);
+    }
+    return Math.atan2(dy, dx);
   }
 
   const near = nearestEnemy(player.x, player.y);
