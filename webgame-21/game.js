@@ -309,7 +309,12 @@ window.addEventListener('keydown', (event) => {
   if (event.key === ' ') startGame();
 });
 
+let lastTapAt = 0;
 canvas.addEventListener('pointerdown', (event) => {
+  const now = performance.now();
+  if (now - lastTapAt < 140) return;
+  lastTapAt = now;
+
   const rect = canvas.getBoundingClientRect();
   const x = (event.clientX - rect.left) * (W / rect.width);
   inputDir(x < W * 0.5 ? -1 : 1);
