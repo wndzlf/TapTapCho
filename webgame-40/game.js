@@ -5080,8 +5080,8 @@ function handleCanvasAction(event) {
   }
 }
 
-const MOBILE_TAP_MAX_MOVE = 10;
-const MOBILE_TAP_MAX_MS = 220;
+const MOBILE_TAP_MAX_MOVE = 14;
+const MOBILE_TAP_MAX_MS = 260;
 const MOBILE_SCROLL_GUARD_MS = 140;
 
 const mobileTapState = {
