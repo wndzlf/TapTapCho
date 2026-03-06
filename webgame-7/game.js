@@ -953,6 +953,13 @@ canvas.addEventListener('pointerdown', (e) => {
   else activateDash();
 });
 
+canvas.addEventListener('pointerup', (e) => {
+  if (state !== 'running') return;
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  if (x > rect.width * 0.82) activateDash();
+});
+
 canvas.addEventListener('pointermove', (e) => {
   if (!pointer.active || state !== 'running') return;
   const dx = e.clientX - pointer.downX;
