@@ -310,14 +310,30 @@ window.addEventListener('keydown', (event) => {
 });
 
 let lastTapAt = 0;
+const swipeState = { active: false, startX: 0, startY: 0 };
+
 canvas.addEventListener('pointerdown', (event) => {
   const now = performance.now();
   if (now - lastTapAt < 140) return;
   lastTapAt = now;
 
+  swipeState.active = true;
+  swipeState.startX = event.clientX;
+  swipeState.startY = event.clientY;
+
   const rect = canvas.getBoundingClientRect();
   const x = (event.clientX - rect.left) * (W / rect.width);
   inputDir(x < W * 0.5 ? -1 : 1);
+});
+
+canvas.addEventListener('pointerup', (event) => {
+  if (!swipeState.active) return;
+  swipeState.active = false;
+  const dx = event.clientX - swipeState.startX;
+  const dy = event.clientY - swipeState.startY;
+  if (Math.abs(dx) > Math.abs(dy) * 1.2 && Math.abs(dx) > 18) {
+    inputDir(dx > 0 ? 1 : -1);
+  }
 });
 
 btnStart.addEventListener('click', startGame);
