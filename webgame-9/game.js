@@ -656,6 +656,40 @@ function bindHoldButton(el, action, repeat = false) {
   el.addEventListener('touchend', stop);
 }
 
+const swipeState = { active: false, startX: 0, startY: 0 };
+canvas.addEventListener('pointerdown', (e) => {
+  if (e.pointerType !== 'touch') return;
+  swipeState.active = true;
+  swipeState.startX = e.clientX;
+  swipeState.startY = e.clientY;
+});
+
+canvas.addEventListener('pointerup', (e) => {
+  if (e.pointerType !== 'touch') return;
+  if (!swipeState.active) return;
+  swipeState.active = false;
+
+  const dx = e.clientX - swipeState.startX;
+  const dy = e.clientY - swipeState.startY;
+  const absX = Math.abs(dx);
+  const absY = Math.abs(dy);
+
+  if (absX < 12 && absY < 12) {
+    playerRotate(1);
+    return;
+  }
+
+  if (absX > absY * 1.1) {
+    playerMove(movementDir(dx > 0 ? 1 : -1));
+    return;
+  }
+
+  if (dy > 0) {
+    if (absY > 70) hardDrop();
+    else playerDrop();
+  }
+});
+
 bindHoldButton(btnLeft, () => playerMove(movementDir(-1)), true);
 bindHoldButton(btnRight, () => playerMove(movementDir(1)), true);
 bindHoldButton(btnRotate, () => playerRotate(1));
