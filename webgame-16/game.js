@@ -291,16 +291,46 @@ window.addEventListener('keydown', (event) => {
   if (event.key === ' ') startGame();
 });
 
+const swipeState = { active: false, startX: 0, startY: 0 };
+
 canvas.addEventListener('pointerdown', (event) => {
   const rect = canvas.getBoundingClientRect();
   const x = (event.clientX - rect.left) * (W / rect.width);
   const y = (event.clientY - rect.top) * (H / rect.height);
 
+  swipeState.active = true;
+  swipeState.startX = x;
+  swipeState.startY = y;
+
   if (state !== 'running') {
     startGame();
-    return;
+  }
+});
+
+canvas.addEventListener('pointerup', (event) => {
+  if (!swipeState.active) return;
+  swipeState.active = false;
+
+  const rect = canvas.getBoundingClientRect();
+  const x = (event.clientX - rect.left) * (W / rect.width);
+  const y = (event.clientY - rect.top) * (H / rect.height);
+  const dx = x - swipeState.startX;
+  const dy = y - swipeState.startY;
+  const absX = Math.abs(dx);
+  const absY = Math.abs(dy);
+
+  if (absX > 24 || absY > 24) {
+    if (absX > absY * 1.15) {
+      moveByDir(0, dx > 0 ? -1 : 1);
+      return;
+    }
+    if (absY > absX * 1.15) {
+      moveByDir(dy > 0 ? -1 : 1, 0);
+      return;
+    }
   }
 
+  if (state !== 'running') return;
   if (x < BOARD_X || x > BOARD_X + CELL * SIZE || y < BOARD_Y || y > BOARD_Y + CELL * SIZE) return;
 
   const c = Math.floor((x - BOARD_X) / CELL);
