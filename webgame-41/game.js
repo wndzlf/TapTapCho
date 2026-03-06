@@ -84,8 +84,14 @@ function setStage(index) {
   goalLabel.textContent = `Goal: ${mini.goal} (${state.gimmick})`;
 }
 
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
 function setMode(mode) {
+  const prev = state.mode;
   state.mode = mode;
+  if (prev !== mode && mode === 'fail') vibrate([60, 40, 60]);
 }
 
 function startGame() {
@@ -144,7 +150,14 @@ function onPointerUp() {
   POINTER.dy = 0;
 }
 
-canvas.addEventListener('pointerdown', (e) => { onPointerDown(e); canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointerdown', (e) => {
+  if (state.mode === 'menu' || state.mode === 'fail') {
+    startGame();
+    return;
+  }
+  onPointerDown(e);
+  canvas.setPointerCapture(e.pointerId);
+});
 canvas.addEventListener('pointermove', onPointerMove);
 canvas.addEventListener('pointerup', onPointerUp);
 canvas.addEventListener('pointercancel', onPointerUp);
@@ -279,6 +292,7 @@ function isInCone(px, py, g) {
 }
 
 function nextStage() {
+  vibrate(25);
   if (state.stageIndex < MINI.length - 1) {
     setStage(state.stageIndex + 1);
   } else {
@@ -450,10 +464,6 @@ function gameLoop() {
   draw();
   requestAnimationFrame(gameLoop);
 }
-
-canvas.addEventListener('pointerdown', () => {
-  if (state.mode === 'fail') startGame();
-});
 
 // BGM/SFX hooks
 // playBgm('poop-escape-theme')
