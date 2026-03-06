@@ -672,6 +672,16 @@ btnRight.addEventListener('pointerdown', () => setDir(1, 0));
 
 let touchStart = null;
 canvas.addEventListener('touchstart', (e) => {
+  if (state === 'idle' || state === 'gameover') {
+    startGame();
+    touchStart = null;
+    return;
+  }
+  if (state === 'paused') {
+    togglePause();
+    touchStart = null;
+    return;
+  }
   const t = e.touches[0];
   touchStart = { x: t.clientX, y: t.clientY };
 }, { passive: true });
@@ -681,7 +691,16 @@ canvas.addEventListener('touchend', (e) => {
   const t = e.changedTouches[0];
   const dx = t.clientX - touchStart.x;
   const dy = t.clientY - touchStart.y;
-  if (Math.abs(dx) > Math.abs(dy)) {
+  const absX = Math.abs(dx);
+  const absY = Math.abs(dy);
+  const minSwipe = 16;
+
+  if (absX < minSwipe && absY < minSwipe) {
+    touchStart = null;
+    return;
+  }
+
+  if (absX > absY) {
     if (dx > 20) setDir(1, 0);
     if (dx < -20) setDir(-1, 0);
   } else {
