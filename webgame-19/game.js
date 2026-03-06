@@ -301,11 +301,13 @@ canvas.addEventListener('pointerup', (event) => {
   const dy = y - pointerStart.y;
   pointerStart = null;
 
-  if (Math.abs(dx) < 14 && Math.abs(dy) < 14) return;
+  const absX = Math.abs(dx);
+  const absY = Math.abs(dy);
+  if (absX < 10 && absY < 10) return;
 
-  if (Math.abs(dx) > Math.abs(dy)) {
+  if (absX > absY * 1.2) {
     move(dx > 0 ? 'right' : 'left');
-  } else {
+  } else if (absY > absX * 1.2) {
     move(dy > 0 ? 'down' : 'up');
   }
 });
