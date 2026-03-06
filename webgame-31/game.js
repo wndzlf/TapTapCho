@@ -230,7 +230,18 @@ function draw() {
   }
 }
 
+let lastTouchAt = 0;
+
 canvas.addEventListener('click', (e) => {
+  if (lastTouchAt && performance.now() - lastTouchAt < 320) return;
+  audio?.unlock();
+  const rect = canvas.getBoundingClientRect();
+  handleClick(e.clientX - rect.left, e.clientY - rect.top);
+});
+
+canvas.addEventListener('pointerdown', (e) => {
+  if (e.pointerType !== 'touch') return;
+  lastTouchAt = performance.now();
   audio?.unlock();
   const rect = canvas.getBoundingClientRect();
   handleClick(e.clientX - rect.left, e.clientY - rect.top);
