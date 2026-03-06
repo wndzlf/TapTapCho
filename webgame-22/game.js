@@ -452,6 +452,9 @@ window.addEventListener('keydown', (event) => {
   }
 });
 
+let touchHoldTimer = null;
+let touchHoldActive = false;
+
 canvas.addEventListener('pointerdown', (event) => {
   const cell = boardCellFromPointer(event);
   if (!cell) {
@@ -459,6 +462,25 @@ canvas.addEventListener('pointerdown', (event) => {
     return;
   }
 
+  if (event.pointerType === 'touch') {
+    touchHoldActive = false;
+    if (touchHoldTimer) clearTimeout(touchHoldTimer);
+    touchHoldTimer = setTimeout(() => {
+      touchHoldActive = true;
+      playAt(cell.r, cell.c, true);
+    }, 320);
+    return;
+  }
+
+  playAt(cell.r, cell.c, false);
+});
+
+canvas.addEventListener('pointerup', (event) => {
+  if (event.pointerType !== 'touch') return;
+  if (touchHoldTimer) clearTimeout(touchHoldTimer);
+  if (touchHoldActive) return;
+  const cell = boardCellFromPointer(event);
+  if (!cell) return;
   playAt(cell.r, cell.c, false);
 });
 
