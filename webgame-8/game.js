@@ -192,11 +192,36 @@ buildVillage().then(() => {
 
 // movement (1st person)
 const keys = new Set();
+const touchMove = { active: false, startX: 0, startY: 0, dx: 0, dy: 0 };
 window.addEventListener('keydown', (e) => keys.add(e.key.toLowerCase()));
 window.addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
 
+renderer.domElement.addEventListener('pointerdown', (e) => {
+  if (e.pointerType !== 'touch') return;
+  touchMove.active = true;
+  touchMove.startX = e.clientX;
+  touchMove.startY = e.clientY;
+  touchMove.dx = 0;
+  touchMove.dy = 0;
+});
+
+renderer.domElement.addEventListener('pointermove', (e) => {
+  if (!touchMove.active || e.pointerType !== 'touch') return;
+  touchMove.dx = e.clientX - touchMove.startX;
+  touchMove.dy = e.clientY - touchMove.startY;
+});
+
+renderer.domElement.addEventListener('pointerup', (e) => {
+  if (e.pointerType !== 'touch') return;
+  touchMove.active = false;
+  touchMove.dx = 0;
+  touchMove.dy = 0;
+});
+
 function updateMovement(delta) {
-  const sprinting = keys.has('shift');
+  const dragLen = Math.hypot(touchMove.dx, touchMove.dy);
+  const touchSprinting = touchMove.active && dragLen > 90;
+  const sprinting = keys.has('shift') || touchSprinting;
   const speed = 6 * delta * (sprinting ? 1.6 : 1);
   if (sprintEl) {
     sprintEl.textContent = sprinting ? 'ON' : 'OFF';
@@ -213,6 +238,16 @@ function updateMovement(delta) {
   if (keys.has('s')) move.addScaledVector(forward, -1);
   if (keys.has('a')) move.addScaledVector(right, -1);
   if (keys.has('d')) move.add(right);
+
+  if (touchMove.active) {
+    const dead = 16;
+    if (Math.abs(touchMove.dy) > dead) {
+      move.addScaledVector(forward, touchMove.dy < 0 ? 1 : -1);
+    }
+    if (Math.abs(touchMove.dx) > dead) {
+      move.addScaledVector(right, touchMove.dx > 0 ? 1 : -1);
+    }
+  }
 
   if (move.lengthSq() > 0) {
     move.normalize().multiplyScalar(speed);
