@@ -275,28 +275,29 @@ function draw() {
 }
 
 let lastHoverCell = null;
-canvas.addEventListener('mousemove', (e) => {
+
+function getCellFromEvent(e, pad = 12) {
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
-  const c = Math.floor((x - offsetX) / cell);
-  const r = Math.floor((y - offsetY) / cell);
-  if (r < 0 || c < 0 || r >= size || c >= size) {
-    lastHoverCell = null;
-    return;
-  }
-  lastHoverCell = { r, c };
-});
+  const maxX = offsetX + size * cell - 1;
+  const maxY = offsetY + size * cell - 1;
+  if (x < offsetX - pad || x > maxX + pad || y < offsetY - pad || y > maxY + pad) return null;
+  const clampedX = clamp(x, offsetX, maxX);
+  const clampedY = clamp(y, offsetY, maxY);
+  const c = Math.floor((clampedX - offsetX) / cell);
+  const r = Math.floor((clampedY - offsetY) / cell);
+  if (r < 0 || c < 0 || r >= size || c >= size) return null;
+  return { r, c };
+}
 
-canvas.addEventListener('click', (e) => {
+function handleBoardPlace(e) {
   if (selected === null) return;
   audio?.unlock();
 
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-  const c = Math.floor((x - offsetX) / cell);
-  const r = Math.floor((y - offsetY) / cell);
+  const cellPos = getCellFromEvent(e);
+  if (!cellPos) return;
+  const { r, c } = cellPos;
   const shapeObj = currentShapes[selected];
   if (!shapeObj) return;
 
@@ -312,6 +313,34 @@ canvas.addEventListener('click', (e) => {
     updateHud();
     audio?.fx('fail');
   }
+}
+
+canvas.addEventListener('mousemove', (e) => {
+  const cellPos = getCellFromEvent(e, 0);
+  if (!cellPos) {
+    lastHoverCell = null;
+    return;
+  }
+  lastHoverCell = cellPos;
+});
+
+canvas.addEventListener('pointermove', (e) => {
+  if (e.pointerType !== 'touch') return;
+  const cellPos = getCellFromEvent(e, 0);
+  if (!cellPos) {
+    lastHoverCell = null;
+    return;
+  }
+  lastHoverCell = cellPos;
+});
+
+canvas.addEventListener('click', (e) => {
+  handleBoardPlace(e);
+});
+
+canvas.addEventListener('pointerdown', (e) => {
+  if (e.pointerType !== 'touch') return;
+  handleBoardPlace(e);
 });
 
 btnRotate.addEventListener('click', () => {
