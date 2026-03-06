@@ -901,6 +901,14 @@ canvas.addEventListener('pointerdown', (e) => {
   else moveLane(1);
 });
 
+canvas.addEventListener('pointerup', (e) => {
+  if (state !== 'running') return;
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  if (x < rect.width * 0.22) moveLane(-1);
+  else if (x > rect.width * 0.78) moveLane(1);
+});
+
 canvas.addEventListener('pointermove', (e) => {
   if (!pointer.active || state !== 'running') return;
   const dx = e.clientX - pointer.downX;
