@@ -387,7 +387,9 @@ function loop(ts) {
   requestAnimationFrame(loop);
 }
 
-btnSpin.addEventListener('click', () => {
+let lastSpinTap = 0;
+
+function startSpin() {
   if (spinning) return;
   sfx.ensure();
   if (parsedItems.length < 2) parseItems();
@@ -397,6 +399,17 @@ btnSpin.addEventListener('click', () => {
   resultEl.textContent = '스핀 중...';
   resultEl.classList.remove('good', 'bad');
   sfx.spin();
+}
+
+btnSpin.addEventListener('click', () => {
+  startSpin();
+});
+
+canvas.addEventListener('pointerdown', () => {
+  const now = performance.now();
+  if (now - lastSpinTap < 220) return;
+  lastSpinTap = now;
+  startSpin();
 });
 
 btnShuffle.addEventListener('click', () => {
