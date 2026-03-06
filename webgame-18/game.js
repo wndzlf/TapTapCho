@@ -273,9 +273,9 @@ function render() {
 
   for (const s of projectiles) {
     const tail = 14 + s.size * 1.2;
-    ctx.strokeStyle = s.color;
+    ctx.strokeStyle = (s.color || '#ff8a65');
     ctx.lineWidth = 2.2;
-    ctx.shadowColor = s.color;
+    ctx.shadowColor = (s.color || '#ff8a65');
     ctx.shadowBlur = 10;
     ctx.beginPath();
     ctx.moveTo(s.x - s.dirX * tail, s.y - s.dirY * tail);
