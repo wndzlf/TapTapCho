@@ -72,7 +72,7 @@ function setStage(index) {
   const zoneW = clamp(90 - (state.runStage - 1) * 3, 50, 90);
   state.paper = { x: 60, y: 160, vx: 120 * diff, zoneX: DESIGN.w * 0.35, zoneW, hits: 0 };
   state.poop = { meter: 0, shake: 0 };
-  state.wipe = { meter: 0, lastDir: 0 };
+  state.wipe = { meter: 0, lastDir: 0, swipe: 0 };
   state.escape = { x: 40, y: 520, tx: 40, ty: 520, speed: 120 + diff * 40 };
   state.guard = { x: 250, y: 420, ang: 0, angSpeed: 0.8 + diff * 0.35, fov: 0.7 + diff * 0.05, range: 150 + diff * 20, blink: 0 };
   state.guy = { x: 110, y: 520, mood: 0 };
@@ -120,6 +120,11 @@ function onPointerDown(e) {
   const t = now();
   if (t - POINTER.tapAt < 260) POINTER.taps += 1; else POINTER.taps = 1;
   POINTER.tapAt = t;
+
+  if (state.mode === 'playing' && state.stageIndex === 3) {
+    state.escape.tx = clamp(p.x, 20, DESIGN.w - 20);
+    state.escape.ty = clamp(p.y, 200, DESIGN.h - 20);
+  }
 }
 
 function onPointerMove(e) {
@@ -211,11 +216,15 @@ function updatePoop(dt) {
 function updateWipe(dt) {
   const w = state.wipe;
   if (POINTER.down) {
+    w.swipe = Math.min(60, w.swipe + Math.abs(POINTER.dx));
     const dir = Math.sign(POINTER.dx || 0);
-    if (dir !== 0 && dir !== w.lastDir) {
+    if (dir !== 0 && dir !== w.lastDir && w.swipe > 18) {
       w.meter = clamp(w.meter + 0.16, 0, 1);
       w.lastDir = dir;
+      w.swipe = 0;
     }
+  } else {
+    w.swipe = Math.max(0, w.swipe - dt * 40);
   }
   const slip = state.gimmick === 'Slippery wipe' ? 0.06 : 0;
   w.meter = clamp(w.meter - dt * (0.05 + difficulty() * 0.02 + slip), 0, 1);
