@@ -9,6 +9,7 @@ const lengthEl = document.getElementById('length');
 const bestLengthEl = document.getElementById('bestLength');
 const aliveEl = document.getElementById('alive');
 const btnStart = document.getElementById('btnStart');
+const btnBoost = document.getElementById('btnBoost');
 
 const W = canvas.width;
 const H = canvas.height;
@@ -37,6 +38,7 @@ let camera = { x: 0, y: 0 };
 
 const pointer = { x: W * 0.5, y: H * 0.5, hasMoved: false };
 const keys = Object.create(null);
+let boostHeld = false;
 
 bestEl.textContent = String(best);
 
@@ -261,7 +263,7 @@ function moveWorm(worm, dt) {
   worm.angle += clamp(diff, -turnStep, turnStep);
 
   let speed = worm.baseSpeed;
-  if (worm.isPlayer && (keys.ShiftLeft || keys.ShiftRight || keys.Space)) {
+  if (worm.isPlayer && (keys.ShiftLeft || keys.ShiftRight || keys.Space || boostHeld)) {
     speed += 70;
   }
   if (!worm.isPlayer) {
@@ -594,6 +596,23 @@ function updatePointer(event) {
 }
 
 btnStart.addEventListener('click', startGame);
+
+btnBoost.addEventListener('pointerdown', (event) => {
+  event.preventDefault();
+  boostHeld = true;
+  btnBoost.setPointerCapture(event.pointerId);
+  bgmAudio?.unlock();
+});
+
+btnBoost.addEventListener('pointerup', (event) => {
+  if (event.pointerId) btnBoost.releasePointerCapture(event.pointerId);
+  boostHeld = false;
+});
+
+btnBoost.addEventListener('pointercancel', (event) => {
+  if (event.pointerId) btnBoost.releasePointerCapture(event.pointerId);
+  boostHeld = false;
+});
 
 canvas.addEventListener('pointerdown', (event) => {
   updatePointer(event);
