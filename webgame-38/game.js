@@ -235,7 +235,10 @@ function getTargetAngle(me) {
 
   const tx = camera.x + pointer.x;
   const ty = camera.y + pointer.y;
-  return Math.atan2(ty - me.y, tx - me.x);
+  const dx = tx - me.x;
+  const dy = ty - me.y;
+  if (Math.hypot(dx, dy) < 22) return me.angle;
+  return Math.atan2(dy, dx);
 }
 
 function sendInput() {
@@ -245,7 +248,7 @@ function sendInput() {
   if (!me) return;
 
   const angle = getTargetAngle(me);
-  const boost = Boolean(keys.ShiftLeft || keys.ShiftRight || keys.Space);
+  const boost = Boolean(keys.ShiftLeft || keys.ShiftRight || keys.Space || pointer.moved && pointer.y > H * 0.78);
   const now = Date.now();
 
   const needSend = Math.abs(angle - lastSendAngle) > 0.01 || boost !== lastSendBoost || now - lastSendAt > 220;
