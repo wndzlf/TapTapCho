@@ -18,6 +18,10 @@ const btnSigEl = document.getElementById('btnSig');
 
 const bgmAudio = window.TapTapNeonAudio?.create('webgame-39', hudEl, { theme: 'mystic' });
 
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
 const W = canvas.width;
 const H = canvas.height;
 const TAU = Math.PI * 2;
@@ -473,6 +477,7 @@ function triggerDash() {
   state.shake = Math.max(state.shake, 8);
   burst(p.x, p.y, '#7fe6ff', 22, 1.2);
   sfx(820, 0.08, 'sawtooth', 0.032);
+  vibrate(18);
 }
 
 function triggerSignature() {
@@ -547,6 +552,7 @@ function triggerSignature() {
 
   p.signatureCdLeft = p.signatureCd * state.mods.signatureMul;
   bgmAudio?.fx('success');
+  vibrate([24, 40, 24]);
 }
 
 function spawnPlayerShot(player, angle, dmgScale = 1, spread = 0) {
@@ -1052,6 +1058,7 @@ function setDefeat() {
       </div>
     </div>
   `;
+  vibrate([60, 40, 60]);
 }
 
 function setVictory() {
