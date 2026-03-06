@@ -142,13 +142,14 @@ function onFail() {
 function handleClick(x, y) {
   const target = items.find((i) => {
     if (found.has(i.name)) return false;
-    return x >= i.x && x <= i.x + i.w && y >= i.y && y <= i.y + i.h;
+    const pad = 10;
+    return x >= i.x - pad && x <= i.x + i.w + pad && y >= i.y - pad && y <= i.y + i.h + pad;
   });
 
   if (!target) {
-    score = Math.max(0, score - 10);
+    score = Math.max(0, score - 6);
     timeLeft = Math.max(0, timeLeft - 1);
-    streak = 0;
+    streak = Math.max(0, streak - 1);
     audio?.fx('fail');
     updateHud();
     return;
