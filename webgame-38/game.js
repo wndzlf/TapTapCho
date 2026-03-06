@@ -15,6 +15,7 @@ const statusEl = document.getElementById('status');
 const btnHost = document.getElementById('btnHost');
 const btnJoin = document.getElementById('btnJoin');
 const btnLeave = document.getElementById('btnLeave');
+const btnBoost = document.getElementById('btnBoost');
 
 const W = canvas.width;
 const H = canvas.height;
@@ -44,6 +45,7 @@ let camera = { x: 0, y: 0 };
 
 const pointer = { x: W * 0.5, y: H * 0.5, moved: false };
 const keys = Object.create(null);
+let boostHeld = false;
 
 let lastSendAngle = 0;
 let lastSendBoost = false;
@@ -248,7 +250,7 @@ function sendInput() {
   if (!me) return;
 
   const angle = getTargetAngle(me);
-  const boost = Boolean(keys.ShiftLeft || keys.ShiftRight || keys.Space || pointer.moved && pointer.y > H * 0.78);
+  const boost = Boolean(keys.ShiftLeft || keys.ShiftRight || keys.Space || boostHeld || (pointer.moved && pointer.y > H * 0.78));
   const now = Date.now();
 
   const needSend = Math.abs(angle - lastSendAngle) > 0.01 || boost !== lastSendBoost || now - lastSendAt > 220;
@@ -483,6 +485,23 @@ btnHost.addEventListener('click', () => {
 
 btnJoin.addEventListener('click', connect);
 btnLeave.addEventListener('click', disconnect);
+
+btnBoost.addEventListener('pointerdown', (event) => {
+  event.preventDefault();
+  boostHeld = true;
+  btnBoost.setPointerCapture(event.pointerId);
+  bgmAudio?.unlock();
+});
+
+btnBoost.addEventListener('pointerup', (event) => {
+  if (event.pointerId) btnBoost.releasePointerCapture(event.pointerId);
+  boostHeld = false;
+});
+
+btnBoost.addEventListener('pointercancel', (event) => {
+  if (event.pointerId) btnBoost.releasePointerCapture(event.pointerId);
+  boostHeld = false;
+});
 
 canvas.addEventListener('pointerdown', (event) => {
   updatePointer(event);
