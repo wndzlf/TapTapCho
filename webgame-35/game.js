@@ -102,8 +102,8 @@ function resetRound(resetProgress = false) {
   startTimer();
 }
 
-function inside(obj, x, y) {
-  return x >= obj.x && x <= obj.x + obj.w && y >= obj.y && y <= obj.y + obj.h;
+function inside(obj, x, y, pad = 0) {
+  return x >= obj.x - pad && x <= obj.x + obj.w + pad && y >= obj.y - pad && y <= obj.y + obj.h + pad;
 }
 
 function dialMatches() {
@@ -135,7 +135,8 @@ function onFail() {
 }
 
 function handleClick(x, y) {
-  if (inside(door, x, y)) {
+  const pad = 10;
+  if (inside(door, x, y, pad)) {
     if (hasKey && hasKeycard) {
       doorOpen = true;
       message = 'Door unlocked. Escaped!';
@@ -149,21 +150,21 @@ function handleClick(x, y) {
     return;
   }
 
-  if (inside(painting, x, y)) {
+  if (inside(painting, x, y, pad)) {
     clueFound = true;
     message = `Code clue found: ${code.join('-')}`;
     audio?.fx('success');
     return;
   }
 
-  if (inside(rug, x, y)) {
+  if (inside(rug, x, y, pad)) {
     rugMoved = true;
     message = 'You moved the rug. Something is hidden...';
     audio?.fx('ui');
     return;
   }
 
-  if (rugMoved && !hasKeycard && inside(keycardSlot, x, y)) {
+  if (rugMoved && !hasKeycard && inside(keycardSlot, x, y, pad)) {
     hasKeycard = true;
     message = 'Picked up keycard.';
     audio?.fx('success');
@@ -172,15 +173,17 @@ function handleClick(x, y) {
   }
 
   for (let i = 0; i < dialBoxes.length; i++) {
-    if (inside(dialBoxes[i], x, y)) {
+    if (inside(dialBoxes[i], x, y, pad)) {
       dials[i] = (dials[i] + 1) % 10;
+      timeLeft = Math.min(120, timeLeft + 1);
+      updateHud();
       message = 'Dial adjusted.';
       audio?.fx('ui');
       return;
     }
   }
 
-  if (inside(drawer, x, y)) {
+  if (inside(drawer, x, y, pad)) {
     if (!drawerOpen) {
       if (dialMatches()) {
         drawerOpen = true;
@@ -193,7 +196,7 @@ function handleClick(x, y) {
       return;
     }
 
-    if (!hasKey && inside(keySlot, x, y)) {
+    if (!hasKey && inside(keySlot, x, y, pad)) {
       hasKey = true;
       message = 'Picked up key.';
       audio?.fx('success');
