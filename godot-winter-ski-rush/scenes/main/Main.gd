@@ -9,6 +9,8 @@ const FINISH_Y := 5000.0
 const BASE_CENTER_X := WORLD_WIDTH * 0.5
 const BGM_PATH := "res://assets/audio/winter-ski-rush-pixabay-286213.mp3"
 const BRAKE_SFX_PATH := "res://assets/audio/winter-ski-rush-brake-pixabay-46042.mp3"
+const NORMAL_SKI_LOOP_SFX_PATH := "res://assets/audio/winter-ski-rush-normal-ski-loop.mp3"
+const LEFT_RIGHT_SFX_PATH := "res://assets/audio/winter-ski-rush-left-right-sfx.mp3"
 const BASE_GRAVITY := 290.0
 const MIN_SPEED := 72.0
 const MAX_SPEED := 300.0
@@ -110,7 +112,11 @@ var easy_button: Button
 var normal_button: Button
 var bgm_player: AudioStreamPlayer
 var brake_sfx_player: AudioStreamPlayer
+var ski_loop_player: AudioStreamPlayer
+var left_right_sfx_player: AudioStreamPlayer
 var _brake_was_pressed := false
+var _left_was_pressed := false
+var _right_was_pressed := false
 var offtrack_warning_target := 0.0
 var offtrack_warning_strength := 0.0
 
@@ -131,6 +137,9 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if run_started and not run_finished and not crashed:
 		_try_play_bgm()
+		_try_play_ski_loop()
+	else:
+		_stop_ski_loop()
 
 	if status_timer > 0.0:
 		status_timer = max(0.0, status_timer - delta)
@@ -143,6 +152,7 @@ func _process(delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	_update_dynamic_obstacles(delta)
 	_update_brake_sfx()
+	_update_left_right_sfx()
 
 	if run_started:
 		run_time += delta
@@ -724,6 +734,36 @@ func _setup_audio() -> void:
 
 	brake_sfx_player.stream = brake_sfx_stream
 
+	ski_loop_player = AudioStreamPlayer.new()
+	ski_loop_player.name = "SkiLoopSFXPlayer"
+	ski_loop_player.bus = "Master"
+	ski_loop_player.volume_db = -13.0
+	add_child(ski_loop_player)
+
+	var ski_loop_stream := load(NORMAL_SKI_LOOP_SFX_PATH) as AudioStream
+	if ski_loop_stream == null:
+		push_warning("Failed to load normal ski loop SFX stream: %s" % NORMAL_SKI_LOOP_SFX_PATH)
+	else:
+		if ski_loop_stream is AudioStreamMP3:
+			var ski_mp3_stream := ski_loop_stream as AudioStreamMP3
+			ski_mp3_stream.loop = true
+		ski_loop_player.stream = ski_loop_stream
+
+	left_right_sfx_player = AudioStreamPlayer.new()
+	left_right_sfx_player.name = "LeftRightSFXPlayer"
+	left_right_sfx_player.bus = "Master"
+	left_right_sfx_player.volume_db = -7.0
+	add_child(left_right_sfx_player)
+
+	var left_right_stream := load(LEFT_RIGHT_SFX_PATH) as AudioStream
+	if left_right_stream == null:
+		push_warning("Failed to load left/right SFX stream: %s" % LEFT_RIGHT_SFX_PATH)
+	else:
+		if left_right_stream is AudioStreamMP3:
+			var left_right_mp3 := left_right_stream as AudioStreamMP3
+			left_right_mp3.loop = false
+		left_right_sfx_player.stream = left_right_stream
+
 
 func _try_play_bgm() -> void:
 	if bgm_player == null:
@@ -767,6 +807,44 @@ func _play_brake_sfx() -> void:
 	if brake_sfx_player.playing:
 		brake_sfx_player.stop()
 	brake_sfx_player.play()
+
+
+func _try_play_ski_loop() -> void:
+	if ski_loop_player == null:
+		return
+	if ski_loop_player.stream == null:
+		return
+	if not ski_loop_player.playing:
+		ski_loop_player.play()
+
+
+func _stop_ski_loop() -> void:
+	if ski_loop_player == null:
+		return
+	if ski_loop_player.playing:
+		ski_loop_player.stop()
+
+
+func _update_left_right_sfx() -> void:
+	var active_run := run_started and not run_finished and not crashed
+	var left_pressed_now := active_run and (Input.is_action_pressed("steer_left") or touch_left)
+	var right_pressed_now := active_run and (Input.is_action_pressed("steer_right") or touch_right)
+
+	if (left_pressed_now and not _left_was_pressed) or (right_pressed_now and not _right_was_pressed):
+		_play_left_right_sfx()
+
+	_left_was_pressed = left_pressed_now
+	_right_was_pressed = right_pressed_now
+
+
+func _play_left_right_sfx() -> void:
+	if left_right_sfx_player == null:
+		return
+	if left_right_sfx_player.stream == null:
+		return
+	if left_right_sfx_player.playing:
+		left_right_sfx_player.stop()
+	left_right_sfx_player.play()
 
 
 func _make_hold_button(label: String, on_press: Callable, on_release: Callable) -> Button:
@@ -905,6 +983,8 @@ func _touch_reset() -> void:
 	touch_brake = false
 	touch_crouch = false
 	_brake_was_pressed = false
+	_left_was_pressed = false
+	_right_was_pressed = false
 	offtrack_warning_target = 0.0
 	offtrack_warning_strength = 0.0
 
@@ -963,18 +1043,24 @@ func _save_records() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	var user_interaction_started := false
 	if event is InputEventScreenTouch:
 		var e_touch := event as InputEventScreenTouch
 		if e_touch.pressed:
-			_try_play_bgm()
+			user_interaction_started = true
 	elif event is InputEventMouseButton:
 		var e_mouse := event as InputEventMouseButton
 		if e_mouse.pressed:
-			_try_play_bgm()
+			user_interaction_started = true
 	elif event is InputEventKey:
 		var e_key := event as InputEventKey
 		if e_key.pressed and not e_key.echo:
-			_try_play_bgm()
+			user_interaction_started = true
+
+	if user_interaction_started:
+		_try_play_bgm()
+		if run_started and not run_finished and not crashed:
+			_try_play_ski_loop()
 
 	if event is InputEventScreenTouch:
 		var touch_event := event as InputEventScreenTouch
