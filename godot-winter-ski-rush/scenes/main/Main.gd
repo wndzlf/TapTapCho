@@ -7,6 +7,7 @@ const WORLD_TOP := 120.0
 const FINISH_Y := 5000.0
 
 const BASE_CENTER_X := WORLD_WIDTH * 0.5
+const BGM_PATH := "res://assets/audio/winter-ski-rush-pixabay-286213.mp3"
 const BASE_GRAVITY := 365.0
 const MIN_SPEED := 105.0
 const MAX_SPEED := 470.0
@@ -77,11 +78,13 @@ var hud_label: Label
 var hint_label: Label
 var guide_label: Label
 var start_button: Button
+var bgm_player: AudioStreamPlayer
 
 
 func _ready() -> void:
 	rng.seed = 20260307
 	_load_records()
+	_setup_audio()
 	_build_ui()
 	_reset_run(false)
 	set_physics_process(true)
@@ -609,6 +612,33 @@ func _build_ui() -> void:
 	row_actions.add_child(trick_btn)
 
 
+func _setup_audio() -> void:
+	bgm_player = AudioStreamPlayer.new()
+	bgm_player.name = "BGMPlayer"
+	bgm_player.bus = "Master"
+	bgm_player.volume_db = -13.0
+	add_child(bgm_player)
+
+	var file := FileAccess.open(BGM_PATH, FileAccess.READ)
+	if file == null:
+		push_warning("Failed to open BGM file: %s" % BGM_PATH)
+		return
+
+	var mp3_stream := AudioStreamMP3.new()
+	mp3_stream.data = file.get_buffer(file.get_length())
+	mp3_stream.loop = true
+	bgm_player.stream = mp3_stream
+
+
+func _try_play_bgm() -> void:
+	if bgm_player == null:
+		return
+	if bgm_player.stream == null:
+		return
+	if not bgm_player.playing:
+		bgm_player.play()
+
+
 func _make_hold_button(label: String, on_press: Callable, on_release: Callable) -> Button:
 	var b := Button.new()
 	b.text = label
@@ -634,6 +664,7 @@ func _on_start_pressed() -> void:
 
 
 func _start_run() -> void:
+	_try_play_bgm()
 	_reset_run(true)
 	_set_status("Go!", 0.6)
 

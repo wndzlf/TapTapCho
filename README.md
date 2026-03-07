@@ -203,6 +203,7 @@ Export 순서:
 - AirStrikerLite BGM(`the_dawn_unfolds_v2`)은 CC BY 4.0 표기를 포함해 사용합니다.
 - Orbit Survivor BGM(`orbit-survivor-pixabay-492540.mp3`)은 Pixabay Content License 조건으로 사용합니다.
 - Zigzag Memory Run BGM(`zigzag-memory-run-pixabay-488126.mp3`)은 Pixabay Content License 조건으로 사용합니다.
+- Winter Ski Rush BGM(`winter-ski-rush-pixabay-286213.mp3`)은 Pixabay Content License 조건으로 사용합니다.
 - Hyperfold 외계인 에셋(`kenney_alien-ufo-pack`)은 CC0로 상업적 사용 가능(출처 표기 권장).
 
 ## 10) Godot 2D 레이어/리와인드 레이스 (Hyperfold)
