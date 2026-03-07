@@ -1,5 +1,9 @@
 const bgmAudio = window.TapTapNeonAudio?.create('webgame-22', document.querySelector('.hud'), { theme: 'mystic' });
 
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
@@ -188,6 +192,7 @@ function nextRound() {
   buildBoard(mineCount);
   flash = 18;
   beep(980, 0.08, 0.03);
+  vibrate([20, 30, 20]);
 }
 
 function revealFlood(startR, startC) {
@@ -220,6 +225,7 @@ function revealFlood(startR, startC) {
 function endGame() {
   state = 'gameover';
   beep(160, 0.24, 0.06);
+  vibrate([50, 50, 50]);
   best = Math.max(best, score);
   bestEl.textContent = String(best);
   localStorage.setItem(STORAGE_KEY, String(best));
@@ -249,6 +255,7 @@ function revealCell(r, c) {
 
   safeLeft -= 1;
   beep(500 + cell.count * 70, 0.02, 0.012);
+  vibrate(10);
   refreshMinesLeft();
 
   if (cell.count === 0) {
@@ -267,6 +274,7 @@ function toggleFlag(r, c) {
 
   cell.flagged = !cell.flagged;
   beep(cell.flagged ? 760 : 420, 0.03, 0.014);
+  vibrate(cell.flagged ? 12 : 8);
   refreshMinesLeft();
 }
 
