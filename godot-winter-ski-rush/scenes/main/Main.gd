@@ -105,12 +105,16 @@ var camera: Camera2D
 var canvas_layer: CanvasLayer
 var hud_label: Label
 var hint_label: Label
+var warning_panel: ColorRect
+var warning_label: Label
 var start_button: Button
 var easy_button: Button
 var normal_button: Button
 var bgm_player: AudioStreamPlayer
 var brake_sfx_player: AudioStreamPlayer
 var _brake_was_pressed := false
+var offtrack_warning_target := 0.0
+var offtrack_warning_strength := 0.0
 
 
 func _ready() -> void:
@@ -135,6 +139,7 @@ func _process(delta: float) -> void:
 		if status_timer == 0.0:
 			status_text = ""
 	_update_ui_text()
+	_update_offtrack_warning_ui(delta)
 
 
 func _physics_process(delta: float) -> void:
@@ -145,6 +150,7 @@ func _physics_process(delta: float) -> void:
 		run_time += delta
 
 	if crashed:
+		offtrack_warning_target = 0.0
 		crash_timer -= delta
 		if crash_timer <= 0.0:
 			_respawn()
@@ -196,6 +202,12 @@ func _simulate_player(delta: float) -> void:
 		_try_jump()
 
 	var surface := _surface_at(player_pos)
+	if not surface["on_track"]:
+		var off_dist_now := float(surface["off_dist"])
+		offtrack_warning_target = clampf((off_dist_now - 10.0) / 80.0, 0.22, 1.0)
+	else:
+		offtrack_warning_target = 0.0
+
 	if surface["on_track"] and String(surface["active_id"]).begins_with("shortcut"):
 		var sid := String(surface["active_id"])
 		if not shortcut_seen.get(sid, false):
@@ -606,6 +618,26 @@ func _build_ui() -> void:
 	hint_label.text = ""
 	root.add_child(hint_label)
 
+	warning_panel = ColorRect.new()
+	warning_panel.anchor_left = 0.5
+	warning_panel.anchor_right = 0.5
+	warning_panel.offset_left = -148
+	warning_panel.offset_right = 148
+	warning_panel.offset_top = 94
+	warning_panel.offset_bottom = 126
+	warning_panel.color = Color(0.86, 0.16, 0.16, 0.0)
+	warning_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(warning_panel)
+
+	warning_label = Label.new()
+	warning_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	warning_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	warning_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	warning_label.add_theme_font_size_override("font_size", 14)
+	warning_label.add_theme_color_override("font_color", Color(1, 1, 1, 0))
+	warning_label.text = "GO BACK TO TRACK"
+	warning_panel.add_child(warning_label)
+
 	start_button = Button.new()
 	start_button.text = "START"
 	start_button.size = Vector2(96, 38)
@@ -715,6 +747,24 @@ func _try_play_bgm() -> void:
 		return
 	if not bgm_player.playing:
 		bgm_player.play()
+
+
+func _update_offtrack_warning_ui(delta: float) -> void:
+	offtrack_warning_strength = lerpf(offtrack_warning_strength, offtrack_warning_target, clampf(delta * 10.0, 0.05, 0.45))
+	if warning_panel == null or warning_label == null:
+		return
+
+	if offtrack_warning_strength <= 0.02:
+		warning_panel.color = Color(0.86, 0.16, 0.16, 0.0)
+		warning_label.add_theme_color_override("font_color", Color(1, 1, 1, 0))
+		return
+
+	var t := float(Time.get_ticks_msec()) * 0.011
+	var pulse := 0.55 + 0.45 * sin(t)
+	var alpha := clampf(offtrack_warning_strength * (0.28 + 0.24 * pulse), 0.08, 0.58)
+	var text_alpha := clampf(0.45 + offtrack_warning_strength * 0.55 + pulse * 0.08, 0.45, 1.0)
+	warning_panel.color = Color(0.86, 0.16, 0.16, alpha)
+	warning_label.add_theme_color_override("font_color", Color(1, 1, 1, text_alpha))
 
 
 func _update_brake_sfx() -> void:
@@ -882,6 +932,8 @@ func _touch_reset() -> void:
 	touch_trick = false
 	touch_jump_queued = false
 	_brake_was_pressed = false
+	offtrack_warning_target = 0.0
+	offtrack_warning_strength = 0.0
 
 
 func _set_status(text: String, ttl: float) -> void:
