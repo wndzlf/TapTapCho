@@ -4,7 +4,7 @@ const SAVE_PATH := "user://winter_ski_rush.save"
 
 const WORLD_WIDTH := 360.0
 const WORLD_TOP := 120.0
-const FINISH_Y := 5000.0
+const FINISH_Y := 15000.0
 
 const BASE_CENTER_X := WORLD_WIDTH * 0.5
 const BGM_PATH := "res://assets/audio/winter-ski-rush-pixabay-286213.mp3"
@@ -20,21 +20,42 @@ const DIFFICULTY_NORMAL := 1
 const CHECKPOINT_COUNT := 20
 const CHECKPOINT_START_OFFSET_Y := 260.0
 const CHECKPOINT_END_OFFSET_Y := 240.0
-const SHORTCUT_IDS := ["shortcut_left_1", "shortcut_right_2", "shortcut_left_3"]
+const SHORTCUT_SPECS := [
+	{"id": "shortcut_left_1", "start": 920.0, "end": 1760.0, "offset": -118.0, "wobble_amp": 16.0, "wobble_freq": 0.019, "wobble_phase": 0.3, "width": 106.0, "bonus": 0.14},
+	{"id": "shortcut_right_2", "start": 2040.0, "end": 2820.0, "offset": 126.0, "wobble_amp": 18.0, "wobble_freq": 0.017, "wobble_phase": 0.9, "width": 104.0, "bonus": 0.15},
+	{"id": "shortcut_left_3", "start": 3340.0, "end": 4160.0, "offset": -132.0, "wobble_amp": 20.0, "wobble_freq": 0.016, "wobble_phase": 0.1, "width": 100.0, "bonus": 0.17},
+	{"id": "shortcut_right_4", "start": 4680.0, "end": 5480.0, "offset": 136.0, "wobble_amp": 21.0, "wobble_freq": 0.015, "wobble_phase": 1.2, "width": 98.0, "bonus": 0.18},
+	{"id": "shortcut_left_5", "start": 5980.0, "end": 6840.0, "offset": -138.0, "wobble_amp": 22.0, "wobble_freq": 0.014, "wobble_phase": 0.6, "width": 96.0, "bonus": 0.19},
+	{"id": "shortcut_right_6", "start": 7300.0, "end": 8220.0, "offset": 142.0, "wobble_amp": 22.0, "wobble_freq": 0.0135, "wobble_phase": 1.0, "width": 95.0, "bonus": 0.2},
+	{"id": "shortcut_left_7", "start": 8780.0, "end": 9720.0, "offset": -144.0, "wobble_amp": 24.0, "wobble_freq": 0.012, "wobble_phase": 0.4, "width": 94.0, "bonus": 0.21},
+	{"id": "shortcut_right_8", "start": 10480.0, "end": 11480.0, "offset": 146.0, "wobble_amp": 24.0, "wobble_freq": 0.0115, "wobble_phase": 1.4, "width": 92.0, "bonus": 0.22},
+	{"id": "shortcut_left_9", "start": 12280.0, "end": 13480.0, "offset": -150.0, "wobble_amp": 25.0, "wobble_freq": 0.011, "wobble_phase": 0.8, "width": 90.0, "bonus": 0.23},
+]
 
 var _track_points: Array[Vector2] = [
 	Vector2(BASE_CENTER_X, WORLD_TOP),
 	Vector2(228, 520),
-	Vector2(132, 900),
-	Vector2(252, 1320),
-	Vector2(118, 1740),
-	Vector2(264, 2140),
-	Vector2(108, 2580),
-	Vector2(258, 3020),
-	Vector2(122, 3460),
-	Vector2(246, 3920),
-	Vector2(136, 4380),
-	Vector2(216, 4740),
+	Vector2(120, 980),
+	Vector2(268, 1460),
+	Vector2(106, 1940),
+	Vector2(270, 2460),
+	Vector2(118, 2980),
+	Vector2(258, 3520),
+	Vector2(108, 4060),
+	Vector2(250, 4620),
+	Vector2(132, 5200),
+	Vector2(274, 5860),
+	Vector2(100, 6520),
+	Vector2(266, 7240),
+	Vector2(122, 7980),
+	Vector2(278, 8740),
+	Vector2(110, 9520),
+	Vector2(258, 10300),
+	Vector2(116, 11120),
+	Vector2(276, 11960),
+	Vector2(132, 12820),
+	Vector2(248, 13640),
+	Vector2(146, 14420),
 	Vector2(BASE_CENTER_X, FINISH_Y),
 ]
 
@@ -430,22 +451,23 @@ func _main_center_x(y: float) -> float:
 		if y <= b.y:
 			var t := inverse_lerp(a.y, b.y, y)
 			var base_x := lerpf(a.x, b.x, t)
-			var wiggle := sin(y * 0.011) * 30.0 + sin(y * 0.021 + 1.1) * 14.0
+			var wiggle := sin(y * 0.0056) * 32.0 + sin(y * 0.0128 + 1.1) * 16.0
 			return clampf(base_x + wiggle, 62.0, WORLD_WIDTH - 62.0)
 	var end_x := _track_points[_track_points.size() - 1].x
-	var end_wiggle := sin(y * 0.011) * 30.0 + sin(y * 0.021 + 1.1) * 14.0
+	var end_wiggle := sin(y * 0.0056) * 32.0 + sin(y * 0.0128 + 1.1) * 16.0
 	return clampf(end_x + end_wiggle, 62.0, WORLD_WIDTH - 62.0)
 
 
 func _slope_at(y: float) -> float:
-	var wave := 0.62 + sin(y * 0.006) * 0.08
-	if y > 1450.0 and y < 2100.0:
-		wave += 0.08
-	if y > 2850.0 and y < 3420.0:
-		wave += 0.12
-	if y > 4200.0:
+	var progress := clampf(inverse_lerp(WORLD_TOP, FINISH_Y, y), 0.0, 1.0)
+	var wave := 0.56 + sin(y * 0.0046) * 0.1 + sin(y * 0.0107 + 1.2) * 0.06
+	wave += progress * 0.11
+	var segment := int(floor((y - WORLD_TOP) / 1700.0))
+	if segment % 3 == 1:
 		wave += 0.05
-	return clampf(wave, 0.48, 0.92)
+	elif segment % 3 == 2:
+		wave -= 0.03
+	return clampf(wave, 0.44, 0.97)
 
 
 func _get_track_bands(y: float) -> Array[Dictionary]:
@@ -460,31 +482,27 @@ func _get_track_bands(y: float) -> Array[Dictionary]:
 		}
 	]
 
-	if y > 840.0 and y < 1360.0:
-		bands.append({
-			"id": "shortcut_left_1",
-			"center": main_center - 112.0 + sin(y * 0.02) * 16.0,
-			"width": 102.0 * active_shortcut_width_scale,
-			"speed_bonus": 0.13 * active_shortcut_speed_scale,
-			"color": Color(0.74, 0.86, 1.0, 0.9),
-		})
+	for spec in SHORTCUT_SPECS:
+		var start_y: float = float(spec["start"])
+		var end_y: float = float(spec["end"])
+		if y <= start_y or y >= end_y:
+			continue
 
-	if y > 1960.0 and y < 2520.0:
-		bands.append({
-			"id": "shortcut_right_2",
-			"center": main_center + 122.0 + cos(y * 0.018) * 18.0,
-			"width": 98.0 * active_shortcut_width_scale,
-			"speed_bonus": 0.15 * active_shortcut_speed_scale,
-			"color": Color(0.76, 0.88, 1.0, 0.9),
-		})
+		var offset: float = float(spec["offset"])
+		var wobble_amp: float = float(spec["wobble_amp"])
+		var wobble_freq: float = float(spec["wobble_freq"])
+		var wobble_phase: float = float(spec["wobble_phase"])
+		var width: float = float(spec["width"]) * active_shortcut_width_scale
+		var bonus: float = float(spec["bonus"]) * active_shortcut_speed_scale
 
-	if y > 3180.0 and y < 3780.0:
+		var shortcut_center := main_center + offset + sin(y * wobble_freq + wobble_phase) * wobble_amp
+		var shortcut_color := Color(0.75, 0.89, 1.0, 0.9) if offset < 0.0 else Color(0.83, 0.9, 1.0, 0.9)
 		bands.append({
-			"id": "shortcut_left_3",
-			"center": main_center - 132.0 + sin(y * 0.016) * 20.0,
-			"width": 96.0 * active_shortcut_width_scale,
-			"speed_bonus": 0.18 * active_shortcut_speed_scale,
-			"color": Color(0.74, 0.9, 1.0, 0.92),
+			"id": String(spec["id"]),
+			"center": shortcut_center,
+			"width": width,
+			"speed_bonus": bonus,
+			"color": shortcut_color,
 		})
 
 	return bands
@@ -495,8 +513,8 @@ func _setup_map_data() -> void:
 	ice_patches.clear()
 	snow_patches.clear()
 
-	for sid in SHORTCUT_IDS:
-		shortcut_seen[sid] = false
+	for spec in SHORTCUT_SPECS:
+		shortcut_seen[String(spec["id"])] = false
 
 	for i in range(CHECKPOINT_COUNT):
 		var t := float(i + 1) / float(CHECKPOINT_COUNT)
@@ -509,32 +527,72 @@ func _setup_map_data() -> void:
 		var band := bands[rng.randi_range(0, bands.size() - 1)]
 		var center: float = band["center"]
 		var width: float = band["width"]
+		var progress := clampf(inverse_lerp(WORLD_TOP, FINISH_Y, obstacle_y), 0.0, 1.0)
 		var x := center + rng.randf_range(-width * 0.32, width * 0.32)
 		var y := obstacle_y + rng.randf_range(-20.0, 20.0)
-		var obstacle_type := "tree" if rng.randf() < 0.62 else "rock"
-		var radius := (rng.randf_range(9.0, 12.0) if obstacle_type == "tree" else rng.randf_range(7.0, 10.0)) * active_obstacle_radius_scale
+		var obstacle_type := "tree" if rng.randf() < lerpf(0.7, 0.46, progress) else "rock"
+		var radius := (rng.randf_range(9.0, 12.0) if obstacle_type == "tree" else rng.randf_range(7.0, 10.5)) * active_obstacle_radius_scale * lerpf(0.95, 1.28, progress)
 		obstacles.append({
 			"pos": Vector2(x, y),
 			"radius": radius,
 			"type": obstacle_type,
 		})
 
-		if rng.randf() < active_obstacle_cluster_chance:
+		if rng.randf() < active_obstacle_cluster_chance + progress * 0.18:
 			obstacles.append({
 				"pos": Vector2(x + rng.randf_range(-34.0, 34.0), y + rng.randf_range(28.0, 54.0)),
-				"radius": radius * rng.randf_range(0.72, 1.05),
+				"radius": radius * rng.randf_range(0.72, 1.1),
 				"type": obstacle_type,
 			})
 
-		obstacle_y += rng.randf_range(active_obstacle_gap_min, active_obstacle_gap_max)
+		if rng.randf() < 0.1 + progress * 0.14:
+			var mirror_x := center - (x - center) * rng.randf_range(0.75, 1.25)
+			obstacles.append({
+				"pos": Vector2(clampf(mirror_x, 32.0, WORLD_WIDTH - 32.0), y + rng.randf_range(-16.0, 18.0)),
+				"radius": radius * rng.randf_range(0.7, 1.05),
+				"type": ("rock" if obstacle_type == "tree" else "tree"),
+			})
 
-	ice_patches.append(_patch_around(980.0, 170.0, 220.0, -18.0))
-	ice_patches.append(_patch_around(2140.0, 200.0, 250.0, 24.0))
-	ice_patches.append(_patch_around(3520.0, 180.0, 230.0, -36.0))
+		var gap_min := lerpf(active_obstacle_gap_min * 1.18, active_obstacle_gap_min * 0.82, progress)
+		var gap_max := lerpf(active_obstacle_gap_max * 1.15, active_obstacle_gap_max * 0.78, progress)
+		obstacle_y += rng.randf_range(gap_min, gap_max)
 
-	snow_patches.append(_patch_around(1350.0, 130.0, 160.0, 54.0))
-	snow_patches.append(_patch_around(2740.0, 140.0, 180.0, -68.0))
-	snow_patches.append(_patch_around(4320.0, 150.0, 180.0, 52.0))
+	var gate_count := 24
+	for i in range(gate_count):
+		var gt := float(i + 1) / float(gate_count + 1)
+		var gate_y := lerpf(WORLD_TOP + 680.0, FINISH_Y - 460.0, gt)
+		var gate_center := _main_center_x(gate_y) + rng.randf_range(-26.0, 26.0)
+		var gate_half := rng.randf_range(34.0, 44.0)
+		obstacles.append({
+			"pos": Vector2(clampf(gate_center - gate_half, 28.0, WORLD_WIDTH - 28.0), gate_y + rng.randf_range(-8.0, 8.0)),
+			"radius": rng.randf_range(7.0, 9.5) * active_obstacle_radius_scale,
+			"type": "tree",
+		})
+		obstacles.append({
+			"pos": Vector2(clampf(gate_center + gate_half, 28.0, WORLD_WIDTH - 28.0), gate_y + rng.randf_range(-8.0, 8.0)),
+			"radius": rng.randf_range(7.0, 9.5) * active_obstacle_radius_scale,
+			"type": "tree",
+		})
+
+	var ice_y := 900.0
+	while ice_y < FINISH_Y - 460.0:
+		ice_patches.append(_patch_around(
+			ice_y + rng.randf_range(-90.0, 90.0),
+			rng.randf_range(160.0, 230.0),
+			rng.randf_range(190.0, 280.0),
+			rng.randf_range(-72.0, 72.0)
+		))
+		ice_y += rng.randf_range(1750.0, 2450.0)
+
+	var snow_y := 1220.0
+	while snow_y < FINISH_Y - 440.0:
+		snow_patches.append(_patch_around(
+			snow_y + rng.randf_range(-80.0, 80.0),
+			rng.randf_range(130.0, 190.0),
+			rng.randf_range(150.0, 230.0),
+			rng.randf_range(-86.0, 86.0)
+		))
+		snow_y += rng.randf_range(1450.0, 2100.0)
 
 
 func _patch_around(y: float, w: float, h: float, x_offset: float) -> Rect2:
@@ -885,7 +943,7 @@ func _apply_difficulty_profile(notify: bool) -> void:
 		active_gravity = 255.0
 		active_speed_visual_ref = 230.0
 		active_start_speed = 76.0
-		challenge_target = 200.0
+		challenge_target = 620.0
 		active_jump_min_speed = 110.0
 		active_jump_base_velocity = 215.0
 		active_jump_speed_velocity_scale = 0.20
@@ -905,7 +963,7 @@ func _apply_difficulty_profile(notify: bool) -> void:
 		active_gravity = BASE_GRAVITY
 		active_speed_visual_ref = 280.0
 		active_start_speed = START_SPEED
-		challenge_target = 175.0
+		challenge_target = 560.0
 		active_jump_min_speed = 125.0
 		active_jump_base_velocity = 225.0
 		active_jump_speed_velocity_scale = 0.22
@@ -993,7 +1051,8 @@ func _update_ui_text() -> void:
 
 	var cp_now: int = maxi(0, last_checkpoint + 1)
 	var shortcut_count := 0
-	for sid in SHORTCUT_IDS:
+	for spec in SHORTCUT_SPECS:
+		var sid := String(spec["id"])
 		if shortcut_seen.get(sid, false):
 			shortcut_count += 1
 
