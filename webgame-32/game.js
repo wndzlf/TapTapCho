@@ -8,6 +8,10 @@ const hudEl = document.querySelector('.hud');
 
 const audio = window.TapTapNeonAudio?.create('webgame-32', hudEl);
 
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
 const size = 8;
 const cell = 48;
 const offsetX = Math.floor((canvas.width - size * cell) / 2);
@@ -189,6 +193,7 @@ function onRoundClear() {
   score += Math.max(100, timeLeft * 2 + level * 20);
   level += 1;
   audio?.fx('win');
+  vibrate([20, 30, 20]);
   updateHud();
   setTimeout(() => init(false), 850);
 }
@@ -197,6 +202,7 @@ function onFail() {
   clearInterval(timerId);
   level = Math.max(1, level - 1);
   audio?.fx('fail');
+  vibrate([40, 40, 40]);
   setTimeout(() => init(false), 450);
 }
 
@@ -215,6 +221,7 @@ function handleClick(x, y) {
   if (!start) {
     start = { r, c };
     audio?.fx('ui');
+    vibrate(10);
     return;
   }
 
@@ -222,6 +229,7 @@ function handleClick(x, y) {
   if (!line) {
     start = null;
     audio?.fx('fail');
+    vibrate(20);
     return;
   }
 
@@ -246,11 +254,13 @@ function handleClick(x, y) {
     renderList();
     updateHud();
     audio?.fx('success');
+    vibrate(18);
     if (found.size === words.length) onRoundClear();
   } else {
     streak = Math.max(0, streak - 1);
     updateHud();
     audio?.fx('fail');
+    vibrate(20);
   }
 
   start = null;
@@ -267,6 +277,14 @@ function useHint() {
   updateHud();
   audio?.fx('ui');
   if (found.size === words.length) onRoundClear();
+}
+
+function getPointerPos(event) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (event.clientX - rect.left) * (canvas.width / rect.width),
+    y: (event.clientY - rect.top) * (canvas.height / rect.height)
+  };
 }
 
 function draw() {
@@ -303,16 +321,16 @@ let lastTouchAt = 0;
 canvas.addEventListener('click', (e) => {
   if (lastTouchAt && performance.now() - lastTouchAt < 320) return;
   audio?.unlock();
-  const rect = canvas.getBoundingClientRect();
-  handleClick(e.clientX - rect.left, e.clientY - rect.top);
+  const pos = getPointerPos(e);
+  handleClick(pos.x, pos.y);
 });
 
 canvas.addEventListener('pointerdown', (e) => {
   if (e.pointerType !== 'touch') return;
   lastTouchAt = performance.now();
   audio?.unlock();
-  const rect = canvas.getBoundingClientRect();
-  handleClick(e.clientX - rect.left, e.clientY - rect.top);
+  const pos = getPointerPos(e);
+  handleClick(pos.x, pos.y);
 });
 
 btnHint.addEventListener('click', () => {
