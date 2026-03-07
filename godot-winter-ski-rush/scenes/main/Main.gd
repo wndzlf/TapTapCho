@@ -122,6 +122,9 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if run_started and not run_finished and not crashed:
+		_try_play_bgm()
+
 	if status_timer > 0.0:
 		status_timer = max(0.0, status_timer - delta)
 		if status_timer == 0.0:
@@ -666,18 +669,19 @@ func _setup_audio() -> void:
 	bgm_player = AudioStreamPlayer.new()
 	bgm_player.name = "BGMPlayer"
 	bgm_player.bus = "Master"
-	bgm_player.volume_db = -13.0
+	bgm_player.volume_db = -8.0
 	add_child(bgm_player)
 
-	var file := FileAccess.open(BGM_PATH, FileAccess.READ)
-	if file == null:
-		push_warning("Failed to open BGM file: %s" % BGM_PATH)
+	var loaded_stream := load(BGM_PATH) as AudioStream
+	if loaded_stream == null:
+		push_warning("Failed to load BGM stream: %s" % BGM_PATH)
 		return
 
-	var mp3_stream := AudioStreamMP3.new()
-	mp3_stream.data = file.get_buffer(file.get_length())
-	mp3_stream.loop = true
-	bgm_player.stream = mp3_stream
+	if loaded_stream is AudioStreamMP3:
+		var mp3_stream := loaded_stream as AudioStreamMP3
+		mp3_stream.loop = true
+
+	bgm_player.stream = loaded_stream
 
 
 func _try_play_bgm() -> void:
@@ -891,6 +895,19 @@ func _save_records() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		var e_touch := event as InputEventScreenTouch
+		if e_touch.pressed:
+			_try_play_bgm()
+	elif event is InputEventMouseButton:
+		var e_mouse := event as InputEventMouseButton
+		if e_mouse.pressed:
+			_try_play_bgm()
+	elif event is InputEventKey:
+		var e_key := event as InputEventKey
+		if e_key.pressed and not e_key.echo:
+			_try_play_bgm()
+
 	if event is InputEventScreenTouch:
 		var touch_event := event as InputEventScreenTouch
 		if touch_event.pressed:
