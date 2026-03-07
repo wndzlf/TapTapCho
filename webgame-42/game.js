@@ -43,7 +43,7 @@ function startGame() {
 
 function addObstacle() {
   const x = 40 + Math.random() * (W - 80);
-  obstacles.push({ x, y: -20, r: 12 + Math.random() * 6, type: (Math.random() < 0.34 ? 'santa' : (Math.random() < 0.5 ? 'rudolph' : 'tree')) });
+  obstacles.push({ x, y: -20, r: 12 + Math.random() * 6, type: (Math.random() < 0.5 ? 'santa' : 'rudolph') });
 }
 
 function boost() {
