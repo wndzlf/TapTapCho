@@ -435,7 +435,7 @@ function rand(min, max) {
 
 function pushParticle(p) {
   if (state.particles.length >= MAX_PARTICLES) return;
-  if (isMobileView && Math.random() > 0.55) return;
+  if (isMobileView && Math.random() > 0.35) return;
   const life = p.life ?? 0.18;
   state.particles.push({
     ...p,
@@ -2932,7 +2932,14 @@ function spawnTowerHitVfx(x, y, towerKind, isUlt = false, secondary = false) {
 }
 
 function updateTowers(dt) {
-  for (const tower of state.towers) {
+  const total = state.towers.length;
+  if (!total) return;
+  const batchSize = Math.max(6, Math.ceil(total / 3));
+  const start = towerUpdateCursor % total;
+  const end = Math.min(total, start + batchSize);
+
+  for (let i = start; i < end; i += 1) {
+    const tower = state.towers[i];
     tower.guardHitFx = Math.max(0, (tower.guardHitFx || 0) - dt * 2.9);
     tower.guardHitPulse = Math.max(0, (tower.guardHitPulse || 0) - dt * 4.6);
     tower.guardHitCooldown = Math.max(0, (tower.guardHitCooldown || 0) - dt);
@@ -2946,6 +2953,8 @@ function updateTowers(dt) {
     emitBullet(tower, target);
     tower.cooldown = tower.reload;
   }
+
+  towerUpdateCursor = end >= total ? 0 : end;
 }
 
 function applyStunChain(primaryEnemy, bullet) {
@@ -3296,6 +3305,7 @@ function updateEnemy(enemy, dt) {
 
 let currentTowerBuckets = null;
 let currentEnemyBuckets = null;
+let towerUpdateCursor = 0;
 
 function updateEnemies(dt) {
   for (const enemy of [...state.enemies]) {
