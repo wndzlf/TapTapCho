@@ -32,7 +32,7 @@ body {
 
 .top-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: nowrap;
@@ -44,6 +44,8 @@ body {
   border-radius: 999px;
   overflow: hidden;
   margin-bottom: 0;
+  height: 34px;
+  align-self: flex-start;
 }
 
 .mode-tabs.left-group {
