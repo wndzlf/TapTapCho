@@ -95,8 +95,6 @@ var touch_left := false
 var touch_right := false
 var touch_brake := false
 var touch_crouch := false
-var touch_trick := false
-var touch_jump_queued := false
 
 var status_text := ""
 var status_timer := 0.0
@@ -195,11 +193,6 @@ func _simulate_player(delta: float) -> void:
 	var steer_input := _read_steer_input()
 	var brake_pressed := Input.is_action_pressed("brake") or touch_brake
 	var crouch_pressed := Input.is_action_pressed("crouch") or touch_crouch
-	var trick_pressed := Input.is_action_pressed("trick") or touch_trick
-
-	if Input.is_action_just_pressed("jump") or touch_jump_queued:
-		touch_jump_queued = false
-		_try_jump()
 
 	var surface := _surface_at(player_pos)
 	if not surface["on_track"]:
@@ -257,9 +250,6 @@ func _simulate_player(delta: float) -> void:
 	if is_airborne:
 		air_velocity -= 980.0 * delta
 		air_height = max(0.0, air_height + air_velocity * delta)
-		if trick_pressed:
-			var spin_dir: float = 1.0 if steer_input == 0.0 else float(sign(steer_input))
-			trick_spin += (420.0 + forward_speed * 0.45) * delta * spin_dir
 		if air_height <= 0.0:
 			_land_from_jump()
 
@@ -695,13 +685,8 @@ func _build_ui() -> void:
 
 	var brake_btn := _make_hold_button("BRAKE  S", func() -> void: touch_brake = true, func() -> void: touch_brake = false)
 	var crouch_btn := _make_hold_button("BOOST  Shift", func() -> void: touch_crouch = true, func() -> void: touch_crouch = false)
-	var jump_btn := _make_tap_button("JUMP  Space", func() -> void: touch_jump_queued = true)
-	var trick_btn := _make_hold_button("TRICK  Q/E", func() -> void: touch_trick = true, func() -> void: touch_trick = false)
-
 	row_actions.add_child(brake_btn)
 	row_actions.add_child(crouch_btn)
-	row_actions.add_child(jump_btn)
-	row_actions.add_child(trick_btn)
 
 
 func _setup_audio() -> void:
@@ -793,16 +778,6 @@ func _make_hold_button(label: String, on_press: Callable, on_release: Callable) 
 	b.button_down.connect(on_press)
 	b.button_up.connect(on_release)
 	b.mouse_exited.connect(on_release)
-	return b
-
-
-func _make_tap_button(label: String, on_tap: Callable) -> Button:
-	var b := Button.new()
-	b.text = label
-	b.custom_minimum_size = Vector2(92, 48)
-	b.add_theme_font_size_override("font_size", 12)
-	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	b.pressed.connect(on_tap)
 	return b
 
 
@@ -929,8 +904,6 @@ func _touch_reset() -> void:
 	touch_right = false
 	touch_brake = false
 	touch_crouch = false
-	touch_trick = false
-	touch_jump_queued = false
 	_brake_was_pressed = false
 	offtrack_warning_target = 0.0
 	offtrack_warning_strength = 0.0
