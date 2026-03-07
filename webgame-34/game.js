@@ -7,6 +7,10 @@ const hudEl = document.querySelector('.hud');
 
 const audio = window.TapTapNeonAudio?.create('webgame-34', hudEl);
 
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
 const suits = ['♠', '♥', '♦', '♣'];
 const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
@@ -156,6 +160,7 @@ function handleDeckClick() {
     combo = 1;
     moves += 1;
     audio?.fx('ui');
+    vibrate(10);
     updateHud();
     return;
   }
@@ -168,6 +173,7 @@ function handleDeckClick() {
   deck = buildDeck().slice(0, 14);
   combo = 1;
   moves += 1;
+  vibrate(10);
   updateHud();
 }
 
@@ -192,6 +198,7 @@ function handleTableauClick(x, y) {
     }
     timeLeft = Math.min(130, timeLeft + 1);
     audio?.fx('success');
+    vibrate(15);
     updateHud();
 
     if (aliveCards().length === 0) {
@@ -204,8 +211,17 @@ function handleTableauClick(x, y) {
 
   combo = Math.max(1, combo - 1);
   audio?.fx('fail');
+  vibrate(25);
   updateHud();
   return false;
+}
+
+function getPointerPos(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (clientX - rect.left) * (canvas.width / rect.width),
+    y: (clientY - rect.top) * (canvas.height / rect.height)
+  };
 }
 
 function draw() {
@@ -238,9 +254,9 @@ function draw() {
 let lastTouchAt = 0;
 
 function handleBoardInput(clientX, clientY) {
-  const rect = canvas.getBoundingClientRect();
-  const x = clientX - rect.left;
-  const y = clientY - rect.top;
+  const pos = getPointerPos(clientX, clientY);
+  const x = pos.x;
+  const y = pos.y;
 
   if (x >= 20 && x <= 94 && y >= 40 && y <= 134) {
     handleDeckClick();
