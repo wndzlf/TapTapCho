@@ -48,10 +48,12 @@ body {
 
 .mode-tabs.left-group {
   margin-right: auto;
+  align-self: center;
 }
 
 .mode-tabs.right-group {
   margin-left: auto;
+  align-self: center;
 }
 
 .mode-tab {
@@ -61,6 +63,11 @@ body {
   font-size: 13px;
   border-right: 1px solid var(--line);
   background: linear-gradient(180deg, #151f33, #101a2d);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  line-height: 1;
 }
 
 .mode-tab.active {
@@ -94,7 +101,7 @@ body {
 
 #tabSingle.active {
   color: #c9d8ef;
-  font-weight: 600;
+  font-weight: 500;
   background: linear-gradient(180deg, #151f33, #101a2d);
 }
 header h1 {
