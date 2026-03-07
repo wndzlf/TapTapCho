@@ -38,6 +38,18 @@
 고지 참고:
 - Pixabay 라이선스는 일반적인 사용에서 출처 표기를 요구하지 않지만, 프로젝트 내 라이선스 문서에 출처/제작자를 명시해 추적 가능하게 유지함.
 
+### Zigzag Memory Run BGM
+- 트랙명: Magical Wizard School Orchestral Fantasy
+- 제작자: domartistudios
+- 출처: https://pixabay.com/music/modern-classical-magical-wizard-school-orchestral-fantasy-488126/
+- 라이선스: Pixabay Content License (무료 상업적 사용 가능, 출처 표기 의무 없음)
+- 라이선스 요약: https://pixabay.com/service/license-summary/
+- 라이선스 원문: https://pixabay.com/service/terms/#license
+- 프로젝트 내 파일: `assets/audio/zigzag-memory-run-pixabay-488126.mp3`
+
+고지 참고:
+- Pixabay 라이선스는 일반적인 사용에서 출처 표기를 요구하지 않지만, 프로젝트 내 라이선스 문서에 출처/제작자를 명시해 추적 가능하게 유지함.
+
 ### Sunken Sixway Defense Impact SFX
 - 팩명: Impact Sounds (1.0)
 - 제작자: Kenney Vleugels (www.kenney.nl)

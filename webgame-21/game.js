@@ -1,4 +1,6 @@
-const bgmAudio = window.TapTapNeonAudio?.create('webgame-21', document.querySelector('.hud'), { theme: 'pulse' });
+const bgmAudio = window.TapTapNeonAudio?.create('webgame-21', document.querySelector('.hud'), {
+  mediaSrc: '../assets/audio/zigzag-memory-run-pixabay-488126.mp3',
+});
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
