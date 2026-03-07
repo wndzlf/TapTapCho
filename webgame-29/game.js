@@ -7,6 +7,10 @@ const hudEl = document.querySelector('.hud');
 
 const audio = window.TapTapNeonAudio?.create('webgame-29', hudEl);
 
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
 let ball = null;
 let wins = 0;
 let aiming = false;
@@ -111,6 +115,7 @@ function startTimer() {
 
 function onFail() {
   audio?.fx('fail');
+  vibrate([40, 40, 40]);
   winsThisLevel = Math.max(0, winsThisLevel - 1);
   level = Math.max(1, level - (winsThisLevel === 0 ? 1 : 0));
   resetRound(false);
@@ -129,10 +134,12 @@ function onScoreGoal() {
   }
   timeLeft = Math.min(90, timeLeft + 3 + Math.floor(winsThisLevel / 2));
   audio?.fx('success');
+  vibrate(15);
   if (winsThisLevel >= targetWinsForLevel()) {
     level += 1;
     winsThisLevel = 0;
     audio?.fx('win');
+    vibrate([20, 30, 20]);
   }
   resetRound(false);
 }
@@ -167,6 +174,7 @@ function update() {
   if (ball.x < ball.r || ball.x > canvas.width - ball.r) {
     ball.vx *= -0.88;
     ball.x = Math.max(ball.r, Math.min(canvas.width - ball.r, ball.x));
+    vibrate(10);
   }
   if (ball.y > canvas.height - ball.r) {
     ball.vy *= -0.62;
@@ -182,6 +190,7 @@ function update() {
         ball.y = o.y - ball.r;
         ball.vy *= -0.74;
         ball.vx += (Math.random() * 2 - 1) * 0.2;
+        vibrate(10);
       }
     }
   });
@@ -191,6 +200,14 @@ function update() {
   if (Math.hypot(dx, dy) < goal.r - 2) {
     onScoreGoal();
   }
+}
+
+function getPointerPos(event) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (event.clientX - rect.left) * (canvas.width / rect.width),
+    y: (event.clientY - rect.top) * (canvas.height / rect.height)
+  };
 }
 
 function draw() {
@@ -247,21 +264,21 @@ function draw() {
 canvas.addEventListener('pointerdown', (e) => {
   audio?.unlock();
   if (ball.dropped) return;
-  const rect = canvas.getBoundingClientRect();
-  aimX = e.clientX - rect.left;
+  const pos = getPointerPos(e);
+  aimX = pos.x;
   aiming = true;
 });
 
 canvas.addEventListener('pointermove', (e) => {
   if (!aiming || ball.dropped) return;
-  const rect = canvas.getBoundingClientRect();
-  aimX = e.clientX - rect.left;
+  const pos = getPointerPos(e);
+  aimX = pos.x;
 });
 
 canvas.addEventListener('pointerup', (e) => {
   if (!aiming || ball.dropped) return;
-  const rect = canvas.getBoundingClientRect();
-  dropBall(e.clientX - rect.left);
+  const pos = getPointerPos(e);
+  dropBall(pos.x);
 });
 
 canvas.addEventListener('pointerleave', () => {
