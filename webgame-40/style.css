@@ -70,6 +70,8 @@ body {
   justify-content: center;
   height: 34px;
   line-height: 1;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 .mode-tab.active {
