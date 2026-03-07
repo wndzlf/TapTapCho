@@ -7,9 +7,9 @@ const WORLD_TOP := 120.0
 const FINISH_Y := 5000.0
 
 const BASE_CENTER_X := WORLD_WIDTH * 0.5
-const BASE_GRAVITY := 430.0
-const MIN_SPEED := 135.0
-const MAX_SPEED := 640.0
+const BASE_GRAVITY := 365.0
+const MIN_SPEED := 105.0
+const MAX_SPEED := 470.0
 
 const CHECKPOINT_Y := [760.0, 1520.0, 2360.0, 3220.0, 4080.0]
 const SHORTCUT_IDS := ["shortcut_left_1", "shortcut_right_2", "shortcut_left_3"]
@@ -31,7 +31,7 @@ var rng := RandomNumberGenerator.new()
 
 var player_pos := Vector2(BASE_CENTER_X, WORLD_TOP + 30.0)
 var player_vel_x := 0.0
-var forward_speed := 170.0
+var forward_speed := 140.0
 
 var is_airborne := false
 var air_height := 0.0
@@ -48,7 +48,7 @@ var style_score := 0
 var best_style := 0
 var crash_count := 0
 var no_crash_run := true
-var challenge_target := 120.0
+var challenge_target := 150.0
 
 var checkpoints: Array[Dictionary] = []
 var last_checkpoint := -1
@@ -61,6 +61,8 @@ var snow_patches: Array[Rect2] = []
 
 var touch_steer_active := false
 var touch_steer_x := BASE_CENTER_X
+var touch_left := false
+var touch_right := false
 var touch_brake := false
 var touch_crouch := false
 var touch_trick := false
@@ -73,6 +75,7 @@ var camera: Camera2D
 var canvas_layer: CanvasLayer
 var hud_label: Label
 var hint_label: Label
+var guide_label: Label
 var start_button: Button
 
 
@@ -160,37 +163,37 @@ func _simulate_player(delta: float) -> void:
 			style_score += 120
 
 	var slope := _slope_at(player_pos.y)
-	var friction := 0.095 if surface["on_track"] else 0.195
+	var friction := 0.1 if surface["on_track"] else 0.18
 	if surface["on_ice"]:
-		friction *= 0.55
+		friction *= 0.7
 	if surface["on_snow"]:
-		friction *= 1.45
+		friction *= 1.25
 
 	var accel := BASE_GRAVITY * slope - friction * forward_speed
 	accel += forward_speed * float(surface["speed_bonus"]) * 0.18
 
 	if crouch_pressed and not brake_pressed:
-		accel += 56.0
+		accel += 42.0
 	if brake_pressed:
-		accel -= 220.0
+		accel -= 210.0
 	if not surface["on_track"]:
-		accel -= min(160.0, float(surface["off_dist"]) * 1.8)
+		accel -= min(130.0, float(surface["off_dist"]) * 1.4)
 
 	forward_speed = clampf(forward_speed + accel * delta, MIN_SPEED, MAX_SPEED)
 	if is_airborne:
-		forward_speed = clampf(forward_speed - 36.0 * delta, MIN_SPEED, MAX_SPEED + 80.0)
+		forward_speed = clampf(forward_speed - 28.0 * delta, MIN_SPEED, MAX_SPEED + 40.0)
 
-	var steer_power := 145.0 if is_airborne else 265.0
+	var steer_power := 165.0 if is_airborne else 300.0
 	if surface["on_ice"]:
-		steer_power *= 0.58
+		steer_power *= 0.72
 	if surface["on_snow"]:
-		steer_power *= 0.8
+		steer_power *= 0.9
 
 	var target_vx := steer_input * steer_power
 	if not surface["on_track"]:
-		target_vx += sign(player_pos.x - _main_center_x(player_pos.y)) * 46.0
+		target_vx += sign(player_pos.x - _main_center_x(player_pos.y)) * 34.0
 
-	player_vel_x = lerpf(player_vel_x, target_vx, 0.07 if is_airborne else 0.12)
+	player_vel_x = lerpf(player_vel_x, target_vx, 0.1 if is_airborne else 0.18)
 	if brake_pressed:
 		player_vel_x *= 0.92
 
@@ -208,7 +211,7 @@ func _simulate_player(delta: float) -> void:
 			_land_from_jump()
 
 	if not is_airborne:
-		if not surface["on_track"] and float(surface["off_dist"]) > 72.0 and forward_speed > 260.0:
+		if not surface["on_track"] and float(surface["off_dist"]) > 92.0 and forward_speed > 320.0:
 			_trigger_crash(player_pos, "cliff")
 			return
 
@@ -259,12 +262,12 @@ func _try_jump() -> void:
 		return
 	if is_airborne:
 		return
-	if forward_speed < 185.0:
+	if forward_speed < 160.0:
 		return
 
 	is_airborne = true
 	air_height = 2.0
-	air_velocity = 290.0 + forward_speed * 0.34
+	air_velocity = 250.0 + forward_speed * 0.28
 	trick_spin = 0.0
 	_set_status("Jump", 0.45)
 
@@ -287,9 +290,9 @@ func _trigger_crash(hit_pos: Vector2, reason: String) -> void:
 	crash_timer = 1.15
 	crash_count += 1
 	no_crash_run = false
-	forward_speed = max(MIN_SPEED, forward_speed * 0.55)
-	run_time += 2.2
-	_set_status("Crash (%s) +2.2s" % reason, 1.2)
+	forward_speed = max(MIN_SPEED, forward_speed * 0.62)
+	run_time += 1.6
+	_set_status("Crash (%s) +1.6s" % reason, 1.2)
 
 	for i in range(20):
 		var ang := rng.randf_range(0.0, TAU)
@@ -320,6 +323,10 @@ func _read_steer_input() -> float:
 	if Input.is_action_pressed("steer_left"):
 		steer -= 1.0
 	if Input.is_action_pressed("steer_right"):
+		steer += 1.0
+	if touch_left:
+		steer -= 1.0
+	if touch_right:
 		steer += 1.0
 
 	if touch_steer_active:
@@ -396,7 +403,7 @@ func _get_track_bands(y: float) -> Array[Dictionary]:
 		{
 			"id": "main",
 			"center": main_center,
-			"width": 156.0,
+			"width": 184.0,
 			"speed_bonus": 0.0,
 			"color": Color(0.93, 0.96, 1.0, 0.95),
 		}
@@ -406,8 +413,8 @@ func _get_track_bands(y: float) -> Array[Dictionary]:
 		bands.append({
 			"id": "shortcut_left_1",
 			"center": main_center - 112.0 + sin(y * 0.02) * 16.0,
-			"width": 88.0,
-			"speed_bonus": 0.16,
+			"width": 102.0,
+			"speed_bonus": 0.13,
 			"color": Color(0.74, 0.86, 1.0, 0.9),
 		})
 
@@ -415,8 +422,8 @@ func _get_track_bands(y: float) -> Array[Dictionary]:
 		bands.append({
 			"id": "shortcut_right_2",
 			"center": main_center + 122.0 + cos(y * 0.018) * 18.0,
-			"width": 84.0,
-			"speed_bonus": 0.18,
+			"width": 98.0,
+			"speed_bonus": 0.15,
 			"color": Color(0.76, 0.88, 1.0, 0.9),
 		})
 
@@ -424,8 +431,8 @@ func _get_track_bands(y: float) -> Array[Dictionary]:
 		bands.append({
 			"id": "shortcut_left_3",
 			"center": main_center - 132.0 + sin(y * 0.016) * 20.0,
-			"width": 80.0,
-			"speed_bonus": 0.22,
+			"width": 96.0,
+			"speed_bonus": 0.18,
 			"color": Color(0.74, 0.9, 1.0, 0.92),
 		})
 
@@ -443,30 +450,30 @@ func _setup_map_data() -> void:
 	for cp_y in CHECKPOINT_Y:
 		checkpoints.append({"y": cp_y, "passed": false})
 
-	var obstacle_y := 260.0
+	var obstacle_y := 300.0
 	while obstacle_y < FINISH_Y - 120.0:
 		var bands := _get_track_bands(obstacle_y)
 		var band := bands[rng.randi_range(0, bands.size() - 1)]
 		var center: float = band["center"]
 		var width: float = band["width"]
-		var x := center + rng.randf_range(-width * 0.36, width * 0.36)
+		var x := center + rng.randf_range(-width * 0.32, width * 0.32)
 		var y := obstacle_y + rng.randf_range(-20.0, 20.0)
 		var obstacle_type := "tree" if rng.randf() < 0.62 else "rock"
-		var radius := rng.randf_range(10.0, 14.0) if obstacle_type == "tree" else rng.randf_range(8.0, 12.0)
+		var radius := rng.randf_range(9.0, 12.0) if obstacle_type == "tree" else rng.randf_range(7.0, 10.0)
 		obstacles.append({
 			"pos": Vector2(x, y),
 			"radius": radius,
 			"type": obstacle_type,
 		})
 
-		if rng.randf() < 0.18:
+		if rng.randf() < 0.1:
 			obstacles.append({
 				"pos": Vector2(x + rng.randf_range(-34.0, 34.0), y + rng.randf_range(28.0, 54.0)),
 				"radius": radius * rng.randf_range(0.72, 1.05),
 				"type": obstacle_type,
 			})
 
-		obstacle_y += rng.randf_range(92.0, 138.0)
+		obstacle_y += rng.randf_range(118.0, 176.0)
 
 	ice_patches.append(_patch_around(980.0, 170.0, 220.0, -18.0))
 	ice_patches.append(_patch_around(2140.0, 200.0, 250.0, 24.0))
@@ -539,11 +546,20 @@ func _build_ui() -> void:
 
 	hint_label = Label.new()
 	hint_label.position = Vector2(10, 112)
-	hint_label.size = Vector2(340, 26)
+	hint_label.size = Vector2(340, 24)
 	hint_label.add_theme_color_override("font_color", Color(0.76, 0.88, 1.0))
 	hint_label.add_theme_font_size_override("font_size", 12)
-	hint_label.text = "A/D steer · S brake · Shift crouch · Space jump · Q/E trick"
+	hint_label.text = "Reach checkpoints and finish fast. Shortcuts are riskier but faster."
 	root.add_child(hint_label)
+
+	guide_label = Label.new()
+	guide_label.position = Vector2(10, 136)
+	guide_label.size = Vector2(340, 60)
+	guide_label.add_theme_color_override("font_color", Color(0.84, 0.93, 1.0))
+	guide_label.add_theme_font_size_override("font_size", 11)
+	guide_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	guide_label.text = "Desktop: A/D steer · S brake · Shift boost · Space jump · Q/E trick · R restart\nMobile: LEFT/RIGHT steer + BRAKE/BOOST/JUMP/TRICK buttons"
+	root.add_child(guide_label)
 
 	start_button = Button.new()
 	start_button.text = "START"
@@ -552,35 +568,51 @@ func _build_ui() -> void:
 	start_button.pressed.connect(_on_start_pressed)
 	root.add_child(start_button)
 
-	var controls := HBoxContainer.new()
+	var controls := VBoxContainer.new()
 	controls.anchor_left = 0.0
 	controls.anchor_right = 1.0
 	controls.anchor_top = 1.0
 	controls.anchor_bottom = 1.0
 	controls.offset_left = 10
 	controls.offset_right = -10
-	controls.offset_top = -56
+	controls.offset_top = -106
 	controls.offset_bottom = -10
 	controls.alignment = BoxContainer.ALIGNMENT_CENTER
-	controls.add_theme_constant_override("separation", 8)
+	controls.add_theme_constant_override("separation", 6)
 	controls.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(controls)
 
+	var row_steer := HBoxContainer.new()
+	row_steer.alignment = BoxContainer.ALIGNMENT_CENTER
+	row_steer.add_theme_constant_override("separation", 8)
+	controls.add_child(row_steer)
+
+	var left_btn := _make_hold_button("LEFT", func() -> void: touch_left = true, func() -> void: touch_left = false)
+	var right_btn := _make_hold_button("RIGHT", func() -> void: touch_right = true, func() -> void: touch_right = false)
+
+	row_steer.add_child(left_btn)
+	row_steer.add_child(right_btn)
+
+	var row_actions := HBoxContainer.new()
+	row_actions.alignment = BoxContainer.ALIGNMENT_CENTER
+	row_actions.add_theme_constant_override("separation", 8)
+	controls.add_child(row_actions)
+
 	var brake_btn := _make_hold_button("BRAKE", func() -> void: touch_brake = true, func() -> void: touch_brake = false)
-	var crouch_btn := _make_hold_button("CROUCH", func() -> void: touch_crouch = true, func() -> void: touch_crouch = false)
+	var crouch_btn := _make_hold_button("BOOST", func() -> void: touch_crouch = true, func() -> void: touch_crouch = false)
 	var jump_btn := _make_tap_button("JUMP", func() -> void: touch_jump_queued = true)
 	var trick_btn := _make_hold_button("TRICK", func() -> void: touch_trick = true, func() -> void: touch_trick = false)
 
-	controls.add_child(brake_btn)
-	controls.add_child(crouch_btn)
-	controls.add_child(jump_btn)
-	controls.add_child(trick_btn)
+	row_actions.add_child(brake_btn)
+	row_actions.add_child(crouch_btn)
+	row_actions.add_child(jump_btn)
+	row_actions.add_child(trick_btn)
 
 
 func _make_hold_button(label: String, on_press: Callable, on_release: Callable) -> Button:
 	var b := Button.new()
 	b.text = label
-	b.custom_minimum_size = Vector2(82, 44)
+	b.custom_minimum_size = Vector2(78, 42)
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	b.button_down.connect(on_press)
 	b.button_up.connect(on_release)
@@ -591,7 +623,7 @@ func _make_hold_button(label: String, on_press: Callable, on_release: Callable) 
 func _make_tap_button(label: String, on_tap: Callable) -> Button:
 	var b := Button.new()
 	b.text = label
-	b.custom_minimum_size = Vector2(82, 44)
+	b.custom_minimum_size = Vector2(78, 42)
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	b.pressed.connect(on_tap)
 	return b
@@ -620,7 +652,7 @@ func _reset_run(start_immediately: bool) -> void:
 	player_pos = Vector2(BASE_CENTER_X, WORLD_TOP + 30.0)
 	respawn_pos = player_pos
 	player_vel_x = 0.0
-	forward_speed = 170.0
+	forward_speed = 140.0
 	is_airborne = false
 	air_height = 0.0
 	air_velocity = 0.0
@@ -638,6 +670,8 @@ func _reset_run(start_immediately: bool) -> void:
 func _touch_reset() -> void:
 	touch_steer_active = false
 	touch_steer_x = BASE_CENTER_X
+	touch_left = false
+	touch_right = false
 	touch_brake = false
 	touch_crouch = false
 	touch_trick = false
@@ -674,7 +708,7 @@ func _update_ui_text() -> void:
 		elif status_text != "":
 			hint_label.text = status_text
 		else:
-			hint_label.text = "Time Trial · Find shortcuts · Keep no-crash run"
+			hint_label.text = "Reach checkpoints and finish fast. Shortcuts are riskier but faster."
 
 
 func _fmt_time(sec: float) -> String:
