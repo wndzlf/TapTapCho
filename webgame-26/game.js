@@ -7,6 +7,10 @@ const hudEl = document.querySelector('.hud');
 
 const audio = window.TapTapNeonAudio?.create('webgame-26', hudEl);
 
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
 const colors = ['#6df3ff', '#7cffc5', '#ffd86d', '#ff7bd0', '#8c7bff', '#ff9b6d', '#9dff7a', '#ff6de1'];
 
 let size = 6;
@@ -199,6 +203,7 @@ function onMatch() {
   pairsLeft -= 1;
   if (pairsLeft <= 0) {
     audio?.fx('win');
+    vibrate([20, 30, 20]);
     level += 1;
     score += Math.max(80, timeLeft * 2);
     setTimeout(() => init(false), 650);
@@ -211,11 +216,13 @@ function onMatch() {
 
   updateHud();
   audio?.fx('success');
+  vibrate(18);
 }
 
 function onFail() {
   clearInterval(timerId);
   audio?.fx('fail');
+  vibrate([40, 40, 40]);
   level = Math.max(1, level - 1);
   setTimeout(() => init(false), 450);
 }
@@ -236,6 +243,7 @@ function handleClick(x, y) {
   if (!selected) {
     selected = { r, c };
     audio?.fx('ui');
+    vibrate(10);
     return;
   }
 
@@ -256,6 +264,7 @@ function handleClick(x, y) {
     selected = b;
     updateHud();
     audio?.fx('fail');
+    vibrate(20);
   }
 }
 
@@ -269,6 +278,14 @@ function useHint() {
   timeLeft = Math.max(0, timeLeft - 4);
   updateHud();
   audio?.fx('ui');
+}
+
+function getPointerPos(event) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (event.clientX - rect.left) * (canvas.width / rect.width),
+    y: (event.clientY - rect.top) * (canvas.height / rect.height)
+  };
 }
 
 function draw() {
@@ -303,16 +320,16 @@ let lastTouchAt = 0;
 canvas.addEventListener('click', (e) => {
   if (lastTouchAt && performance.now() - lastTouchAt < 320) return;
   audio?.unlock();
-  const rect = canvas.getBoundingClientRect();
-  handleClick(e.clientX - rect.left, e.clientY - rect.top);
+  const pos = getPointerPos(e);
+  handleClick(pos.x, pos.y);
 });
 
 canvas.addEventListener('pointerdown', (e) => {
   if (e.pointerType !== 'touch') return;
   lastTouchAt = performance.now();
   audio?.unlock();
-  const rect = canvas.getBoundingClientRect();
-  handleClick(e.clientX - rect.left, e.clientY - rect.top);
+  const pos = getPointerPos(e);
+  handleClick(pos.x, pos.y);
 });
 
 btnNew.addEventListener('click', () => {
