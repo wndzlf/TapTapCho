@@ -71,40 +71,25 @@ function update() {
 
   // collisions
   for (const o of obstacles) {
-    if (o.type === 'santa') {
-      ctx.fillStyle = '#ff6b6b';
-      ctx.beginPath();
-      ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(o.x, o.y - o.r * 0.4, o.r * 0.35, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (o.type === 'rudolph') {
-      ctx.fillStyle = '#c96b3c';
-      ctx.beginPath();
-      ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = '#f5d6a7';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(o.x - o.r * 0.7, o.y - o.r * 0.6);
-      ctx.lineTo(o.x - o.r * 1.2, o.y - o.r);
-      ctx.moveTo(o.x + o.r * 0.7, o.y - o.r * 0.6);
-      ctx.lineTo(o.x + o.r * 1.2, o.y - o.r);
-      ctx.stroke();
-    } else {
-      // tree
-      ctx.fillStyle = '#33c77a';
-      ctx.beginPath();
-      ctx.moveTo(o.x, o.y - o.r * 1.4);
-      ctx.lineTo(o.x - o.r, o.y + o.r * 0.8);
-      ctx.lineTo(o.x + o.r, o.y + o.r * 0.8);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillStyle = '#8b5a2b';
-      ctx.fillRect(o.x - o.r * 0.2, o.y + o.r * 0.8, o.r * 0.4, o.r * 0.6);
+    const d = Math.hypot(o.x - skier.x, o.y - skier.y);
+    if (d < o.r + skier.r) {
+      state = 'over';
     }
+  }
+
+  if (state === 'over') {
+    best = Math.max(best, score);
+    bestEl.textContent = String(best);
+    localStorage.setItem(STORAGE_KEY, String(best));
+  }
+
+  score += 0.02 * speed;
+  scoreEl.textContent = String(Math.floor(score));
+  speedEl.textContent = `${speed.toFixed(1)}x`;
+
+  // cleanup
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    if (obstacles[i].y > H + 30) obstacles.splice(i, 1);
   }
 
   // skier (simple ski silhouette)
