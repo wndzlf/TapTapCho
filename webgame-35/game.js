@@ -7,6 +7,10 @@ const hudEl = document.querySelector('.hud');
 
 const audio = window.TapTapNeonAudio?.create('webgame-35', hudEl);
 
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
 let level = 1;
 let score = 0;
 let timeLeft = 95;
@@ -124,6 +128,7 @@ function onClear() {
     localStorage.setItem('webgame-35-best-level', String(bestLevel));
   }
   audio?.fx('win');
+  vibrate([25, 35, 25]);
   updateHud();
   setTimeout(() => resetRound(false), 900);
 }
@@ -131,6 +136,7 @@ function onClear() {
 function onFail() {
   level = Math.max(1, level - 1);
   audio?.fx('fail');
+  vibrate([40, 40, 40]);
   resetRound(false);
 }
 
@@ -146,6 +152,7 @@ function handleClick(x, y) {
       else if (!hasKey) message = 'Need a key.';
       else message = 'Need a keycard.';
       audio?.fx('fail');
+      vibrate(25);
     }
     return;
   }
@@ -154,6 +161,7 @@ function handleClick(x, y) {
     clueFound = true;
     message = `Code clue found: ${code.join('-')}`;
     audio?.fx('success');
+    vibrate(15);
     return;
   }
 
@@ -161,6 +169,7 @@ function handleClick(x, y) {
     rugMoved = true;
     message = 'You moved the rug. Something is hidden...';
     audio?.fx('ui');
+    vibrate(12);
     return;
   }
 
@@ -168,6 +177,7 @@ function handleClick(x, y) {
     hasKeycard = true;
     message = 'Picked up keycard.';
     audio?.fx('success');
+    vibrate(15);
     updateHud();
     return;
   }
@@ -179,6 +189,7 @@ function handleClick(x, y) {
       updateHud();
       message = 'Dial adjusted.';
       audio?.fx('ui');
+      vibrate(10);
       return;
     }
   }
@@ -189,9 +200,11 @@ function handleClick(x, y) {
         drawerOpen = true;
         message = 'Drawer opened.';
         audio?.fx('success');
+        vibrate(20);
       } else {
         message = 'Drawer locked. Wrong code.';
         audio?.fx('fail');
+        vibrate(25);
       }
       return;
     }
@@ -200,6 +213,7 @@ function handleClick(x, y) {
       hasKey = true;
       message = 'Picked up key.';
       audio?.fx('success');
+      vibrate(15);
       updateHud();
       return;
     }
@@ -276,6 +290,14 @@ function drawRug() {
   }
 }
 
+function getPointerPos(event) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (event.clientX - rect.left) * (canvas.width / rect.width),
+    y: (event.clientY - rect.top) * (canvas.height / rect.height)
+  };
+}
+
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawRoom();
@@ -289,10 +311,10 @@ function draw() {
   ctx.fillText(message, 48, 468);
 }
 
-canvas.addEventListener('click', (e) => {
+canvas.addEventListener('pointerdown', (event) => {
   audio?.unlock();
-  const rect = canvas.getBoundingClientRect();
-  handleClick(e.clientX - rect.left, e.clientY - rect.top);
+  const pos = getPointerPos(event);
+  handleClick(pos.x, pos.y);
 });
 
 btnReset.addEventListener('click', () => {
