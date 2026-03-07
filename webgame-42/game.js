@@ -44,7 +44,7 @@ function startGame() {
 
 function addObstacle() {
   const x = 40 + Math.random() * (W - 80);
-  obstacles.push({ x, y: -20, r: 12 + Math.random() * 6, type: Math.random() < 0.5 ? 'santa' : 'rudolph' });
+  obstacles.push({ x, y: -20, r: 12 + Math.random() * 6, type: (Math.random() < 0.34 ? 'santa' : (Math.random() < 0.5 ? 'rudolph' : 'tree')) });
 }
 
 function boost() {
@@ -81,7 +81,7 @@ function update() {
       ctx.beginPath();
       ctx.arc(o.x, o.y - o.r * 0.4, o.r * 0.35, 0, Math.PI * 2);
       ctx.fill();
-    } else {
+    } else if (o.type === 'rudolph') {
       ctx.fillStyle = '#c96b3c';
       ctx.beginPath();
       ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
@@ -94,6 +94,17 @@ function update() {
       ctx.moveTo(o.x + o.r * 0.7, o.y - o.r * 0.6);
       ctx.lineTo(o.x + o.r * 1.2, o.y - o.r);
       ctx.stroke();
+    } else {
+      // tree
+      ctx.fillStyle = '#33c77a';
+      ctx.beginPath();
+      ctx.moveTo(o.x, o.y - o.r * 1.4);
+      ctx.lineTo(o.x - o.r, o.y + o.r * 0.8);
+      ctx.lineTo(o.x + o.r, o.y + o.r * 0.8);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#8b5a2b';
+      ctx.fillRect(o.x - o.r * 0.2, o.y + o.r * 0.8, o.r * 0.4, o.r * 0.6);
     }
   }
 
