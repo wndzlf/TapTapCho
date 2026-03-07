@@ -32,7 +32,6 @@ function resetGame() {
   skier.x = W * 0.5;
   skier.vx = 0;
   obstacles.length = 0;
-  gates.length = 0;
   scoreEl.textContent = '0';
   speedEl.textContent = '1.0x';
 }
