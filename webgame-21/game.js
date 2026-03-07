@@ -2,6 +2,10 @@ const bgmAudio = window.TapTapNeonAudio?.create('webgame-21', document.querySele
   mediaSrc: '../assets/audio/zigzag-memory-run-pixabay-488126.mp3',
 });
 
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
@@ -141,6 +145,7 @@ function startGame() {
 function endGame() {
   state = 'gameover';
   beep(170, 0.22, 0.06);
+  vibrate([40, 40, 40]);
 
   best = Math.max(best, score);
   bestEl.textContent = String(best);
@@ -171,6 +176,7 @@ function inputDir(dir) {
 
   inputIndex += 1;
   beep(560, 0.03, 0.016);
+  vibrate(10);
 
   const nowPoints = sequenceToPoints(sequence.slice(0, inputIndex));
   const p = nowPoints[nowPoints.length - 1];
@@ -184,6 +190,7 @@ function inputDir(dir) {
     flash = 18;
     roundLength = Math.min(14, roundLength + 1);
     beep(980, 0.08, 0.03);
+    vibrate([20, 30, 20]);
     startRound();
   }
 }
