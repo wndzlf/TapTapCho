@@ -1,4 +1,9 @@
-const bgmAudio = window.TapTapNeonAudio?.create('webgame-18', document.querySelector('.hud'), { theme: 'mystic' });
+const bgmAudio = window.TapTapNeonAudio?.create('webgame-18', document.querySelector('.hud'), {
+  theme: 'mystic',
+  mediaSrc: '../assets/audio/orbit-survivor-pixabay-492540.mp3',
+  showThemeToggle: false,
+  showSfxToggle: false,
+});
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
