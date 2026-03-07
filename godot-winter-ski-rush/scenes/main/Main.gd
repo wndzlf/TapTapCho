@@ -19,7 +19,9 @@ const START_SPEED := 88.0
 const DIFFICULTY_EASY := 0
 const DIFFICULTY_NORMAL := 1
 
-const CHECKPOINT_Y := [760.0, 1520.0, 2360.0, 3220.0, 4080.0]
+const CHECKPOINT_COUNT := 20
+const CHECKPOINT_START_OFFSET_Y := 260.0
+const CHECKPOINT_END_OFFSET_Y := 240.0
 const SHORTCUT_IDS := ["shortcut_left_1", "shortcut_right_2", "shortcut_left_3"]
 
 var _track_points: Array[Vector2] = [
@@ -504,7 +506,9 @@ func _setup_map_data() -> void:
 	for sid in SHORTCUT_IDS:
 		shortcut_seen[sid] = false
 
-	for cp_y in CHECKPOINT_Y:
+	for i in range(CHECKPOINT_COUNT):
+		var t := float(i + 1) / float(CHECKPOINT_COUNT)
+		var cp_y := lerpf(WORLD_TOP + CHECKPOINT_START_OFFSET_Y, FINISH_Y - CHECKPOINT_END_OFFSET_Y, t)
 		checkpoints.append({"y": cp_y, "passed": false})
 
 	var obstacle_y := active_obstacle_start_y
