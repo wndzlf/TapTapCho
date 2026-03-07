@@ -41,6 +41,9 @@ const audioCtx = window.AudioContext ? new AudioContext() : null;
 
 function beep(freq, duration, gain = 0.02) {
   if (!audioCtx) return;
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
   const now = audioCtx.currentTime;
   const osc = audioCtx.createOscillator();
   const amp = audioCtx.createGain();
@@ -52,6 +55,14 @@ function beep(freq, duration, gain = 0.02) {
   amp.connect(audioCtx.destination);
   osc.start(now);
   osc.stop(now + duration);
+}
+
+function playTurnSfx() {
+  const speedBoost = Math.min(220, Math.max(0, orbitSpeed - 0.042) * 12000);
+  const base = 520 + speedBoost + Math.random() * 16;
+  beep(base, 0.05, 0.034);
+  beep(base * 1.38, 0.03, 0.022);
+  bgmAudio?.fx?.('ui');
 }
 
 function addBurst(x, y, color, amount = 12) {
@@ -175,7 +186,7 @@ function action() {
     return;
   }
   orbitDir *= -1;
-  beep(560, 0.04, 0.018);
+  playTurnSfx();
 }
 
 function update() {
@@ -345,7 +356,10 @@ function loop() {
 }
 
 window.addEventListener('keydown', (event) => {
-  if (event.key === ' ') action();
+  if (event.key === ' ' || event.key === 'Tab') {
+    event.preventDefault();
+    action();
+  }
 });
 
 canvas.addEventListener('pointerdown', action);
