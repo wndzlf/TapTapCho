@@ -150,11 +150,38 @@ function draw() {
     ctx.fill();
   }
 
-  // skier
+  // skier (simple ski silhouette)
+  ctx.save();
+  ctx.translate(skier.x, skier.y);
+  const tilt = clamp(skier.vx * 0.03, -0.25, 0.25);
+  ctx.rotate(tilt);
+
+  // skis
+  ctx.strokeStyle = '#cfe6ff';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-14, 10);
+  ctx.lineTo(12, 14);
+  ctx.moveTo(-12, 14);
+  ctx.lineTo(14, 18);
+  ctx.stroke();
+
+  // body
   ctx.fillStyle = '#ffd88a';
   ctx.beginPath();
-  ctx.arc(skier.x, skier.y, skier.r, 0, Math.PI * 2);
+  ctx.moveTo(0, -10);
+  ctx.lineTo(-8, 8);
+  ctx.lineTo(8, 8);
+  ctx.closePath();
   ctx.fill();
+
+  // head
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(0, -14, 4.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
 
   if (state === 'idle' || state === 'over') {
     ctx.fillStyle = 'rgba(0,0,0,0.45)';
