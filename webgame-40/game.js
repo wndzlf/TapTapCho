@@ -2454,6 +2454,25 @@ function nearestEnemy(x, y, range) {
   return found;
 }
 
+function nearestEnemyFromBuckets(x, y, range) {
+  if (!currentEnemyBuckets) return nearestEnemy(x, y, range);
+  const cell = worldToCell(x, y);
+  const radiusCells = Math.ceil((range + GRID.cell) / GRID.cell);
+  const candidates = collectNearbyEnemies(currentEnemyBuckets, cell.c, cell.r, radiusCells);
+  let found = null;
+  let best = range * range;
+  for (const enemy of candidates) {
+    const dx = enemy.x - x;
+    const dy = enemy.y - y;
+    const d = dx * dx + dy * dy;
+    if (d <= best) {
+      best = d;
+      found = enemy;
+    }
+  }
+  return found;
+}
+
 function fastestEnemyFiltered(x, y, range, predicate) {
   let found = null;
   let bestSpeed = -1;
@@ -2474,7 +2493,7 @@ function fastestEnemyFiltered(x, y, range, predicate) {
 }
 
 function pickTowerTarget(tower) {
-  return nearestEnemy(tower.x, tower.y, tower.range);
+  return nearestEnemyFromBuckets(tower.x, tower.y, tower.range);
 }
 
 function removeTower(tower) {
@@ -2961,7 +2980,7 @@ function applyStunChain(primaryEnemy, bullet) {
 }
 
 function updateBullets(dt) {
-  const buckets = buildEnemyBuckets();
+  const buckets = currentEnemyBuckets || buildEnemyBuckets();
   for (let i = state.bullets.length - 1; i >= 0; i -= 1) {
     const b = state.bullets[i];
     b.x += b.vx * dt;
@@ -3276,6 +3295,7 @@ function updateEnemy(enemy, dt) {
 }
 
 let currentTowerBuckets = null;
+let currentEnemyBuckets = null;
 
 function updateEnemies(dt) {
   for (const enemy of [...state.enemies]) {
@@ -4839,6 +4859,7 @@ function step(dt) {
   while (remain > 0 && guard < 32) {
     const subDt = Math.min(MAX_SIM_SUBSTEP, remain);
     updateSpawning(subDt);
+    currentEnemyBuckets = buildEnemyBuckets();
     currentTowerBuckets = buildTowerBuckets();
     updateTowers(subDt);
     updateBullets(subDt);
