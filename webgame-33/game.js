@@ -7,6 +7,10 @@ const bestStreakEl = document.getElementById('bestStreak');
 const leftEl = document.getElementById('left');
 const btnNew = document.getElementById('btnNew');
 
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
 const cols = 8;
 const rows = 10;
 const radius = 18;
@@ -23,6 +27,8 @@ let streak = 0;
 let best = Number(localStorage.getItem('webgame-33-best-score') || 0);
 const BEST_STREAK_KEY = 'webgame-33-best-streak';
 let bestStreak = Number(localStorage.getItem(BEST_STREAK_KEY) || 0);
+let laneManualUntil = 0;
+let pointerActive = false;
 
 function randColor() { return Math.floor(Math.random() * colors.length); }
 
@@ -57,6 +63,15 @@ function init() {
 
 function cellToPos(r, c) {
   return { x: offsetX + c * radius * 2, y: offsetY + r * radius * 2 };
+}
+
+function setLaneFromX(x) {
+  const minX = offsetX + radius * 0.6;
+  const maxX = offsetX + (cols - 1) * radius * 2 - radius * 0.6;
+  const clamped = clamp(x, minX, maxX);
+  lane.x = clamped;
+  lane.t = (clamped - minX) / (maxX - minX);
+  laneManualUntil = performance.now() + 1200;
 }
 
 function shoot() {
@@ -98,6 +113,7 @@ function attachBubble() {
     cluster.forEach(p => grid[p.r][p.c] = -1);
     score += cluster.length * 10;
     streak += 1;
+    vibrate(15);
     if (streak > bestStreak) {
       bestStreak = streak;
       localStorage.setItem(BEST_STREAK_KEY, String(bestStreak));
@@ -113,6 +129,7 @@ function attachBubble() {
   } else {
     streak = 0;
     streakEl.textContent = String(streak);
+    vibrate(10);
   }
   const left = countBubbles();
   leftEl.textContent = String(left);
@@ -124,6 +141,7 @@ function attachBubble() {
     }
     scoreEl.textContent = score;
     bestEl.textContent = String(best);
+    vibrate([20, 40, 20]);
     resetBoard(true);
     return;
   }
@@ -136,6 +154,7 @@ function attachBubble() {
 function update() {
   if (!shooter.active) {
     if (lane) {
+      if (performance.now() < laneManualUntil) return;
       lane.t += 0.018 * laneDir;
       if (lane.t > 1 || lane.t < 0) laneDir *= -1;
       const t = clamp(lane.t, 0, 1);
@@ -204,7 +223,35 @@ function draw() {
   ctx.shadowBlur = 0;
 }
 
-canvas.addEventListener('click', shoot);
+function getPointerPos(event) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (event.clientX - rect.left) * (canvas.width / rect.width),
+    y: (event.clientY - rect.top) * (canvas.height / rect.height)
+  };
+}
+
+canvas.addEventListener('pointerdown', (event) => {
+  pointerActive = true;
+  const pos = getPointerPos(event);
+  setLaneFromX(pos.x);
+  shoot();
+});
+
+canvas.addEventListener('pointermove', (event) => {
+  if (!pointerActive || shooter.active) return;
+  const pos = getPointerPos(event);
+  setLaneFromX(pos.x);
+});
+
+canvas.addEventListener('pointerup', () => {
+  pointerActive = false;
+});
+
+canvas.addEventListener('pointercancel', () => {
+  pointerActive = false;
+});
+
 btnNew.addEventListener('click', init);
 
 init();
