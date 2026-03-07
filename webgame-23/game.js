@@ -139,6 +139,10 @@ function createSfx() {
 
 const sfx = createSfx();
 
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
 function updateSoundButton() {
   btnSound.textContent = `사운드: ${sfx.isEnabled() ? '켜짐' : '꺼짐'}`;
 }
@@ -300,6 +304,7 @@ function setDir(x, y) {
   if (x === -dir.x && y === -dir.y) return;
   nextDir = { x, y };
   sfx.turn();
+  vibrate(8);
 }
 
 function gameOver() {
@@ -310,6 +315,7 @@ function gameOver() {
   }
   updateHud();
   sfx.hit();
+  vibrate([50, 50, 50]);
 }
 
 function handleCollision() {
@@ -388,6 +394,7 @@ function advanceOneCell() {
     addChallenge('eat', 1);
     placeFood();
     sfx.eat();
+    vibrate(12);
     addParticles(offsetX + head.x * cell, offsetY + head.y * cell, '#ff9fe0', 14);
     if (snake.length > bestLength) {
       bestLength = snake.length;
