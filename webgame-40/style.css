@@ -553,22 +553,12 @@ body.rank-mode .top-row {
   color: #fff3d6;
 }
 
-#btnChoLotto {
-  position: relative;
-}
-
-#btnChoLotto::before {
-  content: '';
-  position: absolute;
-  top: 7px;
-  left: 10px;
+#btnChoLotto .icon {
+  display: flex;
   width: 18px;
   height: 18px;
-  background: url('../assets/dollar-icon.svg?v=5') center/contain no-repeat;
-}
-
-#btnChoLotto .icon {
-  display: none;
+  font-size: 0;
+  background: url('../assets/dollar-icon.svg?v=6') center/contain no-repeat;
 }
 
 .build-btn.active {
