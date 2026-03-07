@@ -8,6 +8,10 @@ const hudEl = document.querySelector('.hud');
 
 const audio = window.TapTapNeonAudio?.create('webgame-24', hudEl);
 
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
 const solvedBoards = [
   '534678912672195348198342567859761423426853791713924856961537284287419635345286179',
   '417369825836521947952748316325497168791685432648213759289136574573824691164957283',
@@ -115,11 +119,11 @@ function buildBoard() {
       cell.classList.add('prefill');
     }
 
-    cell.addEventListener('click', () => {
-      if (cell._lastTouch && Date.now() - cell._lastTouch < 320) return;
+    cell.addEventListener('pointerdown', () => {
       audio?.unlock();
       selectCell(cell);
       audio?.fx('ui');
+      vibrate(10);
     });
 
     cell.addEventListener('contextmenu', (e) => {
@@ -131,17 +135,20 @@ function buildBoard() {
       'touchstart',
       () => {
         cell._touchStart = Date.now();
-        cell._lastTouch = cell._touchStart;
         audio?.unlock();
         selectCell(cell);
         audio?.fx('ui');
+        vibrate(10);
       },
       { passive: true }
     );
 
     cell.addEventListener('touchend', () => {
       if (Date.now() - (cell._touchStart || 0) > 320) {
-        if (!cell.classList.contains('prefill')) setCellValue(cell, '0');
+        if (!cell.classList.contains('prefill')) {
+          setCellValue(cell, '0');
+          vibrate(12);
+        }
       }
     });
 
@@ -207,9 +214,11 @@ function checkConflicts() {
   if (wrong > 0) {
     errors += wrong;
     audio?.fx('fail');
+    vibrate([20, 30, 20]);
     updateHud();
   } else {
     audio?.fx('success');
+    vibrate(15);
   }
 }
 
@@ -230,6 +239,7 @@ function onRoundClear() {
   level += 1;
   updateHud();
   audio?.fx('win');
+  vibrate([20, 40, 20]);
 
   boardEl.querySelectorAll('.cell').forEach((c) => c.classList.add('selected'));
   setTimeout(() => {
@@ -271,9 +281,11 @@ padEl.addEventListener('click', (e) => {
       selected.classList.add('error');
       errors += 1;
       audio?.fx('fail');
+      vibrate(20);
     } else {
       selected.classList.remove('error');
       audio?.fx('success');
+      vibrate(12);
     }
     updateHud();
     if (!selected.classList.contains('error')) {
