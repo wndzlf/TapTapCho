@@ -1,0 +1,52 @@
+; Engine configuration file.
+; Godot 4.6+
+
+config_version=5
+
+[application]
+config/name="Winter Ski Rush (Godot)"
+run/main_scene="res://scenes/main/Main.tscn"
+
+[display]
+window/size/viewport_width=360
+window/size/viewport_height=640
+window/size/window_width=360
+window/size/window_height=640
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+
+[input]
+steer_left={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":65), Object(InputEventKey,"physical_keycode":16777231)]
+}
+steer_right={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":68), Object(InputEventKey,"physical_keycode":16777233)]
+}
+brake={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":83), Object(InputEventKey,"physical_keycode":16777234)]
+}
+crouch={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":16777237), Object(InputEventKey,"physical_keycode":340)]
+}
+jump={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":32)]
+}
+trick={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":81), Object(InputEventKey,"physical_keycode":69)]
+}
+restart_run={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":82), Object(InputEventKey,"physical_keycode":16777221)]
+}
+
+[physics]
+common/physics_ticks_per_second=60
+
+[rendering]
+renderer/rendering_method="mobile"
