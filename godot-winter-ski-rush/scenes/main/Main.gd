@@ -101,7 +101,6 @@ var camera: Camera2D
 var canvas_layer: CanvasLayer
 var hud_label: Label
 var hint_label: Label
-var guide_label: Label
 var start_button: Button
 var easy_button: Button
 var normal_button: Button
@@ -572,32 +571,29 @@ func _build_ui() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	canvas_layer.add_child(root)
 
+	var hud_bg := ColorRect.new()
+	hud_bg.position = Vector2(8, 8)
+	hud_bg.size = Vector2(330, 84)
+	hud_bg.color = Color(0.04, 0.09, 0.16, 0.46)
+	root.add_child(hud_bg)
+
 	hud_label = Label.new()
-	hud_label.position = Vector2(10, 10)
-	hud_label.size = Vector2(250, 110)
-	hud_label.add_theme_color_override("font_color", Color(0.9, 0.96, 1.0))
-	hud_label.add_theme_font_size_override("font_size", 13)
+	hud_label.position = Vector2(14, 12)
+	hud_label.size = Vector2(316, 52)
+	hud_label.add_theme_color_override("font_color", Color(0.95, 0.98, 1.0))
+	hud_label.add_theme_font_size_override("font_size", 14)
 	hud_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	hud_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	hud_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	root.add_child(hud_label)
 
 	hint_label = Label.new()
-	hint_label.position = Vector2(10, 112)
-	hint_label.size = Vector2(340, 24)
-	hint_label.add_theme_color_override("font_color", Color(0.76, 0.88, 1.0))
+	hint_label.position = Vector2(14, 62)
+	hint_label.size = Vector2(316, 24)
+	hint_label.add_theme_color_override("font_color", Color(0.99, 0.89, 0.62))
 	hint_label.add_theme_font_size_override("font_size", 12)
-	hint_label.text = "Reach checkpoints and finish fast. Shortcuts are riskier but faster."
+	hint_label.text = ""
 	root.add_child(hint_label)
-
-	guide_label = Label.new()
-	guide_label.position = Vector2(10, 136)
-	guide_label.size = Vector2(340, 60)
-	guide_label.add_theme_color_override("font_color", Color(0.84, 0.93, 1.0))
-	guide_label.add_theme_font_size_override("font_size", 11)
-	guide_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	guide_label.text = "Desktop: A/D steer · S brake · Shift boost · Space jump · Q/E trick · R restart\nMobile: LEFT/RIGHT steer + BRAKE/BOOST/JUMP/TRICK buttons"
-	root.add_child(guide_label)
 
 	start_button = Button.new()
 	start_button.text = "START"
@@ -643,8 +639,8 @@ func _build_ui() -> void:
 	row_steer.add_theme_constant_override("separation", 8)
 	controls.add_child(row_steer)
 
-	var left_btn := _make_hold_button("LEFT", func() -> void: touch_left = true, func() -> void: touch_left = false)
-	var right_btn := _make_hold_button("RIGHT", func() -> void: touch_right = true, func() -> void: touch_right = false)
+	var left_btn := _make_hold_button("LEFT\nA / Left", func() -> void: touch_left = true, func() -> void: touch_left = false)
+	var right_btn := _make_hold_button("RIGHT\nD / Right", func() -> void: touch_right = true, func() -> void: touch_right = false)
 
 	row_steer.add_child(left_btn)
 	row_steer.add_child(right_btn)
@@ -654,10 +650,10 @@ func _build_ui() -> void:
 	row_actions.add_theme_constant_override("separation", 8)
 	controls.add_child(row_actions)
 
-	var brake_btn := _make_hold_button("BRAKE", func() -> void: touch_brake = true, func() -> void: touch_brake = false)
-	var crouch_btn := _make_hold_button("BOOST", func() -> void: touch_crouch = true, func() -> void: touch_crouch = false)
-	var jump_btn := _make_tap_button("JUMP", func() -> void: touch_jump_queued = true)
-	var trick_btn := _make_hold_button("TRICK", func() -> void: touch_trick = true, func() -> void: touch_trick = false)
+	var brake_btn := _make_hold_button("BRAKE\nS / Down", func() -> void: touch_brake = true, func() -> void: touch_brake = false)
+	var crouch_btn := _make_hold_button("BOOST\nShift", func() -> void: touch_crouch = true, func() -> void: touch_crouch = false)
+	var jump_btn := _make_tap_button("JUMP\nSpace", func() -> void: touch_jump_queued = true)
+	var trick_btn := _make_hold_button("TRICK\nQ / E", func() -> void: touch_trick = true, func() -> void: touch_trick = false)
 
 	row_actions.add_child(brake_btn)
 	row_actions.add_child(crouch_btn)
@@ -696,7 +692,7 @@ func _try_play_bgm() -> void:
 func _make_hold_button(label: String, on_press: Callable, on_release: Callable) -> Button:
 	var b := Button.new()
 	b.text = label
-	b.custom_minimum_size = Vector2(78, 42)
+	b.custom_minimum_size = Vector2(104, 62)
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	b.button_down.connect(on_press)
 	b.button_up.connect(on_release)
@@ -707,7 +703,7 @@ func _make_hold_button(label: String, on_press: Callable, on_release: Callable) 
 func _make_tap_button(label: String, on_tap: Callable) -> Button:
 	var b := Button.new()
 	b.text = label
-	b.custom_minimum_size = Vector2(78, 42)
+	b.custom_minimum_size = Vector2(104, 62)
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	b.pressed.connect(on_tap)
 	return b
@@ -857,20 +853,19 @@ func _update_ui_text() -> void:
 
 	var best_label := "--:--.--" if best_time == INF else _fmt_time(best_time)
 	var speed_kmh := int(round(forward_speed * 0.42))
-	var main_line := "Mode %s   Time %s   Best %s" % [_difficulty_name(), _fmt_time(run_time), best_label]
-	var sub_line := "Speed %d km/h   CP %d/%d   Crash %d" % [speed_kmh, cp_now, checkpoints.size(), crash_count]
-	var extra_line := "Shortcut %d/%d   Style %d" % [shortcut_count, SHORTCUT_IDS.size(), style_score]
-	hud_label.text = "%s\n%s\n%s" % [main_line, sub_line, extra_line]
+	var main_line := "TIME %s   BEST %s" % [_fmt_time(run_time), best_label]
+	var sub_line := "SPD %d   CP %d/%d   %s" % [speed_kmh, cp_now, checkpoints.size(), _difficulty_name()]
+	hud_label.text = "%s\n%s" % [main_line, sub_line]
 
 	if hint_label != null:
 		if run_finished:
-			hint_label.text = "Finished! Press START to run again"
+			hint_label.text = "Finished. Press START."
 		elif crashed:
-			hint_label.text = "Respawning from checkpoint..."
+			hint_label.text = "Respawning..."
 		elif status_text != "":
 			hint_label.text = status_text
 		else:
-			hint_label.text = "Reach checkpoints and finish fast. Shortcuts are riskier but faster."
+			hint_label.text = ""
 
 
 func _fmt_time(sec: float) -> String:
