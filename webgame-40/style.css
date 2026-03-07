@@ -40,6 +40,7 @@ body {
 
 .mode-tabs {
   display: inline-flex;
+  align-items: center;
   border: 1px solid var(--line);
   border-radius: 999px;
   overflow: hidden;
@@ -50,19 +51,18 @@ body {
 
 .mode-tabs.left-group {
   margin-right: auto;
-  align-self: center;
 }
 
 .mode-tabs.right-group {
   margin-left: auto;
-  align-self: center;
 }
 
 .mode-tab {
   color: #c9d8ef;
   text-decoration: none;
-  padding: 8px 14px;
+  padding: 0 14px;
   font-size: 13px;
+  border: 0;
   border-right: 1px solid var(--line);
   background: linear-gradient(180deg, #151f33, #101a2d);
   display: inline-flex;
@@ -70,8 +70,10 @@ body {
   justify-content: center;
   height: 34px;
   line-height: 1;
+  margin: 0;
   appearance: none;
   -webkit-appearance: none;
+  font-family: inherit;
 }
 
 .mode-tab.active {
