@@ -8,6 +8,10 @@ const hudEl = document.querySelector('.hud');
 
 const audio = window.TapTapNeonAudio?.create('webgame-28', hudEl);
 
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
 const size = 10;
 const cell = 40;
 const offsetX = Math.floor((canvas.width - size * cell) / 2);
@@ -180,9 +184,11 @@ function place(shapeObj, r0, c0) {
     }
     score += linesCleared * 90 * combo;
     audio?.fx('success');
+    vibrate(18);
   } else {
     combo = 1;
     audio?.fx('ui');
+    vibrate(10);
   }
 
   best = Math.max(best, score);
@@ -216,12 +222,14 @@ function checkRoundState() {
     combo = 1;
     updateHud();
     audio?.fx('win');
+    vibrate([20, 30, 20]);
     return;
   }
 
   const hasPlayable = currentShapes.some((shapeObj) => anyPlaceAvailable(shapeObj));
   if (!hasPlayable) {
     audio?.fx('fail');
+    vibrate([40, 40, 40]);
     level = Math.max(1, level - 1);
     levelStartScore = score;
     targetScore = Math.max(320, targetScore - 80);
@@ -276,10 +284,18 @@ function draw() {
 
 let lastHoverCell = null;
 
-function getCellFromEvent(e, pad = 12) {
+function getPointerPos(event) {
   const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
+  return {
+    x: (event.clientX - rect.left) * (canvas.width / rect.width),
+    y: (event.clientY - rect.top) * (canvas.height / rect.height)
+  };
+}
+
+function getCellFromEvent(e, pad = 12) {
+  const pos = getPointerPos(e);
+  const x = pos.x;
+  const y = pos.y;
   const maxX = offsetX + size * cell - 1;
   const maxY = offsetY + size * cell - 1;
   if (x < offsetX - pad || x > maxX + pad || y < offsetY - pad || y > maxY + pad) return null;
@@ -312,6 +328,7 @@ function handleBoardPlace(e) {
     combo = 1;
     updateHud();
     audio?.fx('fail');
+    vibrate(20);
   }
 }
 
