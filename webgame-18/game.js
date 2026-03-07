@@ -17,8 +17,11 @@ const W = canvas.width;
 const H = canvas.height;
 const STORAGE_KEY = 'orbit-survivor-best';
 
-const center = { x: W * 0.5, y: H * 0.52 };
+const BASE_CENTER_X = W * 0.5;
+const BASE_CENTER_Y = H * 0.52;
+const center = { x: BASE_CENTER_X, y: BASE_CENTER_Y };
 const ORBIT_R = 126;
+const ORBIT_DRIFT_START_SCORE = 20;
 
 let state = 'idle'; // idle | running | gameover
 let score = 0;
@@ -30,6 +33,10 @@ let shake = 0;
 let orbitAngle = -Math.PI * 0.5;
 let orbitDir = 1;
 let orbitSpeed = 0.042;
+let orbitDriftDir = 1;
+let orbitDriftSpeed = 0;
+let orbitDriftWarn = 0;
+let orbitDriftIntroFx = 0;
 let lastActionAt = 0;
 
 const projectiles = [];
@@ -145,6 +152,12 @@ function resetGame() {
   orbitAngle = -Math.PI * 0.5;
   orbitDir = 1;
   orbitSpeed = 0.042;
+  orbitDriftDir = 1;
+  orbitDriftSpeed = 0;
+  orbitDriftWarn = 0;
+  orbitDriftIntroFx = 0;
+  center.x = BASE_CENTER_X;
+  center.y = BASE_CENTER_Y;
 
   projectiles.length = 0;
   particles.length = 0;
@@ -191,6 +204,8 @@ function action() {
 
 function update() {
   tick += 1;
+  orbitDriftWarn = Math.max(0, orbitDriftWarn - 1);
+  orbitDriftIntroFx = Math.max(0, orbitDriftIntroFx - 1);
 
   for (const p of particles) {
     p.x += p.vx;
@@ -204,8 +219,40 @@ function update() {
 
   if (state !== 'running') return;
 
+  if (score >= ORBIT_DRIFT_START_SCORE) {
+    if (orbitDriftSpeed <= 0) {
+      orbitDriftDir = Math.random() < 0.5 ? -1 : 1;
+      orbitDriftIntroFx = 26;
+      beep(430, 0.07, 0.028);
+    }
+    orbitDriftSpeed = Math.min(1.85, 0.55 + (score - ORBIT_DRIFT_START_SCORE) * 0.025);
+    const minX = ORBIT_R + 34;
+    const maxX = W - ORBIT_R - 34;
+    center.x += orbitDriftDir * orbitDriftSpeed;
+    if (center.x <= minX) {
+      center.x = minX;
+      orbitDriftDir = 1;
+      orbitDriftWarn = 18;
+      beep(360, 0.04, 0.02);
+    } else if (center.x >= maxX) {
+      center.x = maxX;
+      orbitDriftDir = -1;
+      orbitDriftWarn = 18;
+      beep(360, 0.04, 0.02);
+    }
+  } else {
+    orbitDriftSpeed = 0;
+    center.x += (BASE_CENTER_X - center.x) * 0.08;
+    center.y += (BASE_CENTER_Y - center.y) * 0.08;
+  }
+
   orbitAngle += orbitDir * orbitSpeed;
-  orbitSpeed = Math.min(0.075, 0.042 + score * 0.00006);
+  orbitSpeed = Math.min(
+    0.082,
+    0.042
+      + score * 0.00006
+      + (score >= ORBIT_DRIFT_START_SCORE ? 0.006 : 0)
+  );
 
   const spawnInterval = Math.max(18, 52 - Math.floor(score / 28));
   if (tick % spawnInterval === 0) {
@@ -276,11 +323,60 @@ function render() {
     ctx.fillRect(x, y, 2, 2);
   }
 
+  const driftActive = score >= ORBIT_DRIFT_START_SCORE && state === 'running';
+  if (driftActive) {
+    const flowDir = orbitDriftDir > 0 ? 1 : -1;
+    const flowPhase = (tick * (0.45 + orbitDriftSpeed * 0.22)) % 38;
+    const glow = orbitDriftWarn > 0 ? 0.84 : 0.46;
+    for (let i = 0; i < 7; i += 1) {
+      const y = 108 + i * 18;
+      const span = 160 + i * 12;
+      const baseX = center.x - flowDir * 14;
+      const x1 = baseX - flowDir * ((flowPhase + i * 9) % span);
+      const x2 = x1 + flowDir * (8 + i * 0.55);
+      ctx.strokeStyle = `rgba(124, 219, 255, ${0.1 + i * 0.035 + glow * 0.16})`;
+      ctx.lineWidth = 1.2 + i * 0.1;
+      ctx.beginPath();
+      ctx.moveTo(x1, y);
+      ctx.lineTo(x2, y);
+      ctx.stroke();
+    }
+  }
+
   ctx.strokeStyle = 'rgba(109, 200, 255, 0.45)';
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.arc(center.x, center.y, ORBIT_R, 0, Math.PI * 2);
   ctx.stroke();
+
+  if (driftActive || orbitDriftIntroFx > 0) {
+    const flowDir = orbitDriftDir > 0 ? 1 : -1;
+    const introBoost = orbitDriftIntroFx > 0 ? (orbitDriftIntroFx / 26) : 0;
+    const markerAlpha = 0.36 + introBoost * 0.34 + (orbitDriftWarn > 0 ? 0.22 : 0);
+    const ringPulse = 0.5 + 0.5 * Math.sin(tick * 0.18);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = `rgba(137, 228, 255, ${markerAlpha})`;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, ORBIT_R + 10 + ringPulse * 2.4, 0, Math.PI * 2);
+    ctx.stroke();
+
+    for (let i = 0; i < 4; i += 1) {
+      const yOff = -36 + i * 24;
+      const tipX = center.x + flowDir * (ORBIT_R + 17 + i * 3);
+      const tipY = center.y + yOff;
+      ctx.fillStyle = `rgba(176, 238, 255, ${0.2 + markerAlpha * 0.56})`;
+      ctx.beginPath();
+      ctx.moveTo(tipX, tipY);
+      ctx.lineTo(tipX - flowDir * 9, tipY - 5);
+      ctx.lineTo(tipX - flowDir * 9, tipY + 5);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
 
   ctx.fillStyle = '#1a2c4a';
   ctx.beginPath();
@@ -327,6 +423,36 @@ function render() {
   ctx.closePath();
   ctx.fill();
   ctx.restore();
+
+  if (driftActive || orbitDriftIntroFx > 0) {
+    const flowDir = orbitDriftDir > 0 ? 1 : -1;
+    const glow = orbitDriftWarn > 0 ? 0.9 : 0.55;
+    ctx.save();
+    ctx.translate(W - 38, 34);
+    ctx.fillStyle = 'rgba(8, 18, 36, 0.78)';
+    ctx.strokeStyle = `rgba(121, 214, 255, ${0.52 + glow * 0.3})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, 17, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.strokeStyle = `rgba(182, 239, 255, ${0.6 + glow * 0.34})`;
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.moveTo(-8 * flowDir, 0);
+    ctx.lineTo(6 * flowDir, 0);
+    ctx.stroke();
+
+    ctx.fillStyle = `rgba(206, 248, 255, ${0.72 + glow * 0.24})`;
+    ctx.beginPath();
+    ctx.moveTo(9 * flowDir, 0);
+    ctx.lineTo(3 * flowDir, -5);
+    ctx.lineTo(3 * flowDir, 5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
 
   for (const p of particles) {
     ctx.fillStyle = p.color;
