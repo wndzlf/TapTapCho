@@ -1,0 +1,73 @@
+:root {
+  --bg: #0a1120;
+  --panel: #111a2c;
+  --line: #2b3b5a;
+  --text: #eaf2ff;
+  --muted: #a9bbd8;
+  --accent: #8fd3ff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  color: var(--text);
+  font-family: "Pretendard", system-ui, -apple-system, sans-serif;
+  background: radial-gradient(900px 500px at 20% -10%, #1d2a45 0%, transparent 70%),
+              radial-gradient(800px 480px at 80% -10%, #2b2a55 0%, transparent 70%),
+              linear-gradient(180deg, #0f1423, #0a0f1d);
+  touch-action: manipulation;
+}
+
+.wrap {
+  width: min(1100px, 96vw);
+  margin: 14px auto 22px;
+}
+
+header h1 {
+  margin: 0;
+  color: var(--accent);
+  font-size: clamp(26px, 4vw, 42px);
+}
+
+header p {
+  margin: 6px 0 12px;
+  color: var(--muted);
+}
+
+.hud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #121a2c, #0d1424);
+  margin-bottom: 10px;
+}
+
+.hud button {
+  margin-left: auto;
+  background: linear-gradient(180deg, #9ad1ff, #6ba4d6);
+  border: 0;
+  color: #0b1424;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+canvas {
+  width: min(420px, 92vw);
+  height: auto;
+  display: block;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: #0c1424;
+}
+
+footer {
+  margin-top: 10px;
+  color: var(--muted);
+}
