@@ -7,6 +7,10 @@ const hudEl = document.querySelector('.hud');
 
 const audio = window.TapTapNeonAudio?.create('webgame-27', hudEl);
 
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
 const tiles = ['🀄', '🐉', '🎴', '🌸', '🎋', '🧧', '🪭', '🪷', '🀙', '🀚'];
 
 let size = 6;
@@ -182,6 +186,7 @@ function shuffleAliveTiles() {
 function onFail() {
   clearInterval(timerId);
   audio?.fx('fail');
+  vibrate([40, 40, 40]);
   level = Math.max(1, level - 1);
   setTimeout(() => init(false), 450);
 }
@@ -200,10 +205,12 @@ function handleMatch() {
   timeLeft = Math.min(120, timeLeft + Math.floor(streak / 2));
   pairsLeft -= 1;
   audio?.fx('success');
+  vibrate(18);
   if (pairsLeft <= 0) {
     score += Math.max(90, timeLeft * 2);
     level += 1;
     audio?.fx('win');
+    vibrate([20, 30, 20]);
     setTimeout(() => init(false), 700);
     return;
   }
@@ -227,6 +234,7 @@ function handleClick(x, y) {
   if (!selected) {
     selected = { r, c };
     audio?.fx('ui');
+    vibrate(10);
     return;
   }
 
@@ -250,6 +258,7 @@ function handleClick(x, y) {
     selected = b;
     updateHud();
     audio?.fx('fail');
+    vibrate(20);
   }
 }
 
@@ -263,6 +272,14 @@ function useHint() {
   timeLeft = Math.max(0, timeLeft - 5);
   updateHud();
   audio?.fx('ui');
+}
+
+function getPointerPos(event) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (event.clientX - rect.left) * (canvas.width / rect.width),
+    y: (event.clientY - rect.top) * (canvas.height / rect.height)
+  };
 }
 
 function draw() {
@@ -300,10 +317,10 @@ function draw() {
   }
 }
 
-canvas.addEventListener('click', (e) => {
+canvas.addEventListener('pointerdown', (e) => {
   audio?.unlock();
-  const rect = canvas.getBoundingClientRect();
-  handleClick(e.clientX - rect.left, e.clientY - rect.top);
+  const pos = getPointerPos(e);
+  handleClick(pos.x, pos.y);
 });
 
 btnNew.addEventListener('click', () => {
