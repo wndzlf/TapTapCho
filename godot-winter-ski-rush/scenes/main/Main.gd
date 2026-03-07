@@ -11,6 +11,10 @@ const BGM_PATH := "res://assets/audio/winter-ski-rush-pixabay-286213.mp3"
 const BASE_GRAVITY := 365.0
 const MIN_SPEED := 105.0
 const MAX_SPEED := 470.0
+const START_SPEED := 140.0
+
+const DIFFICULTY_EASY := 0
+const DIFFICULTY_NORMAL := 1
 
 const CHECKPOINT_Y := [760.0, 1520.0, 2360.0, 3220.0, 4080.0]
 const SHORTCUT_IDS := ["shortcut_left_1", "shortcut_right_2", "shortcut_left_3"]
@@ -32,7 +36,7 @@ var rng := RandomNumberGenerator.new()
 
 var player_pos := Vector2(BASE_CENTER_X, WORLD_TOP + 30.0)
 var player_vel_x := 0.0
-var forward_speed := 140.0
+var forward_speed := START_SPEED
 
 var is_airborne := false
 var air_height := 0.0
@@ -50,6 +54,27 @@ var best_style := 0
 var crash_count := 0
 var no_crash_run := true
 var challenge_target := 150.0
+
+var current_difficulty := DIFFICULTY_EASY
+var active_gravity := BASE_GRAVITY
+var active_min_speed := MIN_SPEED
+var active_max_speed := MAX_SPEED
+var active_start_speed := START_SPEED
+var active_jump_min_speed := 160.0
+var active_jump_base_velocity := 250.0
+var active_jump_speed_velocity_scale := 0.28
+var active_crash_penalty := 1.6
+var active_crash_keep_speed_ratio := 0.62
+var active_offtrack_crash_dist := 92.0
+var active_offtrack_crash_speed := 320.0
+var active_main_track_width_scale := 1.0
+var active_shortcut_width_scale := 1.0
+var active_shortcut_speed_scale := 1.0
+var active_obstacle_start_y := 300.0
+var active_obstacle_gap_min := 118.0
+var active_obstacle_gap_max := 176.0
+var active_obstacle_cluster_chance := 0.10
+var active_obstacle_radius_scale := 1.0
 
 var checkpoints: Array[Dictionary] = []
 var last_checkpoint := -1
@@ -78,14 +103,18 @@ var hud_label: Label
 var hint_label: Label
 var guide_label: Label
 var start_button: Button
+var easy_button: Button
+var normal_button: Button
 var bgm_player: AudioStreamPlayer
 
 
 func _ready() -> void:
 	rng.seed = 20260307
 	_load_records()
+	_apply_difficulty_profile(false)
 	_setup_audio()
 	_build_ui()
+	_refresh_difficulty_ui()
 	_reset_run(false)
 	set_physics_process(true)
 	set_process(true)
@@ -172,7 +201,7 @@ func _simulate_player(delta: float) -> void:
 	if surface["on_snow"]:
 		friction *= 1.25
 
-	var accel := BASE_GRAVITY * slope - friction * forward_speed
+	var accel := active_gravity * slope - friction * forward_speed
 	accel += forward_speed * float(surface["speed_bonus"]) * 0.18
 
 	if crouch_pressed and not brake_pressed:
@@ -182,9 +211,9 @@ func _simulate_player(delta: float) -> void:
 	if not surface["on_track"]:
 		accel -= min(130.0, float(surface["off_dist"]) * 1.4)
 
-	forward_speed = clampf(forward_speed + accel * delta, MIN_SPEED, MAX_SPEED)
+	forward_speed = clampf(forward_speed + accel * delta, active_min_speed, active_max_speed)
 	if is_airborne:
-		forward_speed = clampf(forward_speed - 28.0 * delta, MIN_SPEED, MAX_SPEED + 40.0)
+		forward_speed = clampf(forward_speed - 28.0 * delta, active_min_speed, active_max_speed + 40.0)
 
 	var steer_power := 165.0 if is_airborne else 300.0
 	if surface["on_ice"]:
@@ -214,7 +243,7 @@ func _simulate_player(delta: float) -> void:
 			_land_from_jump()
 
 	if not is_airborne:
-		if not surface["on_track"] and float(surface["off_dist"]) > 92.0 and forward_speed > 320.0:
+		if not surface["on_track"] and float(surface["off_dist"]) > active_offtrack_crash_dist and forward_speed > active_offtrack_crash_speed:
 			_trigger_crash(player_pos, "cliff")
 			return
 
@@ -265,12 +294,12 @@ func _try_jump() -> void:
 		return
 	if is_airborne:
 		return
-	if forward_speed < 160.0:
+	if forward_speed < active_jump_min_speed:
 		return
 
 	is_airborne = true
 	air_height = 2.0
-	air_velocity = 250.0 + forward_speed * 0.28
+	air_velocity = active_jump_base_velocity + forward_speed * active_jump_speed_velocity_scale
 	trick_spin = 0.0
 	_set_status("Jump", 0.45)
 
@@ -293,9 +322,9 @@ func _trigger_crash(hit_pos: Vector2, reason: String) -> void:
 	crash_timer = 1.15
 	crash_count += 1
 	no_crash_run = false
-	forward_speed = max(MIN_SPEED, forward_speed * 0.62)
-	run_time += 1.6
-	_set_status("Crash (%s) +1.6s" % reason, 1.2)
+	forward_speed = max(active_min_speed, forward_speed * active_crash_keep_speed_ratio)
+	run_time += active_crash_penalty
+	_set_status("Crash (%s) +%.1fs" % [reason, active_crash_penalty], 1.2)
 
 	for i in range(20):
 		var ang := rng.randf_range(0.0, TAU)
@@ -406,7 +435,7 @@ func _get_track_bands(y: float) -> Array[Dictionary]:
 		{
 			"id": "main",
 			"center": main_center,
-			"width": 184.0,
+			"width": 184.0 * active_main_track_width_scale,
 			"speed_bonus": 0.0,
 			"color": Color(0.93, 0.96, 1.0, 0.95),
 		}
@@ -416,8 +445,8 @@ func _get_track_bands(y: float) -> Array[Dictionary]:
 		bands.append({
 			"id": "shortcut_left_1",
 			"center": main_center - 112.0 + sin(y * 0.02) * 16.0,
-			"width": 102.0,
-			"speed_bonus": 0.13,
+			"width": 102.0 * active_shortcut_width_scale,
+			"speed_bonus": 0.13 * active_shortcut_speed_scale,
 			"color": Color(0.74, 0.86, 1.0, 0.9),
 		})
 
@@ -425,8 +454,8 @@ func _get_track_bands(y: float) -> Array[Dictionary]:
 		bands.append({
 			"id": "shortcut_right_2",
 			"center": main_center + 122.0 + cos(y * 0.018) * 18.0,
-			"width": 98.0,
-			"speed_bonus": 0.15,
+			"width": 98.0 * active_shortcut_width_scale,
+			"speed_bonus": 0.15 * active_shortcut_speed_scale,
 			"color": Color(0.76, 0.88, 1.0, 0.9),
 		})
 
@@ -434,8 +463,8 @@ func _get_track_bands(y: float) -> Array[Dictionary]:
 		bands.append({
 			"id": "shortcut_left_3",
 			"center": main_center - 132.0 + sin(y * 0.016) * 20.0,
-			"width": 96.0,
-			"speed_bonus": 0.18,
+			"width": 96.0 * active_shortcut_width_scale,
+			"speed_bonus": 0.18 * active_shortcut_speed_scale,
 			"color": Color(0.74, 0.9, 1.0, 0.92),
 		})
 
@@ -453,7 +482,7 @@ func _setup_map_data() -> void:
 	for cp_y in CHECKPOINT_Y:
 		checkpoints.append({"y": cp_y, "passed": false})
 
-	var obstacle_y := 300.0
+	var obstacle_y := active_obstacle_start_y
 	while obstacle_y < FINISH_Y - 120.0:
 		var bands := _get_track_bands(obstacle_y)
 		var band := bands[rng.randi_range(0, bands.size() - 1)]
@@ -462,21 +491,21 @@ func _setup_map_data() -> void:
 		var x := center + rng.randf_range(-width * 0.32, width * 0.32)
 		var y := obstacle_y + rng.randf_range(-20.0, 20.0)
 		var obstacle_type := "tree" if rng.randf() < 0.62 else "rock"
-		var radius := rng.randf_range(9.0, 12.0) if obstacle_type == "tree" else rng.randf_range(7.0, 10.0)
+		var radius := (rng.randf_range(9.0, 12.0) if obstacle_type == "tree" else rng.randf_range(7.0, 10.0)) * active_obstacle_radius_scale
 		obstacles.append({
 			"pos": Vector2(x, y),
 			"radius": radius,
 			"type": obstacle_type,
 		})
 
-		if rng.randf() < 0.1:
+		if rng.randf() < active_obstacle_cluster_chance:
 			obstacles.append({
 				"pos": Vector2(x + rng.randf_range(-34.0, 34.0), y + rng.randf_range(28.0, 54.0)),
 				"radius": radius * rng.randf_range(0.72, 1.05),
 				"type": obstacle_type,
 			})
 
-		obstacle_y += rng.randf_range(118.0, 176.0)
+		obstacle_y += rng.randf_range(active_obstacle_gap_min, active_obstacle_gap_max)
 
 	ice_patches.append(_patch_around(980.0, 170.0, 220.0, -18.0))
 	ice_patches.append(_patch_around(2140.0, 200.0, 250.0, 24.0))
@@ -571,6 +600,24 @@ func _build_ui() -> void:
 	start_button.pressed.connect(_on_start_pressed)
 	root.add_child(start_button)
 
+	var difficulty_box := HBoxContainer.new()
+	difficulty_box.position = Vector2(212, 56)
+	difficulty_box.size = Vector2(136, 30)
+	difficulty_box.add_theme_constant_override("separation", 6)
+	root.add_child(difficulty_box)
+
+	easy_button = Button.new()
+	easy_button.text = "EASY"
+	easy_button.custom_minimum_size = Vector2(64, 30)
+	easy_button.pressed.connect(_on_easy_pressed)
+	difficulty_box.add_child(easy_button)
+
+	normal_button = Button.new()
+	normal_button.text = "NORMAL"
+	normal_button.custom_minimum_size = Vector2(66, 30)
+	normal_button.pressed.connect(_on_normal_pressed)
+	difficulty_box.add_child(normal_button)
+
 	var controls := VBoxContainer.new()
 	controls.anchor_left = 0.0
 	controls.anchor_right = 1.0
@@ -663,6 +710,83 @@ func _on_start_pressed() -> void:
 	_start_run()
 
 
+func _on_easy_pressed() -> void:
+	_set_difficulty(DIFFICULTY_EASY)
+
+
+func _on_normal_pressed() -> void:
+	_set_difficulty(DIFFICULTY_NORMAL)
+
+
+func _set_difficulty(next_difficulty: int) -> void:
+	if current_difficulty == next_difficulty:
+		return
+	current_difficulty = next_difficulty
+	_apply_difficulty_profile(true)
+	_refresh_difficulty_ui()
+	_reset_run(false)
+	_set_status("Difficulty: %s" % _difficulty_name(), 1.0)
+
+
+func _difficulty_name() -> String:
+	return "EASY" if current_difficulty == DIFFICULTY_EASY else "NORMAL"
+
+
+func _apply_difficulty_profile(notify: bool) -> void:
+	if current_difficulty == DIFFICULTY_EASY:
+		active_gravity = 330.0
+		active_min_speed = 92.0
+		active_max_speed = 400.0
+		active_start_speed = 120.0
+		challenge_target = 170.0
+		active_jump_min_speed = 145.0
+		active_jump_base_velocity = 235.0
+		active_jump_speed_velocity_scale = 0.24
+		active_crash_penalty = 1.2
+		active_crash_keep_speed_ratio = 0.74
+		active_offtrack_crash_dist = 116.0
+		active_offtrack_crash_speed = 360.0
+		active_main_track_width_scale = 1.18
+		active_shortcut_width_scale = 1.2
+		active_shortcut_speed_scale = 0.86
+		active_obstacle_start_y = 340.0
+		active_obstacle_gap_min = 144.0
+		active_obstacle_gap_max = 228.0
+		active_obstacle_cluster_chance = 0.05
+		active_obstacle_radius_scale = 0.9
+	else:
+		active_gravity = BASE_GRAVITY
+		active_min_speed = MIN_SPEED
+		active_max_speed = MAX_SPEED
+		active_start_speed = START_SPEED
+		challenge_target = 150.0
+		active_jump_min_speed = 160.0
+		active_jump_base_velocity = 250.0
+		active_jump_speed_velocity_scale = 0.28
+		active_crash_penalty = 1.6
+		active_crash_keep_speed_ratio = 0.62
+		active_offtrack_crash_dist = 92.0
+		active_offtrack_crash_speed = 320.0
+		active_main_track_width_scale = 1.0
+		active_shortcut_width_scale = 1.0
+		active_shortcut_speed_scale = 1.0
+		active_obstacle_start_y = 300.0
+		active_obstacle_gap_min = 118.0
+		active_obstacle_gap_max = 176.0
+		active_obstacle_cluster_chance = 0.10
+		active_obstacle_radius_scale = 1.0
+
+	if notify:
+		_update_ui_text()
+
+
+func _refresh_difficulty_ui() -> void:
+	if easy_button != null:
+		easy_button.disabled = current_difficulty == DIFFICULTY_EASY
+	if normal_button != null:
+		normal_button.disabled = current_difficulty == DIFFICULTY_NORMAL
+
+
 func _start_run() -> void:
 	_try_play_bgm()
 	_reset_run(true)
@@ -683,7 +807,7 @@ func _reset_run(start_immediately: bool) -> void:
 	player_pos = Vector2(BASE_CENTER_X, WORLD_TOP + 30.0)
 	respawn_pos = player_pos
 	player_vel_x = 0.0
-	forward_speed = 140.0
+	forward_speed = active_start_speed
 	is_airborne = false
 	air_height = 0.0
 	air_velocity = 0.0
@@ -726,7 +850,7 @@ func _update_ui_text() -> void:
 
 	var best_label := "--:--.--" if best_time == INF else _fmt_time(best_time)
 	var speed_kmh := int(round(forward_speed * 0.42))
-	var main_line := "Time %s   Best %s" % [_fmt_time(run_time), best_label]
+	var main_line := "Mode %s   Time %s   Best %s" % [_difficulty_name(), _fmt_time(run_time), best_label]
 	var sub_line := "Speed %d km/h   CP %d/%d   Crash %d" % [speed_kmh, cp_now, checkpoints.size(), crash_count]
 	var extra_line := "Shortcut %d/%d   Style %d" % [shortcut_count, SHORTCUT_IDS.size(), style_score]
 	hud_label.text = "%s\n%s\n%s" % [main_line, sub_line, extra_line]
