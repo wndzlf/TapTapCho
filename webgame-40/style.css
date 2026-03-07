@@ -45,6 +45,14 @@ body {
   margin-bottom: 8px;
 }
 
+.mode-tabs.left-group {
+  margin-right: auto;
+}
+
+.mode-tabs.right-group {
+  margin-left: auto;
+}
+
 .mode-tab {
   color: #c9d8ef;
   text-decoration: none;
@@ -52,6 +60,13 @@ body {
   font-size: 13px;
   border-right: 1px solid var(--line);
   background: linear-gradient(180deg, #151f33, #101a2d);
+}
+
+.mode-tab.active {
+  color: #0b1424;
+  font-weight: 700;
+  background: linear-gradient(180deg, #9ad1ff, #6ba4d6);
+  box-shadow: none;
 }
 
 .mode-tab.rank-toggle,
@@ -72,6 +87,7 @@ body {
   color: #0b1424;
   font-weight: 700;
   background: linear-gradient(180deg, #9ad1ff, #6ba4d6);
+  box-shadow: none;
 }
 
 header h1 {
