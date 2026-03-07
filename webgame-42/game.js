@@ -7,6 +7,7 @@ const btnStart = document.getElementById('btnStart');
 
 const W = canvas.width;
 const H = canvas.height;
+function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
 const STORAGE_KEY = 'winter-ski-rush-best';
 
 let state = 'idle'; // idle | running | over
@@ -207,8 +208,7 @@ canvas.addEventListener('pointerdown', (e) => {
   const x = (e.clientX - rect.left) * (W / rect.width);
   touch.active = true;
   touch.x = x;
-  if (state !== 'running') startGame();
-  else boost();
+  if (state !== 'running') { startGame(); } else { boost(); }
 });
 
 canvas.addEventListener('pointermove', (e) => {
