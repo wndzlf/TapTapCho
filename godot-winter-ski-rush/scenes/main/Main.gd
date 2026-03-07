@@ -12,8 +12,6 @@ const BRAKE_SFX_PATH := "res://assets/audio/winter-ski-rush-brake-pixabay-46042.
 const NORMAL_SKI_LOOP_SFX_PATH := "res://assets/audio/winter-ski-rush-normal-ski-loop.mp3"
 const LEFT_RIGHT_SFX_PATH := "res://assets/audio/winter-ski-rush-left-right-sfx.mp3"
 const BASE_GRAVITY := 290.0
-const MIN_SPEED := 72.0
-const MAX_SPEED := 300.0
 const START_SPEED := 88.0
 
 const DIFFICULTY_EASY := 0
@@ -65,8 +63,7 @@ var challenge_target := 150.0
 
 var current_difficulty := DIFFICULTY_EASY
 var active_gravity := BASE_GRAVITY
-var active_min_speed := MIN_SPEED
-var active_max_speed := MAX_SPEED
+var active_speed_visual_ref := 240.0
 var active_start_speed := START_SPEED
 var active_jump_min_speed := 140.0
 var active_jump_base_velocity := 235.0
@@ -221,25 +218,20 @@ func _simulate_player(delta: float) -> void:
 			style_score += 120
 
 	var slope := _slope_at(player_pos.y)
-	var friction := 0.11 if surface["on_track"] else 0.2
-	if surface["on_ice"]:
-		friction *= 0.7
-	if surface["on_snow"]:
-		friction *= 1.25
+	var accel := active_gravity * slope * 0.18
+	accel += active_gravity * float(surface["speed_bonus"]) * 0.08
 
-	var accel := active_gravity * slope - friction * forward_speed
-	accel += forward_speed * float(surface["speed_bonus"]) * 0.12
+	if surface["on_ice"]:
+		accel *= 1.08
+	if surface["on_snow"]:
+		accel *= 0.9
 
 	if crouch_pressed and not brake_pressed:
-		accel += 20.0
+		accel += 18.0
 	if brake_pressed:
-		accel -= 240.0
-	if not surface["on_track"]:
-		accel -= min(150.0, float(surface["off_dist"]) * 1.5)
+		accel = -320.0
 
-	forward_speed = clampf(forward_speed + accel * delta, active_min_speed, active_max_speed)
-	if is_airborne:
-		forward_speed = clampf(forward_speed - 36.0 * delta, active_min_speed, active_max_speed + 30.0)
+	forward_speed = maxf(0.0, forward_speed + accel * delta)
 
 	var steer_power := 165.0 if is_airborne else 300.0
 	if surface["on_ice"]:
@@ -345,7 +337,7 @@ func _trigger_crash(hit_pos: Vector2, reason: String) -> void:
 	crash_timer = 1.15
 	crash_count += 1
 	no_crash_run = false
-	forward_speed = max(active_min_speed, forward_speed * active_crash_keep_speed_ratio)
+	forward_speed = maxf(0.0, forward_speed * active_crash_keep_speed_ratio)
 	run_time += active_crash_penalty
 	_set_status("Crash (%s) +%.1fs" % [reason, active_crash_penalty], 1.2)
 
@@ -568,8 +560,7 @@ func _update_camera(delta: float) -> void:
 	if camera == null:
 		return
 	var viewport_height := get_viewport_rect().size.y
-	var speed_range := maxf(1.0, active_max_speed - active_min_speed)
-	var speed_factor := clampf((forward_speed - active_min_speed) / speed_range, 0.0, 1.0)
+	var speed_factor := clampf(forward_speed / maxf(1.0, active_speed_visual_ref), 0.0, 1.0)
 	var follow_down := clampf(viewport_height * 0.11, 90.0, 140.0) + speed_factor * 22.0
 	var target_pos := Vector2(player_pos.x, clampf(player_pos.y + follow_down, 170.0, FINISH_Y - 120.0))
 	camera.position = camera.position.lerp(target_pos, clampf(delta * 6.2, 0.04, 0.22))
@@ -892,8 +883,7 @@ func _difficulty_name() -> String:
 func _apply_difficulty_profile(notify: bool) -> void:
 	if current_difficulty == DIFFICULTY_EASY:
 		active_gravity = 255.0
-		active_min_speed = 62.0
-		active_max_speed = 220.0
+		active_speed_visual_ref = 230.0
 		active_start_speed = 76.0
 		challenge_target = 200.0
 		active_jump_min_speed = 110.0
@@ -913,8 +903,7 @@ func _apply_difficulty_profile(notify: bool) -> void:
 		active_obstacle_radius_scale = 0.88
 	else:
 		active_gravity = BASE_GRAVITY
-		active_min_speed = MIN_SPEED
-		active_max_speed = MAX_SPEED
+		active_speed_visual_ref = 280.0
 		active_start_speed = START_SPEED
 		challenge_target = 175.0
 		active_jump_min_speed = 125.0
