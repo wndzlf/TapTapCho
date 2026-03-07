@@ -8,6 +8,7 @@ const FINISH_Y := 5000.0
 
 const BASE_CENTER_X := WORLD_WIDTH * 0.5
 const BGM_PATH := "res://assets/audio/winter-ski-rush-pixabay-286213.mp3"
+const BRAKE_SFX_PATH := "res://assets/audio/winter-ski-rush-brake-pixabay-46042.mp3"
 const BASE_GRAVITY := 290.0
 const MIN_SPEED := 72.0
 const MAX_SPEED := 300.0
@@ -105,6 +106,8 @@ var start_button: Button
 var easy_button: Button
 var normal_button: Button
 var bgm_player: AudioStreamPlayer
+var brake_sfx_player: AudioStreamPlayer
+var _brake_was_pressed := false
 
 
 func _ready() -> void:
@@ -133,6 +136,7 @@ func _process(delta: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	_update_dynamic_obstacles(delta)
+	_update_brake_sfx()
 
 	if run_started:
 		run_time += delta
@@ -679,6 +683,23 @@ func _setup_audio() -> void:
 
 	bgm_player.stream = loaded_stream
 
+	brake_sfx_player = AudioStreamPlayer.new()
+	brake_sfx_player.name = "BrakeSFXPlayer"
+	brake_sfx_player.bus = "Master"
+	brake_sfx_player.volume_db = -6.0
+	add_child(brake_sfx_player)
+
+	var brake_sfx_stream := load(BRAKE_SFX_PATH) as AudioStream
+	if brake_sfx_stream == null:
+		push_warning("Failed to load brake SFX stream: %s" % BRAKE_SFX_PATH)
+		return
+
+	if brake_sfx_stream is AudioStreamMP3:
+		var brake_mp3_stream := brake_sfx_stream as AudioStreamMP3
+		brake_mp3_stream.loop = false
+
+	brake_sfx_player.stream = brake_sfx_stream
+
 
 func _try_play_bgm() -> void:
 	if bgm_player == null:
@@ -687,6 +708,23 @@ func _try_play_bgm() -> void:
 		return
 	if not bgm_player.playing:
 		bgm_player.play()
+
+
+func _update_brake_sfx() -> void:
+	var brake_pressed_now := (Input.is_action_pressed("brake") or touch_brake) and run_started and not run_finished and not crashed
+	if brake_pressed_now and not _brake_was_pressed:
+		_play_brake_sfx()
+	_brake_was_pressed = brake_pressed_now
+
+
+func _play_brake_sfx() -> void:
+	if brake_sfx_player == null:
+		return
+	if brake_sfx_player.stream == null:
+		return
+	if brake_sfx_player.playing:
+		brake_sfx_player.stop()
+	brake_sfx_player.play()
 
 
 func _make_hold_button(label: String, on_press: Callable, on_release: Callable) -> Button:
@@ -834,6 +872,7 @@ func _touch_reset() -> void:
 	touch_crouch = false
 	touch_trick = false
 	touch_jump_queued = false
+	_brake_was_pressed = false
 
 
 func _set_status(text: String, ttl: float) -> void:
