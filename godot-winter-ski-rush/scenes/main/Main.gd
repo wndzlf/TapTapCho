@@ -22,14 +22,17 @@ const SHORTCUT_IDS := ["shortcut_left_1", "shortcut_right_2", "shortcut_left_3"]
 
 var _track_points: Array[Vector2] = [
 	Vector2(BASE_CENTER_X, WORLD_TOP),
-	Vector2(196, 620),
-	Vector2(150, 1140),
-	Vector2(214, 1680),
-	Vector2(166, 2240),
-	Vector2(212, 2780),
-	Vector2(148, 3380),
-	Vector2(202, 4040),
-	Vector2(172, 4680),
+	Vector2(228, 520),
+	Vector2(132, 900),
+	Vector2(252, 1320),
+	Vector2(118, 1740),
+	Vector2(264, 2140),
+	Vector2(108, 2580),
+	Vector2(258, 3020),
+	Vector2(122, 3460),
+	Vector2(246, 3920),
+	Vector2(136, 4380),
+	Vector2(216, 4740),
 	Vector2(BASE_CENTER_X, FINISH_Y),
 ]
 
@@ -420,8 +423,12 @@ func _main_center_x(y: float) -> float:
 		var b := _track_points[i + 1]
 		if y <= b.y:
 			var t := inverse_lerp(a.y, b.y, y)
-			return lerpf(a.x, b.x, t)
-	return _track_points[_track_points.size() - 1].x
+			var base_x := lerpf(a.x, b.x, t)
+			var wiggle := sin(y * 0.011) * 30.0 + sin(y * 0.021 + 1.1) * 14.0
+			return clampf(base_x + wiggle, 62.0, WORLD_WIDTH - 62.0)
+	var end_x := _track_points[_track_points.size() - 1].x
+	var end_wiggle := sin(y * 0.011) * 30.0 + sin(y * 0.021 + 1.1) * 14.0
+	return clampf(end_x + end_wiggle, 62.0, WORLD_WIDTH - 62.0)
 
 
 func _slope_at(y: float) -> float:
@@ -547,8 +554,8 @@ func _update_camera(delta: float) -> void:
 	var viewport_height := get_viewport_rect().size.y
 	var speed_range := maxf(1.0, active_max_speed - active_min_speed)
 	var speed_factor := clampf((forward_speed - active_min_speed) / speed_range, 0.0, 1.0)
-	var look_ahead := clampf(viewport_height * 0.12, 120.0, 190.0) + speed_factor * 40.0
-	var target_pos := Vector2(player_pos.x, clampf(player_pos.y - look_ahead, 170.0, FINISH_Y - 120.0))
+	var follow_down := clampf(viewport_height * 0.11, 90.0, 140.0) + speed_factor * 22.0
+	var target_pos := Vector2(player_pos.x, clampf(player_pos.y + follow_down, 170.0, FINISH_Y - 120.0))
 	camera.position = camera.position.lerp(target_pos, clampf(delta * 6.2, 0.04, 0.22))
 
 	var target_zoom := 1.04 - speed_factor * 0.23
@@ -631,8 +638,8 @@ func _build_ui() -> void:
 	controls.anchor_bottom = 1.0
 	controls.offset_left = 10
 	controls.offset_right = -10
-	controls.offset_top = -106
-	controls.offset_bottom = -10
+	controls.offset_top = -136
+	controls.offset_bottom = -12
 	controls.alignment = BoxContainer.ALIGNMENT_CENTER
 	controls.add_theme_constant_override("separation", 6)
 	controls.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -643,8 +650,8 @@ func _build_ui() -> void:
 	row_steer.add_theme_constant_override("separation", 8)
 	controls.add_child(row_steer)
 
-	var left_btn := _make_hold_button("LEFT\nA / Left", func() -> void: touch_left = true, func() -> void: touch_left = false)
-	var right_btn := _make_hold_button("RIGHT\nD / Right", func() -> void: touch_right = true, func() -> void: touch_right = false)
+	var left_btn := _make_hold_button("LEFT  A", func() -> void: touch_left = true, func() -> void: touch_left = false)
+	var right_btn := _make_hold_button("RIGHT  D", func() -> void: touch_right = true, func() -> void: touch_right = false)
 
 	row_steer.add_child(left_btn)
 	row_steer.add_child(right_btn)
@@ -654,10 +661,10 @@ func _build_ui() -> void:
 	row_actions.add_theme_constant_override("separation", 8)
 	controls.add_child(row_actions)
 
-	var brake_btn := _make_hold_button("BRAKE\nS / Down", func() -> void: touch_brake = true, func() -> void: touch_brake = false)
-	var crouch_btn := _make_hold_button("BOOST\nShift", func() -> void: touch_crouch = true, func() -> void: touch_crouch = false)
-	var jump_btn := _make_tap_button("JUMP\nSpace", func() -> void: touch_jump_queued = true)
-	var trick_btn := _make_hold_button("TRICK\nQ / E", func() -> void: touch_trick = true, func() -> void: touch_trick = false)
+	var brake_btn := _make_hold_button("BRAKE  S", func() -> void: touch_brake = true, func() -> void: touch_brake = false)
+	var crouch_btn := _make_hold_button("BOOST  Shift", func() -> void: touch_crouch = true, func() -> void: touch_crouch = false)
+	var jump_btn := _make_tap_button("JUMP  Space", func() -> void: touch_jump_queued = true)
+	var trick_btn := _make_hold_button("TRICK  Q/E", func() -> void: touch_trick = true, func() -> void: touch_trick = false)
 
 	row_actions.add_child(brake_btn)
 	row_actions.add_child(crouch_btn)
@@ -730,7 +737,8 @@ func _play_brake_sfx() -> void:
 func _make_hold_button(label: String, on_press: Callable, on_release: Callable) -> Button:
 	var b := Button.new()
 	b.text = label
-	b.custom_minimum_size = Vector2(104, 62)
+	b.custom_minimum_size = Vector2(92, 48)
+	b.add_theme_font_size_override("font_size", 12)
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	b.button_down.connect(on_press)
 	b.button_up.connect(on_release)
@@ -741,7 +749,8 @@ func _make_hold_button(label: String, on_press: Callable, on_release: Callable) 
 func _make_tap_button(label: String, on_tap: Callable) -> Button:
 	var b := Button.new()
 	b.text = label
-	b.custom_minimum_size = Vector2(104, 62)
+	b.custom_minimum_size = Vector2(92, 48)
+	b.add_theme_font_size_override("font_size", 12)
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	b.pressed.connect(on_tap)
 	return b
@@ -893,7 +902,7 @@ func _update_ui_text() -> void:
 	var best_label := "--:--.--" if best_time == INF else _fmt_time(best_time)
 	var speed_kmh := int(round(forward_speed * 0.42))
 	var main_line := "TIME %s   BEST %s" % [_fmt_time(run_time), best_label]
-	var sub_line := "SPD %d   CP %d/%d   %s" % [speed_kmh, cp_now, checkpoints.size(), _difficulty_name()]
+	var sub_line := "SPEED %dkm/h   CHECKPOINT %d/%d   MODE %s" % [speed_kmh, cp_now, checkpoints.size(), _difficulty_name()]
 	hud_label.text = "%s\n%s" % [main_line, sub_line]
 
 	if hint_label != null:
