@@ -8,10 +8,10 @@ const FINISH_Y := 5000.0
 
 const BASE_CENTER_X := WORLD_WIDTH * 0.5
 const BGM_PATH := "res://assets/audio/winter-ski-rush-pixabay-286213.mp3"
-const BASE_GRAVITY := 320.0
-const MIN_SPEED := 85.0
-const MAX_SPEED := 340.0
-const START_SPEED := 105.0
+const BASE_GRAVITY := 290.0
+const MIN_SPEED := 72.0
+const MAX_SPEED := 300.0
+const START_SPEED := 88.0
 
 const DIFFICULTY_EASY := 0
 const DIFFICULTY_NORMAL := 1
@@ -205,7 +205,7 @@ func _simulate_player(delta: float) -> void:
 	accel += forward_speed * float(surface["speed_bonus"]) * 0.12
 
 	if crouch_pressed and not brake_pressed:
-		accel += 28.0
+		accel += 20.0
 	if brake_pressed:
 		accel -= 240.0
 	if not surface["on_track"]:
@@ -539,12 +539,12 @@ func _update_camera(delta: float) -> void:
 	if camera == null:
 		return
 	var viewport_height := get_viewport_rect().size.y
-	var look_ahead := clampf(viewport_height * 0.44, 270.0, 390.0)
+	var speed_range := maxf(1.0, active_max_speed - active_min_speed)
+	var speed_factor := clampf((forward_speed - active_min_speed) / speed_range, 0.0, 1.0)
+	var look_ahead := clampf(viewport_height * 0.12, 120.0, 190.0) + speed_factor * 40.0
 	var target_pos := Vector2(player_pos.x, clampf(player_pos.y - look_ahead, 170.0, FINISH_Y - 120.0))
 	camera.position = camera.position.lerp(target_pos, clampf(delta * 6.2, 0.04, 0.22))
 
-	var speed_range := maxf(1.0, active_max_speed - active_min_speed)
-	var speed_factor := clampf((forward_speed - active_min_speed) / speed_range, 0.0, 1.0)
 	var target_zoom := 1.04 - speed_factor * 0.23
 	var nearest := _nearest_obstacle_distance()
 	if nearest < 160.0:
@@ -737,21 +737,21 @@ func _difficulty_name() -> String:
 
 func _apply_difficulty_profile(notify: bool) -> void:
 	if current_difficulty == DIFFICULTY_EASY:
-		active_gravity = 285.0
-		active_min_speed = 72.0
-		active_max_speed = 260.0
-		active_start_speed = 90.0
+		active_gravity = 255.0
+		active_min_speed = 62.0
+		active_max_speed = 220.0
+		active_start_speed = 76.0
 		challenge_target = 200.0
-		active_jump_min_speed = 125.0
-		active_jump_base_velocity = 225.0
-		active_jump_speed_velocity_scale = 0.22
+		active_jump_min_speed = 110.0
+		active_jump_base_velocity = 215.0
+		active_jump_speed_velocity_scale = 0.20
 		active_crash_penalty = 1.0
 		active_crash_keep_speed_ratio = 0.78
 		active_offtrack_crash_dist = 124.0
 		active_offtrack_crash_speed = 380.0
 		active_main_track_width_scale = 1.25
 		active_shortcut_width_scale = 1.25
-		active_shortcut_speed_scale = 0.78
+		active_shortcut_speed_scale = 0.68
 		active_obstacle_start_y = 380.0
 		active_obstacle_gap_min = 165.0
 		active_obstacle_gap_max = 255.0
@@ -763,16 +763,16 @@ func _apply_difficulty_profile(notify: bool) -> void:
 		active_max_speed = MAX_SPEED
 		active_start_speed = START_SPEED
 		challenge_target = 175.0
-		active_jump_min_speed = 140.0
-		active_jump_base_velocity = 235.0
-		active_jump_speed_velocity_scale = 0.25
+		active_jump_min_speed = 125.0
+		active_jump_base_velocity = 225.0
+		active_jump_speed_velocity_scale = 0.22
 		active_crash_penalty = 1.3
 		active_crash_keep_speed_ratio = 0.7
 		active_offtrack_crash_dist = 106.0
 		active_offtrack_crash_speed = 340.0
 		active_main_track_width_scale = 1.1
 		active_shortcut_width_scale = 1.1
-		active_shortcut_speed_scale = 0.9
+		active_shortcut_speed_scale = 0.8
 		active_obstacle_start_y = 340.0
 		active_obstacle_gap_min = 140.0
 		active_obstacle_gap_max = 220.0
