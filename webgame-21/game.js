@@ -15,6 +15,7 @@ const STORAGE_KEY = 'zigzag-memory-run-best';
 const START_Y = H * 0.8;
 const STEP_Y = 42;
 const STEP_X = 38;
+const MIN_GOAL_Y = 148;
 
 let state = 'idle'; // idle | preview | input | gameover
 let score = 0;
@@ -93,12 +94,14 @@ function generateSequence(len) {
 function sequenceToPoints(seq) {
   const points = [{ x: W * 0.5, y: START_Y }];
   let lane = 0;
+  const spanY = Math.max(1, START_Y - MIN_GOAL_Y);
+  const stepY = Math.max(18, Math.min(STEP_Y, spanY / Math.max(1, seq.length)));
 
   for (let i = 0; i < seq.length; i += 1) {
     lane += seq[i];
     points.push({
       x: W * 0.5 + lane * STEP_X,
-      y: START_Y - (i + 1) * STEP_Y,
+      y: START_Y - (i + 1) * stepY,
     });
   }
   return points;
@@ -249,7 +252,6 @@ function render() {
     const previewPoints = sequenceToPoints(sequence.slice(0, show));
     drawPath(previewPoints, '#7de3ff', 7);
   } else if (state === 'input' || state === 'gameover') {
-    drawPath(fullPoints, 'rgba(140,170,210,0.35)', 4);
     drawPath(entered, '#7de3ff', 7);
   }
 
