@@ -7,6 +7,10 @@ const hudEl = document.querySelector('.hud');
 
 const audio = window.TapTapNeonAudio?.create('webgame-31', hudEl);
 
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
 let size = 3;
 let cell = 120;
 let offsetX = 0;
@@ -125,6 +129,7 @@ function solved() {
 function onClear() {
   clearInterval(timerId);
   audio?.fx('win');
+  vibrate([20, 30, 20]);
   level += 1;
   bestLevel = Math.max(bestLevel, level);
   localStorage.setItem('webgame-31-best-level', String(bestLevel));
@@ -139,6 +144,7 @@ function onClear() {
 function onFail() {
   clearInterval(timerId);
   audio?.fx('fail');
+  vibrate([40, 40, 40]);
   level = Math.max(1, level - 1);
   setTimeout(() => init(false), 450);
 }
@@ -160,6 +166,7 @@ function handleClick(x, y) {
   if (!adjacent) {
     streak = Math.max(0, streak - 1);
     audio?.fx('fail');
+    vibrate(20);
     updateHud();
     return;
   }
@@ -176,6 +183,7 @@ function handleClick(x, y) {
   }
   updateHud();
   audio?.fx('ui');
+  vibrate(12);
 
   if (solved()) onClear();
 }
@@ -183,6 +191,14 @@ function handleClick(x, y) {
 function tileColor(val) {
   const hue = (val * 27) % 360;
   return `hsl(${hue} 92% 63%)`;
+}
+
+function getPointerPos(event) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (event.clientX - rect.left) * (canvas.width / rect.width),
+    y: (event.clientY - rect.top) * (canvas.height / rect.height)
+  };
 }
 
 function draw() {
@@ -235,16 +251,16 @@ let lastTouchAt = 0;
 canvas.addEventListener('click', (e) => {
   if (lastTouchAt && performance.now() - lastTouchAt < 320) return;
   audio?.unlock();
-  const rect = canvas.getBoundingClientRect();
-  handleClick(e.clientX - rect.left, e.clientY - rect.top);
+  const pos = getPointerPos(e);
+  handleClick(pos.x, pos.y);
 });
 
 canvas.addEventListener('pointerdown', (e) => {
   if (e.pointerType !== 'touch') return;
   lastTouchAt = performance.now();
   audio?.unlock();
-  const rect = canvas.getBoundingClientRect();
-  handleClick(e.clientX - rect.left, e.clientY - rect.top);
+  const pos = getPointerPos(e);
+  handleClick(pos.x, pos.y);
 });
 
 btnNew.addEventListener('click', () => {
