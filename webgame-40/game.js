@@ -448,12 +448,14 @@ function rand(min, max) {
 }
 
 function isFxHeavyLoad() {
+  if (!isMobileView) return false;
   return state.towers.length >= 65
     || state.enemies.length >= 120
     || state.bullets.length >= MAX_BULLETS * 0.72;
 }
 
 function isFxSevereLoad() {
+  if (!isMobileView) return false;
   return state.towers.length >= 92
     || state.enemies.length >= 150
     || state.bullets.length >= MAX_BULLETS * 0.86;
@@ -3966,8 +3968,10 @@ function drawTowerSunken(tower, now) {
   ctx.stroke();
 
   const liteTowerDraw = isMobileView
-    || state.towers.length >= 52
-    || state.bullets.length >= MAX_BULLETS * 0.78;
+    && (
+      state.towers.length >= 52
+      || state.bullets.length >= MAX_BULLETS * 0.78
+    );
   if (liteTowerDraw) {
     ctx.fillStyle = isSplash
       ? '#ffb67f'
@@ -4268,7 +4272,7 @@ function drawTowerSunken(tower, now) {
   }
 
   if (tower.kind === 'fusion') {
-    if (isMobileView || state.towers.length >= 70) {
+    if (isMobileView && state.towers.length >= 70) {
       ctx.strokeStyle = 'rgba(200, 255, 255, 0.9)';
       ctx.lineWidth = 2;
       ctx.beginPath();
