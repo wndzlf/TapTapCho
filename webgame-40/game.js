@@ -383,6 +383,8 @@ const state = {
   mergeCheckVersion: 0,
   mergeCheckSnapshotVersion: -1,
   mergeCheckResult: false,
+  mergeSaturationSnapshotVersion: -1,
+  mergeSaturationResult: false,
   banner: { text: '', ttl: 0, warn: false },
 };
 
@@ -406,6 +408,7 @@ const TURN_SLOW_MUL = 0.82;
 const MAX_PARTICLES = isMobileView ? 420 : 900;
 const MAX_BULLETS = isMobileView ? 420 : 900;
 const MAX_ENEMIES = isMobileView ? 160 : 260;
+const MIN_TOWER_RELOAD = isMobileView ? 0.18 : 0.14;
 
 const sfxCtx = window.AudioContext ? new AudioContext() : null;
 
@@ -703,7 +706,8 @@ function ensureRankIdentityRegistered() {
   if (singleRankState.playerName) return true;
   setRankStatus('Set a name to save online.');
   flashBanner('Name required', 0.9, true);
-  if (rankNameEl) {
+  const isCoarsePointer = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  if (rankNameEl && !isCoarsePointer) {
     rankNameEl.focus();
     rankNameEl.select?.();
   }
@@ -1268,7 +1272,7 @@ function applyTowerUpgradeScaling(tower, factors = null, kindOverride = null, le
   const stats = factors || getTowerUpgradeFactors(kind);
   tower.range *= stats.rangeMul;
   tower.damage *= stats.damageMul;
-  tower.reload *= stats.reloadMul;
+  tower.reload = Math.max(MIN_TOWER_RELOAD, tower.reload * stats.reloadMul);
   tower.pierce = Math.min(3, tower.pierce + (kind === 'obelisk' ? 1 : 0));
 
   if (kind === 'sunkenSplash') {
@@ -2095,6 +2099,8 @@ function getFusionTowerCount() {
 
 function invalidateMergeCache() {
   state.mergeCheckVersion += 1;
+  state.mergeCheckSnapshotVersion = -1;
+  state.mergeSaturationSnapshotVersion = -1;
 }
 
 function getTowerKindsForMerge(tower) {
@@ -2178,11 +2184,22 @@ function isFusionTowerSaturated(tower) {
 
 // Merge 잠금은 "fusion 5개가 모두 포화"일 때만 걸린다.
 function isMergeSystemSaturated() {
+  if (state.mergeSaturationSnapshotVersion === state.mergeCheckVersion) {
+    return state.mergeSaturationResult;
+  }
+
   const fusionTowers = state.towers.filter((tower) => (
     tower.kind === 'fusion' && (tower.footprint || 1) === 1
   ));
-  if (fusionTowers.length < MERGE_FUSION_MAX) return false;
-  return fusionTowers.every((tower) => isFusionTowerSaturated(tower));
+  if (fusionTowers.length < MERGE_FUSION_MAX) {
+    state.mergeSaturationSnapshotVersion = state.mergeCheckVersion;
+    state.mergeSaturationResult = false;
+    return false;
+  }
+  const saturated = fusionTowers.every((tower) => isFusionTowerSaturated(tower));
+  state.mergeSaturationSnapshotVersion = state.mergeCheckVersion;
+  state.mergeSaturationResult = saturated;
+  return saturated;
 }
 
 function refreshMergeButton(selectionCount = null) {
@@ -2940,6 +2957,9 @@ function updateTowers(dt) {
 
   for (let i = start; i < end; i += 1) {
     const tower = state.towers[i];
+    if (!Number.isFinite(tower.reload) || tower.reload < MIN_TOWER_RELOAD) {
+      tower.reload = MIN_TOWER_RELOAD;
+    }
     tower.guardHitFx = Math.max(0, (tower.guardHitFx || 0) - dt * 2.9);
     tower.guardHitPulse = Math.max(0, (tower.guardHitPulse || 0) - dt * 4.6);
     tower.guardHitCooldown = Math.max(0, (tower.guardHitCooldown || 0) - dt);
@@ -5085,6 +5105,7 @@ function handleCanvasAction(event) {
     // Fusion balance: overall nerf so merged sunken isn't overpowering
     baseTower.damage *= 0.8;
     baseTower.reload *= 1.15;
+    baseTower.reload = Math.max(MIN_TOWER_RELOAD, baseTower.reload);
     baseTower.range *= 0.95;
 
     baseTower.color = '#aef0ff';
@@ -5151,6 +5172,9 @@ canvas.addEventListener('pointerdown', (event) => {
     return;
   }
 
+  event.preventDefault();
+  try { canvas.setPointerCapture(event.pointerId); } catch (_) {}
+
   mobileTapState.active = true;
   mobileTapState.pointerId = event.pointerId;
   mobileTapState.startX = event.clientX;
@@ -5161,11 +5185,13 @@ canvas.addEventListener('pointerdown', (event) => {
 
 canvas.addEventListener('pointermove', (event) => {
   if (!mobileTapState.active || event.pointerId !== mobileTapState.pointerId) return;
+  event.preventDefault();
   if (tapMovedTooFar(event)) mobileTapState.moved = true;
 });
 
 canvas.addEventListener('pointerup', (event) => {
   if (!mobileTapState.active || event.pointerId !== mobileTapState.pointerId) return;
+  event.preventDefault();
 
   const elapsed = performance.now() - mobileTapState.startAt;
   const moved = mobileTapState.moved || tapMovedTooFar(event);
@@ -5176,12 +5202,14 @@ canvas.addEventListener('pointerup', (event) => {
   }
 
   clearMobileTap();
+  try { canvas.releasePointerCapture(event.pointerId); } catch (_) {}
 });
 
 canvas.addEventListener('pointercancel', (event) => {
   if (mobileTapState.active && event.pointerId === mobileTapState.pointerId) {
     clearMobileTap();
   }
+  try { canvas.releasePointerCapture(event.pointerId); } catch (_) {}
 });
 
 window.addEventListener('keydown', (event) => {
@@ -5329,12 +5357,6 @@ if (rankAdsEl) {
     if (url) window.open(url, '_blank', 'noopener');
   });
 }
-
-const onScroll = () => {
-  document.body.classList.toggle('scrolled', window.scrollY > 4);
-};
-window.addEventListener('scroll', onScroll, { passive: true });
-onScroll();
 
 loadEnemySprites();
 requestAnimationFrame(frame);

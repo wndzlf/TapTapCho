@@ -802,7 +802,7 @@ canvas {
   width: 100%;
   height: auto;
   max-height: 70vh;
-  touch-action: pan-y;
+  touch-action: none;
 }
 
 .overlay {
@@ -983,7 +983,6 @@ footer {
     font-size: 11px;
   }
 
-  body.scrolled .tower-guide,
   body.playing .tower-guide {
     display: none;
   }
