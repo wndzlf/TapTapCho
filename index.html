@@ -469,12 +469,18 @@
         var card = thumb.closest('.card');
         if (!card) return;
         var href = card.getAttribute('href') || '';
-        var key = href
-          .replace(/^\.\//, '')
+        var path = '';
+        try {
+          path = new URL(href, window.location.origin + '/').pathname || '';
+        } catch (e) {
+          path = href;
+        }
+        var key = path
+          .replace(/^\/+/, '')
           .replace(/\/index\.html$/, '')
           .replace(/\//g, '__');
         if (!key) return;
-        thumb.style.setProperty('--thumb-url', "url('./assets/thumbs/" + key + ".svg')");
+        thumb.style.setProperty('--thumb-url', "url('/assets/thumbs/" + key + ".svg')");
       });
     })();
   </script>
