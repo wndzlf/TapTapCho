@@ -51,15 +51,15 @@
 ### 5-1. 게임 포트폴리오 상태
 - 총 게임: 40+
 - Launch Candidate(85+): 0
-- Soft Launch(70~84): 1
-- Rework(50~69): 1
+- Soft Launch(70~84): 2
+- Rework(50~69): 0
 - Hold/Remove(<50): 38
 
 ### 5-2. 대표 게임 현황
 | 게임 | GQS 총점 | 상태 | 핵심 이슈 |
 |---|---:|---|---|
 | AirStrikerLite | 70 | Soft Launch | 진행/성장 루프와 콘텐츠 깊이 보강 필요 |
-| Sunken Sixway Defense | 63.4 | Rework | 고레벨 부하/밸런스/모바일 UX 정교화 필요 |
+| Sunken Sixway Defense | 80.0 | Soft Launch | Stage 30+ 난이도/최적화 추가 튜닝 필요 |
 | Crimson Hunter Trials | 43.36 | Hold | 루프/성장/폴리시 미달 |
 | ThrillPark Manager | 43.0 | Hold | 매니지먼트 깊이/튜닝/튜토리얼 부족 |
 | 다수 Neon/미니게임 | 30~40대 | Hold | 클론성, 성장/리텐션/독창성 부족 |

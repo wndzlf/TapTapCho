@@ -8,6 +8,7 @@ const quickBuildEl = document.getElementById('quickBuild');
 const stageTextEl = document.getElementById('stageText');
 const baseTextEl = document.getElementById('baseText');
 const goldTextEl = document.getElementById('goldText');
+const coreTextEl = document.getElementById('coreText');
 const aliveTextEl = document.getElementById('aliveText');
 const queueTextEl = document.getElementById('queueText');
 const killsTextEl = document.getElementById('killsText');
@@ -36,6 +37,8 @@ const btnPause = document.getElementById('btnPause');
 const btnMerge = document.getElementById('btnMerge');
 const btnChoLotto = document.getElementById('btnChoLotto');
 const btnCull = document.getElementById('btnCull');
+const btnCoreWorkshop = document.getElementById('btnCoreWorkshop');
+const btnRewardGold = document.getElementById('btnRewardGold');
 const btnEmperorShield = document.getElementById('btnEmperorShield');
 const btnSunken = document.getElementById('btnSunken');
 try {
@@ -207,6 +210,14 @@ const singleRankState = {
   connectTried: false,
 };
 
+const SUNKEN_META_KEY = 'taptapcho_web40_meta_v2';
+const META_UPGRADES = {
+  startGold: { label: 'Start Gold', max: 5, costBase: 12, costScale: 1.65, valuePerLv: 40 },
+  towerPower: { label: 'Tower Power', max: 5, costBase: 14, costScale: 1.72, valuePerLv: 0.06 },
+  emperorFort: { label: 'Emperor Fort', max: 5, costBase: 10, costScale: 1.6, valuePerLv: 2 },
+  bossBounty: { label: 'Boss Bounty', max: 5, costBase: 15, costScale: 1.78, valuePerLv: 0.12 },
+};
+
 const GRID = {
   cell: GRID_CELL,
   cols: Math.floor(W / GRID_CELL),
@@ -337,6 +348,7 @@ const state = {
   mode: 'menu',
   stage: 1,
   maxStage: 50,
+  baseMaxHp: 20,
   baseHp: 20,
   gold: 160,
   kills: 0,
@@ -370,6 +382,7 @@ const state = {
   rushDamageBonus: 0,
   pendingStage: 0,
   pendingStageBonusGold: 0,
+  pendingStageCore: 0,
   rewardUiUnlockAt: 0,
   emperorShieldTimer: 0,
   onboarding: {
@@ -380,11 +393,42 @@ const state = {
   emperorShieldFx: 0,
   emperorShieldHitCooldown: 0,
   emperorShieldUses: 0,
+  rewardGoldCooldown: 0,
+  rewardGoldUses: 0,
+  workshopReturnMode: '',
+  workshopPrevPaused: false,
   mergeCheckVersion: 0,
   mergeCheckSnapshotVersion: -1,
   mergeCheckResult: false,
   mergeSaturationSnapshotVersion: -1,
   mergeSaturationResult: false,
+  cores: 0,
+  meta: {
+    upgrades: {
+      startGold: 0,
+      towerPower: 0,
+      emperorFort: 0,
+      bossBounty: 0,
+    },
+    bestStage: 1,
+    bestKills: 0,
+  },
+  daily: {
+    key: '',
+    label: '',
+    desc: '',
+    coreMul: 1,
+    startGoldAdd: 0,
+    towerPowerAdd: 0,
+    enemyHpMul: 1,
+    bossBountyAdd: 0,
+    oneTimeCoreBonus: 0,
+    claimed: false,
+  },
+  metaTowerDamageMul: 1,
+  metaBossBountyMul: 1,
+  metaStartGoldBonus: 0,
+  metaBaseHpBonus: 0,
   banner: { text: '', ttl: 0, warn: false },
 };
 
@@ -399,8 +443,53 @@ const CULL_MAX_USES = 5;
 
 const CHO_LOTTO_COST = 1000;
 const CHO_LOTTO_CHANCE = 0.1;
+const REWARD_GOLD_COOLDOWN = 18;
+const REWARD_GOLD_MAX_USES = 8;
 
 const STUN_IMMUNE_BOSS_STAGES = [5, 15, 25, 35, 45];
+
+const DAILY_MUTATORS = [
+  {
+    label: 'Blitz Payday',
+    desc: '+Start Gold, +Core reward, enemies are tougher',
+    coreMul: 1.22,
+    startGoldAdd: 140,
+    towerPowerAdd: 0,
+    enemyHpMul: 1.16,
+    bossBountyAdd: 0.08,
+    oneTimeCoreBonus: 12,
+  },
+  {
+    label: 'Arc Overdrive',
+    desc: '+Tower power, +Boss bounty, enemies are tougher',
+    coreMul: 1.18,
+    startGoldAdd: 0,
+    towerPowerAdd: 0.1,
+    enemyHpMul: 1.14,
+    bossBountyAdd: 0.22,
+    oneTimeCoreBonus: 10,
+  },
+  {
+    label: 'Fortress March',
+    desc: '+Base fortification, steady cores',
+    coreMul: 1.1,
+    startGoldAdd: 80,
+    towerPowerAdd: 0.03,
+    enemyHpMul: 1.08,
+    bossBountyAdd: 0.1,
+    oneTimeCoreBonus: 9,
+  },
+  {
+    label: 'Snow Drift',
+    desc: 'Easier waves, lower core payout',
+    coreMul: 0.92,
+    startGoldAdd: 40,
+    towerPowerAdd: 0,
+    enemyHpMul: 0.92,
+    bossBountyAdd: 0,
+    oneTimeCoreBonus: 6,
+  },
+];
 
 const TURN_SLOW_DURATION = 0.35;
 const TURN_SLOW_MUL = 0.82;
@@ -445,6 +534,277 @@ function clamp(v, min, max) {
 
 function rand(min, max) {
   return min + Math.random() * (max - min);
+}
+
+function hashString(input) {
+  let hash = 2166136261;
+  for (let i = 0; i < input.length; i += 1) {
+    hash ^= input.charCodeAt(i);
+    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+  }
+  return hash >>> 0;
+}
+
+function todayKey() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function makeDailyMutator(key) {
+  const idx = hashString(`sunken-daily:${key}`) % DAILY_MUTATORS.length;
+  const src = DAILY_MUTATORS[idx];
+  return {
+    key,
+    label: src.label,
+    desc: src.desc,
+    coreMul: src.coreMul,
+    startGoldAdd: src.startGoldAdd,
+    towerPowerAdd: src.towerPowerAdd,
+    enemyHpMul: src.enemyHpMul,
+    bossBountyAdd: src.bossBountyAdd,
+    oneTimeCoreBonus: src.oneTimeCoreBonus,
+    claimed: false,
+  };
+}
+
+function createDefaultPersistentMeta() {
+  return {
+    cores: 0,
+    upgrades: {
+      startGold: 0,
+      towerPower: 0,
+      emperorFort: 0,
+      bossBounty: 0,
+    },
+    bestStage: 1,
+    bestKills: 0,
+    dailyKey: '',
+    dailyClaimed: false,
+  };
+}
+
+function normalizePersistentMeta(raw) {
+  const base = createDefaultPersistentMeta();
+  if (!raw || typeof raw !== 'object') return base;
+  const upgrades = {};
+  for (const [key, def] of Object.entries(META_UPGRADES)) {
+    const lv = Math.floor(Number(raw.upgrades?.[key]) || 0);
+    upgrades[key] = clamp(lv, 0, def.max);
+  }
+  const bestStage = clamp(Math.floor(Number(raw.bestStage) || 1), 1, 999);
+  const bestKills = clamp(Math.floor(Number(raw.bestKills) || 0), 0, 9999999);
+  const dailyKey = String(raw.dailyKey || '').slice(0, 24);
+  const dailyClaimed = Boolean(raw.dailyClaimed);
+  const cores = clamp(Math.floor(Number(raw.cores) || 0), 0, 999999);
+  return {
+    cores,
+    upgrades,
+    bestStage,
+    bestKills,
+    dailyKey,
+    dailyClaimed,
+  };
+}
+
+function loadPersistentMeta() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SUNKEN_META_KEY) || '{}');
+    return normalizePersistentMeta(raw);
+  } catch (_) {
+    return createDefaultPersistentMeta();
+  }
+}
+
+function savePersistentMeta() {
+  const payload = {
+    cores: Math.floor(state.cores || 0),
+    upgrades: { ...state.meta.upgrades },
+    bestStage: Math.floor(state.meta.bestStage || 1),
+    bestKills: Math.floor(state.meta.bestKills || 0),
+    dailyKey: state.daily.key || '',
+    dailyClaimed: Boolean(state.daily.claimed),
+  };
+  try {
+    localStorage.setItem(SUNKEN_META_KEY, JSON.stringify(payload));
+  } catch (_) {}
+}
+
+function applyRuntimeMetaBonuses() {
+  const u = state.meta.upgrades;
+  state.metaStartGoldBonus = Math.floor((u.startGold || 0) * META_UPGRADES.startGold.valuePerLv) + (state.daily.startGoldAdd || 0);
+  state.metaTowerDamageMul = 1 + (u.towerPower || 0) * META_UPGRADES.towerPower.valuePerLv + (state.daily.towerPowerAdd || 0);
+  state.metaBossBountyMul = 1 + (u.bossBounty || 0) * META_UPGRADES.bossBounty.valuePerLv + (state.daily.bossBountyAdd || 0);
+  state.metaBaseHpBonus = Math.floor((u.emperorFort || 0) * META_UPGRADES.emperorFort.valuePerLv);
+}
+
+function loadMetaProgression() {
+  const persisted = loadPersistentMeta();
+  state.cores = persisted.cores;
+  state.meta.upgrades = persisted.upgrades;
+  state.meta.bestStage = persisted.bestStage;
+  state.meta.bestKills = persisted.bestKills;
+
+  const dayKey = todayKey();
+  const daily = makeDailyMutator(dayKey);
+  if (persisted.dailyKey === dayKey) {
+    daily.claimed = persisted.dailyClaimed;
+  }
+  state.daily = daily;
+  applyRuntimeMetaBonuses();
+  savePersistentMeta();
+}
+
+function updateMetaRunRecords(stageReached = state.stage, kills = state.kills) {
+  const stage = clamp(Math.floor(stageReached || 1), 1, 999);
+  const killCount = clamp(Math.floor(kills || 0), 0, 9999999);
+  state.meta.bestStage = Math.max(state.meta.bestStage || 1, stage);
+  state.meta.bestKills = Math.max(state.meta.bestKills || 0, killCount);
+  savePersistentMeta();
+}
+
+function getMetaUpgradeCost(key) {
+  const def = META_UPGRADES[key];
+  if (!def) return Infinity;
+  const lv = clamp(Math.floor(state.meta.upgrades[key] || 0), 0, def.max);
+  if (lv >= def.max) return Infinity;
+  return Math.floor(def.costBase * Math.pow(def.costScale, lv));
+}
+
+function getMetaUpgradeDeltaLabel(key) {
+  const def = META_UPGRADES[key];
+  if (!def) return '';
+  if (key === 'startGold' || key === 'emperorFort') return `+${def.valuePerLv}`;
+  return `+${Math.round(def.valuePerLv * 100)}%`;
+}
+
+function grantCores(amount, reason = '', silent = false) {
+  const n = Math.floor(Number(amount) || 0);
+  if (n <= 0) return;
+  state.cores = clamp(state.cores + n, 0, 999999);
+  savePersistentMeta();
+  if (!silent) {
+    flashBanner(reason ? `${reason} +${n} Core` : `+${n} Core`, 0.8);
+  }
+}
+
+function stageCoreReward(stage) {
+  const s = Math.max(1, Math.floor(stage || 1));
+  const raw = 1 + s * 0.28 + Math.max(0, s - 10) * 0.12;
+  return Math.max(1, Math.floor(raw * (state.daily.coreMul || 1)));
+}
+
+function maybeClaimDailyCoreBonus() {
+  if (state.daily.claimed) return 0;
+  if (state.stage < 10) return 0;
+  const bonus = Math.max(0, Math.floor(state.daily.oneTimeCoreBonus || 0));
+  if (bonus <= 0) {
+    state.daily.claimed = true;
+    savePersistentMeta();
+    return 0;
+  }
+  state.daily.claimed = true;
+  grantCores(bonus, 'Daily milestone', true);
+  savePersistentMeta();
+  return bonus;
+}
+
+function renderCoreWorkshop(returnMode = 'menu') {
+  const rows = Object.entries(META_UPGRADES).map(([key, def]) => {
+    const lv = clamp(Math.floor(state.meta.upgrades[key] || 0), 0, def.max);
+    const nextCost = getMetaUpgradeCost(key);
+    const maxed = lv >= def.max;
+    const deltaLabel = getMetaUpgradeDeltaLabel(key);
+    const costText = maxed ? 'MAX' : `${nextCost} Core`;
+    const disabled = maxed || state.cores < nextCost;
+    return `
+      <button class="reward-btn" data-action="meta:buy:${key}" ${disabled ? 'disabled' : ''} type="button">
+        <strong>${def.label} Lv.${lv}/${def.max}</strong>
+        <span>Per Lv ${deltaLabel}</span>
+        <span>${costText}</span>
+      </button>
+    `;
+  }).join('');
+
+  const returnAction = returnMode === 'reward' ? 'meta:back-reward' : 'meta:close';
+  const returnLabel = returnMode === 'reward' ? 'Back to stage clear' : 'Close';
+
+  overlayEl.classList.remove('hidden');
+  overlayEl.classList.remove('banner-passive');
+  overlayEl.classList.add('reward-mode');
+  overlayEl.innerHTML = `
+    <div class="modal core-modal">
+      <h2>Core Workshop</h2>
+      <p>Core ${state.cores} · Daily ${state.daily.label}</p>
+      <p>${state.daily.desc}</p>
+      <div class="reward-grid">${rows}</div>
+      <div class="actions">
+        <button type="button" data-action="${returnAction}">${returnLabel}</button>
+      </div>
+    </div>
+  `;
+}
+
+function closeCoreWorkshop() {
+  const returnMode = state.workshopReturnMode || 'menu';
+  if (returnMode === 'reward') {
+    state.mode = 'reward';
+    showStageReward({ skipGrant: true });
+    return;
+  }
+  if (returnMode === 'playing') {
+    state.mode = 'playing';
+    overlayEl.classList.add('hidden');
+    overlayEl.classList.remove('reward-mode');
+    overlayEl.classList.remove('banner-passive');
+    overlayEl.innerHTML = '';
+    if (!state.workshopPrevPaused) {
+      state.paused = false;
+      syncPauseButton();
+    }
+    refreshHud();
+    return;
+  }
+  showMenu();
+}
+
+function openCoreWorkshop(returnMode = 'menu') {
+  state.workshopReturnMode = returnMode;
+  if (returnMode === 'playing') {
+    state.workshopPrevPaused = state.paused;
+    if (!state.paused) {
+      state.paused = true;
+      syncPauseButton();
+    }
+  }
+  state.mode = 'workshop';
+  renderCoreWorkshop(returnMode);
+}
+
+function buyMetaUpgrade(key) {
+  const def = META_UPGRADES[key];
+  if (!def) return;
+  const current = clamp(Math.floor(state.meta.upgrades[key] || 0), 0, def.max);
+  if (current >= def.max) {
+    flashBanner('Upgrade maxed', 0.55, true);
+    return;
+  }
+  const cost = getMetaUpgradeCost(key);
+  if (state.cores < cost) {
+    flashBanner('Need Core', 0.55, true);
+    return;
+  }
+  state.cores -= cost;
+  state.meta.upgrades[key] = current + 1;
+  applyRuntimeMetaBonuses();
+  savePersistentMeta();
+  flashBanner(`${def.label} Lv.${state.meta.upgrades[key]}`, 0.65);
+  sfx(620, 0.06, 'triangle', 0.018);
+  renderCoreWorkshop(state.workshopReturnMode || 'menu');
+  refreshBuildHint();
+  refreshHud();
 }
 
 function isFxHeavyLoad() {
@@ -1258,7 +1618,7 @@ function makeTower(kind, c, r, spec = null) {
     baseCost: placement.cost,
     spent: placement.cost,
     range: placement.range,
-    damage: placement.damage,
+    damage: placement.damage * (state.metaTowerDamageMul || 1),
     reload: placement.reload,
     bulletSpeed: placement.bulletSpeed,
     pierce: placement.pierce,
@@ -1710,7 +2070,11 @@ function makeEnemy(type) {
   const attackBase = (1 + s * 0.035 + Math.max(0, s - 18) * 0.02) * (d.boss ? 2.2 : d.fast ? 1.25 : 1);
   const breakerAttackMul = towerBreaker ? (1.35 + pressureIndex * 0.06 + nightmareIndex * 0.05 + brutalIndex * 0.07) : 1;
   const siegeAttackMul = siege ? 1.15 : 1;
-  const hp = Math.max(1, Math.floor(d.hp * adaptiveHpMul));
+  const runEnemyHpMul = Math.max(0.72, state.daily.enemyHpMul || 1);
+  const hp = Math.max(1, Math.floor(d.hp * adaptiveHpMul * runEnemyHpMul));
+  const stageRewardBase = d.reward + Math.floor(s * 1.6 + nightmareIndex * 4.4 + pressureIndex * 1.2);
+  const bossRewardMul = d.boss ? (state.metaBossBountyMul || 1) : 1;
+  const reward = Math.max(1, Math.floor(stageRewardBase * bossRewardMul));
 
   return {
     type,
@@ -1720,7 +2084,7 @@ function makeEnemy(type) {
     hp,
     maxHp: hp,
     speed: d.speed * adaptiveSpeedMul * BALANCE_SCALE,
-    reward: d.reward + Math.floor(s * 1.6 + nightmareIndex * 4.4 + pressureIndex * 1.2),
+    reward,
     leak,
     color: d.color,
     boss: Boolean(d.boss),
@@ -1927,8 +2291,10 @@ function startStage(stage) {
 function startRun() {
   state.mode = 'playing';
   state.stage = 1;
-  state.baseHp = 20;
-  state.gold = 160;
+  applyRuntimeMetaBonuses();
+  state.baseMaxHp = 20 + (state.metaBaseHpBonus || 0);
+  state.baseHp = state.baseMaxHp;
+  state.gold = 160 + (state.metaStartGoldBonus || 0);
   state.kills = 0;
   state.score = 0;
   state.stageTimer = 0;
@@ -1955,11 +2321,16 @@ function startRun() {
   state.rushDamageBonus = 0;
   state.pendingStage = 0;
   state.pendingStageBonusGold = 0;
+  state.pendingStageCore = 0;
   state.rewardUiUnlockAt = 0;
   state.emperorShieldTimer = 0;
   state.emperorShieldFx = 0;
   state.emperorShieldHitCooldown = 0;
   state.emperorShieldUses = 0;
+  state.rewardGoldCooldown = 0;
+  state.rewardGoldUses = 0;
+  state.workshopReturnMode = '';
+  state.workshopPrevPaused = false;
   state.onboarding = {
     firstBuild: false,
     firstUpgrade: false,
@@ -1968,6 +2339,7 @@ function startRun() {
   document.body.classList.add('playing');
   setSelectedButton();
   setSellMode(false);
+  syncPauseButton();
   refreshBuildHint();
 
   buildDistanceMap();
@@ -1983,6 +2355,7 @@ function startRun() {
 }
 
 function setDefeat() {
+  updateMetaRunRecords(state.stage, state.kills);
   submitSingleRank('defeat');
   state.mode = 'defeat';
   document.body.classList.remove('playing');
@@ -2003,6 +2376,9 @@ function setDefeat() {
 }
 
 function setVictory() {
+  const victoryCore = Math.max(12, Math.floor((18 + state.maxStage * 0.22) * (state.daily.coreMul || 1)));
+  grantCores(victoryCore, 'Victory bonus', true);
+  updateMetaRunRecords(state.maxStage, state.kills);
   submitSingleRank('victory');
   state.mode = 'victory';
   document.body.classList.remove('playing');
@@ -2013,6 +2389,7 @@ function setVictory() {
     <div class="modal">
       <h2>Victory</h2>
       <p>Stage ${state.maxStage} · Kills ${state.kills} · Base HP ${state.baseHp}</p>
+      <p>+${victoryCore} Core</p>
       <div class="actions">
         <button type="button" data-action="restart">New Run</button>
       </div>
@@ -2022,10 +2399,14 @@ function setVictory() {
   sfx(520, 0.16, 'triangle', 0.04);
 }
 
-function showStageReward() {
+function showStageReward(options = {}) {
+  const skipGrant = Boolean(options.skipGrant);
   const nightmareIndex = Math.max(0, state.stage - 20);
   let clearGold = 70 + state.stage * 14 + nightmareIndex * 28 + Math.floor(nightmareIndex * nightmareIndex * 3);
   let bonusTag = '';
+  let dailyCoreBonus = 0;
+  let clearCore = stageCoreReward(state.stage);
+
   if (state.stage === 1 && !state.onboarding.firstClear) {
     state.onboarding.firstClear = true;
     const bonus = 120;
@@ -2033,10 +2414,20 @@ function showStageReward() {
     bonusTag = ` · First Clear +${bonus}`;
   }
   const autoRushBonus = 0.25;
-  state.pendingStage = state.stage + 1;
-  state.pendingStageBonusGold = clearGold;
-  state.gold += clearGold;
-  state.rushDamageBonus += autoRushBonus;
+
+  if (!skipGrant) {
+    dailyCoreBonus = maybeClaimDailyCoreBonus();
+    state.pendingStage = state.stage + 1;
+    state.pendingStageBonusGold = clearGold;
+    state.pendingStageCore = clearCore + dailyCoreBonus;
+    state.gold += clearGold;
+    state.rushDamageBonus += autoRushBonus;
+    grantCores(state.pendingStageCore, 'Stage clear', true);
+  } else {
+    clearGold = state.pendingStageBonusGold || clearGold;
+    clearCore = state.pendingStageCore || clearCore;
+  }
+
   state.mode = 'reward';
   state.rewardUiUnlockAt = performance.now() + 220;
 
@@ -2050,15 +2441,17 @@ function showStageReward() {
       <h2>Mission Success</h2>
       <p>Stage ${state.stage} · Time ${formatTime(stageTimeSec)} · Kills ${state.kills}</p>
       <p>Towers ${towerCount} · +${clearGold} Gold${bonusTag}</p>
+      <p>+${clearCore} Core${dailyCoreBonus > 0 ? ` · Daily +${dailyCoreBonus}` : ''}</p>
       <div class="actions">
         <button type="button" data-action="reward:next" disabled>Next Stage</button>
+        <button type="button" data-action="reward:workshop" disabled>Core Workshop</button>
       </div>
     </div>
   `;
   const unlockAt = state.rewardUiUnlockAt;
   window.setTimeout(() => {
     if (state.mode !== 'reward' || state.rewardUiUnlockAt !== unlockAt) return;
-    for (const btn of overlayEl.querySelectorAll('[data-action=\"reward:next\"][disabled]')) {
+    for (const btn of overlayEl.querySelectorAll('[data-action^=\"reward:\"][disabled]')) {
       btn.disabled = false;
     }
   }, 230);
@@ -2067,6 +2460,10 @@ function showStageReward() {
 function applyStageReward(kind) {
   if (state.mode !== 'reward') return;
   if (performance.now() < state.rewardUiUnlockAt) return;
+  if (kind === 'workshop') {
+    openCoreWorkshop('reward');
+    return;
+  }
   if (kind !== 'next') return;
   flashBanner(`Rush total +${Math.round(state.rushDamageBonus * 100)}%`, 0.9);
   sfx(620, 0.07, 'triangle', 0.028);
@@ -2081,6 +2478,7 @@ function applyStageReward(kind) {
   const nextStage = state.pendingStage || state.stage + 1;
   state.pendingStage = 0;
   state.pendingStageBonusGold = 0;
+  state.pendingStageCore = 0;
   startStage(nextStage);
 }
 
@@ -2113,8 +2511,9 @@ function formatHudNumber(value) {
 
 function refreshHud() {
   stageTextEl.textContent = String(state.stage);
-  baseTextEl.textContent = `${formatHudNumber(Math.max(0, state.baseHp))}/20`;
+  baseTextEl.textContent = `${formatHudNumber(Math.max(0, state.baseHp))}/${formatHudNumber(Math.max(1, state.baseMaxHp || 20))}`;
   goldTextEl.textContent = formatHudNumber(state.gold);
+  if (coreTextEl) coreTextEl.textContent = formatHudNumber(state.cores);
   aliveTextEl.textContent = formatHudNumber(state.enemies.length);
   queueTextEl.textContent = formatHudNumber(state.spawnQueue.length);
   killsTextEl.textContent = formatHudNumber(state.kills);
@@ -2141,6 +2540,32 @@ function refreshHud() {
       ? formatCompactNumber(CHO_LOTTO_COST)
       : `${CHO_LOTTO_COST} Gold`;
   }
+  if (btnCoreWorkshop) {
+    const costEl = btnCoreWorkshop.querySelector('.cost');
+    if (costEl) costEl.textContent = isMobileView ? `Core ${formatCompactNumber(state.cores)}` : `Core ${state.cores}`;
+  }
+  if (btnRewardGold) {
+    const nameEl = btnRewardGold.querySelector('.name');
+    const costEl = btnRewardGold.querySelector('.cost');
+    const usesLeft = Math.max(0, REWARD_GOLD_MAX_USES - state.rewardGoldUses);
+    const canUse = state.rewardGoldCooldown <= 0.01 && usesLeft > 0 && state.mode === 'playing';
+    btnRewardGold.classList.toggle('locked', !canUse);
+    if (nameEl) nameEl.textContent = canUse ? 'Supply Drop' : (usesLeft <= 0 ? 'Supply End' : 'Cooldown');
+    if (costEl) {
+      if (usesLeft <= 0) {
+        costEl.textContent = isMobileView
+          ? `${REWARD_GOLD_MAX_USES}/${REWARD_GOLD_MAX_USES}`
+          : `Used ${REWARD_GOLD_MAX_USES}/${REWARD_GOLD_MAX_USES}`;
+      } else if (!canUse) {
+        costEl.textContent = `${state.rewardGoldCooldown.toFixed(1)}s · ${usesLeft}/${REWARD_GOLD_MAX_USES}`;
+      } else {
+        const gain = Math.floor(220 + state.stage * 20 + Math.max(0, state.stage - 20) * 8);
+        costEl.textContent = isMobileView
+          ? `+${formatCompactNumber(gain)} · ${usesLeft}/${REWARD_GOLD_MAX_USES}`
+          : `+${gain} Gold · Left ${usesLeft}/${REWARD_GOLD_MAX_USES}`;
+      }
+    }
+  }
   refreshMergeButton();
   refreshEmperorShieldButton();
 }
@@ -2161,6 +2586,15 @@ function setSellMode(enabled) {
   if (costEl && isMobileView) costEl.textContent = 'Sell';
 }
 
+function syncPauseButton() {
+  if (!btnPause) return;
+  btnPause.classList.toggle('active', state.paused);
+  const nameEl = btnPause.querySelector('.name');
+  if (nameEl) nameEl.textContent = state.paused ? 'PAUSED' : 'PAUSE';
+  const costEl = btnPause.querySelector('.cost');
+  if (costEl) costEl.textContent = state.paused ? `On (${state.pauseUses}/5)` : `Use (${state.pauseUses}/5)`;
+}
+
 function setPaused(enabled) {
   const next = Boolean(enabled);
   if (next && !state.paused) {
@@ -2171,12 +2605,7 @@ function setPaused(enabled) {
     state.pauseUses += 1;
   }
   state.paused = next;
-  if (!btnPause) return;
-  btnPause.classList.toggle('active', state.paused);
-  const nameEl = btnPause.querySelector('.name');
-  if (nameEl) nameEl.textContent = state.paused ? 'PAUSED' : 'PAUSE';
-  const costEl = btnPause.querySelector('.cost');
-  if (costEl) costEl.textContent = state.paused ? `On (${state.pauseUses}/5)` : `Use (${state.pauseUses}/5)`;
+  syncPauseButton();
 }
 
 function getFusionTowerCount() {
@@ -2430,6 +2859,26 @@ function castCull() {
   refreshHud();
 }
 
+function castRewardGold() {
+  if (state.mode !== 'playing') return;
+  if (state.rewardGoldUses >= REWARD_GOLD_MAX_USES) {
+    flashBanner(`Reward used (${REWARD_GOLD_MAX_USES}/${REWARD_GOLD_MAX_USES})`, 0.65, true);
+    return;
+  }
+  if (state.rewardGoldCooldown > 0.01) {
+    flashBanner(`Cooldown ${state.rewardGoldCooldown.toFixed(1)}s`, 0.48, true);
+    return;
+  }
+  const gain = Math.floor(220 + state.stage * 20 + Math.max(0, state.stage - 20) * 8);
+  state.gold += gain;
+  state.rewardGoldUses += 1;
+  state.rewardGoldCooldown = REWARD_GOLD_COOLDOWN;
+  flashBanner(`Supply +${gain} Gold`, 0.72);
+  impactSfx.play('build', { volume: 0.24, minGap: 0.05, rateMin: 1.02, rateMax: 1.1 });
+  sfx(500, 0.06, 'triangle', 0.016);
+  refreshHud();
+}
+
 function refreshBuildHint() {
   if (buildHintEl) {
     buildHintEl.textContent = '';
@@ -2535,6 +2984,7 @@ function refreshTowerGuide() {
 
   const perLevelSummary = buildTowerPerLevelChangeLine(state.selectedTower);
   const upgradeCostSummary = buildTowerUpgradeCostLine(placement.cost);
+  const runBonusSummary = `Run Bonus: Tower x${(state.metaTowerDamageMul || 1).toFixed(2)} · Enemy HP x${(state.daily.enemyHpMul || 1).toFixed(2)} · Boss Bounty x${(state.metaBossBountyMul || 1).toFixed(2)}`;
 
   towerGuideEl.innerHTML = `
     <div class="line">
@@ -2543,6 +2993,7 @@ function refreshTowerGuide() {
     </div>
     <div class="growth">Per Lv +1: ${perLevelSummary}</div>
     <div class="growth">Upgrade Cost (+1): ${upgradeCostSummary}</div>
+    <div class="growth">${runBonusSummary}</div>
   `;
 }
 
@@ -2847,10 +3298,12 @@ function hurtEnemy(enemy, damage, sourceKind = '', secondary = false) {
     if (idx >= 0) state.enemies.splice(idx, 1);
 
     if (enemy.boss) {
+      const bossCore = Math.max(2, Math.floor((4 + state.stage * 0.18) * (state.daily.coreMul || 1)));
+      grantCores(bossCore, 'Boss bounty', true);
       bgmAudio?.fx('win');
       impactSfx.play('enemyHitHeavy', { volume: 0.46, minGap: 0.12, rateMin: 0.88, rateMax: 0.95 });
       sfx(280, 0.2, 'sawtooth', 0.04);
-      flashBanner('BOSS DOWN', 0.9);
+      flashBanner(`BOSS DOWN +${bossCore} Core`, 0.9);
     } else {
       if (Math.random() < 0.35) {
         sfx(560, 0.04, 'triangle', 0.013);
@@ -5100,6 +5553,7 @@ function step(dt) {
     return;
   }
 
+  state.rewardGoldCooldown = Math.max(0, state.rewardGoldCooldown - dt);
   const simDt = dt * state.simSpeed;
   state.runTime += dt;
 
@@ -5200,6 +5654,17 @@ function handleControlsClick(event) {
 
   if (event.target.closest('[data-action="cull-enemies"]')) {
     castCull();
+    return;
+  }
+
+  if (event.target.closest('[data-action="reward-gold"]')) {
+    castRewardGold();
+    return;
+  }
+
+  if (event.target.closest('[data-action="open-workshop"]')) {
+    const returnMode = state.mode === 'playing' ? 'playing' : 'menu';
+    openCoreWorkshop(returnMode);
     return;
   }
 
@@ -5484,11 +5949,36 @@ window.addEventListener('keydown', (event) => {
     castEmperorShield();
   }
 
+  if (event.code === 'KeyC') {
+    const returnMode = state.mode === 'playing' ? 'playing' : (state.mode === 'reward' ? 'reward' : 'menu');
+    openCoreWorkshop(returnMode);
+  }
+
+  if (event.code === 'KeyZ') {
+    castRewardGold();
+  }
+
 });
 
 overlayEl.addEventListener('click', (event) => {
   const action = event.target.closest('[data-action]')?.dataset.action;
   if (!action) return;
+  if (action.startsWith('meta:buy:')) {
+    buyMetaUpgrade(action.split(':')[2]);
+    return;
+  }
+  if (action === 'meta:close' || action === 'meta:back-reward') {
+    closeCoreWorkshop();
+    return;
+  }
+  if (action === 'open-workshop') {
+    if (state.mode === 'reward') {
+      openCoreWorkshop('reward');
+    } else {
+      openCoreWorkshop('menu');
+    }
+    return;
+  }
   if (action.startsWith('reward:')) {
     applyStageReward(action.split(':')[1]);
     return;
@@ -5502,6 +5992,7 @@ overlayEl.addEventListener('click', (event) => {
 });
 
 function showMenu() {
+  state.mode = 'menu';
   document.body.classList.remove('playing');
   overlayEl.classList.remove('banner-passive');
   overlayEl.classList.remove('reward-mode');
@@ -5509,13 +6000,16 @@ function showMenu() {
   overlayEl.innerHTML = `
     <div class="modal">
       <h2>Sunken Sixway Defense</h2>
+      <p>Daily: ${state.daily.label} · Core x${(state.daily.coreMul || 1).toFixed(2)}</p>
       <div class="actions">
         <button type="button" data-action="start">Start</button>
+        <button type="button" data-action="open-workshop">Core Workshop</button>
       </div>
     </div>
   `;
 }
 
+loadMetaProgression();
 showMenu();
 renderBuildButtonIcons();
 refreshMergeableTowerBadge();

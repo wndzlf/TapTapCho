@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Sunken Sixway Defense</title>
-  <link rel="stylesheet" href="style.css?v=20260308c" />
+  <link rel="stylesheet" href="style.css?v=20260309a" />
 </head>
 <body>
   <div class="wrap">
@@ -116,6 +116,7 @@
       <div class="stat">Kills <b id="killsText">0</b></div>
       <div class="stat">Time <b id="timeText">0:00</b></div>
       <div class="stat stat-gold">Gold <b id="goldText">0</b></div>
+      <div class="stat">Core <b id="coreText">0</b></div>
       <div class="stat">Speed <b id="speedText">1.00x</b></div>
       <div class="stat">Emperor <b id="baseText">20/20</b></div>
       <div class="stat">Alive <b id="aliveText">0</b></div>
@@ -197,6 +198,16 @@
         <span class="name">-50% ALL ENEMY HP</span>
         <span class="cost">10000 Gold</span>
       </button>
+      <button class="build-btn mode-btn core-btn" id="btnCoreWorkshop" data-action="open-workshop" type="button">
+        <span class="icon">C</span>
+        <span class="name">Core Workshop</span>
+        <span class="cost">Core 0</span>
+      </button>
+      <button class="build-btn mode-btn ad-reward-btn" id="btnRewardGold" data-action="reward-gold" type="button">
+        <span class="icon">🎁</span>
+        <span class="name">Supply Drop</span>
+        <span class="cost">+220 Gold</span>
+      </button>
       <button class="build-btn mode-btn ult-btn" id="btnEmperorShield" data-action="emperor-shield" type="button">
         <span class="icon">R</span>
         <span class="name">EMPEROR SHIELD</span>
@@ -224,6 +235,6 @@
       singleRankServer: 'wss://bizarre-meets-defeat-shelter.trycloudflare.com',
     });
   </script>
-  <script src="game.js?v=20260308e"></script>
+  <script src="game.js?v=20260309b"></script>
 </body>
 </html>
