@@ -106,8 +106,10 @@ var side_label: Label
 var status_label: Label
 var speed_button: Button
 var pause_button: Button
+var objective_label: Label
 
 var mode_buttons := {}
+var ui_pulse := 0.0
 
 var mouse_pan := false
 var touch_pan_id := -1
@@ -123,7 +125,7 @@ func _ready() -> void:
 	_load_game()
 	_rebuild_feature_lists()
 	_set_mode(BuildMode.PATH)
-	_set_status("Build paths, place rides, keep guests happy.", 2.5)
+	_set_status("Tap to build. Keep guests flowing.", 2.0)
 	set_process(true)
 	queue_redraw()
 
@@ -237,12 +239,12 @@ func _build_ui() -> void:
 	toolbar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	toolbar_scroll.add_child(toolbar)
 
-	_create_mode_button(toolbar, "PATH", BuildMode.PATH)
-	_create_mode_button(toolbar, "THRILL", BuildMode.RIDE)
-	_create_mode_button(toolbar, "SHOP", BuildMode.SHOP)
-	_create_mode_button(toolbar, "FACILITY", BuildMode.FACILITY)
-	_create_mode_button(toolbar, "BENCH", BuildMode.BENCH)
-	_create_mode_button(toolbar, "BULLDOZE", BuildMode.BULLDOZE)
+	_create_mode_button(toolbar, "ROAD 10", BuildMode.PATH)
+	_create_mode_button(toolbar, "RIDE 700", BuildMode.RIDE)
+	_create_mode_button(toolbar, "SHOP 220", BuildMode.SHOP)
+	_create_mode_button(toolbar, "CARE 140", BuildMode.FACILITY)
+	_create_mode_button(toolbar, "REST 60", BuildMode.BENCH)
+	_create_mode_button(toolbar, "CLEAR", BuildMode.BULLDOZE)
 
 	var janitor_button := Button.new()
 	janitor_button.text = "JANITOR +"
@@ -291,12 +293,21 @@ func _build_ui() -> void:
 	side_panel.anchor_right = 1.0
 	side_panel.anchor_top = 0.0
 	side_panel.anchor_bottom = 0.0
-	side_panel.offset_left = -300
+	side_panel.offset_left = -320
 	side_panel.offset_right = -8
 	side_panel.offset_top = 104
-	side_panel.offset_bottom = 280
+	side_panel.offset_bottom = 252
 	side_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(side_panel)
+
+	var side_box := VBoxContainer.new()
+	side_box.add_theme_constant_override("separation", 5)
+	side_panel.add_child(side_box)
+
+	objective_label = Label.new()
+	objective_label.add_theme_font_size_override("font_size", 15)
+	objective_label.add_theme_color_override("font_color", Color(1.0, 0.94, 0.75))
+	side_box.add_child(objective_label)
 
 	side_label = Label.new()
 	side_label.add_theme_font_size_override("font_size", 14)
@@ -304,7 +315,7 @@ func _build_ui() -> void:
 	side_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	side_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	side_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	side_panel.add_child(side_label)
+	side_box.add_child(side_label)
 
 	status_label = Label.new()
 	status_label.anchor_left = 0.5
@@ -326,7 +337,7 @@ func _build_ui() -> void:
 func _create_mode_button(parent: HBoxContainer, label: String, mode: int) -> void:
 	var b := Button.new()
 	b.text = label
-	b.custom_minimum_size = Vector2(102, 34)
+	b.custom_minimum_size = Vector2(106, 34)
 	b.pressed.connect(_on_mode_button_pressed.bind(mode))
 	parent.add_child(b)
 	mode_buttons[mode] = b
@@ -338,14 +349,23 @@ func _on_mode_button_pressed(mode: int) -> void:
 
 func _set_mode(mode: int) -> void:
 	build_mode = mode
+	_set_status("Mode: %s" % MODE_LABELS.get(mode, "UNKNOWN"), 1.1)
+	_refresh_mode_button_visuals(-1)
+
+
+func _refresh_mode_button_visuals(recommended_mode: int) -> void:
 	for key in mode_buttons.keys():
 		var button := mode_buttons[key] as Button
 		if button == null:
 			continue
-		button.modulate = Color(1, 1, 1, 1)
-		if int(key) == mode:
+		var mode := int(key)
+		if mode == build_mode:
 			button.modulate = Color(1.0, 0.92, 0.6, 1.0)
-	_set_status("Mode: %s" % MODE_LABELS.get(mode, "UNKNOWN"), 1.1)
+		elif mode == recommended_mode:
+			var pulse := 0.72 + 0.28 * sin(ui_pulse * 5.4)
+			button.modulate = Color(0.68 + 0.22 * pulse, 0.93, 0.62 + 0.25 * pulse, 1.0)
+		else:
+			button.modulate = Color(1, 1, 1, 1)
 
 
 func _toggle_pause() -> void:
@@ -371,6 +391,8 @@ func _on_hire_janitor() -> void:
 
 
 func _process(delta: float) -> void:
+	ui_pulse += delta
+
 	if status_timer > 0.0:
 		status_timer = maxf(0.0, status_timer - delta)
 		if status_timer == 0.0:
@@ -890,6 +912,80 @@ func _rebuild_feature_lists() -> void:
 				path_cells.append(cell)
 
 
+func _suggested_mode(avg_happiness: float) -> int:
+	if path_cells.size() < 34 and money >= COST_PATH:
+		return BuildMode.PATH
+	if ride_cells.size() < 3 and money >= COST_RIDE:
+		return BuildMode.RIDE
+	if shop_cells.size() < 2 and money >= COST_SHOP:
+		return BuildMode.SHOP
+	if janitors == 0 and litter >= 25.0 and money >= JANITOR_MONTHLY_COST:
+		return -2
+	if (avg_happiness < 58.0 or complaints > 8) and money >= COST_BENCH:
+		return BuildMode.BENCH
+	if money >= COST_RIDE:
+		return BuildMode.RIDE
+	if money >= COST_PATH:
+		return BuildMode.PATH
+	return -1
+
+
+func _suggested_action_text(suggested_mode: int) -> String:
+	match suggested_mode:
+		BuildMode.PATH:
+			return "NEXT ROAD"
+		BuildMode.RIDE:
+			return "NEXT RIDE"
+		BuildMode.SHOP:
+			return "NEXT SHOP"
+		BuildMode.FACILITY:
+			return "NEXT CARE"
+		BuildMode.BENCH:
+			return "NEXT REST"
+		-2:
+			return "NEXT JANITOR"
+		_:
+			return "NEXT WAIT"
+
+
+func _recommended_build_cell(mode: int) -> Vector2i:
+	if mode < 0:
+		return Vector2i(-1, -1)
+	for r in range(2, 22):
+		for dy in range(-r, r + 1):
+			for dx in range(-r, r + 1):
+				var cell := Vector2i(entrance_cell.x + dx, entrance_cell.y - 11 + dy)
+				if not _in_bounds(cell):
+					continue
+				if _can_build_on_cell(cell, mode):
+					return cell
+	return Vector2i(-1, -1)
+
+
+func _can_build_on_cell(cell: Vector2i, mode: int) -> bool:
+	if not _in_bounds(cell):
+		return false
+	if cell == entrance_cell:
+		return false
+
+	match mode:
+		BuildMode.PATH:
+			return _get_tile(cell) == Tile.GRASS and money >= COST_PATH
+		BuildMode.RIDE:
+			return _get_tile(cell) == Tile.GRASS and _has_adjacent_walkway(cell) and money >= COST_RIDE
+		BuildMode.SHOP:
+			return _get_tile(cell) == Tile.GRASS and _has_adjacent_walkway(cell) and money >= COST_SHOP
+		BuildMode.FACILITY:
+			return _get_tile(cell) == Tile.GRASS and _has_adjacent_walkway(cell) and money >= COST_FACILITY
+		BuildMode.BENCH:
+			return _get_tile(cell) == Tile.GRASS and _has_adjacent_walkway(cell) and money >= COST_BENCH
+		BuildMode.BULLDOZE:
+			var t := _get_tile(cell)
+			return t != Tile.GRASS and t != Tile.WATER and t != Tile.ENTRANCE
+		_:
+			return false
+
+
 func _update_ui() -> void:
 	if hud_label == null or side_label == null:
 		return
@@ -899,21 +995,22 @@ func _update_ui() -> void:
 		for g in guests:
 			avg_happiness += float(g["happiness"])
 		avg_happiness /= float(guests.size())
+	var clean_score := clampf(100.0 - litter * 1.6, 0.0, 100.0)
+	var goal_guest := 220
+	var goal_money := 10000
+	var suggested_mode := _suggested_mode(avg_happiness)
+	var action_text := _suggested_action_text(suggested_mode)
+	_refresh_mode_button_visuals(suggested_mode)
 
-	var top_line := "THRILLPARK MANAGER   $%d   Guests %d   Month %d   Mode %s" % [money, guests.size(), month, MODE_LABELS.get(build_mode, "-")]
-	var sub_line := "Rides %d  Shops %d  Janitors %d  Litter %d  Avg Happy %.0f" % [ride_cells.size(), shop_cells.size(), janitors, int(round(litter)), avg_happiness]
+	var top_line := "$%d  Guests %d  Month %d  Speed x%s" % [money, guests.size(), month, str(SPEED_VALUES[speed_index])]
+	var sub_line := "Mode %s  Ride %d  Shop %d  Staff %d" % [MODE_LABELS.get(build_mode, "-"), ride_cells.size(), shop_cells.size(), janitors]
 	hud_label.text = "%s\n%s" % [top_line, sub_line]
 
-	var target_text := "Goal: Guests 220+ and Money $10000+"
-	var goal_ok := guests.size() >= 220 and money >= 10000
-	if goal_ok:
-		target_text = "Goal reached. Expand or optimize for higher profit."
-
-	var event_text := "Event: %s (%.0fs)" % [active_event, active_event_timer] if active_event != "" else "Event: NONE"
-	var speed_text := "Speed: x%s   Paused: %s" % [str(SPEED_VALUES[speed_index]), "YES" if game_paused else "NO"]
-	var fin_text := "Income(month): %d   Cost(month): %d   Total profit: %d" % [monthly_income, monthly_cost, total_profit]
-
-	side_label.text = "%s\n%s\n%s\n%s\n\nControls:\nLeft click/tap: build\nRight drag / touch drag: pan\nWheel or +/-: zoom\n1..6 mode switch, P pause, F speed\n\nCosts:\nPath $10, Ride $700, Shop $220\nFacility $140, Bench $60\nJanitor $300/month" % [target_text, event_text, speed_text, fin_text]
+	var guest_progress := "%d/%d" % [mini(guests.size(), goal_guest), goal_guest]
+	var money_progress := "%d/%d" % [mini(money, goal_money), goal_money]
+	var event_text := "%s %.0fs" % [active_event, active_event_timer] if active_event != "" else "NONE"
+	objective_label.text = "GOAL  G:%s  $:%s" % [guest_progress, money_progress]
+	side_label.text = "NEXT  %s\nMood %.0f  Clean %.0f\nEvent %s\nProfit %d" % [action_text, avg_happiness, clean_score, event_text, total_profit]
 
 	status_label.text = status_text
 
@@ -1093,12 +1190,53 @@ func _draw() -> void:
 		if nausea > 70.0:
 			draw_circle(pos + Vector2(0.0, -5.0), 1.4, Color(0.74, 0.52, 1.0, 0.95))
 
+	var draw_avg_happiness := 72.0
+	if not guests.is_empty():
+		draw_avg_happiness = 0.0
+		for g in guests:
+			draw_avg_happiness += float(g["happiness"])
+		draw_avg_happiness /= float(guests.size())
+	var rec_mode := _suggested_mode(draw_avg_happiness)
+	var rec_cell := _recommended_build_cell(rec_mode)
+	if _in_bounds(rec_cell):
+		var rc := _cell_center(rec_cell)
+		var rr := TILE_SIZE * (0.34 + 0.09 * (0.5 + 0.5 * sin(ui_pulse * 6.0)))
+		draw_arc(rc, rr, 0.0, TAU, 32, Color(0.98, 0.95, 0.55, 0.92), 2.2)
+		draw_circle(rc, 1.8, Color(1.0, 0.96, 0.62, 0.9))
+
 	var mouse_world := _screen_to_world(get_viewport().get_mouse_position())
 	var hover := _world_to_cell(mouse_world)
 	if _in_bounds(hover):
 		var hrect := Rect2(float(hover.x) * TILE_SIZE, float(hover.y) * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-		draw_rect(hrect, Color(1.0, 0.95, 0.45, 0.08), true)
-		draw_rect(hrect, Color(1.0, 0.95, 0.45, 0.75), false, 1.8)
+		var can_build := _can_build_on_cell(hover, build_mode)
+		var frame_col := Color(0.66, 0.98, 0.74, 0.9) if can_build else Color(1.0, 0.44, 0.42, 0.9)
+		draw_rect(hrect, frame_col * Color(1, 1, 1, 0.13), true)
+		draw_rect(hrect, frame_col, false, 1.8)
+		if build_mode != BuildMode.BULLDOZE:
+			_draw_mode_ghost(hrect, build_mode, frame_col)
+		elif can_build:
+			draw_line(hrect.position + Vector2(3, 3), hrect.position + Vector2(TILE_SIZE - 3, TILE_SIZE - 3), frame_col, 2.0)
+			draw_line(hrect.position + Vector2(TILE_SIZE - 3, 3), hrect.position + Vector2(3, TILE_SIZE - 3), frame_col, 2.0)
+		if not can_build:
+			draw_line(hrect.position + Vector2(2, 2), hrect.position + Vector2(TILE_SIZE - 2, TILE_SIZE - 2), Color(1.0, 0.35, 0.35, 0.86), 1.8)
+			draw_line(hrect.position + Vector2(TILE_SIZE - 2, 2), hrect.position + Vector2(2, TILE_SIZE - 2), Color(1.0, 0.35, 0.35, 0.86), 1.8)
+
+
+func _draw_mode_ghost(rect: Rect2, mode: int, col: Color) -> void:
+	var alpha_col := col * Color(1, 1, 1, 0.85)
+	match mode:
+		BuildMode.PATH:
+			draw_line(rect.position + Vector2(2, TILE_SIZE * 0.5), rect.position + Vector2(TILE_SIZE - 2, TILE_SIZE * 0.5), alpha_col, 2.3)
+		BuildMode.RIDE:
+			draw_circle(rect.position + rect.size * 0.5, TILE_SIZE * 0.28, alpha_col)
+		BuildMode.SHOP:
+			draw_rect(rect.grow(-4.0), alpha_col, true)
+		BuildMode.FACILITY:
+			draw_rect(rect.grow(-4.0), alpha_col, true)
+			draw_circle(rect.position + rect.size * 0.5, TILE_SIZE * 0.12, Color(0.08, 0.17, 0.24, 0.92))
+		BuildMode.BENCH:
+			draw_line(rect.position + Vector2(4.0, TILE_SIZE * 0.65), rect.position + Vector2(TILE_SIZE - 4.0, TILE_SIZE * 0.65), alpha_col, 2.1)
+			draw_line(rect.position + Vector2(4.0, TILE_SIZE * 0.72), rect.position + Vector2(TILE_SIZE - 4.0, TILE_SIZE * 0.72), alpha_col, 2.1)
 
 
 func _tile_color(tile: int) -> Color:
