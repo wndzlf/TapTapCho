@@ -464,24 +464,105 @@
   <footer class="foot">© TapTapCho</footer>
   <script>
     (function () {
-      var thumbs = document.querySelectorAll('.card .thumb');
-      thumbs.forEach(function (thumb) {
-        var card = thumb.closest('.card');
-        if (!card) return;
-        var href = card.getAttribute('href') || '';
+      var params = new URLSearchParams(window.location.search);
+      var debugEnabled = params.has('thumbdebug');
+
+      function showDebugBanner(text, isError) {
+        if (!debugEnabled) return;
+        var banner = document.createElement('div');
+        banner.textContent = text;
+        banner.style.position = 'fixed';
+        banner.style.left = '12px';
+        banner.style.bottom = '12px';
+        banner.style.zIndex = '99999';
+        banner.style.padding = '8px 10px';
+        banner.style.fontSize = '12px';
+        banner.style.fontFamily = 'ui-monospace, Menlo, monospace';
+        banner.style.borderRadius = '8px';
+        banner.style.color = '#fff';
+        banner.style.background = isError ? 'rgba(180,40,40,0.92)' : 'rgba(24,36,70,0.92)';
+        banner.style.border = '1px solid ' + (isError ? '#ff8d8d' : '#6aa7ff');
+        document.body.appendChild(banner);
+      }
+
+      function keyFromHref(href) {
         var path = '';
         try {
           path = new URL(href, window.location.origin + '/').pathname || '';
         } catch (e) {
-          path = href;
+          path = href || '';
         }
-        var key = path
+        return path
           .replace(/^\/+/, '')
           .replace(/\/index\.html$/, '')
           .replace(/\//g, '__');
-        if (!key) return;
-        thumb.style.setProperty('--thumb-url', "url('/assets/thumbs/" + key + ".svg')");
-      });
+      }
+
+      try {
+        var thumbs = Array.prototype.slice.call(document.querySelectorAll('.card .thumb'));
+        var checks = [];
+        var applied = 0;
+
+        thumbs.forEach(function (thumb) {
+          var card = thumb.closest('.card');
+          if (!card) return;
+          var href = card.getAttribute('href') || '';
+          var key = keyFromHref(href);
+          if (!key) return;
+
+          var url = '/assets/thumbs/' + key + '.svg';
+          thumb.style.setProperty('--thumb-url', "url('" + url + "')");
+          applied += 1;
+
+          checks.push(new Promise(function (resolve) {
+            var img = new Image();
+            img.onload = function () { resolve({ key: key, ok: true }); };
+            img.onerror = function () { resolve({ key: key, ok: false }); };
+            img.src = url + (debugEnabled ? ('?t=' + Date.now()) : '');
+          }));
+        });
+
+        Promise.all(checks).then(function (results) {
+          var ok = 0;
+          var fail = 0;
+          var failedKeys = [];
+          results.forEach(function (r) {
+            if (r.ok) ok += 1;
+            else {
+              fail += 1;
+              if (failedKeys.length < 8) failedKeys.push(r.key);
+            }
+          });
+
+          window.__thumbDebug = {
+            cards: thumbs.length,
+            applied: applied,
+            checked: results.length,
+            ok: ok,
+            fail: fail,
+            failedKeys: failedKeys,
+            path: window.location.pathname,
+            ts: new Date().toISOString()
+          };
+
+          console.info('[TapTapCho][thumb]', window.__thumbDebug);
+
+          if (fail > 0 || debugEnabled) {
+            showDebugBanner(
+              'thumb ok=' + ok + ' fail=' + fail + (failedKeys.length ? ' [' + failedKeys.join(',') + ']' : ''),
+              fail > 0
+            );
+          }
+        });
+      } catch (err) {
+        window.__thumbDebug = {
+          error: String(err && err.message ? err.message : err),
+          path: window.location.pathname,
+          ts: new Date().toISOString()
+        };
+        console.error('[TapTapCho][thumb] fatal', err);
+        showDebugBanner('thumb fatal: ' + window.__thumbDebug.error, true);
+      }
     })();
   </script>
 </body>
