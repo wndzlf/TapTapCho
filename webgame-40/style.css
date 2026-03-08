@@ -10,6 +10,10 @@
   --good: #8ff8bf;
 }
 
+html {
+  overscroll-behavior-y: contain;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -23,11 +27,13 @@ body {
     radial-gradient(900px 520px at 80% -20%, #31264c 0%, transparent 70%),
     linear-gradient(180deg, #0f1320, var(--bg));
   touch-action: manipulation;
+  overscroll-behavior-y: contain;
 }
 
 .wrap {
   width: min(1100px, 96vw);
   margin: 14px auto 22px;
+  overflow-anchor: none;
 }
 
 .top-row {
@@ -1013,10 +1019,10 @@ footer {
     flex-wrap: nowrap;
     gap: 6px;
     padding: 5px 6px;
-    position: sticky;
-    top: 8px;
-    z-index: 16;
-    backdrop-filter: blur(4px);
+    position: static;
+    top: auto;
+    z-index: auto;
+    backdrop-filter: none;
     margin-bottom: 4px;
   }
 
@@ -1047,10 +1053,10 @@ footer {
   .quick-build {
     gap: 4px;
     padding: 4px;
-    position: sticky;
-    top: 50px;
-    z-index: 15;
-    backdrop-filter: blur(4px);
+    position: static;
+    top: auto;
+    z-index: auto;
+    backdrop-filter: none;
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 

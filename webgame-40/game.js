@@ -216,7 +216,7 @@ const GRID = {
 const SPAWN = { c: 0, r: Math.floor(GRID.rows / 2) };
 const GOAL = { c: GRID.cols - 1, r: Math.floor(GRID.rows / 2) };
 const MAX_TOWER_LEVEL = 8;
-const MAX_SIM_SUBSTEP = 1 / 120;
+const MAX_SIM_SUBSTEP = 1 / 70;
 
 const TOWER_TYPES = {
   sunken: {
@@ -405,10 +405,21 @@ const STUN_IMMUNE_BOSS_STAGES = [5, 15, 25, 35, 45];
 const TURN_SLOW_DURATION = 0.35;
 const TURN_SLOW_MUL = 0.82;
 
-const MAX_PARTICLES = isMobileView ? 420 : 900;
-const MAX_BULLETS = isMobileView ? 420 : 900;
-const MAX_ENEMIES = isMobileView ? 160 : 260;
-const MIN_TOWER_RELOAD = isMobileView ? 0.18 : 0.14;
+const MAX_PARTICLES = isMobileView ? 240 : 620;
+const MAX_BULLETS = isMobileView ? 240 : 620;
+const MAX_ENEMIES = isMobileView ? 150 : 240;
+const MIN_TOWER_RELOAD = isMobileView ? 0.2 : 0.15;
+const MAX_TOWER_RANGE = (isMobileView ? 410 : 430) * BALANCE_SCALE;
+const MAX_TOWER_DAMAGE = isMobileView ? 340 : 420;
+const MAX_TOWER_BULLET_SPEED = (isMobileView ? 560 : 620) * BALANCE_SCALE;
+const MAX_TOWER_SPLASH_RADIUS = (isMobileView ? 150 : 170) * BALANCE_SCALE;
+const MAX_TOWER_STUN_RADIUS = (isMobileView ? 140 : 160) * BALANCE_SCALE;
+const MAX_TOWER_STUN_CHAIN = 5;
+const MAX_TARGET_SCAN_CELLS = isMobileView ? 7 : 9;
+const TARGET_SCAN_ENEMY_LIMIT = isMobileView ? 42 : 68;
+const BULLET_HIT_SCAN_LIMIT = isMobileView ? 18 : 26;
+const SPLASH_SCAN_ENEMY_LIMIT = isMobileView ? 32 : 54;
+const STUN_SCAN_ENEMY_LIMIT = isMobileView ? 20 : 30;
 
 const sfxCtx = window.AudioContext ? new AudioContext() : null;
 
@@ -436,9 +447,63 @@ function rand(min, max) {
   return min + Math.random() * (max - min);
 }
 
+function isFxHeavyLoad() {
+  return state.towers.length >= 65
+    || state.enemies.length >= 120
+    || state.bullets.length >= MAX_BULLETS * 0.72;
+}
+
+function normalizeTowerCombatStats(tower) {
+  if (!tower) return;
+  const base = TOWER_TYPES[tower.kind] || TOWER_TYPES.sunken;
+
+  const defaultRange = Math.max(40, base.range || 105 * BALANCE_SCALE);
+  const defaultDamage = Math.max(1, base.damage || 20);
+  const defaultReload = Math.max(MIN_TOWER_RELOAD, base.reload || 0.8);
+  const defaultBulletSpeed = Math.max(120 * BALANCE_SCALE, base.bulletSpeed || 300 * BALANCE_SCALE);
+
+  tower.range = clamp(
+    Number.isFinite(tower.range) ? tower.range : defaultRange,
+    defaultRange * 0.65,
+    MAX_TOWER_RANGE,
+  );
+  tower.damage = clamp(
+    Number.isFinite(tower.damage) ? tower.damage : defaultDamage,
+    1,
+    MAX_TOWER_DAMAGE,
+  );
+  tower.reload = clamp(
+    Number.isFinite(tower.reload) ? tower.reload : defaultReload,
+    MIN_TOWER_RELOAD,
+    3.2,
+  );
+  tower.bulletSpeed = clamp(
+    Number.isFinite(tower.bulletSpeed) ? tower.bulletSpeed : defaultBulletSpeed,
+    120 * BALANCE_SCALE,
+    MAX_TOWER_BULLET_SPEED,
+  );
+  tower.splashRadius = clamp(Number.isFinite(tower.splashRadius) ? tower.splashRadius : 0, 0, MAX_TOWER_SPLASH_RADIUS);
+  tower.splashFalloff = clamp(Number.isFinite(tower.splashFalloff) ? tower.splashFalloff : 0.35, 0.25, 0.9);
+  tower.stunDuration = clamp(Number.isFinite(tower.stunDuration) ? tower.stunDuration : 0, 0, 2.4);
+  tower.stunRadius = clamp(Number.isFinite(tower.stunRadius) ? tower.stunRadius : 0, 0, MAX_TOWER_STUN_RADIUS);
+  tower.stunChain = clamp(Math.floor(Number.isFinite(tower.stunChain) ? tower.stunChain : 0), 0, MAX_TOWER_STUN_CHAIN);
+  tower.poisonDuration = clamp(Number.isFinite(tower.poisonDuration) ? tower.poisonDuration : 0, 0, 8);
+  tower.poisonDps = clamp(Number.isFinite(tower.poisonDps) ? tower.poisonDps : 0, 0, 120);
+  tower.damageMitigation = clamp(Number.isFinite(tower.damageMitigation) ? tower.damageMitigation : 0, 0, 0.8);
+
+  if (!Number.isFinite(tower.maxHp) || tower.maxHp <= 1) {
+    tower.maxHp = Math.max(100, (base.hp || 240));
+  }
+  if (!Number.isFinite(tower.hp)) {
+    tower.hp = tower.maxHp;
+  }
+  tower.hp = clamp(tower.hp, 0, tower.maxHp);
+}
+
 function pushParticle(p) {
   if (state.particles.length >= MAX_PARTICLES) return;
   if (isMobileView && Math.random() > 0.35) return;
+  if (isFxHeavyLoad() && Math.random() > (isMobileView ? 0.42 : 0.58)) return;
   const life = p.life ?? 0.18;
   state.particles.push({
     ...p,
@@ -474,14 +539,26 @@ function buildTowerBuckets() {
   return buckets;
 }
 
-function collectNearbyEnemies(buckets, c, r, radiusCells = 1) {
+function collectNearbyEnemies(buckets, c, r, radiusCells = 1, maxCount = Infinity) {
   const list = [];
   for (let dc = -radiusCells; dc <= radiusCells; dc += 1) {
     for (let dr = -radiusCells; dr <= radiusCells; dr += 1) {
       const key = `${c + dc},${r + dr}`;
       const bucket = buckets.get(key);
       if (!bucket) continue;
-      list.push(...bucket);
+      if (!Number.isFinite(maxCount) || maxCount <= 0) {
+        list.push(...bucket);
+        continue;
+      }
+      if (list.length + bucket.length <= maxCount) {
+        list.push(...bucket);
+      } else {
+        for (let i = 0; i < bucket.length; i += 1) {
+          list.push(bucket[i]);
+          if (list.length >= maxCount) return list;
+        }
+      }
+      if (list.length >= maxCount) return list;
     }
   }
   return list;
@@ -1159,7 +1236,7 @@ function makeTower(kind, c, r, spec = null) {
   const footprint = placement?.footprint || 1;
   const center = cellCenter(c + (footprint - 1) * 0.5, r + (footprint - 1) * 0.5);
   const hpMul = 1 + state.towerHpBonus;
-  return {
+  const tower = {
     id: state.nextTowerId++,
     kind,
     fusedKinds: [kind],
@@ -1198,6 +1275,8 @@ function makeTower(kind, c, r, spec = null) {
     guardHitPulse: 0,
     guardHitCooldown: 0,
   };
+  normalizeTowerCombatStats(tower);
+  return tower;
 }
 
 function upgradeCost(tower) {
@@ -1323,6 +1402,7 @@ function upgradeTower(tower) {
   tower.level = Math.max(...Object.values(fusedLevels));
   tower.maxHp *= 1.34;
   tower.hp = Math.min(tower.maxHp, tower.hp + tower.maxHp * 0.25);
+  normalizeTowerCombatStats(tower);
 
   let banner = `UPGRADE Lv.${tower.level} (Fused)`;
   if (!state.onboarding.firstUpgrade) {
@@ -2473,12 +2553,20 @@ function nearestEnemy(x, y, range) {
 
 function nearestEnemyFromBuckets(x, y, range) {
   if (!currentEnemyBuckets) return nearestEnemy(x, y, range);
+  const effectiveRange = Math.min(range, MAX_TOWER_RANGE);
   const cell = worldToCell(x, y);
-  const radiusCells = Math.ceil((range + GRID.cell) / GRID.cell);
-  const candidates = collectNearbyEnemies(currentEnemyBuckets, cell.c, cell.r, radiusCells);
+  const radiusCells = Math.min(MAX_TARGET_SCAN_CELLS, Math.ceil((effectiveRange + GRID.cell) / GRID.cell));
+  const candidates = collectNearbyEnemies(
+    currentEnemyBuckets,
+    cell.c,
+    cell.r,
+    radiusCells,
+    TARGET_SCAN_ENEMY_LIMIT,
+  );
   let found = null;
-  let best = range * range;
+  let best = effectiveRange * effectiveRange;
   for (const enemy of candidates) {
+    if (!enemy || enemy.hp <= 0) continue;
     const dx = enemy.x - x;
     const dy = enemy.y - y;
     const d = dx * dx + dy * dy;
@@ -2968,9 +3056,7 @@ function updateTowers(dt) {
 
   for (let i = start; i < end; i += 1) {
     const tower = state.towers[i];
-    if (!Number.isFinite(tower.reload) || tower.reload < MIN_TOWER_RELOAD) {
-      tower.reload = MIN_TOWER_RELOAD;
-    }
+    normalizeTowerCombatStats(tower);
     tower.guardHitFx = Math.max(0, (tower.guardHitFx || 0) - dt * 2.9);
     tower.guardHitPulse = Math.max(0, (tower.guardHitPulse || 0) - dt * 4.6);
     tower.guardHitCooldown = Math.max(0, (tower.guardHitCooldown || 0) - dt);
@@ -2991,19 +3077,25 @@ function updateTowers(dt) {
 function applyStunChain(primaryEnemy, bullet) {
   if (primaryEnemy.stunImmune) return;
   const stunDuration = bullet.stunDuration || 0.85;
-  const stunRadius = bullet.stunRadius || (72 * BALANCE_SCALE);
+  const stunRadius = clamp(bullet.stunRadius || (72 * BALANCE_SCALE), 16, MAX_TOWER_STUN_RADIUS);
   const stunRadiusSq = stunRadius * stunRadius;
-  const stunMax = Math.max(1, Math.floor(bullet.stunChain || 3));
-
-  const nearby = state.enemies
-    .filter((enemy) => enemy !== primaryEnemy && enemy.hp > 0)
-    .map((enemy) => {
-      const dx = enemy.x - primaryEnemy.x;
-      const dy = enemy.y - primaryEnemy.y;
-      return { enemy, d2: dx * dx + dy * dy };
-    })
-    .filter((item) => item.d2 <= stunRadiusSq)
-    .sort((a, b) => a.d2 - b.d2)
+  const stunMax = clamp(Math.floor(bullet.stunChain || 3), 1, MAX_TOWER_STUN_CHAIN);
+  const buckets = currentEnemyBuckets || buildEnemyBuckets();
+  const cell = worldToCell(primaryEnemy.x, primaryEnemy.y);
+  const radiusCells = Math.min(MAX_TARGET_SCAN_CELLS, Math.ceil((stunRadius + GRID.cell) / GRID.cell));
+  const scanLimit = Math.max(STUN_SCAN_ENEMY_LIMIT, stunMax * 6);
+  const candidatePool = collectNearbyEnemies(buckets, cell.c, cell.r, radiusCells, scanLimit);
+  const ranked = [];
+  for (const enemy of candidatePool) {
+    if (!enemy || enemy === primaryEnemy || enemy.hp <= 0) continue;
+    const dx = enemy.x - primaryEnemy.x;
+    const dy = enemy.y - primaryEnemy.y;
+    const d2 = dx * dx + dy * dy;
+    if (d2 > stunRadiusSq) continue;
+    ranked.push({ enemy, d2 });
+  }
+  ranked.sort((a, b) => a.d2 - b.d2);
+  const nearby = ranked
     .slice(0, Math.max(0, stunMax - 1))
     .map((item) => item.enemy);
 
@@ -3034,8 +3126,9 @@ function updateBullets(dt) {
 
     let removed = false;
     const bulletCell = worldToCell(b.x, b.y);
-    const candidates = collectNearbyEnemies(buckets, bulletCell.c, bulletCell.r, 1);
+    const candidates = collectNearbyEnemies(buckets, bulletCell.c, bulletCell.r, 1, BULLET_HIT_SCAN_LIMIT);
     for (const enemy of candidates) {
+      if (!enemy || enemy.hp <= 0) continue;
       const dx = enemy.x - b.x;
       const dy = enemy.y - b.y;
       const rr = enemy.r + b.r;
@@ -3088,13 +3181,19 @@ function updateBullets(dt) {
         hurtEnemy(enemy, b.damage, b.towerKind, false);
 
         if (b.splashRadius > 0) {
-          const splashRadius = b.splashRadius;
+          const splashRadius = Math.min(b.splashRadius, MAX_TOWER_SPLASH_RADIUS);
           const splashSq = splashRadius * splashRadius;
           const splashCell = worldToCell(enemy.x, enemy.y);
-          const radiusCells = Math.ceil((splashRadius + GRID.cell) / GRID.cell);
-          const splashCandidates = collectNearbyEnemies(buckets, splashCell.c, splashCell.r, radiusCells);
+          const radiusCells = Math.min(MAX_TARGET_SCAN_CELLS, Math.ceil((splashRadius + GRID.cell) / GRID.cell));
+          const splashCandidates = collectNearbyEnemies(
+            buckets,
+            splashCell.c,
+            splashCell.r,
+            radiusCells,
+            SPLASH_SCAN_ENEMY_LIMIT,
+          );
           for (const other of splashCandidates) {
-            if (other === enemy) continue;
+            if (!other || other === enemy || other.hp <= 0) continue;
             const sdx = other.x - enemy.x;
             const sdy = other.y - enemy.y;
             const sDistSq = sdx * sdx + sdy * sdy;
@@ -3840,6 +3939,65 @@ function drawTowerSunken(tower, now) {
   ctx.beginPath();
   ctx.arc(0, 0, ringR + 1.3, 0, TAU);
   ctx.stroke();
+
+  const liteTowerDraw = isMobileView
+    || state.towers.length >= 52
+    || state.bullets.length >= MAX_BULLETS * 0.78;
+  if (liteTowerDraw) {
+    ctx.fillStyle = isSplash
+      ? '#ffb67f'
+      : isNova
+        ? '#cda4ff'
+      : isStun
+        ? '#ffd173'
+      : isTanker
+        ? '#9effc4'
+        : '#8adfff';
+    ctx.beginPath();
+    ctx.arc(0, 0, ringR * 0.58, 0, TAU);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(234, 245, 255, 0.82)';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(0, 0, ringR * 0.88, 0, TAU);
+    ctx.stroke();
+
+    if (isHammer) {
+      ctx.fillStyle = '#ff6a6a';
+      ctx.fillRect(-4.2, -2.4, 8.4, 4.8);
+    } else if (isStun) {
+      ctx.strokeStyle = '#fff0b2';
+      ctx.lineWidth = 1.7;
+      ctx.beginPath();
+      ctx.moveTo(-3.2, -4.2);
+      ctx.lineTo(1.6, -1.1);
+      ctx.lineTo(-1.2, 1.4);
+      ctx.lineTo(3.8, 4.5);
+      ctx.stroke();
+    } else if (isTanker) {
+      ctx.strokeStyle = 'rgba(226, 255, 238, 0.92)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-4.4, 0);
+      ctx.lineTo(4.4, 0);
+      ctx.moveTo(0, -4.4);
+      ctx.lineTo(0, 4.4);
+      ctx.stroke();
+    } else if (tower.kind === 'fusion') {
+      ctx.strokeStyle = 'rgba(220, 255, 255, 0.92)';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(-4.4, -4.4);
+      ctx.lineTo(4.4, 4.4);
+      ctx.moveTo(4.4, -4.4);
+      ctx.lineTo(-4.4, 4.4);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+    return;
+  }
 
   const aura = ctx.createRadialGradient(0, 0, ringR * 0.45, 0, 0, ringR + 12 + tower.level * 2.2);
   if (isSplash) {
@@ -4914,7 +5072,7 @@ function step(dt) {
 
   let remain = simDt;
   let guard = 0;
-  while (remain > 0 && guard < 32) {
+  while (remain > 0 && guard < 20) {
     const subDt = Math.min(MAX_SIM_SUBSTEP, remain);
     updateSpawning(subDt);
     currentEnemyBuckets = buildEnemyBuckets();
@@ -5135,6 +5293,7 @@ function handleCanvasAction(event) {
     baseTower.reload *= 1.15;
     baseTower.reload = Math.max(MIN_TOWER_RELOAD, baseTower.reload);
     baseTower.range *= 0.95;
+    normalizeTowerCombatStats(baseTower);
 
     baseTower.color = '#aef0ff';
     baseTower.baseCost = Math.max(baseTower.baseCost || baseTower.spent, targetTower.baseCost || targetTower.spent);
