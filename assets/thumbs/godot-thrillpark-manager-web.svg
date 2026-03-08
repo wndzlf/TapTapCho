@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="640" y2="360" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#122237"/>
+      <stop offset="1" stop-color="#1b3d2a"/>
+    </linearGradient>
+    <linearGradient id="ride" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#ffca6d"/>
+      <stop offset="1" stop-color="#ff8651"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="360" rx="22" fill="url(#bg)"/>
+  <rect x="36" y="44" width="568" height="272" rx="16" fill="#102033" stroke="#3c608c"/>
+
+  <g opacity="0.45" stroke="#315476">
+    <path d="M36 120H604"/>
+    <path d="M36 164H604"/>
+    <path d="M36 208H604"/>
+    <path d="M36 252H604"/>
+    <path d="M132 44V316"/>
+    <path d="M228 44V316"/>
+    <path d="M324 44V316"/>
+    <path d="M420 44V316"/>
+    <path d="M516 44V316"/>
+  </g>
+
+  <path d="M82 252 C130 188, 182 178, 244 214 C305 249, 368 250, 431 195 C493 142, 548 145, 586 178"
+        stroke="#9de8ff" stroke-width="12" stroke-linecap="round"/>
+
+  <circle cx="250" cy="214" r="18" fill="url(#ride)" stroke="#ffe4a7"/>
+  <circle cx="430" cy="194" r="14" fill="#7ed0ff" stroke="#c6ebff"/>
+  <rect x="325" y="245" width="34" height="34" rx="8" fill="#f67f67" stroke="#ffd2bf"/>
+  <rect x="368" y="247" width="24" height="30" rx="6" fill="#67b58d" stroke="#b8f1d7"/>
+
+  <rect x="64" y="274" width="170" height="30" rx="8" fill="#101c2f" stroke="#395b88"/>
+  <text x="78" y="294" fill="#dff4ff" font-size="18" font-family="Arial, sans-serif" font-weight="700">ThrillPark Manager</text>
+</svg>
