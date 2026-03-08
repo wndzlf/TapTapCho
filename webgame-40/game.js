@@ -453,6 +453,12 @@ function isFxHeavyLoad() {
     || state.bullets.length >= MAX_BULLETS * 0.72;
 }
 
+function isFxSevereLoad() {
+  return state.towers.length >= 92
+    || state.enemies.length >= 150
+    || state.bullets.length >= MAX_BULLETS * 0.86;
+}
+
 function normalizeTowerCombatStats(tower) {
   if (!tower) return;
   const base = TOWER_TYPES[tower.kind] || TOWER_TYPES.sunken;
@@ -1459,6 +1465,7 @@ function tryPlaceTower(c, r) {
 
   const tower = makeTower(state.selectedTower, c, r, placement);
   state.towers.push(tower);
+  towerBucketsDirty = true;
   invalidateMergeCache();
   state.gold -= placement.cost;
   if (state.selectedTower === 'lottoSunken') {
@@ -1927,6 +1934,7 @@ function startRun() {
   state.spawnQueue = [];
   state.enemies = [];
   state.towers = [];
+  towerBucketsDirty = true;
   invalidateMergeCache();
   state.nextTowerId = 1;
   state.spawnSerial = 0;
@@ -2605,6 +2613,7 @@ function removeTower(tower) {
   const idx = state.towers.indexOf(tower);
   if (idx < 0) return false;
   state.towers.splice(idx, 1);
+  towerBucketsDirty = true;
   invalidateMergeCache();
   const footprint = tower.footprint || 1;
   for (let ry = 0; ry < footprint; ry += 1) {
@@ -2620,9 +2629,15 @@ function removeTower(tower) {
 }
 
 function emitNovaBurst(tower, colorOverride = null, kindOverride = null, lite = false) {
-  const burstCount = lite
-    ? Math.min(isMobileView ? 6 : 8, 4 + Math.floor((tower.level - 1) / 3))
-    : 8 + Math.floor((tower.level - 1) / 2) * 2;
+  const heavy = isFxHeavyLoad();
+  const severe = isFxSevereLoad();
+  const burstCount = severe
+    ? (isMobileView ? 3 : 4)
+    : heavy
+      ? (isMobileView ? 4 : 5)
+      : lite
+        ? Math.min(isMobileView ? 6 : 8, 4 + Math.floor((tower.level - 1) / 3))
+        : 8 + Math.floor((tower.level - 1) / 2) * 2;
   const spinOffset = performance.now() * 0.0018 + tower.id * 0.37;
   const perShotDamage = tower.damage * 0.55;
   const shotColor = colorOverride || tower.color;
@@ -2637,7 +2652,7 @@ function emitNovaBurst(tower, colorOverride = null, kindOverride = null, lite = 
       vy: Math.sin(ang) * tower.bulletSpeed,
       r: 4.9,
       damage: perShotDamage,
-      life: 1.6,
+      life: severe ? 1.05 : heavy ? 1.25 : 1.6,
       color: shotColor,
       pierce: 0,
       towerKind: shotKind,
@@ -2649,7 +2664,7 @@ function emitNovaBurst(tower, colorOverride = null, kindOverride = null, lite = 
     });
   }
 
-  const particleCount = lite ? (isMobileView ? 3 : 5) : 10;
+  const particleCount = severe ? 0 : heavy ? 2 : (lite ? (isMobileView ? 3 : 5) : 10);
   for (let i = 0; i < particleCount; i += 1) {
     const ang = rand(0, TAU);
     const speed = rand(90, 180);
@@ -2691,7 +2706,7 @@ function emitBulletForKind(tower, target, kind, lite = false) {
     vy: (dy / d) * tower.bulletSpeed,
     r: isSplash ? 5.6 : (isNova || isStun) ? 4.8 : 4,
     damage: tower.damage,
-    life: 2,
+    life: isFxSevereLoad() ? 1.25 : isFxHeavyLoad() ? 1.55 : 2,
     color: baseColor,
     pierce: (isNova || isStun) ? 0 : tower.pierce,
     towerKind: kind,
@@ -2708,7 +2723,9 @@ function emitBulletForKind(tower, target, kind, lite = false) {
     lightning: isHammer,
   });
 
-  const muzzleParticleCount = lite ? 1 : 3;
+  const heavy = isFxHeavyLoad();
+  const severe = isFxSevereLoad();
+  const muzzleParticleCount = severe ? 0 : (heavy ? (lite ? 0 : 1) : (lite ? 1 : 3));
   for (let i = 0; i < muzzleParticleCount; i += 1) {
     pushParticle({
       x: tower.x,
@@ -3050,7 +3067,10 @@ function spawnTowerHitVfx(x, y, towerKind, isUlt = false, secondary = false) {
 function updateTowers(dt) {
   const total = state.towers.length;
   if (!total) return;
-  const batchSize = Math.max(6, Math.ceil(total / 3));
+  const severe = isFxSevereLoad();
+  const heavy = severe ? true : isFxHeavyLoad();
+  const batchDivisor = severe ? 6 : heavy ? 4 : 3;
+  const batchSize = Math.max(6, Math.ceil(total / batchDivisor));
   const start = towerUpdateCursor % total;
   const end = Math.min(total, start + batchSize);
 
@@ -3068,7 +3088,11 @@ function updateTowers(dt) {
     if (!target) continue;
 
     emitBullet(tower, target);
-    tower.cooldown = tower.reload;
+    if (tower.kind === 'fusion' || tower.kind === 'sunkenNova') {
+      tower.cooldown = tower.reload * (severe ? 2.5 : heavy ? 1.7 : 1);
+    } else {
+      tower.cooldown = tower.reload * (severe ? 1.22 : 1);
+    }
   }
 
   towerUpdateCursor = end >= total ? 0 : end;
@@ -3436,6 +3460,7 @@ function updateEnemy(enemy, dt) {
 let currentTowerBuckets = null;
 let currentEnemyBuckets = null;
 let towerUpdateCursor = 0;
+let towerBucketsDirty = true;
 
 function updateEnemies(dt) {
   for (const enemy of [...state.enemies]) {
@@ -4743,12 +4768,14 @@ function drawEnemyTankSprite(enemy) {
 
 function drawEnemies() {
   const now = performance.now() * 0.001;
+  const severe = isFxSevereLoad();
+  const heavy = severe ? true : isFxHeavyLoad();
   for (const enemy of state.enemies) {
     const pulse = 0.5 + 0.5 * Math.sin(now * 5 + enemy.morph);
     const auraRadius = enemy.r + 4 + enemy.threat * 6 + pulse * 2.6;
     const spikeCount = 6 + Math.floor(enemy.threat * 8);
 
-    if (enemy.threat >= 0.35) {
+    if (!heavy && enemy.threat >= 0.35) {
       ctx.strokeStyle = enemy.boss
         ? `rgba(255, 154, 178, ${0.25 + pulse * 0.2})`
         : `rgba(195, 140, 255, ${0.2 + pulse * 0.16})`;
@@ -4758,7 +4785,7 @@ function drawEnemies() {
       ctx.stroke();
     }
 
-    if (enemy.threat >= 0.55) {
+    if (!heavy && enemy.threat >= 0.55) {
       ctx.strokeStyle = enemy.boss ? 'rgba(255, 193, 143, 0.38)' : 'rgba(197, 150, 255, 0.32)';
       ctx.lineWidth = 1.8;
       for (let i = 0; i < spikeCount; i += 1) {
@@ -4791,7 +4818,7 @@ function drawEnemies() {
       ctx.fill();
     }
 
-    if (enemy.fast) {
+    if (!severe && enemy.fast) {
       const fastMarkAlpha = enemy.snareTimer > 0 ? 0.42 : 0.86;
       ctx.strokeStyle = `rgba(255, 230, 180, ${fastMarkAlpha})`;
       ctx.lineWidth = 1.8;
@@ -4803,7 +4830,7 @@ function drawEnemies() {
       ctx.stroke();
     }
 
-    if (enemy.jumper) {
+    if (!severe && enemy.jumper) {
       const jumpPulse = 0.45 + 0.55 * Math.sin(now * 9 + enemy.morph * 1.6);
       ctx.strokeStyle = `rgba(148, 246, 255, ${0.58 + jumpPulse * 0.35})`;
       ctx.lineWidth = 1.8;
@@ -4812,7 +4839,7 @@ function drawEnemies() {
       ctx.stroke();
     }
 
-    if ((enemy.stunTimer || 0) > 0) {
+    if (!severe && (enemy.stunTimer || 0) > 0) {
       const stunRatio = clamp((enemy.stunTimer || 0) / 1.2, 0, 1);
       const pulse = 0.4 + 0.6 * Math.sin(now * 11 + enemy.morph * 1.9);
       ctx.strokeStyle = `rgba(255, 220, 120, ${0.58 + stunRatio * 0.24})`;
@@ -4916,7 +4943,10 @@ function drawEnemies() {
 }
 
 function drawBullets() {
-  for (const b of state.bullets) {
+  const severe = isFxSevereLoad();
+  const stride = severe ? 2 : 1;
+  for (let i = 0; i < state.bullets.length; i += stride) {
+    const b = state.bullets[i];
     if (b.lightning) {
       const ang = Math.atan2(b.vy, b.vx);
       const len = 16;
@@ -4956,12 +4986,17 @@ function drawBullets() {
 }
 
 function drawParticles() {
+  const severe = isFxSevereLoad();
+  const heavy = severe ? true : isFxHeavyLoad();
+  const stride = severe ? 2 : 1;
   ctx.lineCap = 'butt';
-  for (const p of state.particles) {
+  for (let i = 0; i < state.particles.length; i += stride) {
+    const p = state.particles[i];
     const ratio = p.ttl ? clamp(p.life / p.ttl, 0, 1) : clamp(p.life * 3, 0, 1);
     ctx.globalAlpha = clamp(ratio * (p.alphaMul || 1.15), 0, 1);
 
     if (p.render === 'ring') {
+      if (severe) continue;
       const r = (p.size || 5) + (1 - ratio) * (p.expand || 12);
       ctx.strokeStyle = p.color;
       ctx.lineWidth = (p.lineWidth || 1.6) * (0.85 + ratio * 0.45);
@@ -4972,6 +5007,7 @@ function drawParticles() {
     }
 
     if (p.render === 'shard') {
+      if (heavy) continue;
       const len = (p.length || 9) * (0.55 + ratio * 0.95);
       const ang = Math.atan2(p.vy || 0, p.vx || 1);
       const tx = p.x - Math.cos(ang) * len;
@@ -4987,6 +5023,7 @@ function drawParticles() {
     }
 
     if (p.render === 'ray') {
+      if (heavy) continue;
       const ang = p.rot || 0;
       const len = (p.length || 12) * (0.58 + (1 - ratio) * 0.8);
       const sx = p.x - Math.cos(ang) * len * 0.22;
@@ -5076,7 +5113,10 @@ function step(dt) {
     const subDt = Math.min(MAX_SIM_SUBSTEP, remain);
     updateSpawning(subDt);
     currentEnemyBuckets = buildEnemyBuckets();
-    currentTowerBuckets = buildTowerBuckets();
+    if (!currentTowerBuckets || towerBucketsDirty) {
+      currentTowerBuckets = buildTowerBuckets();
+      towerBucketsDirty = false;
+    }
     updateTowers(subDt);
     updateBullets(subDt);
     updateEnemies(subDt);
