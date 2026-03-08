@@ -2531,8 +2531,10 @@ function removeTower(tower) {
   return true;
 }
 
-function emitNovaBurst(tower, colorOverride = null, kindOverride = null) {
-  const burstCount = 8 + Math.floor((tower.level - 1) / 2) * 2;
+function emitNovaBurst(tower, colorOverride = null, kindOverride = null, lite = false) {
+  const burstCount = lite
+    ? Math.min(isMobileView ? 6 : 8, 4 + Math.floor((tower.level - 1) / 3))
+    : 8 + Math.floor((tower.level - 1) / 2) * 2;
   const spinOffset = performance.now() * 0.0018 + tower.id * 0.37;
   const perShotDamage = tower.damage * 0.55;
   const shotColor = colorOverride || tower.color;
@@ -2559,7 +2561,8 @@ function emitNovaBurst(tower, colorOverride = null, kindOverride = null) {
     });
   }
 
-  for (let i = 0; i < 10; i += 1) {
+  const particleCount = lite ? (isMobileView ? 3 : 5) : 10;
+  for (let i = 0; i < particleCount; i += 1) {
     const ang = rand(0, TAU);
     const speed = rand(90, 180);
     pushParticle({
@@ -2577,10 +2580,10 @@ function emitNovaBurst(tower, colorOverride = null, kindOverride = null) {
   if (Math.random() < 0.65) sfx(346 + rand(-24, 22), 0.045, 'square', 0.012);
 }
 
-function emitBulletForKind(tower, target, kind) {
+function emitBulletForKind(tower, target, kind, lite = false) {
   const baseColor = TOWER_TYPES[kind]?.color || tower.color;
   if (kind === 'sunkenNova') {
-    emitNovaBurst(tower, baseColor, 'sunkenNova');
+    emitNovaBurst(tower, baseColor, 'sunkenNova', lite);
     return;
   }
 
@@ -2617,7 +2620,8 @@ function emitBulletForKind(tower, target, kind) {
     lightning: isHammer,
   });
 
-  for (let i = 0; i < 3; i += 1) {
+  const muzzleParticleCount = lite ? 1 : 3;
+  for (let i = 0; i < muzzleParticleCount; i += 1) {
     pushParticle({
       x: tower.x,
       y: tower.y,
@@ -2648,13 +2652,20 @@ function emitBulletForKind(tower, target, kind) {
 function emitBullet(tower, target) {
   if (tower.kind === 'fusion') {
     const kinds = tower.fusedKinds || [];
-    for (const kind of kinds) {
-      emitBulletForKind(tower, target, kind);
+    if (!kinds.length) return;
+
+    if (!Number.isFinite(tower.fusionCycle)) tower.fusionCycle = 0;
+    const start = tower.fusionCycle % kinds.length;
+    const shotsPerTick = isMobileView ? 1 : (tower.level >= 7 ? 2 : 1);
+    for (let i = 0; i < shotsPerTick; i += 1) {
+      const kind = kinds[(start + i) % kinds.length];
+      emitBulletForKind(tower, target, kind, true);
     }
+    tower.fusionCycle = (start + shotsPerTick) % kinds.length;
     return;
   }
 
-  emitBulletForKind(tower, target, tower.kind);
+  emitBulletForKind(tower, target, tower.kind, false);
 }
 
 function hurtEnemy(enemy, damage, sourceKind = '', secondary = false) {
@@ -4074,6 +4085,23 @@ function drawTowerSunken(tower, now) {
   }
 
   if (tower.kind === 'fusion') {
+    if (isMobileView || state.towers.length >= 70) {
+      ctx.strokeStyle = 'rgba(200, 255, 255, 0.9)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, ringR * 0.9, 0, TAU);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(150, 255, 230, 0.6)';
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(-ringR * 0.7, 0);
+      ctx.lineTo(ringR * 0.7, 0);
+      ctx.moveTo(0, -ringR * 0.7);
+      ctx.lineTo(0, ringR * 0.7);
+      ctx.stroke();
+      return;
+    }
+
     const starR1 = ringR * 0.45;
     const starR2 = ringR * 0.75;
     ctx.strokeStyle = 'rgba(200, 255, 255, 0.95)';
