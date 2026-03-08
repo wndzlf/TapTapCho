@@ -1,218 +1,72 @@
-# TapTapCho Hyper-casual Build Kit
+# TapTapCho
 
-이 저장소는 웹 기반 하이퍼 캐주얼 게임 플랫폼(포키 스타일)을 빠르게 확장하기 위한 기본 골격입니다.
+웹 기반 하이퍼 캐주얼 게임 컬렉션 플랫폼입니다.  
+목표는 `빠른 프로토타이핑`에서 `상업화 가능한 게임 플랫폼`으로 전환하는 것입니다.
 
-## 1) 빠른 실행
+## 1) 프로젝트 개요
+- 플랫폼 형태: 단일 게임 목록 페이지 + 개별 게임 페이지
+- 기술 스택: Vanilla JS/HTML5 Canvas + Godot Web Export
+- 플레이 타겟: 모바일 터치 중심, 3~5분 세션
+- 운영 구조: 싱글 + 일부 멀티(웹소켓 서버)
+
+## 2) 현재 상태 요약 (외부 리뷰 반영)
+1. 게임성 편차가 큼 (상위 소수 외 대부분 리워크 필요)
+2. 독창성 부족 (클론 성향, 차별화 약함)
+3. 수익화 준비 미흡 (광고/리워드 루프 체계 부족)
+4. 기술/운영 표준화 부족 (성능/장애 복구/QA 체계 보완 필요)
+5. 유저 인게이지먼트 장치 부족 (리텐션/공유/재방문 설계 약함)
+
+상세 평가 체계와 점수는 `/Users/user/TapTapCho/game-evaluation.md` 기준으로 관리합니다.
+
+## 3) 빠른 실행
 
 ```bash
 cd /Users/user/TapTapCho
 python3 -m http.server 8080
 ```
 
-브라우저에서 `http://localhost:8080` 접속.
+브라우저: `http://localhost:8080`
 
-### 같은 와이파이 멀티(Worm Arena LAN)
+## 4) 로컬 멀티/랭킹 서버
 
-1. LAN 서버 실행 (호스트 PC 1대):
+의존성 설치:
 
 ```bash
 cd /Users/user/TapTapCho
 npm install
+```
+
+Sunken 멀티 + 싱글 랭킹 서버:
+
+```bash
+npm run sunken-multi-server
+```
+
+Worm LAN 서버:
+
+```bash
 npm run worm-lan-server
 ```
 
-2. 정적 웹 서버 실행:
+## 5) 개발 운영 원칙
+1. 점수표 우선: `game-evaluation.md` 기준으로만 개선 우선순위 결정
+2. 집중 개발: 동시 집중 게임은 최대 2~3개
+3. 모바일 우선: 터치 정확도/가독성/시야 가림을 최우선 검증
+4. PC와 모바일 최적화 분리: 모바일 경량화가 PC 품질에 영향 주지 않게 유지
+5. 문서 일원화: 평가/우선순위/라이선스는 단일 문서 기준으로 관리
 
-```bash
-cd /Users/user/TapTapCho
-python3 -m http.server 8080
-```
+## 6) 수익화 전환 체크리스트
+- [ ] 상위 게임 2개를 GQS 70+로 안정화
+- [ ] 공통 텔레메트리(세션/이탈/재시도) 도입
+- [ ] 광고/리워드 지점 정의 및 A/B 테스트 계획 수립
+- [ ] 서버 장애 복구/데이터 보존 운영 규칙 확정
+- [ ] 외부 에셋 라이선스 최종 검수
 
-3. 같은 와이파이 기기에서 접속:
-- 게임 페이지: `http://<호스트PC-IP>:8080/webgame-38/index.html`
-- Server 입력값: `ws://<호스트PC-IP>:9090`
-- 같은 Room 코드로 `Host` 또는 `Join`
+## 7) 핵심 문서
+- 평가표/우선순위: `/Users/user/TapTapCho/game-evaluation.md`
+- 외부 에셋 라이선스: `/Users/user/TapTapCho/THIRD_PARTY_LICENSES.md`
+- 병렬 작업 가이드: `/Users/user/TapTapCho/agent.md`
+- 아이디어/진행 상태: `/Users/user/TapTapCho/checklist.md`
 
-### 같은 와이파이 멀티(Sunken Sixway 2~4P)
-
-1. 멀티 서버 실행 (호스트 PC 1대):
-
-```bash
-cd /Users/user/TapTapCho
-npm install
-npm run sunken-multi-server
-```
-
-2. 정적 웹 서버 실행:
-
-```bash
-cd /Users/user/TapTapCho
-python3 -m http.server 8080
-```
-
-3. 같은 와이파이 기기에서 접속:
-- 게임 페이지: `http://<호스트PC-IP>:8080/webgame-40/multi.html`
-- Server 입력값: `ws://<호스트PC-IP>:9091`
-- 방 만들기에서 인원수(2/3/4명) 선택 가능
-- 2명 선택 시 활성 라인: `3시/9시`
-- 방 만들기 후 방 목록에서 클릭 참여(방 번호 수동 입력 없이 참여 가능)
-
-4. 오프라인 복구:
-- 연결이 끊기면 우상단 `새로고침/재연결` 버튼이 표시됩니다.
-- 끊긴 상태에서 한 배치/판매 작업은 Pending 큐로 저장되고, 새로고침 후 재연결 시 자동 재전송됩니다.
-
-### 싱글 랭킹 서버 등록(맥미니 호스트)
-
-싱글 모드에서도 플레이어 닉네임을 서버에 등록하고 기록을 계속 유지할 수 있습니다.
-
-1. 맥미니에서 랭킹/멀티 서버 실행:
-
-```bash
-cd /Users/user/TapTapCho
-npm install
-npm run sunken-multi-server
-```
-
-2. 게임 정적 서버 실행:
-
-```bash
-cd /Users/user/TapTapCho
-python3 -m http.server 8080
-```
-
-3. 맥미니 IP 확인:
-
-```bash
-ipconfig getifaddr en0
-```
-
-(`en0`가 비어 있으면 `en1` 확인)
-
-4. 싱글 고정 서버 주소 설정(`/webgame-40/index.html`):
-- `window.TapTapChoConfig.singleRankServer` 값을 `wss://<Cloudflare-도메인>`으로 설정
-- 예시: `singleRankServer: 'wss://sunken-rank.example.com'`
-- 싱글 모드 랭킹 패널에서는 `닉네임`만 입력 후 `등록/저장` 클릭
-
-5. 저장 위치:
-- 싱글 랭킹 점수: `/Users/user/TapTapCho/data/sunken-single-ranks.json`
-- 플레이어 등록 정보: `/Users/user/TapTapCho/data/sunken-single-players.json`
-
-6. 연결 점검:
-
-```bash
-curl http://<맥미니IP>:9091
-```
-
-`ok: true`와 `singleLeaderboardTop`가 보이면 정상입니다.
-
-Cloudflare 사용 시:
-- 웹이 HTTPS면 `wss://` 주소를 사용해야 브라우저 혼합콘텐츠 차단이 발생하지 않습니다.
-
-연결이 안 될 때 체크:
-- 맥미니 방화벽에서 Node(`node`) 인바운드 허용
-- 공유기/같은 와이파이 망인지 확인
-- 서버 포트 변경 시: `SUNKEN_MULTI_PORT=9091 npm run sunken-multi-server`
-
-## 2) 개발 원칙
-
-- **액션으로 유저에게 게임을 이해시키는 구조**를 최우선으로 한다. (설명보다 행동/피드백)
-- **디자인은 максимально 심플**하게 유지한다. (불필요한 UI/장식 제거)
-- **탭/모드 전환은 즉시 색상 변화로 인지 가능**해야 한다. (현재 탭이 명확히 보이게 유지)
-- **광고 이미지는 구좌에 맞게 잘림 없이 최적화(기본 contain + 품질 유지)**한다.
-- **UI 추가/레이아웃 변경 시 모바일 화면에서 모든 텍스트/콘텐츠가 실제로 보이는지 최종 확인**한다.
-- **게임 중 맵 가림은 큰 불편**이므로, 플레이 중 시야를 가리는 고정 UI는 지양한다.
-- 5초 안에 재미 포인트가 보여야 합니다.
-- 튜토리얼 없이 바로 플레이 가능해야 합니다.
-- 1분 내 짧은 세션으로도 재미가 나와야 합니다.
-- 각 게임은 독립 폴더로 분리합니다 (충돌 방지).
-- 게임 개선 우선순위/점수 기준은 `game-evaluation.md`를 단일 기준으로 사용합니다.
-- 프로젝트 문서/평가표/변경 이력/작업 로그는 기본 한글로 작성합니다.
-- 모든 작업 응답에는 **현재 상태 기준 재미 강화 제안(최소 1개, 권장 3개)** 을 반드시 포함합니다.
-- 사용자가 요청하지 않아도, 에이전트는 매 작업 종료 시 다음 반복에서 바로 적용 가능한 재미 개선안을 선제 제시합니다.
-
-## 3) 병렬 제작 워크플로
-
-- `agent.md`: 역할 분담 + 프롬프트 규칙
-- `checklist.md`: 게임 아이디어/진행 상태 트래킹
-- `templates/webgame-template`: 새 게임 템플릿
-- `scripts/create-webgame.sh`: 템플릿 복제 스크립트
-
-권장 순서:
-
-1. 기획 에이전트가 `checklist.md`에서 다음 게임 3~5개 선정
-2. 구현 에이전트들이 각자 다른 `webgame-*` 폴더만 작업
-3. 검수 에이전트가 난이도/점수/버그/게임주스 보정
-4. 통합 에이전트가 `index.html` 카드만 최종 반영
-5. 게임 작업 직후 `game-evaluation.md`에 점수/사유/개선액션을 반드시 업데이트
-
-## 4) 새 게임 생성
-
-```bash
-bash scripts/create-webgame.sh webgame-10 "Zigzag Rush" "Reflex · Zigzag"
-```
-
-명령 실행 후:
-
-- `webgame-10/` 폴더가 생성됩니다.
-- 메인 페이지(`index.html`)에 붙여 넣을 카드 HTML 스니펫이 출력됩니다.
-
-썸네일 일괄 생성:
-
-```bash
-cd /Users/user/TapTapCho
-node scripts/generate-thumbnails.js
-```
-
-## 5) 병렬 작업 충돌 방지 규칙
-
-- 구현 에이전트는 `index.html` 수정 금지
-- 한 에이전트 = 한 게임 폴더만 수정
-- 공통 파일(`style.css`, `index.html`)은 통합 담당만 수정
-- 머지 직전 `python3 -m http.server 8080`로 클릭/모바일 터치 직접 확인
-
-## 6) Godot 3D 게임 반영(필수)
-
-`godot-urban-maze`, `godot-platformer`는 **소스 프로젝트**, `godot-urban-maze-web`, `godot-platformer-web`는 **웹 export 결과물**입니다.
-
-Godot 소스 변경 후 웹에 반영하려면:
-
-1. Godot 4에서 `/Users/user/TapTapCho/godot-urban-maze/project.godot` 열기
-2. `Project -> Export -> Web` 선택
-3. `export_path`가 `../godot-urban-maze-web/index.html`인지 확인 후 Export
-4. 같은 방식으로 `godot-platformer`도 `../godot-platformer-web/index.html`로 Export
-
-## 7) Godot 2D 비행 슈팅 (AirStrikerLite)
-
-- 소스: `godot-air-striker`
-- 웹 export 결과물 경로: `godot-air-striker-web`
-
-Export 순서:
-1. Godot 4에서 `/Users/user/TapTapCho/godot-air-striker/project.godot` 열기
-2. `Project -> Export -> Web`
-3. export path를 `../godot-air-striker-web/index.html`로 지정 후 Export
-
-## 8) Godot 공식 데모 레퍼런스(항상 참고)
-
-- 레퍼런스 저장소: `https://github.com/godotengine/godot-demo-projects`
-- 앞으로 Godot 기반 기능(이동, 카메라, 보스 패턴, HUD, 물리, 입력)은 위 공식 데모 코드 구조를 우선 참고합니다.
-- 특히 2D 액션/슈팅 및 3D 이동 안정화 작업에서 데모 프로젝트의 씬 구성과 스크립트 패턴을 기준으로 적용합니다.
-
-## 9) 외부 에셋 라이선스
-
-- 외부 에셋(오디오/이미지) 라이선스 고지: `THIRD_PARTY_LICENSES.md`
-- AirStrikerLite BGM(`the_dawn_unfolds_v2`)은 CC BY 4.0 표기를 포함해 사용합니다.
-- Orbit Survivor BGM(`orbit-survivor-pixabay-492540.mp3`)은 Pixabay Content License 조건으로 사용합니다.
-- Zigzag Memory Run BGM(`zigzag-memory-run-pixabay-488126.mp3`)은 Pixabay Content License 조건으로 사용합니다.
-- Winter Ski Rush BGM(`winter-ski-rush-pixabay-286213.mp3`)은 Pixabay Content License 조건으로 사용합니다.
-- Winter Ski Rush Brake SFX(`winter-ski-rush-brake-pixabay-46042.mp3`)은 Pixabay Content License 조건으로 사용합니다.
-- Hyperfold 외계인 에셋(`kenney_alien-ufo-pack`)은 CC0로 상업적 사용 가능(출처 표기 권장).
-
-## 10) Godot 2D 레이어/리와인드 레이스 (Hyperfold)
-
-- 소스: `godot-hyperfold`
-- 웹 export 결과물 경로: `godot-hyperfold-web`
-
-Export 순서:
-1. Godot 4.3+에서 `/Users/user/TapTapCho/godot-hyperfold/project.godot` 열기
-2. `Project -> Export -> Web`
-3. export path를 `../godot-hyperfold-web/index.html`로 지정 후 Export
+## 8) 라이선스
+외부 에셋/음원 사용 조건은 `THIRD_PARTY_LICENSES.md`를 단일 기준으로 따릅니다.
