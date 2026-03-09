@@ -907,40 +907,65 @@ function buildTowerBuckets() {
   return buckets;
 }
 
+const NEARBY_OFFSET_CACHE = new Map();
+
+function getNearbyOffsets(radiusCells = 1) {
+  const radius = Math.max(0, Math.floor(radiusCells || 0));
+  const key = `r${radius}`;
+  if (NEARBY_OFFSET_CACHE.has(key)) return NEARBY_OFFSET_CACHE.get(key);
+
+  const offsets = [];
+  for (let dc = -radius; dc <= radius; dc += 1) {
+    for (let dr = -radius; dr <= radius; dr += 1) {
+      // 가까운 칸 우선(맨해튼 + 유클리드 보조)으로 수집해 근접 타겟 누락 방지.
+      const manhattan = Math.abs(dc) + Math.abs(dr);
+      const distSq = dc * dc + dr * dr;
+      offsets.push({ dc, dr, manhattan, distSq });
+    }
+  }
+  offsets.sort((a, b) => {
+    if (a.manhattan !== b.manhattan) return a.manhattan - b.manhattan;
+    if (a.distSq !== b.distSq) return a.distSq - b.distSq;
+    if (a.dc !== b.dc) return a.dc - b.dc;
+    return a.dr - b.dr;
+  });
+  const compact = offsets.map(({ dc, dr }) => [dc, dr]);
+  NEARBY_OFFSET_CACHE.set(key, compact);
+  return compact;
+}
+
 function collectNearbyEnemies(buckets, c, r, radiusCells = 1, maxCount = Infinity) {
   const list = [];
-  for (let dc = -radiusCells; dc <= radiusCells; dc += 1) {
-    for (let dr = -radiusCells; dr <= radiusCells; dr += 1) {
-      const key = `${c + dc},${r + dr}`;
-      const bucket = buckets.get(key);
-      if (!bucket) continue;
-      if (!Number.isFinite(maxCount) || maxCount <= 0) {
-        list.push(...bucket);
-        continue;
-      }
-      if (list.length + bucket.length <= maxCount) {
-        list.push(...bucket);
-      } else {
-        for (let i = 0; i < bucket.length; i += 1) {
-          list.push(bucket[i]);
-          if (list.length >= maxCount) return list;
-        }
-      }
-      if (list.length >= maxCount) return list;
+  const offsets = getNearbyOffsets(radiusCells);
+  for (const [dc, dr] of offsets) {
+    const key = `${c + dc},${r + dr}`;
+    const bucket = buckets.get(key);
+    if (!bucket) continue;
+    if (!Number.isFinite(maxCount) || maxCount <= 0) {
+      list.push(...bucket);
+      continue;
     }
+    if (list.length + bucket.length <= maxCount) {
+      list.push(...bucket);
+    } else {
+      for (let i = 0; i < bucket.length; i += 1) {
+        list.push(bucket[i]);
+        if (list.length >= maxCount) return list;
+      }
+    }
+    if (list.length >= maxCount) return list;
   }
   return list;
 }
 
 function collectNearbyTowers(buckets, c, r, radiusCells = 1) {
   const list = [];
-  for (let dc = -radiusCells; dc <= radiusCells; dc += 1) {
-    for (let dr = -radiusCells; dr <= radiusCells; dr += 1) {
-      const key = `${c + dc},${r + dr}`;
-      const bucket = buckets.get(key);
-      if (!bucket) continue;
-      list.push(...bucket);
-    }
+  const offsets = getNearbyOffsets(radiusCells);
+  for (const [dc, dr] of offsets) {
+    const key = `${c + dc},${r + dr}`;
+    const bucket = buckets.get(key);
+    if (!bucket) continue;
+    list.push(...bucket);
   }
   return list;
 }
