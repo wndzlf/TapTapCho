@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="VietKo Community Demo thumbnail">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#cfe4ff"/>
+      <stop offset="1" stop-color="#8eb4de"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#eaf2ff" stop-opacity="0.95"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="360" fill="url(#bg)"/>
+
+  <circle cx="88" cy="82" r="54" fill="#ffffff" opacity="0.22"/>
+  <circle cx="562" cy="72" r="66" fill="#ffffff" opacity="0.16"/>
+  <circle cx="518" cy="302" r="90" fill="#ffffff" opacity="0.12"/>
+
+  <rect x="138" y="24" width="364" height="84" rx="12" fill="url(#panel)" stroke="#c7d7eb"/>
+  <rect x="154" y="40" width="76" height="24" rx="6" fill="#2b72d6"/>
+  <rect x="238" y="40" width="76" height="24" rx="6" fill="#4f88d8"/>
+  <rect x="322" y="40" width="76" height="24" rx="6" fill="#7aa8e2"/>
+  <rect x="406" y="40" width="76" height="24" rx="6" fill="#aac5ea"/>
+  <rect x="154" y="72" width="328" height="20" rx="5" fill="#d9e7fa"/>
+
+  <rect x="36" y="132" width="568" height="86" rx="12" fill="url(#panel)" stroke="#c7d7eb"/>
+  <rect x="56" y="148" width="172" height="54" rx="8" fill="#f1f6ff" stroke="#d7e4f7"/>
+  <rect x="238" y="148" width="172" height="54" rx="8" fill="#f1f6ff" stroke="#d7e4f7"/>
+  <rect x="420" y="148" width="164" height="54" rx="8" fill="#f1f6ff" stroke="#d7e4f7"/>
+
+  <rect x="36" y="232" width="368" height="90" rx="12" fill="url(#panel)" stroke="#c7d7eb"/>
+  <rect x="52" y="248" width="104" height="58" rx="8" fill="#e7f0ff"/>
+  <rect x="166" y="248" width="104" height="58" rx="8" fill="#dceafe"/>
+  <rect x="280" y="248" width="108" height="58" rx="8" fill="#d2e3fb"/>
+
+  <rect x="416" y="232" width="188" height="90" rx="12" fill="#173456" stroke="#436999"/>
+  <text x="432" y="284" font-size="18" fill="#d9e9ff" font-family="Arial, sans-serif" font-weight="700">COMMUNITY</text>
+
+  <text x="36" y="345" font-size="34" fill="#f4f9ff" font-family="Arial, sans-serif" font-weight="700">VietKo Community Demo</text>
+</svg>

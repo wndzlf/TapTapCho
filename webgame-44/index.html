@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VietKo Community Demo</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">VietKo <span>Community</span></div>
+    <nav class="topnav" aria-label="Main">
+      <a href="#">커뮤니티</a>
+      <a href="#">일자리</a>
+      <a href="#">비즈니스</a>
+      <a href="#">부동산</a>
+      <a href="#">공지</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div class="hero-overlay"></div>
+    <div class="hero-inner">
+      <h1>Vietnam Korean Community Portal</h1>
+      <p>공지 · 광고 · 구인구직 · 커뮤니티를 한 화면에서 운영하는 예시 레이아웃</p>
+      <div class="partner-board" role="list" aria-label="Partners">
+        <article class="partner" role="listitem">TBT Group</article>
+        <article class="partner" role="listitem">우리은행</article>
+        <article class="partner" role="listitem">VietKo Ads</article>
+        <article class="partner" role="listitem">K-Trade</article>
+        <article class="partner" role="listitem">Global Edu</article>
+        <article class="partner" role="listitem">HanViet Biz</article>
+        <article class="partner" role="listitem">K-Market</article>
+        <article class="partner" role="listitem">Nexus HR</article>
+      </div>
+    </div>
+  </section>
+
+  <main class="layout">
+    <section class="section">
+      <div class="section-head">
+        <h2>커뮤니티</h2>
+        <div class="tabs" role="tablist" aria-label="Community tabs">
+          <button class="tab active" type="button">전체</button>
+          <button class="tab" type="button">공지</button>
+          <button class="tab" type="button">자유</button>
+          <button class="tab" type="button">이벤트</button>
+        </div>
+      </div>
+
+      <div class="row-with-sideads">
+        <aside class="side-ad" aria-label="Left ad">AD</aside>
+        <div class="post-grid">
+          <article class="post-card feature">
+            <div class="img"></div>
+            <div class="post-body">
+              <h3>베트남 생활 가이드 2026</h3>
+              <p>입국 · 통신 · 은행 · 생활비를 한 번에 정리한 고정 게시물</p>
+            </div>
+          </article>
+          <article class="post-card"><div class="img"></div><div class="post-body"><h3>이번 주 교민 행사</h3><p>호치민/하노이 지역 행사 일정</p></div></article>
+          <article class="post-card"><div class="img"></div><div class="post-body"><h3>오늘의 중고장터</h3><p>가전/가구/차량 거래 모음</p></div></article>
+          <article class="post-card"><div class="img"></div><div class="post-body"><h3>신규 매장 오픈</h3><p>한식/카페/마트 신규 입점</p></div></article>
+          <article class="post-card"><div class="img"></div><div class="post-body"><h3>비자 Q&A 베스트</h3><p>자주 묻는 질문 모음</p></div></article>
+          <article class="post-card"><div class="img"></div><div class="post-body"><h3>출장/물류 추천</h3><p>교민 후기 기반 업체 리스트</p></div></article>
+        </div>
+        <aside class="side-ad" aria-label="Right ad">AD</aside>
+      </div>
+    </section>
+
+    <section class="banner-row">
+      <div class="wide-banner">PROMOTION BANNER AREA</div>
+      <div class="wide-banner dark">EVENT / AD SLOT</div>
+    </section>
+
+    <section class="section">
+      <div class="section-head simple"><h2>일자리</h2></div>
+      <div class="job-strip">
+        <article class="job-card"><h3>영업 매니저</h3><p>월 2,500$ · HCMC</p></article>
+        <article class="job-card"><h3>통역/번역</h3><p>월 1,800$ · Hanoi</p></article>
+        <article class="job-card"><h3>회계 담당</h3><p>월 2,100$ · Danang</p></article>
+        <article class="job-card"><h3>개발자</h3><p>월 3,000$ · Remote</p></article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head simple"><h2>부동산</h2></div>
+      <div class="property-list">
+        <article class="property-card"><div class="thumb"></div><h3>District 2 Apartment</h3><p>2BR · 95m² · $1,150/mo</p></article>
+        <article class="property-card"><div class="thumb"></div><h3>Thao Dien Studio</h3><p>1BR · 55m² · $780/mo</p></article>
+        <article class="property-card"><div class="thumb"></div><h3>Vinhomes Family Unit</h3><p>3BR · 125m² · $1,650/mo</p></article>
+        <article class="property-card"><div class="thumb"></div><h3>Office Shared Space</h3><p>6 desks · 45m² · $420/mo</p></article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head simple"><h2>문의</h2></div>
+      <form class="inquiry" action="#" method="get" onsubmit="return false;">
+        <input type="text" placeholder="광고/제휴 문의를 남겨주세요" />
+        <button type="button">등록</button>
+      </form>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>© VietKo Community Demo · Built for TapTapCho showcase</p>
+  </footer>
+
+  <script>
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach((node) => node.classList.remove('active'));
+        tab.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>
