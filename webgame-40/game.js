@@ -3084,7 +3084,10 @@ function fastestEnemyFiltered(x, y, range, predicate) {
 }
 
 function pickTowerTarget(tower) {
-  return nearestEnemyFromBuckets(tower.x, tower.y, tower.range);
+  const target = nearestEnemyFromBuckets(tower.x, tower.y, tower.range);
+  if (target) return target;
+  if (state.enemies.length) return nearestEnemy(tower.x, tower.y, tower.range);
+  return null;
 }
 
 function removeTower(tower) {
