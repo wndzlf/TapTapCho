@@ -15,12 +15,24 @@
 
     <div class="hud">
       <div>Score: <span id="score">0</span></div>
+      <div>Lives: <span id="lives">3</span></div>
       <div>Best: <span id="best">0</span></div>
       <div>Streak: <span id="streak">0</span></div>
       <button id="btnStart">Start</button>
     </div>
 
-    <canvas id="game" width="420" height="700"></canvas>
+    <div class="game-shell">
+      <canvas id="game" width="420" height="700"></canvas>
+      <div id="hitFlash" class="hit-flash"></div>
+      <div id="gameOverModal" class="gameover-modal hidden" role="dialog" aria-modal="true" aria-labelledby="gameOverTitle">
+        <div class="gameover-card">
+          <h2 id="gameOverTitle">Mission Failed</h2>
+          <p>Final Score: <strong id="finalScore">0</strong></p>
+          <p>Best Score: <strong id="finalBest">0</strong></p>
+          <button id="btnRestart">Play Again</button>
+        </div>
+      </div>
+    </div>
 
     <footer>
       <small>Tap / Space: change orbit direction · Music: "Comedy Cartoon Funny Background Music" (Pixabay)</small>

@@ -60,6 +60,11 @@ header p {
   box-shadow: 0 0 10px rgba(125, 227, 255, 0.35);
 }
 
+.hud > div.lives-low {
+  border-color: rgba(255, 123, 116, 0.85);
+  box-shadow: 0 0 12px rgba(255, 123, 116, 0.45);
+}
+
 button {
   border: 1px solid #355b99;
   background: #1a2a4d;
@@ -83,6 +88,66 @@ canvas {
   border-radius: 12px;
   background: #0d1324;
   touch-action: none;
+}
+
+.game-shell {
+  position: relative;
+}
+
+.hit-flash {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 184, 184, 0.44), rgba(255, 80, 80, 0.2) 55%, rgba(0, 0, 0, 0));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+
+.hit-flash.show {
+  opacity: 1;
+}
+
+.gameover-modal {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: rgba(3, 6, 12, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  z-index: 4;
+}
+
+.gameover-modal.hidden {
+  display: none;
+}
+
+.gameover-card {
+  width: min(320px, 90%);
+  background: #0f1a33;
+  border: 1px solid #2b4778;
+  border-radius: 14px;
+  padding: 18px 16px;
+  text-align: center;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
+}
+
+.gameover-card h2 {
+  margin: 0 0 10px;
+  color: #ff8f88;
+}
+
+.gameover-card p {
+  margin: 6px 0;
+  opacity: 0.96;
+}
+
+.gameover-card button {
+  margin-top: 12px;
+  width: 100%;
+  font-weight: 700;
 }
 
 footer {
