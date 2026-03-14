@@ -1,0 +1,27 @@
+<svg width="640" height="360" viewBox="0 0 640 360" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffb3c7"/>
+      <stop offset="100%" stop-color="#7ad6ff"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.65"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="360" rx="28" fill="url(#bg)"/>
+  <g transform="translate(56 56)">
+    <rect width="240" height="160" rx="18" fill="url(#card)"/>
+    <rect x="24" y="24" width="192" height="96" rx="12" fill="#ffe6ef"/>
+    <circle cx="72" cy="72" r="20" fill="#ff7aa2"/>
+    <path d="M120 100c18-4 36-16 48-32" stroke="#ff7aa2" stroke-width="8" stroke-linecap="round"/>
+    <text x="24" y="140" font-family="Verdana, sans-serif" font-size="18" fill="#dd4b7f">Couple Log</text>
+  </g>
+  <g transform="translate(344 84)">
+    <path d="M0 40c36-44 88-44 124 0 36 44 76 44 116 0" stroke="#ffffff" stroke-width="12" stroke-linecap="round" fill="none"/>
+    <circle cx="24" cy="40" r="14" fill="#ffffff"/>
+    <circle cx="124" cy="40" r="14" fill="#ffffff"/>
+    <circle cx="240" cy="40" r="14" fill="#ffffff"/>
+    <text x="0" y="120" font-family="Verdana, sans-serif" font-size="20" fill="#ffffff">Travel Timeline</text>
+  </g>
+</svg>

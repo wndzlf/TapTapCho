@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Couple Travel Log</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="top">
+    <a class="back" href="../index.html">← TapTapCho</a>
+    <div class="brand">
+      <h1>커플 여행 기록</h1>
+      <p>장소별 사진 정리 · 대표컷 · 타임라인</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div class="hero-card">
+        <h2 id="hero-title">최근 여행</h2>
+        <p id="hero-sub">대표 사진과 함께 정리됩니다.</p>
+        <div id="hero-photo" class="hero-photo">
+          <span>대표 사진</span>
+        </div>
+      </div>
+      <div class="hero-timeline">
+        <h3>타임라인</h3>
+        <div id="timeline" class="timeline"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>장소별 사진 더미</h2>
+        <p>각 장소의 대표 사진이 맨 앞에 자동 배치됩니다.</p>
+      </div>
+      <div id="location-grid" class="location-grid"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>가고 싶은 여행지 리스트업</h2>
+        <p>각자 저장한 위시리스트를 합쳐서 추천지 자동 선정</p>
+      </div>
+      <div class="wishlist">
+        <div class="wishlist-form">
+          <input id="wish-input" placeholder="여행지를 추가하세요 (예: 오사카, 파리)" />
+          <select id="wish-owner">
+            <option value="me">내가 가고싶은 곳</option>
+            <option value="partner">상대가 가고싶은 곳</option>
+          </select>
+          <button id="wish-add">추가</button>
+        </div>
+        <div class="wishlist-body">
+          <div>
+            <h3>위시리스트</h3>
+            <ul id="wishlist-items"></ul>
+          </div>
+          <div class="wishlist-reco">
+            <h3>추천</h3>
+            <p id="wishlist-reco">데이터를 분석 중...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">© TapTapCho · Couple Travel Log</footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
