@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Twin Temple Escape - Online Co-op</title>
+  <link rel="stylesheet" href="multi.css" />
+  <link rel="stylesheet" href="../assets/css/site-quality.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="header">
+      <div class="mode-tabs">
+        <a class="mode-tab" href="./index.html">Local</a>
+        <a class="mode-tab active" href="./multi.html">Online Co-op</a>
+      </div>
+      <h1>Twin Temple Escape: Online Co-op</h1>
+      <p>Join one room with two players. Each player controls one character on mobile or desktop.</p>
+    </header>
+
+    <section class="net" id="netPanel">
+      <label>Server
+        <input id="serverUrl" type="text" placeholder="ws://192.168.0.10:9092" />
+      </label>
+      <label>Player
+        <input id="playerName" type="text" maxlength="14" placeholder="Player" />
+      </label>
+      <label>Room name
+        <input id="roomName" type="text" maxlength="22" placeholder="Twin Temple Room" />
+      </label>
+      <button id="btnConnect" type="button">Connect</button>
+      <button id="btnCreateRoom" type="button">Create room</button>
+      <button id="btnRefreshRooms" type="button">Refresh list</button>
+      <button id="btnLeaveRoom" type="button">Leave room</button>
+      <button id="btnReconnect" class="reconnect" type="button">Reconnect</button>
+      <div class="status" id="statusText">Offline</div>
+    </section>
+
+    <section class="rooms">
+      <h2>Room List</h2>
+      <div class="room-list" id="roomList"></div>
+    </section>
+
+    <section class="hud">
+      <div class="stat">Room <b id="roomText">-</b></div>
+      <div class="stat">Role <b id="roleText">-</b></div>
+      <div class="stat">Level <b id="levelText">-</b></div>
+      <div class="stat">Time <b id="timeText">00:00.00</b></div>
+      <div class="stat">Deaths <b id="deathText">0</b></div>
+      <div class="stat">Players <b id="playersText">0/2</b></div>
+      <div class="stat">State <b id="stateText">Idle</b></div>
+    </section>
+
+    <section class="actions">
+      <button id="btnStartRun" type="button">Start</button>
+      <button id="btnRestartLevel" type="button">Restart</button>
+      <button id="btnNextLevel" type="button">Next</button>
+      <div class="hint">Control one assigned role only. Keyboard: A/D/W or Arrow/Up.</div>
+    </section>
+
+    <section class="touch">
+      <button class="touch-btn" data-action="left" type="button">Left</button>
+      <button class="touch-btn" data-action="right" type="button">Right</button>
+      <button class="touch-btn jump" data-action="jump" type="button">Jump</button>
+    </section>
+
+    <div class="arena">
+      <canvas id="game" width="960" height="540"></canvas>
+      <div class="overlay" id="overlay">Connect and join room</div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    window.TapTapChoConfig = Object.assign({}, window.TapTapChoConfig, {
+      // 고정 서버 주소를 쓰려면 여기 값을 넣으세요.
+      // 예: multiServer: 'wss://your-tunnel.trycloudflare.com'
+      multiServer: 'wss://desert-television-nationally-communicate.trycloudflare.com',
+    });
+  </script>
+  <script src="multi.js?v=20260315a"></script>
+  <script src="../assets/js/site-quality.js"></script>
+</body>
+</html>

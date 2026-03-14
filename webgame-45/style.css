@@ -45,6 +45,27 @@ body {
   gap: 14px;
 }
 
+.mode-tabs {
+  display: inline-flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.mode-tab {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 12px;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.mode-tab.active {
+  color: var(--text);
+  border-color: #79a5ff;
+  box-shadow: 0 0 0 1px rgba(121, 165, 255, 0.45);
+}
+
 .title-wrap h1 {
   margin: 0;
   font-size: clamp(28px, 4vw, 42px);
