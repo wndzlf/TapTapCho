@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Twin Temple Escape</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="../assets/css/site-quality.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <div class="title-wrap">
+        <h1>Twin Temple Escape</h1>
+        <p>Dual-character co-op puzzle platformer</p>
+      </div>
+      <div class="action-wrap">
+        <button id="btnStart" type="button">Start</button>
+        <button id="btnRestart" type="button">Restart</button>
+        <button id="btnNext" type="button" disabled>Next</button>
+      </div>
+    </header>
+
+    <section class="hud" aria-label="HUD">
+      <div class="chip"><span>Level</span><strong id="hudLevel">1 / 5</strong></div>
+      <div class="chip"><span>Time</span><strong id="hudTime">00:00.00</strong></div>
+      <div class="chip"><span>Deaths</span><strong id="hudDeaths">0</strong></div>
+      <div class="chip"><span>Status</span><strong id="hudStatus">Idle</strong></div>
+    </section>
+
+    <canvas id="game" width="960" height="540" aria-label="Twin Temple Escape"></canvas>
+
+    <section class="touch" aria-label="Touch controls">
+      <div class="pad ember">
+        <h2>Ember</h2>
+        <div class="row">
+          <button class="touch-btn" data-touch="ember-left" type="button">Left<br /><small>A</small></button>
+          <button class="touch-btn" data-touch="ember-right" type="button">Right<br /><small>D</small></button>
+          <button class="touch-btn jump" data-touch="ember-jump" type="button">Jump<br /><small>W</small></button>
+        </div>
+      </div>
+      <div class="pad aqua">
+        <h2>Aqua</h2>
+        <div class="row">
+          <button class="touch-btn" data-touch="aqua-left" type="button">Left<br /><small>&larr;</small></button>
+          <button class="touch-btn" data-touch="aqua-right" type="button">Right<br /><small>&rarr;</small></button>
+          <button class="touch-btn jump" data-touch="aqua-jump" type="button">Jump<br /><small>&uarr;</small></button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="game.js"></script>
+  <script src="../assets/js/site-quality.js"></script>
+</body>
+</html>
