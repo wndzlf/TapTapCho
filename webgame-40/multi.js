@@ -176,7 +176,8 @@ function normalizeServerUrl(value) {
     const host = parsed.hostname;
     if (!host) return '';
     const port = parsed.port ? `:${parsed.port}` : '';
-    return `${parsed.protocol}//${host}${port}`;
+    const pathname = parsed.pathname && parsed.pathname !== '/' ? parsed.pathname.replace(/\/+$/, '') : '';
+    return `${parsed.protocol}//${host}${port}${pathname}`;
   } catch (_) {
     return '';
   }
@@ -189,7 +190,7 @@ function fixedMultiServerUrl() {
 
 function defaultMultiServerUrl() {
   const host = window.location.hostname || 'localhost';
-  return `ws://${host}:9091`;
+  return `ws://${host}:9090/ws/sunken`;
 }
 
 function normalizeName(value) {

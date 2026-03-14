@@ -19,7 +19,7 @@
 
     <section class="net" id="netPanel">
       <label>서버
-        <input id="serverUrl" type="text" placeholder="ws://192.168.0.10:9091" />
+        <input id="serverUrl" type="text" placeholder="ws://192.168.0.10:9090/ws/sunken" />
       </label>
       <label>아이디
         <input id="playerName" type="text" maxlength="14" placeholder="Player" />
@@ -96,9 +96,9 @@
   <script src="../assets/js/neon-audio.js"></script>
   <script>
     window.TapTapChoConfig = Object.assign({}, window.TapTapChoConfig, {
-      // 멀티 고정 서버 주소 (예: wss://sunken-multi.example.com)
-      // 빈 문자열이면 입력값/기본값(ws://<host>:9091)을 사용합니다.
-      multiServer: 'wss://desert-television-nationally-communicate.trycloudflare.com',
+      // 멀티 고정 서버 주소 (예: wss://sunken-multi.example.com/ws/sunken)
+      // 빈 문자열이면 입력값/기본값(ws://<host>:9090/ws/sunken)을 사용합니다.
+      multiServer: 'wss://desert-television-nationally-communicate.trycloudflare.com/ws/sunken',
     });
   </script>
   <script src="multi.js?v=20260302d"></script>

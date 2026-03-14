@@ -20,7 +20,7 @@
 
     <section class="net" id="netPanel">
       <label>Server
-        <input id="serverUrl" type="text" placeholder="ws://192.168.0.10:9092" />
+        <input id="serverUrl" type="text" placeholder="ws://192.168.0.10:9090/ws/twin" />
       </label>
       <label>Player
         <input id="playerName" type="text" maxlength="14" placeholder="Player" />
@@ -75,8 +75,8 @@
   <script>
     window.TapTapChoConfig = Object.assign({}, window.TapTapChoConfig, {
       // 고정 서버 주소를 쓰려면 여기 값을 넣으세요.
-      // 예: multiServer: 'wss://your-tunnel.trycloudflare.com'
-      multiServer: 'wss://desert-television-nationally-communicate.trycloudflare.com',
+      // 예: multiServer: 'wss://your-tunnel.trycloudflare.com/ws/twin'
+      multiServer: 'wss://desert-television-nationally-communicate.trycloudflare.com/ws/twin',
     });
   </script>
   <script src="multi.js?v=20260315a"></script>
