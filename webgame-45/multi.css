@@ -73,7 +73,7 @@ body {
   padding: 10px;
   background: linear-gradient(180deg, rgba(20, 36, 74, 0.9), rgba(12, 24, 54, 0.9));
   display: grid;
-  grid-template-columns: 1.6fr 1.2fr 1.2fr repeat(5, auto);
+  grid-template-columns: 1.5fr 1.4fr repeat(4, auto);
   gap: 8px;
   align-items: end;
 }

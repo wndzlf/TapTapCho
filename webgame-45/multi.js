@@ -1,7 +1,6 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
-const serverUrlEl = document.getElementById('serverUrl');
 const playerNameEl = document.getElementById('playerName');
 const roomNameEl = document.getElementById('roomName');
 const roomListEl = document.getElementById('roomList');
@@ -17,7 +16,6 @@ const deathTextEl = document.getElementById('deathText');
 const playersTextEl = document.getElementById('playersText');
 const stateTextEl = document.getElementById('stateText');
 
-const btnConnect = document.getElementById('btnConnect');
 const btnCreateRoom = document.getElementById('btnCreateRoom');
 const btnRefreshRooms = document.getElementById('btnRefreshRooms');
 const btnLeaveRoom = document.getElementById('btnLeaveRoom');
@@ -32,7 +30,6 @@ const W = canvas.width;
 const H = canvas.height;
 
 const STORAGE = {
-  server: 'twin-temple-server-url',
   playerId: 'twin-temple-player-id',
   playerName: 'twin-temple-player-name',
   roomId: 'twin-temple-room-id',
@@ -267,7 +264,6 @@ function defaultServerUrl() {
 }
 
 function saveStorage() {
-  localStorage.setItem(STORAGE.server, client.serverUrl);
   localStorage.setItem(STORAGE.playerId, client.playerId);
   localStorage.setItem(STORAGE.playerName, client.playerName);
   if (client.roomId) localStorage.setItem(STORAGE.roomId, client.roomId);
@@ -278,9 +274,7 @@ function saveStorage() {
 
 function loadStorage() {
   const fixed = fixedServerUrl();
-  client.serverUrl = fixed
-    || normalizeServerUrl(localStorage.getItem(STORAGE.server) || '')
-    || defaultServerUrl();
+  client.serverUrl = fixed || defaultServerUrl();
   client.playerId = String(localStorage.getItem(STORAGE.playerId) || '').trim();
   if (!client.playerId) {
     client.playerId = randomId('p').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32);
@@ -290,8 +284,6 @@ function loadStorage() {
   client.roomName = normalizeRoomName(localStorage.getItem(STORAGE.roomName) || '');
   client.shouldAutoReconnect = Boolean(client.roomId);
 
-  serverUrlEl.value = client.serverUrl;
-  serverUrlEl.readOnly = Boolean(fixed);
   playerNameEl.value = client.playerName;
   roomNameEl.value = client.roomName || 'Twin Temple Room';
   saveStorage();
@@ -303,7 +295,7 @@ function setOverlay(text, visible) {
 }
 
 function updateReconnectVisibility() {
-  const show = !client.connected && client.shouldAutoReconnect && !!client.roomId;
+  const show = !client.connected;
   btnReconnect.classList.toggle('visible', show);
 }
 
@@ -348,11 +340,9 @@ function roleLabel(role) {
 }
 
 function connect(silent = false) {
-  const fixed = fixedServerUrl();
-  client.serverUrl = fixed || normalizeServerUrl(serverUrlEl.value) || defaultServerUrl();
+  client.serverUrl = fixedServerUrl() || defaultServerUrl();
   client.playerName = normalizeName(playerNameEl.value);
 
-  serverUrlEl.value = client.serverUrl;
   playerNameEl.value = client.playerName;
   saveStorage();
 
@@ -806,11 +796,6 @@ function loop(now) {
 }
 
 function bindUiEvents() {
-  btnConnect.addEventListener('click', () => {
-    client.shouldAutoReconnect = true;
-    connect();
-  });
-
   btnCreateRoom.addEventListener('click', () => createRoom());
   btnRefreshRooms.addEventListener('click', () => requestRooms());
   btnLeaveRoom.addEventListener('click', () => leaveRoom());
@@ -840,7 +825,7 @@ function init() {
   bindInputEvents();
   renderRooms();
   updateHud();
-  setOverlay('Connect and join room', true);
+  setOverlay('Connecting to server...', true);
   connect(true);
   requestAnimationFrame(loop);
 }

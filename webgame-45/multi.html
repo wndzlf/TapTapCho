@@ -19,21 +19,17 @@
     </header>
 
     <section class="net" id="netPanel">
-      <label>Server
-        <input id="serverUrl" type="text" placeholder="ws://192.168.0.10:9090/ws/twin" />
-      </label>
       <label>Player
         <input id="playerName" type="text" maxlength="14" placeholder="Player" />
       </label>
       <label>Room name
         <input id="roomName" type="text" maxlength="22" placeholder="Twin Temple Room" />
       </label>
-      <button id="btnConnect" type="button">Connect</button>
       <button id="btnCreateRoom" type="button">Create room</button>
       <button id="btnRefreshRooms" type="button">Refresh list</button>
       <button id="btnLeaveRoom" type="button">Leave room</button>
       <button id="btnReconnect" class="reconnect" type="button">Reconnect</button>
-      <div class="status" id="statusText">Offline</div>
+      <div class="status" id="statusText">Connecting…</div>
     </section>
 
     <section class="rooms">
@@ -66,7 +62,7 @@
 
     <div class="arena">
       <canvas id="game" width="960" height="540"></canvas>
-      <div class="overlay" id="overlay">Connect and join room</div>
+      <div class="overlay" id="overlay">Connecting to server...</div>
     </div>
   </div>
 
@@ -79,7 +75,7 @@
       multiServer: 'wss://desert-television-nationally-communicate.trycloudflare.com/ws/twin',
     });
   </script>
-  <script src="multi.js?v=20260315a"></script>
+  <script src="multi.js?v=20260315b"></script>
   <script src="../assets/js/site-quality.js"></script>
 </body>
 </html>
