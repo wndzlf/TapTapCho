@@ -28,7 +28,6 @@ const rankPanelEl = document.getElementById('singleRankPanel');
 const rankToggleBtn = document.getElementById('btnRankToggle');
 const detailToggleBtn = document.getElementById('btnDetailToggle');
 const singleTabEl = document.getElementById('tabSingle');
-const rankAdsEl = document.getElementById('rankAds');
 const detailPanelEl = document.getElementById('detailPanel');
 
 const btnSellMode = document.getElementById('btnSellMode');
@@ -1150,7 +1149,8 @@ function normalizeRankServerUrl(raw) {
 }
 
 function fixedRankServerUrl() {
-  const configured = window.TapTapChoConfig?.singleRankServer;
+  const configured = window.TapTapChoServers?.sunkenRankWs
+    || window.TapTapChoConfig?.singleRankServer;
   return normalizeRankServerUrl(configured || '');
 }
 
@@ -6092,24 +6092,6 @@ if (singleTabEl) {
   });
 }
 initSingleRank();
-
-const rankAdUrls = {
-  1: 'https://iksu-cheers.com/',
-  2: '',
-  3: '',
-  4: '',
-  5: '',
-};
-
-if (rankAdsEl) {
-  rankAdsEl.addEventListener('click', (event) => {
-    const slot = event.target.closest('.ad-slot');
-    if (!slot) return;
-    const key = slot.getAttribute('data-ad-slot');
-    const url = key ? (rankAdUrls[key] || '') : '';
-    if (url) window.open(url, '_blank', 'noopener');
-  });
-}
 
 loadEnemySprites();
 requestAnimationFrame(frame);

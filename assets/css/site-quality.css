@@ -1,0 +1,283 @@
+:root {
+  --site-line: #2a3b5f;
+  --site-panel: rgba(12, 19, 34, 0.88);
+  --site-text: #d8e6ff;
+  --site-title: #f0d17e;
+  --site-link: #8fd4ff;
+}
+
+.site-nav-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0 12px;
+  padding: 8px;
+  border: 1px solid var(--site-line);
+  border-radius: 10px;
+  background: var(--site-panel);
+}
+
+.site-nav-inline.no-wrap-nav {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 9998;
+  margin: 0;
+  max-width: calc(100vw - 20px);
+  backdrop-filter: blur(6px);
+}
+
+.site-nav-inline .label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #c0d2f1;
+  padding-right: 6px;
+}
+
+.site-nav-inline a,
+.site-footer-links a,
+.top-links a {
+  color: var(--site-link);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.site-nav-inline a:hover,
+.site-footer-links a:hover,
+.top-links a:hover {
+  text-decoration: underline;
+}
+
+.site-footer-links {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.top-links {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.game-guide {
+  margin-top: 14px;
+  margin-bottom: 12px;
+  border: 1px solid var(--site-line);
+  border-radius: 14px;
+  padding: 14px;
+  background: linear-gradient(180deg, rgba(20, 30, 50, 0.95), rgba(12, 20, 34, 0.95));
+  color: var(--site-text);
+}
+
+.game-guide h2 {
+  margin: 0 0 8px;
+  font-size: clamp(22px, 3vw, 30px);
+  color: var(--site-title);
+}
+
+.game-guide .lead {
+  margin: 0 0 12px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #d9e7ff;
+}
+
+.game-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.game-guide-card {
+  border: 1px solid #344b77;
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(10, 18, 32, 0.82);
+}
+
+.game-guide-card h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  color: #9ce3ff;
+}
+
+.game-guide-card p,
+.game-guide-card li {
+  margin: 0;
+  line-height: 1.52;
+  font-size: 14px;
+}
+
+.game-guide-card ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.game-guide-updates {
+  margin-top: 10px;
+}
+
+.game-guide-updates li {
+  line-height: 1.5;
+}
+
+.game-guide-faq {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.game-guide-faq dt {
+  font-weight: 700;
+  color: #cde8ff;
+}
+
+.game-guide-faq dd {
+  margin: 4px 0 0;
+  color: #b8cbe8;
+}
+
+.catalog-note {
+  margin-top: 14px;
+  border: 1px solid #355383;
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(13, 23, 41, 0.9);
+}
+
+.catalog-note h3 {
+  margin: 0 0 8px;
+  color: #9ce3ff;
+  font-size: 18px;
+}
+
+.catalog-note p {
+  margin: 0;
+  line-height: 1.5;
+  color: #cfe1ff;
+}
+
+.is-hidden-card {
+  display: none !important;
+}
+
+.floating-guide-btn {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 9999;
+  border: 1px solid #4f7ac2;
+  border-radius: 999px;
+  background: rgba(17, 28, 51, 0.9);
+  color: #e6f0ff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.floating-guide {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(4, 8, 16, 0.72);
+}
+
+.floating-guide.show {
+  display: flex;
+}
+
+.floating-guide-panel {
+  width: min(760px, 96vw);
+  max-height: 88vh;
+  overflow: auto;
+  border: 1px solid #3a5f95;
+  border-radius: 14px;
+  background: #0e182c;
+  color: #dce9ff;
+  padding: 14px;
+}
+
+.floating-guide-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #3d5f94;
+  border-radius: 8px;
+  background: #162744;
+  color: #e6f0ff;
+  padding: 6px 10px;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.legal-layout {
+  width: min(900px, 94vw);
+  margin: 20px auto 48px;
+  color: #e6eef8;
+}
+
+.legal-hero {
+  border: 1px solid #2e4168;
+  border-radius: 14px;
+  padding: 14px;
+  background: linear-gradient(180deg, rgba(21, 33, 58, 0.94), rgba(12, 20, 34, 0.94));
+  margin-bottom: 12px;
+}
+
+.legal-hero h1 {
+  margin: 0 0 8px;
+  color: #f0d17e;
+}
+
+.legal-section {
+  border: 1px solid #2d4066;
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(12, 20, 34, 0.9);
+  margin-bottom: 10px;
+}
+
+.legal-section h2 {
+  margin: 0 0 8px;
+  color: #9ce3ff;
+}
+
+.legal-section p,
+.legal-section li {
+  line-height: 1.55;
+}
+
+.legal-section ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 5px;
+}
+
+@media (max-width: 760px) {
+  .game-guide-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .top-links {
+    width: 100%;
+    margin-left: 0;
+  }
+}

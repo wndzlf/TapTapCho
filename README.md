@@ -18,6 +18,14 @@
 
 상세 평가 체계와 점수는 `/Users/user/TapTapCho/game-evaluation.md` 기준으로 관리합니다.
 
+## 2-1) 콘텐츠 심사 통과 운영 모드 (2026-03-14 적용)
+- 메인 노출: 상위 12개 게임만 큐레이션 노출
+- 하위 게임: 임시 숨김 처리(코드 보존)
+- 게임 페이지: 각 노출 게임마다 고유 텍스트 블록(목표/조작/공략/업데이트/FAQ) 제공
+- 공통 신뢰 페이지: About / Contact / Privacy / Terms / Copyright-DMCA 제공
+- 광고 유도성 UI: `apply ads` 슬롯 및 AdSense 스크립트 제거
+- 재검토 일정: `2026-03-28 ~ 2026-04-04` 운영 데이터 기반 재평가
+
 ## 3) 빠른 실행
 
 ```bash
@@ -67,6 +75,8 @@ npm run worm-lan-server
 - 외부 에셋 라이선스: `/Users/user/TapTapCho/THIRD_PARTY_LICENSES.md`
 - 병렬 작업 가이드: `/Users/user/TapTapCho/agent.md`
 - 아이디어/진행 상태: `/Users/user/TapTapCho/checklist.md`
+- BMGD 도입/사용 기록: `/Users/user/TapTapCho/docs/bmad-game-dev-studio.md`
+- 서비스 정책 페이지: `/Users/user/TapTapCho/about.html`, `/Users/user/TapTapCho/contact.html`, `/Users/user/TapTapCho/privacy.html`, `/Users/user/TapTapCho/terms.html`, `/Users/user/TapTapCho/dmca.html`
 
 ## 8) 라이선스
 외부 에셋/음원 사용 조건은 `THIRD_PARTY_LICENSES.md`를 단일 기준으로 따릅니다.

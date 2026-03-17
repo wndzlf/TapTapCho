@@ -7,6 +7,7 @@ const roomListEl = document.getElementById('roomList');
 const statusTextEl = document.getElementById('statusText');
 const overlayEl = document.getElementById('overlay');
 const toastEl = document.getElementById('toast');
+const btnFullscreen = document.getElementById('btnFullscreen');
 
 const roomTextEl = document.getElementById('roomText');
 const roleTextEl = document.getElementById('roleText');
@@ -28,6 +29,11 @@ const touchButtons = Array.from(document.querySelectorAll('.touch-btn'));
 
 const W = canvas.width;
 const H = canvas.height;
+const isTouchDevice = (window.matchMedia && window.matchMedia('(pointer: coarse)').matches)
+  || (navigator.maxTouchPoints || 0) > 0;
+
+let hasRunStarted = false;
+let lastTouchEndAt = 0;
 
 const STORAGE = {
   playerId: 'twin-temple-player-id',
@@ -260,6 +266,92 @@ function fixedServerUrl() {
   return normalizeServerUrl(configured);
 }
 
+function isEditableTarget(target) {
+  return !!(target && target.closest && target.closest('input, textarea, [contenteditable="true"]'));
+}
+
+function isNativeFullscreen() {
+  return !!(document.fullscreenElement || document.webkitFullscreenElement);
+}
+
+function isPseudoFullscreen() {
+  return document.body.classList.contains('pseudo-fullscreen');
+}
+
+function enterPseudoFullscreen() {
+  document.body.classList.add('pseudo-fullscreen');
+  window.scrollTo(0, 0);
+}
+
+function exitPseudoFullscreen() {
+  document.body.classList.remove('pseudo-fullscreen');
+}
+
+async function enterFullscreenMode() {
+  const target = document.documentElement;
+
+  try {
+    if (target.requestFullscreen) {
+      await target.requestFullscreen();
+      return;
+    }
+    if (target.webkitRequestFullscreen) {
+      target.webkitRequestFullscreen();
+      return;
+    }
+  } catch (_) {
+    // Fall back to pseudo fullscreen for browsers like iOS Safari.
+  }
+
+  enterPseudoFullscreen();
+}
+
+async function exitFullscreenMode() {
+  try {
+    if (document.exitFullscreen && document.fullscreenElement) {
+      await document.exitFullscreen();
+    } else if (document.webkitExitFullscreen && document.webkitFullscreenElement) {
+      document.webkitExitFullscreen();
+    }
+  } catch (_) {
+    // Ignore native fullscreen exit errors and clear fallback mode below.
+  }
+
+  exitPseudoFullscreen();
+}
+
+async function toggleFullscreenMode() {
+  if (isNativeFullscreen() || isPseudoFullscreen()) {
+    await exitFullscreenMode();
+  } else {
+    await enterFullscreenMode();
+  }
+  updateFullscreenButton();
+}
+
+function updateFullscreenButton() {
+  if (!btnFullscreen) return;
+
+  const state = String(client.snapshot?.state || '');
+  const shouldShow = isTouchDevice && (
+    hasRunStarted
+    || state === 'running'
+    || state === 'respawn'
+    || state === 'clear'
+    || state === 'done'
+  );
+  const active = isNativeFullscreen() || isPseudoFullscreen();
+
+  btnFullscreen.classList.toggle('visible', shouldShow);
+  btnFullscreen.classList.toggle('active', active);
+  btnFullscreen.setAttribute('aria-pressed', active ? 'true' : 'false');
+
+  const labelEl = btnFullscreen.querySelector('span');
+  if (labelEl) {
+    labelEl.textContent = active ? 'EXIT' : 'FULL';
+  }
+}
+
 function defaultServerUrl() {
   const host = window.location.hostname || 'localhost';
   return `ws://${host}:9090/ws/twin`;
@@ -299,6 +391,7 @@ function setOverlay(text, visible) {
 function updateReconnectVisibility() {
   const show = !client.connected;
   btnReconnect.classList.toggle('visible', show);
+  updateFullscreenButton();
 }
 
 function sendMsg(payload) {
@@ -429,6 +522,7 @@ function connect(silent = false) {
       setOverlay('Waiting for snapshot...', true);
       showToast(`${roleLabel(client.role)} assigned`);
       updateReconnectVisibility();
+      updateFullscreenButton();
       return;
     }
 
@@ -438,10 +532,13 @@ function connect(silent = false) {
       client.role = '';
       client.snapshot = null;
       client.shouldAutoReconnect = false;
+      hasRunStarted = false;
       saveStorage();
       setStatus('Left room');
       setOverlay('Connect and join room', true);
       updateReconnectVisibility();
+      if (isPseudoFullscreen()) exitPseudoFullscreen();
+      updateFullscreenButton();
       return;
     }
 
@@ -472,6 +569,7 @@ function connect(silent = false) {
     if (client.shouldAutoReconnect) {
       setOverlay('Disconnected - tap reconnect', true);
     }
+    updateFullscreenButton();
   });
 
   ws.addEventListener('error', () => {
@@ -479,6 +577,7 @@ function connect(silent = false) {
     client.connected = false;
     setStatus('Connection error', 'bad');
     updateReconnectVisibility();
+    updateFullscreenButton();
   });
 }
 
@@ -526,9 +625,12 @@ function leaveRoom() {
   client.roomName = '';
   client.role = '';
   client.snapshot = null;
+  hasRunStarted = false;
   saveStorage();
   updateReconnectVisibility();
   setOverlay('Connect and join room', true);
+  if (isPseudoFullscreen()) exitPseudoFullscreen();
+  updateFullscreenButton();
 }
 
 function formatTime(seconds) {
@@ -548,6 +650,7 @@ function updateHud() {
     deathTextEl.textContent = '0';
     playersTextEl.textContent = '0/2';
     stateTextEl.textContent = 'Idle';
+    updateFullscreenButton();
     return;
   }
 
@@ -573,6 +676,8 @@ function updateHud() {
   } else {
     setOverlay('', false);
   }
+
+  updateFullscreenButton();
 }
 
 function drawBackground() {
@@ -786,6 +891,45 @@ function bindInputEvents() {
   });
 }
 
+function bindMobileBrowserGuards() {
+  if (!isTouchDevice) return;
+
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach((eventName) => {
+    document.addEventListener(eventName, (event) => {
+      if (!isEditableTarget(event.target)) {
+        event.preventDefault();
+      }
+    }, { passive: false });
+  });
+
+  document.addEventListener('dblclick', (event) => {
+    if (!isEditableTarget(event.target)) {
+      event.preventDefault();
+    }
+  }, { passive: false });
+
+  document.addEventListener('touchend', (event) => {
+    if (isEditableTarget(event.target)) return;
+    const now = Date.now();
+    if (now - lastTouchEndAt < 320) {
+      event.preventDefault();
+    }
+    lastTouchEndAt = now;
+  }, { passive: false });
+
+  document.addEventListener('contextmenu', (event) => {
+    if (!isEditableTarget(event.target)) {
+      event.preventDefault();
+    }
+  });
+
+  document.addEventListener('selectstart', (event) => {
+    if (!isEditableTarget(event.target)) {
+      event.preventDefault();
+    }
+  });
+}
+
 function refreshHudFrame() {
   updateHud();
 }
@@ -802,14 +946,24 @@ function bindUiEvents() {
   btnRefreshRooms.addEventListener('click', () => requestRooms());
   btnLeaveRoom.addEventListener('click', () => leaveRoom());
   btnReconnect.addEventListener('click', () => connect());
+  btnFullscreen.addEventListener('click', (event) => {
+    event.preventDefault();
+    toggleFullscreenMode();
+  });
 
   btnStartRun.addEventListener('click', () => {
+    hasRunStarted = true;
+    updateFullscreenButton();
     if (!sendMsg({ type: 'start_run' })) connect(true);
   });
   btnRestartLevel.addEventListener('click', () => {
+    hasRunStarted = true;
+    updateFullscreenButton();
     if (!sendMsg({ type: 'restart_level' })) connect(true);
   });
   btnNextLevel.addEventListener('click', () => {
+    hasRunStarted = true;
+    updateFullscreenButton();
     if (!sendMsg({ type: 'next_level' })) connect(true);
   });
 
@@ -825,9 +979,12 @@ function init() {
   loadStorage();
   bindUiEvents();
   bindInputEvents();
+  bindMobileBrowserGuards();
   renderRooms();
   updateHud();
   setOverlay('Connecting to server...', true);
+  document.addEventListener('fullscreenchange', updateFullscreenButton);
+  document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
   connect(true);
   requestAnimationFrame(loop);
 }

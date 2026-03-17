@@ -4,7 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Sunken Sixway Defense</title>
+  
   <link rel="stylesheet" href="style.css?v=20260309a" />
+  <link rel="stylesheet" href="../assets/css/site-quality.css" />
 </head>
 <body>
   <div class="wrap">
@@ -30,13 +32,6 @@
           </div>
           <ol class="rank-list" id="rankList"></ol>
           <div class="rank-status" id="rankStatus">Loading local leaderboard...</div>
-          <div class="rank-ads" id="rankAds" aria-label="Rank ad slots">
-            <button class="ad-slot" data-ad-slot="1" data-has-image="true" type="button">apply ads</button>
-            <button class="ad-slot" data-ad-slot="2" type="button">apply ads</button>
-            <button class="ad-slot" data-ad-slot="3" type="button">apply ads</button>
-            <button class="ad-slot" data-ad-slot="4" type="button">apply ads</button>
-            <button class="ad-slot" data-ad-slot="5" type="button">apply ads</button>
-          </div>
         </section>
         <section class="sunken-detail detail-hidden" id="detailPanel" aria-label="Sunken details">
           <div class="detail-head">Sunken Details</div>
@@ -228,13 +223,8 @@
   </div>
 
   <script src="../assets/js/neon-audio.js"></script>
-  <script>
-    window.TapTapChoConfig = Object.assign({}, window.TapTapChoConfig, {
-      // Fixed Cloudflare leaderboard server (example: wss://sunken-rank.example.com)
-      // If empty, connect to ws(s)://<host>:9091 on the current host.
-      singleRankServer: 'wss://bizarre-meets-defeat-shelter.trycloudflare.com',
-    });
-  </script>
+  <script src="../assets/js/server-config.js"></script>
   <script src="game.js?v=20260309b"></script>
+  <script src="../assets/js/site-quality.js"></script>
 </body>
 </html>

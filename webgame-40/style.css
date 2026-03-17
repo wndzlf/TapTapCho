@@ -322,42 +322,6 @@ body.rank-mode .top-row {
   font-size: 11px;
 }
 
-.rank-ads {
-  display: grid;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.ad-slot {
-  height: 208px;
-  border-radius: 10px;
-  border: 1px dashed #4f6a95;
-  background: rgba(16, 24, 41, 0.6);
-  color: #a8bedf;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-}
-
-.ad-slot[data-ad-slot="1"] {
-  background: #0c1220 url('./assets/ads/slot-1.jpg?v=3') center/contain no-repeat;
-  border-style: solid;
-}
-
-.ad-slot[data-has-image="true"] {
-  color: transparent;
-  text-shadow: none;
-}
-
-.ad-slot:hover {
-  border-color: #f0ca77;
-  color: #f8e6b9;
-}
-
 .hud {
   display: flex;
   flex-wrap: nowrap;
