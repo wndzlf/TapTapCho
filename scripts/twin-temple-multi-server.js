@@ -16,8 +16,8 @@ const MOVE_ACCEL = 2600;
 const MOVE_DRAG = 2200;
 const MAX_SPEED = 245;
 const MAX_FALL = 1000;
-const JUMP_SPEED = 840;
-const COYOTE_TIME = 0.12;
+const JUMP_SPEED = 880;
+const COYOTE_TIME = 0.14;
 const RESPAWN_MS = 680;
 
 const STATE = {
@@ -249,7 +249,7 @@ function makeActor(element, spawn) {
     vx: 0,
     vy: 0,
     onGround: false,
-    coyote: 0,
+    coyote: COYOTE_TIME,
     inExit: false,
   };
 }

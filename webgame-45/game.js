@@ -23,7 +23,8 @@ const MOVE_ACCEL = 2600;
 const MOVE_DRAG = 2200;
 const MAX_SPEED = 245;
 const MAX_FALL = 1000;
-const JUMP_SPEED = 650;
+const JUMP_SPEED = 880;
+const COYOTE_TIME = 0.14;
 
 const STATE = {
   IDLE: 'idle',
@@ -245,6 +246,7 @@ function makePlayer(element, controls) {
     vx: 0,
     vy: 0,
     onGround: false,
+    coyote: COYOTE_TIME,
     inExit: false,
     deadFlash: 0,
   };
@@ -536,6 +538,7 @@ function updatePlayers(dt) {
   const solids = allSolids();
   for (let i = 0; i < world.players.length; i += 1) {
     const p = world.players[i];
+    p.coyote = Math.max(0, Number(p.coyote || 0) - dt);
     const left = isPressed(p, 'left');
     const right = isPressed(p, 'right');
     const move = (right ? 1 : 0) - (left ? 1 : 0);
@@ -549,9 +552,10 @@ function updatePlayers(dt) {
     }
     p.vx = clamp(p.vx, -MAX_SPEED, MAX_SPEED);
 
-    if (isJustJump(p) && p.onGround) {
+    if (isJustJump(p) && (p.onGround || p.coyote > 0)) {
       p.vy = -JUMP_SPEED;
       p.onGround = false;
+      p.coyote = 0;
       sfx.jump();
       spawnBurst(p.x + p.w * 0.5, p.y + p.h, p.element === 'ember' ? '#ffbc73' : '#9ce9ff', 7);
     }
@@ -565,6 +569,7 @@ function updatePlayers(dt) {
     const prevY = p.y;
     p.y += p.vy * dt;
     resolveVertical(p, solids, prevY);
+    if (p.onGround) p.coyote = COYOTE_TIME;
 
     p.deadFlash = Math.max(0, p.deadFlash - dt * 3.4);
   }

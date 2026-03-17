@@ -21,8 +21,8 @@
 
 ## Physics Tuning
 
-- Jump speed raised to `840`.
-- Added `0.12s` coyote time for more forgiving mobile jumps.
+- Jump speed raised to `880`.
+- Added `0.14s` coyote time for more forgiving mobile jumps.
 - Core movement speed remains readable and compact for short-session play.
 
 ## Stage Flow
