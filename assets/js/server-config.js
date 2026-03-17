@@ -1,6 +1,6 @@
 /* Global multiplayer/rank server config: update only this file when tunnel changes. */
 (function initTapTapChoServerConfig() {
-  const baseUrl = 'wss://thought-myself-solve-improve.trycloudflare.com';
+  const baseUrl = 'wss://rehab-noticed-considerable-boulder.trycloudflare.com';
 
   const servers = {
     baseUrl,
@@ -11,4 +11,3 @@
 
   window.TapTapChoServers = Object.freeze(servers);
 })();
-
