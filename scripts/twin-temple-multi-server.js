@@ -1,6 +1,7 @@
 const http = require('http');
 const crypto = require('crypto');
 const WebSocket = require('ws');
+const { levels: LEVELS } = require('../webgame-45/shared-levels.js');
 
 const PORT = Number(process.env.TWIN_TEMPLE_PORT || 9092);
 const TICK_MS = 33;
@@ -31,172 +32,6 @@ const STATE = {
 function rect(x, y, w, h) {
   return { x, y, w, h };
 }
-
-const LEVELS = [
-  {
-    name: 'Twin Relay',
-    spawns: { ember: { x: 56, y: 452 }, aqua: { x: 116, y: 452 } },
-    solids: [
-      rect(0, 500, 960, 40),
-      rect(108, 430, 140, 16),
-      rect(330, 430, 138, 16),
-      rect(520, 360, 150, 16),
-      rect(702, 430, 124, 16),
-      rect(812, 300, 120, 16),
-    ],
-    hazards: [
-      { ...rect(476, 500, 108, 40), kind: 'water' },
-      { ...rect(690, 500, 98, 40), kind: 'fire' },
-      { ...rect(804, 500, 118, 40), kind: 'acid' },
-    ],
-    buttons: [
-      { ...rect(150, 416, 54, 14), target: 'gate-center', element: 'aqua' },
-      { ...rect(568, 346, 54, 14), target: 'gate-right', element: 'ember' },
-    ],
-    doors: [
-      { id: 'gate-center', x: 286, y: 348, w: 24, h: 152, lift: 124, color: '#6ad7ff' },
-      { id: 'gate-right', x: 664, y: 348, w: 24, h: 152, lift: 124, color: '#ff9e4b' },
-    ],
-    exits: [
-      { ...rect(736, 386, 34, 44), element: 'ember' },
-      { ...rect(858, 256, 34, 44), element: 'aqua' },
-    ],
-  },
-  {
-    name: 'Split Switchback',
-    spawns: { ember: { x: 58, y: 452 }, aqua: { x: 118, y: 452 } },
-    solids: [
-      rect(0, 500, 960, 40),
-      rect(96, 430, 120, 16),
-      rect(250, 360, 124, 16),
-      rect(434, 430, 148, 16),
-      rect(620, 360, 150, 16),
-      rect(804, 430, 128, 16),
-      rect(804, 290, 128, 16),
-    ],
-    hazards: [
-      { ...rect(222, 500, 96, 40), kind: 'fire' },
-      { ...rect(594, 500, 112, 40), kind: 'water' },
-      { ...rect(774, 500, 132, 40), kind: 'acid' },
-    ],
-    buttons: [
-      { ...rect(286, 346, 54, 14), target: 'gate-center', element: 'ember' },
-      { ...rect(668, 346, 54, 14), target: 'gate-final', element: 'aqua' },
-    ],
-    doors: [
-      { id: 'gate-center', x: 390, y: 348, w: 24, h: 152, lift: 124, color: '#ff9a4a' },
-      { id: 'gate-final', x: 780, y: 318, w: 24, h: 182, lift: 148, color: '#65d9ff' },
-    ],
-    exits: [
-      { ...rect(860, 386, 34, 44), element: 'ember' },
-      { ...rect(860, 246, 34, 44), element: 'aqua' },
-    ],
-  },
-  {
-    name: 'Cross Current',
-    spawns: { ember: { x: 54, y: 452 }, aqua: { x: 114, y: 452 } },
-    solids: [
-      rect(0, 500, 960, 40),
-      rect(104, 430, 120, 16),
-      rect(310, 430, 130, 16),
-      rect(500, 360, 140, 16),
-      rect(664, 430, 126, 16),
-      rect(664, 360, 126, 16),
-      rect(840, 430, 100, 16),
-      rect(840, 300, 100, 16),
-    ],
-    hazards: [
-      { ...rect(466, 500, 118, 40), kind: 'water' },
-      { ...rect(624, 500, 128, 40), kind: 'fire' },
-      { ...rect(812, 500, 120, 40), kind: 'acid' },
-    ],
-    buttons: [
-      { ...rect(146, 416, 54, 14), target: 'gate-center', element: 'aqua' },
-      { ...rect(544, 346, 54, 14), target: 'gate-right', element: 'ember' },
-      { ...rect(700, 346, 54, 14), target: 'gate-exit', element: 'aqua' },
-    ],
-    doors: [
-      { id: 'gate-center', x: 272, y: 348, w: 24, h: 152, lift: 124, color: '#74dcff' },
-      { id: 'gate-right', x: 636, y: 348, w: 24, h: 152, lift: 124, color: '#ffa24f' },
-      { id: 'gate-exit', x: 812, y: 288, w: 24, h: 212, lift: 164, color: '#78dfff' },
-    ],
-    exits: [
-      { ...rect(874, 386, 34, 44), element: 'ember' },
-      { ...rect(874, 256, 34, 44), element: 'aqua' },
-    ],
-  },
-  {
-    name: 'Temple Switchback',
-    spawns: { ember: { x: 56, y: 452 }, aqua: { x: 116, y: 452 } },
-    solids: [
-      rect(0, 500, 960, 40),
-      rect(110, 360, 120, 16),
-      rect(300, 430, 140, 16),
-      rect(480, 360, 140, 16),
-      rect(676, 430, 120, 16),
-      rect(676, 300, 120, 16),
-      rect(842, 430, 100, 16),
-      rect(842, 250, 100, 16),
-    ],
-    hazards: [
-      { ...rect(248, 500, 112, 40), kind: 'fire' },
-      { ...rect(458, 500, 118, 40), kind: 'water' },
-      { ...rect(636, 500, 124, 40), kind: 'acid' },
-      { ...rect(812, 500, 116, 40), kind: 'fire' },
-    ],
-    buttons: [
-      { ...rect(146, 346, 54, 14), target: 'gate-center', element: 'ember' },
-      { ...rect(526, 346, 54, 14), target: 'gate-right', element: 'aqua' },
-      { ...rect(712, 286, 54, 14), target: 'gate-final', element: 'ember' },
-    ],
-    doors: [
-      { id: 'gate-center', x: 260, y: 348, w: 24, h: 152, lift: 124, color: '#ffa24f' },
-      { id: 'gate-right', x: 640, y: 318, w: 24, h: 182, lift: 148, color: '#74dcff' },
-      { id: 'gate-final', x: 806, y: 218, w: 24, h: 282, lift: 208, color: '#ffab5a' },
-    ],
-    exits: [
-      { ...rect(876, 386, 34, 44), element: 'ember' },
-      { ...rect(876, 206, 34, 44), element: 'aqua' },
-    ],
-  },
-  {
-    name: 'Final Tandem',
-    spawns: { ember: { x: 52, y: 452 }, aqua: { x: 112, y: 452 } },
-    solids: [
-      rect(0, 500, 960, 40),
-      rect(110, 430, 120, 16),
-      rect(302, 430, 140, 16),
-      rect(484, 360, 140, 16),
-      rect(656, 430, 128, 16),
-      rect(656, 330, 128, 16),
-      rect(760, 260, 104, 16),
-      rect(860, 430, 80, 16),
-      rect(860, 190, 80, 16),
-    ],
-    hazards: [
-      { ...rect(252, 500, 120, 40), kind: 'water' },
-      { ...rect(462, 500, 126, 40), kind: 'fire' },
-      { ...rect(626, 500, 118, 40), kind: 'acid' },
-      { ...rect(818, 500, 104, 40), kind: 'water' },
-    ],
-    buttons: [
-      { ...rect(146, 416, 54, 14), target: 'gate-one', element: 'aqua' },
-      { ...rect(532, 346, 54, 14), target: 'gate-two', element: 'ember' },
-      { ...rect(700, 316, 54, 14), target: 'gate-three', element: 'aqua' },
-      { ...rect(786, 246, 54, 14), target: 'gate-final', element: 'ember' },
-    ],
-    doors: [
-      { id: 'gate-one', x: 264, y: 348, w: 24, h: 152, lift: 124, color: '#74dcff' },
-      { id: 'gate-two', x: 638, y: 348, w: 24, h: 152, lift: 124, color: '#ffa24f' },
-      { id: 'gate-three', x: 742, y: 298, w: 24, h: 202, lift: 156, color: '#7ce2ff' },
-      { id: 'gate-final', x: 836, y: 158, w: 24, h: 342, lift: 248, color: '#ffab5a' },
-    ],
-    exits: [
-      { ...rect(884, 386, 34, 44), element: 'ember' },
-      { ...rect(884, 146, 34, 44), element: 'aqua' },
-    ],
-  },
-];
 
 const rooms = new Map();
 let lastRoomsBroadcastAt = 0;
@@ -437,8 +272,6 @@ function updateActors(room, dt) {
     const role = roles[i];
     const actor = room.actors[role];
     const control = inputForRole(room, role);
-    actor.coyote = Math.max(0, Number(actor.coyote || 0) - dt);
-
     const move = (control.right ? 1 : 0) - (control.left ? 1 : 0);
     if (move !== 0) {
       actor.vx += move * MOVE_ACCEL * dt;
@@ -450,12 +283,6 @@ function updateActors(room, dt) {
 
     actor.vx = clamp(actor.vx, -MAX_SPEED, MAX_SPEED);
 
-    if (control.jump && !control.prevJump && (actor.onGround || actor.coyote > 0)) {
-      actor.vy = -JUMP_SPEED;
-      actor.onGround = false;
-      actor.coyote = 0;
-    }
-
     actor.vy = Math.min(MAX_FALL, actor.vy + GRAVITY * dt);
 
     const prevX = actor.x;
@@ -465,7 +292,6 @@ function updateActors(room, dt) {
     const prevY = actor.y;
     actor.y += actor.vy * dt;
     resolveVertical(actor, solids, prevY);
-    if (actor.onGround) actor.coyote = COYOTE_TIME;
   }
 
   for (const role of roles) {

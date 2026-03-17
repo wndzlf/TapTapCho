@@ -47,17 +47,9 @@ const STORAGE = {
   roomName: 'twin-temple-room-name',
 };
 
-function rect(x, y, w, h) {
-  return { x, y, w, h };
-}
-
-const LEVELS = [
-  { name: 'Twin Relay' },
-  { name: 'Split Switchback' },
-  { name: 'Cross Current' },
-  { name: 'Temple Switchback' },
-  { name: 'Final Tandem' },
-];
+const LEVELS = Array.isArray(window.TapTapTwinTempleShared?.levels)
+  ? window.TapTapTwinTempleShared.levels.map((level) => ({ name: level.name }))
+  : [];
 
 const client = {
   ws: null,
@@ -795,14 +787,14 @@ function rightPressedByKeyboard() {
 }
 
 function jumpPressedByKeyboard() {
-  return !!(input.keys.ArrowUp || input.keys.KeyW || input.keys.Space);
+  return false;
 }
 
 function currentInputState() {
   return {
     left: leftPressedByKeyboard() || input.touch.left,
     right: rightPressedByKeyboard() || input.touch.right,
-    jump: jumpPressedByKeyboard() || input.touch.jump,
+    jump: false,
   };
 }
 
