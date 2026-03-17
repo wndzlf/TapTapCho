@@ -1,6 +1,6 @@
 /* Global multiplayer/rank server config: update only this file when tunnel changes. */
 (function initTapTapChoServerConfig() {
-  const baseUrl = 'wss://rehab-noticed-considerable-boulder.trycloudflare.com';
+  const baseUrl = 'wss://status-version-describing-panel.trycloudflare.com';
 
   const servers = {
     baseUrl,
