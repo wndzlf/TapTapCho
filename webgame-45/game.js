@@ -9,6 +9,11 @@ const hudTime = document.getElementById('hudTime');
 const hudDeaths = document.getElementById('hudDeaths');
 const hudStatus = document.getElementById('hudStatus');
 const toast = document.getElementById('toast');
+const bgmAudio = window.TapTapNeonAudio?.create('webgame-45-local', document.querySelector('.action-wrap'), {
+  mediaSrc: '../assets/audio/twin-temple-escape-pixabay-358426.mp3',
+  showSfxToggle: false,
+  showThemeToggle: false,
+});
 
 const W = canvas.width;
 const H = canvas.height;

@@ -3,8 +3,8 @@ const crypto = require('crypto');
 const WebSocket = require('ws');
 
 const PORT = Number(process.env.TWIN_TEMPLE_PORT || 9092);
-const TICK_MS = 50;
-const SNAPSHOT_MS = 90;
+const TICK_MS = 33;
+const SNAPSHOT_MS = 50;
 const ROOMS_BROADCAST_MS = 1200;
 const ROOM_IDLE_MS = 20 * 60 * 1000;
 const OFFLINE_GRACE_MS = 4 * 60 * 1000;

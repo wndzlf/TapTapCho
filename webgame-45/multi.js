@@ -24,6 +24,11 @@ const btnReconnect = document.getElementById('btnReconnect');
 const btnStartRun = document.getElementById('btnStartRun');
 const btnRestartLevel = document.getElementById('btnRestartLevel');
 const btnNextLevel = document.getElementById('btnNextLevel');
+const bgmAudio = window.TapTapNeonAudio?.create('webgame-45-multi', document.querySelector('.actions'), {
+  mediaSrc: '../assets/audio/twin-temple-escape-pixabay-358426.mp3',
+  showSfxToggle: false,
+  showThemeToggle: false,
+});
 
 const touchButtons = Array.from(document.querySelectorAll('.touch-btn'));
 
@@ -195,6 +200,12 @@ const client = {
   lastInputPayload: '',
 };
 
+const renderState = {
+  key: '',
+  actors: { ember: null, aqua: null },
+  doors: [],
+};
+
 const input = {
   keys: Object.create(null),
   touch: { left: false, right: false, jump: false },
@@ -202,6 +213,79 @@ const input = {
 
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
+}
+
+function cloneActor(actor) {
+  return actor ? { ...actor } : null;
+}
+
+function cloneDoor(door) {
+  return door ? { ...door } : null;
+}
+
+function syncRenderState(force = false) {
+  const snap = client.snapshot;
+  if (!snap) {
+    renderState.key = '';
+    renderState.actors.ember = null;
+    renderState.actors.aqua = null;
+    renderState.doors = [];
+    return;
+  }
+
+  const nextKey = `${snap.id || ''}:${snap.levelIndex || 0}:${snap.state || ''}`;
+  const shouldReset = force
+    || renderState.key !== nextKey
+    || !renderState.actors.ember
+    || !renderState.actors.aqua
+    || renderState.doors.length !== (snap.doors || []).length;
+
+  if (!shouldReset) return;
+
+  renderState.key = nextKey;
+  renderState.actors.ember = cloneActor(snap.actors?.ember);
+  renderState.actors.aqua = cloneActor(snap.actors?.aqua);
+  renderState.doors = (snap.doors || []).map(cloneDoor);
+}
+
+function lerp(current, target, alpha) {
+  return current + (target - current) * alpha;
+}
+
+function advanceRenderState() {
+  const snap = client.snapshot;
+  if (!snap) return;
+
+  syncRenderState(false);
+
+  ['ember', 'aqua'].forEach((role) => {
+    const target = snap.actors?.[role];
+    const actor = renderState.actors[role];
+    if (!target || !actor) return;
+
+    actor.x = lerp(actor.x, target.x, 0.34);
+    actor.y = lerp(actor.y, target.y, 0.34);
+    actor.vx = lerp(Number(actor.vx || 0), Number(target.vx || 0), 0.2);
+    actor.vy = lerp(Number(actor.vy || 0), Number(target.vy || 0), 0.2);
+    actor.inExit = !!target.inExit;
+    actor.element = target.element;
+    actor.w = target.w;
+    actor.h = target.h;
+  });
+
+  const targetDoors = snap.doors || [];
+  for (let i = 0; i < targetDoors.length; i += 1) {
+    const target = targetDoors[i];
+    const door = renderState.doors[i];
+    if (!target || !door) continue;
+
+    door.x = target.x;
+    door.w = target.w;
+    door.h = target.h;
+    door.color = target.color;
+    door.progress = lerp(Number(door.progress || 0), Number(target.progress || 0), 0.28);
+    door.y = lerp(Number(door.y || target.y), Number(target.y || 0), 0.34);
+  }
 }
 
 function showToast(text, ms = 1300) {
@@ -292,7 +376,7 @@ async function enterFullscreenMode() {
 
   try {
     if (target.requestFullscreen) {
-      await target.requestFullscreen();
+      await target.requestFullscreen({ navigationUI: 'hide' });
       return;
     }
     if (target.webkitRequestFullscreen) {
@@ -521,6 +605,7 @@ function connect(silent = false) {
       setStatus(`${client.roomName || client.roomId} joined`, 'ok');
       setOverlay('Waiting for snapshot...', true);
       showToast(`${roleLabel(client.role)} assigned`);
+      updateHud();
       updateReconnectVisibility();
       updateFullscreenButton();
       return;
@@ -531,11 +616,13 @@ function connect(silent = false) {
       client.roomName = '';
       client.role = '';
       client.snapshot = null;
+      syncRenderState(true);
       client.shouldAutoReconnect = false;
       hasRunStarted = false;
       saveStorage();
       setStatus('Left room');
       setOverlay('Connect and join room', true);
+      updateHud();
       updateReconnectVisibility();
       if (isPseudoFullscreen()) exitPseudoFullscreen();
       updateFullscreenButton();
@@ -543,9 +630,11 @@ function connect(silent = false) {
     }
 
     if (msg.type === 'snapshot' && msg.room) {
+      const prevLevel = client.snapshot?.levelIndex;
+      const prevState = client.snapshot?.state;
       client.snapshot = msg.room;
+      syncRenderState(prevLevel !== msg.room.levelIndex || prevState !== msg.room.state);
       updateHud();
-      setOverlay('', false);
       return;
     }
 
@@ -625,10 +714,12 @@ function leaveRoom() {
   client.roomName = '';
   client.role = '';
   client.snapshot = null;
+  syncRenderState(true);
   hasRunStarted = false;
   saveStorage();
   updateReconnectVisibility();
   setOverlay('Connect and join room', true);
+  updateHud();
   if (isPseudoFullscreen()) exitPseudoFullscreen();
   updateFullscreenButton();
 }
@@ -794,13 +885,17 @@ function draw(now) {
   drawBackground();
   const snap = client.snapshot;
   if (!snap) return;
+  advanceRenderState();
 
   (snap.solids || []).forEach(drawSolid);
   (snap.hazards || []).forEach((h) => drawHazard(h, now));
   (snap.buttons || []).forEach(drawButton);
-  (snap.doors || []).forEach(drawDoor);
+  (renderState.doors.length ? renderState.doors : (snap.doors || [])).forEach(drawDoor);
 
-  const actors = snap.actors || {};
+  const actors = {
+    ember: renderState.actors.ember || snap.actors?.ember,
+    aqua: renderState.actors.aqua || snap.actors?.aqua,
+  };
   const ember = actors.ember;
   const aqua = actors.aqua;
 
@@ -842,7 +937,7 @@ function sendInputIfNeeded(force = false) {
   const state = currentInputState();
   const payload = JSON.stringify(state);
   const now = performance.now();
-  if (!force && payload === client.lastInputPayload && now - client.lastInputSentAt < 120) {
+  if (!force && payload === client.lastInputPayload && now - client.lastInputSentAt < 45) {
     return;
   }
 
@@ -930,13 +1025,8 @@ function bindMobileBrowserGuards() {
   });
 }
 
-function refreshHudFrame() {
-  updateHud();
-}
-
 function loop(now) {
   draw(now);
-  refreshHudFrame();
   sendInputIfNeeded(false);
   requestAnimationFrame(loop);
 }

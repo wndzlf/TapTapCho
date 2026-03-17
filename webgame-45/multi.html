@@ -2,9 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#071024" />
   <title>Twin Temple Escape - Online Co-op</title>
-  <link rel="stylesheet" href="multi.css" />
+  <link rel="stylesheet" href="multi.css?v=20260317b" />
   <link rel="stylesheet" href="../assets/css/site-quality.css" />
 </head>
 <body>
@@ -54,16 +58,16 @@
       <div class="hint">Control one assigned role only. Keyboard: A/D/W or Arrow/Up.</div>
     </section>
 
+    <div class="arena">
+      <canvas id="game" width="960" height="540"></canvas>
+      <div class="overlay" id="overlay">Connecting to server...</div>
+    </div>
+
     <section class="touch">
       <button class="touch-btn" data-action="left" type="button">Left</button>
       <button class="touch-btn" data-action="right" type="button">Right</button>
       <button class="touch-btn jump" data-action="jump" type="button">Jump</button>
     </section>
-
-    <div class="arena">
-      <canvas id="game" width="960" height="540"></canvas>
-      <div class="overlay" id="overlay">Connecting to server...</div>
-    </div>
   </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -72,7 +76,8 @@
   </button>
 
   <script src="../assets/js/server-config.js"></script>
-  <script src="multi.js?v=20260317a"></script>
+  <script src="../assets/js/neon-audio.js"></script>
+  <script src="multi.js?v=20260317b"></script>
   <script src="../assets/js/site-quality.js"></script>
 </body>
 </html>
