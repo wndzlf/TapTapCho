@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Twin Temple Escape</title>
-  <link rel="stylesheet" href="style.css?v=20260317d" />
+  <link rel="stylesheet" href="style.css?v=20260318a" />
   <link rel="stylesheet" href="../assets/css/site-quality.css" />
 </head>
 <body>
@@ -16,7 +16,7 @@
           <a class="mode-tab" href="./multi.html">Online Co-op</a>
         </div>
         <h1>Twin Temple Escape</h1>
-        <p>No-jump co-op temple puzzle</p>
+        <p>Double-jump co-op temple platform puzzle</p>
       </div>
       <div class="action-wrap">
         <button id="btnStart" type="button">Start</button>
@@ -40,6 +40,7 @@
         <div class="row">
           <button class="touch-btn" data-touch="ember-left" type="button">Left<br /><small>A</small></button>
           <button class="touch-btn" data-touch="ember-right" type="button">Right<br /><small>D</small></button>
+          <button class="touch-btn jump" data-touch="ember-jump" type="button">Jump<br /><small>W</small></button>
         </div>
       </div>
       <div class="pad aqua">
@@ -47,6 +48,7 @@
         <div class="row">
           <button class="touch-btn" data-touch="aqua-left" type="button">Left<br /><small>&larr;</small></button>
           <button class="touch-btn" data-touch="aqua-right" type="button">Right<br /><small>&rarr;</small></button>
+          <button class="touch-btn jump" data-touch="aqua-jump" type="button">Jump<br /><small>&uarr;</small></button>
         </div>
       </div>
     </section>
@@ -55,8 +57,8 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="../assets/js/neon-audio.js"></script>
-  <script src="shared-levels.js?v=20260317a"></script>
-  <script src="game.js?v=20260317d"></script>
+  <script src="shared-levels.js?v=20260318a"></script>
+  <script src="game.js?v=20260318a"></script>
   <script src="../assets/js/site-quality.js"></script>
 </body>
 </html>

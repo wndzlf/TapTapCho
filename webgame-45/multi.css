@@ -247,7 +247,7 @@ input {
 .touch {
   margin-top: 10px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -401,8 +401,8 @@ body.pseudo-fullscreen .touch {
 
   .wrap {
     width: 100%;
-    margin: 0 auto 20px;
-    padding: 12px 10px calc(128px + env(safe-area-inset-bottom));
+    margin: 0 auto 16px;
+    padding: 8px 10px calc(158px + env(safe-area-inset-bottom));
   }
 
   .net {
@@ -426,11 +426,11 @@ body.pseudo-fullscreen .touch {
   }
 
   .arena {
-    margin-top: 12px;
+    margin-top: 8px;
   }
 
   .fullscreen-fab {
-    bottom: calc(126px + env(safe-area-inset-bottom));
+    bottom: calc(134px + env(safe-area-inset-bottom));
     min-width: 74px;
     min-height: 48px;
     font-size: 13px;
@@ -440,7 +440,7 @@ body.pseudo-fullscreen .touch {
     position: fixed;
     left: 10px;
     right: 10px;
-    bottom: calc(10px + env(safe-area-inset-bottom));
+    bottom: calc(18px + env(safe-area-inset-bottom));
     z-index: 1100;
     gap: 10px;
     margin: 0;
@@ -457,10 +457,10 @@ body.pseudo-fullscreen .touch {
   }
 
   body.pseudo-fullscreen .wrap {
-    padding: 0 0 calc(122px + env(safe-area-inset-bottom));
+    padding: 0 0 calc(150px + env(safe-area-inset-bottom));
   }
 
   body.pseudo-fullscreen .arena {
-    height: calc(100vh - 88px - env(safe-area-inset-bottom));
+    height: calc(100vh - 112px - env(safe-area-inset-bottom));
   }
 }

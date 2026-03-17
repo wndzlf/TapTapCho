@@ -12,13 +12,14 @@ const OFFLINE_GRACE_MS = 4 * 60 * 1000;
 
 const WIDTH = 960;
 const HEIGHT = 540;
-const GRAVITY = 1850;
+const GRAVITY = 1800;
 const MOVE_ACCEL = 2600;
 const MOVE_DRAG = 2200;
-const MAX_SPEED = 245;
+const MAX_SPEED = 260;
 const MAX_FALL = 1000;
-const JUMP_SPEED = 880;
-const COYOTE_TIME = 0.14;
+const JUMP_SPEED = 980;
+const COYOTE_TIME = 0.16;
+const EXTRA_AIR_JUMPS = 1;
 const RESPAWN_MS = 680;
 
 const STATE = {
@@ -85,6 +86,7 @@ function makeActor(element, spawn) {
     vy: 0,
     onGround: false,
     coyote: COYOTE_TIME,
+    airJumpsLeft: EXTRA_AIR_JUMPS,
     inExit: false,
   };
 }
@@ -272,6 +274,7 @@ function updateActors(room, dt) {
     const role = roles[i];
     const actor = room.actors[role];
     const control = inputForRole(room, role);
+    actor.coyote = Math.max(0, Number(actor.coyote || 0) - dt);
     const move = (control.right ? 1 : 0) - (control.left ? 1 : 0);
     if (move !== 0) {
       actor.vx += move * MOVE_ACCEL * dt;
@@ -283,6 +286,18 @@ function updateActors(room, dt) {
 
     actor.vx = clamp(actor.vx, -MAX_SPEED, MAX_SPEED);
 
+    const justJump = control.jump && !control.prevJump;
+    const canGroundJump = actor.onGround || actor.coyote > 0;
+    const canAirJump = !canGroundJump && (actor.airJumpsLeft || 0) > 0;
+    if (justJump && (canGroundJump || canAirJump)) {
+      actor.vy = -JUMP_SPEED;
+      actor.onGround = false;
+      actor.coyote = 0;
+      if (canAirJump) {
+        actor.airJumpsLeft = Math.max(0, (actor.airJumpsLeft || 0) - 1);
+      }
+    }
+
     actor.vy = Math.min(MAX_FALL, actor.vy + GRAVITY * dt);
 
     const prevX = actor.x;
@@ -292,6 +307,10 @@ function updateActors(room, dt) {
     const prevY = actor.y;
     actor.y += actor.vy * dt;
     resolveVertical(actor, solids, prevY);
+    if (actor.onGround) {
+      actor.coyote = COYOTE_TIME;
+      actor.airJumpsLeft = EXTRA_AIR_JUMPS;
+    }
   }
 
   for (const role of roles) {

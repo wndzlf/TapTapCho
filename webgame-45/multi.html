@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#071024" />
   <title>Twin Temple Escape - Online Co-op</title>
-  <link rel="stylesheet" href="multi.css?v=20260317e" />
+  <link rel="stylesheet" href="multi.css?v=20260318a" />
   <link rel="stylesheet" href="../assets/css/site-quality.css" />
 </head>
 <body>
@@ -19,7 +19,7 @@
         <a class="mode-tab active" href="./multi.html">Online Co-op</a>
       </div>
       <h1>Twin Temple Escape: Online Co-op</h1>
-      <p>No-jump co-op temple puzzle. Each player controls one character on mobile or desktop.</p>
+      <p>Double-jump co-op temple platform puzzle. Each player controls one character on mobile or desktop.</p>
     </header>
 
     <section class="net" id="netPanel">
@@ -55,7 +55,7 @@
       <button id="btnStartRun" type="button">Start</button>
       <button id="btnRestartLevel" type="button">Restart</button>
       <button id="btnNextLevel" type="button">Next</button>
-      <div class="hint">Control one assigned role only. Keyboard: A/D or Arrow keys.</div>
+      <div class="hint">Control one assigned role only. Keyboard: A/D/W or Arrow/Up/Space.</div>
     </section>
 
     <div class="arena">
@@ -66,6 +66,7 @@
     <section class="touch">
       <button class="touch-btn" data-action="left" type="button">Left</button>
       <button class="touch-btn" data-action="right" type="button">Right</button>
+      <button class="touch-btn jump" data-action="jump" type="button">Jump</button>
     </section>
   </div>
 
@@ -75,9 +76,9 @@
   </button>
 
   <script src="../assets/js/server-config.js"></script>
-  <script src="shared-levels.js?v=20260317a"></script>
+  <script src="shared-levels.js?v=20260318a"></script>
   <script src="../assets/js/neon-audio.js"></script>
-  <script src="multi.js?v=20260317e"></script>
+  <script src="multi.js?v=20260318a"></script>
   <script src="../assets/js/site-quality.js"></script>
 </body>
 </html>

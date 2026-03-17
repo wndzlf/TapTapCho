@@ -787,14 +787,14 @@ function rightPressedByKeyboard() {
 }
 
 function jumpPressedByKeyboard() {
-  return false;
+  return !!(input.keys.ArrowUp || input.keys.KeyW || input.keys.Space);
 }
 
 function currentInputState() {
   return {
     left: leftPressedByKeyboard() || input.touch.left,
     right: rightPressedByKeyboard() || input.touch.right,
-    jump: false,
+    jump: jumpPressedByKeyboard() || input.touch.jump,
   };
 }
 

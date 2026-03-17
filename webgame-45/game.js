@@ -18,13 +18,15 @@ const bgmAudio = window.TapTapNeonAudio?.create('webgame-45-local', document.que
 const W = canvas.width;
 const H = canvas.height;
 
-const GRAVITY = 1850;
+const GRAVITY = 1800;
 const MOVE_ACCEL = 2600;
 const MOVE_DRAG = 2200;
-const MAX_SPEED = 245;
+const MAX_SPEED = 260;
 const MAX_FALL = 1000;
-const JUMP_SPEED = 880;
-const COYOTE_TIME = 0.14;
+const JUMP_SPEED = 980;
+const COYOTE_TIME = 0.16;
+const JUMP_BUFFER = 0.1;
+const EXTRA_AIR_JUMPS = 1;
 
 const STATE = {
   IDLE: 'idle',
@@ -77,6 +79,8 @@ function makePlayer(element, controls) {
     vy: 0,
     onGround: false,
     coyote: COYOTE_TIME,
+    jumpBuffer: 0,
+    airJumpsLeft: EXTRA_AIR_JUMPS,
     inExit: false,
     deadFlash: 0,
   };
@@ -369,6 +373,8 @@ function updatePlayers(dt) {
   for (let i = 0; i < world.players.length; i += 1) {
     const p = world.players[i];
     p.coyote = Math.max(0, Number(p.coyote || 0) - dt);
+    p.jumpBuffer = Math.max(0, Number(p.jumpBuffer || 0) - dt);
+    if (isJustJump(p)) p.jumpBuffer = JUMP_BUFFER;
     const left = isPressed(p, 'left');
     const right = isPressed(p, 'right');
     const move = (right ? 1 : 0) - (left ? 1 : 0);
@@ -382,6 +388,19 @@ function updatePlayers(dt) {
     }
     p.vx = clamp(p.vx, -MAX_SPEED, MAX_SPEED);
 
+    const canGroundJump = p.onGround || p.coyote > 0;
+    const canAirJump = !canGroundJump && (p.airJumpsLeft || 0) > 0;
+    if (p.jumpBuffer > 0 && (canGroundJump || canAirJump)) {
+      p.vy = -JUMP_SPEED;
+      p.jumpBuffer = 0;
+      p.onGround = false;
+      p.coyote = 0;
+      if (canAirJump) {
+        p.airJumpsLeft = Math.max(0, (p.airJumpsLeft || 0) - 1);
+      }
+      sfx.jump();
+    }
+
     p.vy = Math.min(MAX_FALL, p.vy + GRAVITY * dt);
 
     const prevX = p.x;
@@ -391,7 +410,10 @@ function updatePlayers(dt) {
     const prevY = p.y;
     p.y += p.vy * dt;
     resolveVertical(p, solids, prevY);
-    if (p.onGround) p.coyote = COYOTE_TIME;
+    if (p.onGround) {
+      p.coyote = COYOTE_TIME;
+      p.airJumpsLeft = EXTRA_AIR_JUMPS;
+    }
 
     p.deadFlash = Math.max(0, p.deadFlash - dt * 3.4);
   }
