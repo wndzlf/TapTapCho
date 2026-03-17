@@ -184,7 +184,9 @@ function normalizeServerUrl(value) {
 }
 
 function fixedMultiServerUrl() {
-  const configured = window.TapTapChoConfig?.multiServer || '';
+  const configured = window.TapTapChoServers?.sunkenWs
+    || window.TapTapChoConfig?.multiServer
+    || '';
   return normalizeServerUrl(configured);
 }
 
