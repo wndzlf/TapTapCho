@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 	<head>
 		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
-		<title>Winter Ski Rush (Godot)</title>
-			<style>
+		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, viewport-fit=cover">
+		<meta name="description" content="앱 안에서 바로 즐기는 세로형 스키 타임어택 게임, 윈터 스키 러시">
+		<title>윈터 스키 러시</title>
+		<style>
 html, body, #canvas {
 	margin: 0;
 	padding: 0;
@@ -89,19 +90,18 @@ body {
 	text-align: center;
 	z-index: 1;
 }
-			</style>
-			<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
-	<link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
-	<link rel="stylesheet" href="../assets/css/site-quality.css" />
+		</style>
+		<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
+<link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
 
 	</head>
 	<body>
 		<canvas id="canvas">
-			Your browser does not support the canvas tag.
+			브라우저가 canvas를 지원하지 않습니다.
 		</canvas>
 
 		<noscript>
-			Your browser does not support JavaScript.
+			브라우저가 JavaScript를 지원하지 않습니다.
 		</noscript>
 
 		<div id="status">
@@ -112,7 +112,7 @@ body {
 
 		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":4096964,"index.wasm":37685705},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":4097604,"index.wasm":37685705},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
@@ -150,18 +150,18 @@ const engine = new Engine(GODOT_CONFIG);
 		});
 	}
 
-	function displayFailureNotice(err) {
-		console.error(err);
-		if (err instanceof Error) {
-			setStatusNotice(err.message);
-		} else if (typeof err === 'string') {
-			setStatusNotice(err);
-		} else {
-			setStatusNotice('An unknown error occurred.');
+		function displayFailureNotice(err) {
+			console.error(err);
+			if (err instanceof Error) {
+				setStatusNotice(err.message);
+			} else if (typeof err === 'string') {
+				setStatusNotice(err);
+			} else {
+				setStatusNotice('알 수 없는 오류가 발생했습니다.');
+			}
+			setStatusMode('notice');
+			initializing = false;
 		}
-		setStatusMode('notice');
-		initializing = false;
-	}
 
 	const missing = Engine.getMissingFeatures({
 		threads: GODOT_THREADS_ENABLED,
@@ -173,13 +173,13 @@ const engine = new Engine(GODOT_CONFIG);
 			try {
 				serviceWorkerRegistrationPromise = navigator.serviceWorker.getRegistration();
 			} catch (err) {
-				serviceWorkerRegistrationPromise = Promise.reject(new Error('Service worker registration failed.'));
+				serviceWorkerRegistrationPromise = Promise.reject(new Error('서비스 워커 등록에 실패했습니다.'));
 			}
 			// There's a chance that installing the service worker would fix the issue
 			Promise.race([
 				serviceWorkerRegistrationPromise.then((registration) => {
 					if (registration != null) {
-						return Promise.reject(new Error('Service worker already exists.'));
+						return Promise.reject(new Error('서비스 워커가 이미 등록되어 있습니다.'));
 					}
 					return registration;
 				}).then(() => engine.installServiceWorker()),
@@ -195,7 +195,7 @@ const engine = new Engine(GODOT_CONFIG);
 			});
 		} else {
 			// Display the message as usual
-			const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
+			const missingMsg = '오류\n웹에서 게임을 실행하는 데 필요한 기능이 없습니다:\n';
 			displayFailureNotice(missingMsg + missing.join('\n'));
 		}
 	} else {
@@ -216,6 +216,5 @@ const engine = new Engine(GODOT_CONFIG);
 	}
 }());
 		</script>
-	  <script src="../assets/js/site-quality.js"></script>
-</body>
+	</body>
 </html>

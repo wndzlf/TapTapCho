@@ -141,6 +141,18 @@ var offtrack_warning_target := 0.0
 var offtrack_warning_strength := 0.0
 
 
+func _localized_crash_reason(reason: String) -> String:
+	match reason:
+		"tree":
+			return "나무"
+		"rock":
+			return "바위"
+		"cliff":
+			return "코스 이탈"
+		_:
+			return reason
+
+
 func _ready() -> void:
 	rng.seed = 20260307
 	_load_records()
@@ -235,7 +247,7 @@ func _simulate_player(delta: float) -> void:
 		var sid := String(surface["active_id"])
 		if not shortcut_seen.get(sid, false):
 			shortcut_seen[sid] = true
-			_set_status("Shortcut found!", 1.2)
+			_set_status("지름길 발견!", 1.2)
 			style_score += 120
 
 	var slope := _slope_at(player_pos.y)
@@ -303,7 +315,7 @@ func _check_checkpoints() -> void:
 			last_checkpoint = i
 			respawn_pos = Vector2(_main_center_x(cp_y + 12.0), cp_y + 20.0)
 			style_score += 80
-			_set_status("Checkpoint %d" % (i + 1), 0.9)
+			_set_status("체크포인트 %d" % (i + 1), 0.9)
 
 
 func _check_finish() -> void:
@@ -320,9 +332,9 @@ func _check_finish() -> void:
 	_save_records()
 
 	var challenge_ok := no_crash_run and run_time <= challenge_target
-	_set_status("Finish! %s" % _fmt_time(run_time), 2.4)
+	_set_status("완주! %s" % _fmt_time(run_time), 2.4)
 	if challenge_ok:
-		_set_status("Perfect run + Challenge clear!", 2.8)
+		_set_status("무충돌 완주! 목표 달성!", 2.8)
 
 
 func _try_jump() -> void:
@@ -337,7 +349,7 @@ func _try_jump() -> void:
 	air_height = 2.0
 	air_velocity = active_jump_base_velocity + forward_speed * active_jump_speed_velocity_scale
 	trick_spin = 0.0
-	_set_status("Jump", 0.45)
+	_set_status("점프!", 0.45)
 
 
 func _land_from_jump() -> void:
@@ -349,7 +361,7 @@ func _land_from_jump() -> void:
 		style_score += spins * 180
 		var bonus: float = minf(1.2, 0.25 * float(spins))
 		run_time = max(0.0, run_time - bonus)
-		_set_status("Trick x%d (-%.2fs)" % [spins, bonus], 1.0)
+		_set_status("트릭 x%d (-%.2fs)" % [spins, bonus], 1.0)
 	trick_spin = 0.0
 
 
@@ -360,7 +372,7 @@ func _trigger_crash(hit_pos: Vector2, reason: String) -> void:
 	no_crash_run = false
 	forward_speed = maxf(0.0, forward_speed * active_crash_keep_speed_ratio)
 	run_time += active_crash_penalty
-	_set_status("Crash (%s) +%.1fs" % [reason, active_crash_penalty], 1.2)
+	_set_status("충돌 (%s) +%.1fs" % [_localized_crash_reason(reason), active_crash_penalty], 1.2)
 
 	for i in range(20):
 		var ang := rng.randf_range(0.0, TAU)
@@ -383,7 +395,7 @@ func _respawn() -> void:
 	air_height = 0.0
 	air_velocity = 0.0
 	trick_spin = 0.0
-	_set_status("Respawn", 0.7)
+	_set_status("복귀", 0.7)
 
 
 func _read_steer_input() -> float:
@@ -688,13 +700,13 @@ func _build_ui() -> void:
 	warning_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	warning_label.add_theme_font_size_override("font_size", 14)
 	warning_label.add_theme_color_override("font_color", Color(1, 1, 1, 0))
-	warning_label.text = "GO BACK TO TRACK"
+	warning_label.text = "코스로 돌아오세요"
 	warning_panel.add_child(warning_label)
 
 	start_button = Button.new()
-	start_button.text = "START"
-	start_button.size = Vector2(96, 38)
-	start_button.position = Vector2(252, 12)
+	start_button.text = "시작"
+	start_button.size = Vector2(104, 38)
+	start_button.position = Vector2(244, 12)
 	start_button.pressed.connect(_on_start_pressed)
 	root.add_child(start_button)
 
@@ -705,13 +717,13 @@ func _build_ui() -> void:
 	root.add_child(difficulty_box)
 
 	easy_button = Button.new()
-	easy_button.text = "EASY"
+	easy_button.text = "쉬움"
 	easy_button.custom_minimum_size = Vector2(64, 30)
 	easy_button.pressed.connect(_on_easy_pressed)
 	difficulty_box.add_child(easy_button)
 
 	normal_button = Button.new()
-	normal_button.text = "NORMAL"
+	normal_button.text = "보통"
 	normal_button.custom_minimum_size = Vector2(66, 30)
 	normal_button.pressed.connect(_on_normal_pressed)
 	difficulty_box.add_child(normal_button)
@@ -735,8 +747,8 @@ func _build_ui() -> void:
 	row_steer.add_theme_constant_override("separation", 8)
 	controls.add_child(row_steer)
 
-	var left_btn := _make_hold_button("LEFT  A", func() -> void: touch_left = true, func() -> void: touch_left = false)
-	var right_btn := _make_hold_button("RIGHT  D", func() -> void: touch_right = true, func() -> void: touch_right = false)
+	var left_btn := _make_hold_button("왼쪽 A", func() -> void: touch_left = true, func() -> void: touch_left = false)
+	var right_btn := _make_hold_button("오른쪽 D", func() -> void: touch_right = true, func() -> void: touch_right = false)
 
 	row_steer.add_child(left_btn)
 	row_steer.add_child(right_btn)
@@ -746,8 +758,8 @@ func _build_ui() -> void:
 	row_actions.add_theme_constant_override("separation", 8)
 	controls.add_child(row_actions)
 
-	var brake_btn := _make_hold_button("BRAKE  S", func() -> void: touch_brake = true, func() -> void: touch_brake = false)
-	var crouch_btn := _make_hold_button("BOOST  Shift", func() -> void: touch_crouch = true, func() -> void: touch_crouch = false)
+	var brake_btn := _make_hold_button("브레이크 S", func() -> void: touch_brake = true, func() -> void: touch_brake = false)
+	var crouch_btn := _make_hold_button("부스트 Shift", func() -> void: touch_crouch = true, func() -> void: touch_crouch = false)
 	row_actions.add_child(brake_btn)
 	row_actions.add_child(crouch_btn)
 
@@ -931,11 +943,11 @@ func _set_difficulty(next_difficulty: int) -> void:
 	_apply_difficulty_profile(true)
 	_refresh_difficulty_ui()
 	_reset_run(false)
-	_set_status("Difficulty: %s" % _difficulty_name(), 1.0)
+	_set_status("난이도: %s" % _difficulty_name(), 1.0)
 
 
 func _difficulty_name() -> String:
-	return "EASY" if current_difficulty == DIFFICULTY_EASY else "NORMAL"
+	return "쉬움" if current_difficulty == DIFFICULTY_EASY else "보통"
 
 
 func _apply_difficulty_profile(notify: bool) -> void:
@@ -994,7 +1006,7 @@ func _refresh_difficulty_ui() -> void:
 func _start_run() -> void:
 	_try_play_bgm()
 	_reset_run(true)
-	_set_status("Go!", 0.6)
+	_set_status("출발!", 0.6)
 
 
 func _reset_run(start_immediately: bool) -> void:
@@ -1023,7 +1035,7 @@ func _reset_run(start_immediately: bool) -> void:
 	_touch_reset()
 
 	if start_button != null:
-		start_button.text = "RESTART" if start_immediately else "START"
+		start_button.text = "다시 시작" if start_immediately else "시작"
 
 
 func _touch_reset() -> void:
@@ -1058,15 +1070,15 @@ func _update_ui_text() -> void:
 
 	var best_label := "--:--.--" if best_time == INF else _fmt_time(best_time)
 	var speed_kmh := int(round(forward_speed * 0.42))
-	var main_line := "TIME %s   BEST %s" % [_fmt_time(run_time), best_label]
-	var sub_line := "SPEED %dkm/h   CHECKPOINT %d/%d   MODE %s" % [speed_kmh, cp_now, checkpoints.size(), _difficulty_name()]
+	var main_line := "시간 %s   최고 %s" % [_fmt_time(run_time), best_label]
+	var sub_line := "속도 %dkm/h   체크 %d/%d   모드 %s" % [speed_kmh, cp_now, checkpoints.size(), _difficulty_name()]
 	hud_label.text = "%s\n%s" % [main_line, sub_line]
 
 	if hint_label != null:
 		if run_finished:
-			hint_label.text = "Finished. Press START."
+			hint_label.text = "완주! 다시 시작을 눌러 주세요."
 		elif crashed:
-			hint_label.text = "Respawning..."
+			hint_label.text = "복귀 중..."
 		elif status_text != "":
 			hint_label.text = status_text
 		else:
