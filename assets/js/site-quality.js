@@ -323,6 +323,88 @@
     return holder;
   }
 
+  function isCanvasGamePage() {
+    return !document.querySelector('.wrap') &&
+      !document.querySelector('.legal-layout') &&
+      !!document.querySelector('canvas');
+  }
+
+  function buildFixedLinkNav() {
+    var fixed = document.createElement('nav');
+    fixed.className = 'site-nav-inline no-wrap-nav';
+    var fixedLabel = document.createElement('span');
+    fixedLabel.className = 'label';
+    fixedLabel.textContent = 'TapTapCho';
+    fixed.appendChild(fixedLabel);
+    LEGAL_LINKS.forEach(function (item, idx) {
+      var link = document.createElement('a');
+      link.href = item.href;
+      link.textContent = item.label;
+      fixed.appendChild(link);
+      if (idx < LEGAL_LINKS.length - 1) {
+        var dot = document.createElement('span');
+        dot.textContent = '·';
+        fixed.appendChild(dot);
+      }
+    });
+    return fixed;
+  }
+
+  function buildCompactFixedNav() {
+    var fixed = document.createElement('nav');
+    fixed.className = 'site-nav-inline no-wrap-nav compact-nav';
+    fixed.setAttribute('aria-label', 'TapTapCho quick links');
+
+    var fixedLabel = document.createElement('span');
+    fixedLabel.className = 'label';
+    fixedLabel.textContent = 'TapTapCho';
+    fixed.appendChild(fixedLabel);
+
+    var toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'site-nav-toggle';
+    toggle.textContent = 'Menu';
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Open TapTapCho menu');
+    fixed.appendChild(toggle);
+
+    var drawer = document.createElement('div');
+    drawer.className = 'site-nav-drawer';
+    drawer.setAttribute('aria-label', 'Quick links');
+    LEGAL_LINKS.forEach(function (item) {
+      var link = document.createElement('a');
+      link.href = item.href;
+      link.textContent = item.label;
+      drawer.appendChild(link);
+    });
+    fixed.appendChild(drawer);
+
+    function closeDrawer() {
+      fixed.classList.remove('is-open');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+
+    toggle.addEventListener('click', function (event) {
+      event.stopPropagation();
+      var isOpen = fixed.classList.toggle('is-open');
+      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+
+    document.addEventListener('click', function (event) {
+      if (!fixed.contains(event.target)) {
+        closeDrawer();
+      }
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        closeDrawer();
+      }
+    });
+
+    return fixed;
+  }
+
   function ensureTopLinks() {
     var topHeader = document.querySelector('header.top');
     if (topHeader && !topHeader.querySelector('.top-links')) {
@@ -354,24 +436,7 @@
     }
 
     if (!wrap && !document.querySelector('.site-nav-inline.no-wrap-nav')) {
-      var fixed = document.createElement('nav');
-      fixed.className = 'site-nav-inline no-wrap-nav';
-      var fixedLabel = document.createElement('span');
-      fixedLabel.className = 'label';
-      fixedLabel.textContent = 'TapTapCho';
-      fixed.appendChild(fixedLabel);
-      LEGAL_LINKS.forEach(function (item, idx) {
-        var link = document.createElement('a');
-        link.href = item.href;
-        link.textContent = item.label;
-        fixed.appendChild(link);
-        if (idx < LEGAL_LINKS.length - 1) {
-          var dot = document.createElement('span');
-          dot.textContent = '·';
-          fixed.appendChild(dot);
-        }
-      });
-      document.body.appendChild(fixed);
+      document.body.appendChild(isCanvasGamePage() ? buildCompactFixedNav() : buildFixedLinkNav());
     }
   }
 
