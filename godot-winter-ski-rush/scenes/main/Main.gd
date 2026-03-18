@@ -11,6 +11,7 @@ const BGM_PATH := "res://assets/audio/winter-ski-rush-pixabay-286213.mp3"
 const BRAKE_SFX_PATH := "res://assets/audio/winter-ski-rush-brake-pixabay-46042.mp3"
 const NORMAL_SKI_LOOP_SFX_PATH := "res://assets/audio/winter-ski-rush-normal-ski-loop.mp3"
 const LEFT_RIGHT_SFX_PATH := "res://assets/audio/winter-ski-rush-left-right-sfx.mp3"
+const UI_FONT_PATH := "res://assets/fonts/appintoss-kr-ui.ttf"
 const BASE_GRAVITY := 290.0
 const START_SPEED := 88.0
 
@@ -134,6 +135,7 @@ var bgm_player: AudioStreamPlayer
 var brake_sfx_player: AudioStreamPlayer
 var ski_loop_player: AudioStreamPlayer
 var left_right_sfx_player: AudioStreamPlayer
+var ui_font: FontFile
 var _brake_was_pressed := false
 var _left_was_pressed := false
 var _right_was_pressed := false
@@ -153,10 +155,26 @@ func _localized_crash_reason(reason: String) -> String:
 			return reason
 
 
+func _load_ui_font() -> void:
+	ui_font = load(UI_FONT_PATH) as FontFile
+	if ui_font == null:
+		push_warning("Failed to load UI font: %s" % UI_FONT_PATH)
+
+
+func _apply_ui_font(control: Control, font_size: int = -1) -> void:
+	if control == null:
+		return
+	if ui_font != null:
+		control.add_theme_font_override("font", ui_font)
+	if font_size > 0:
+		control.add_theme_font_size_override("font_size", font_size)
+
+
 func _ready() -> void:
 	rng.seed = 20260307
 	_load_records()
 	_apply_difficulty_profile(false)
+	_load_ui_font()
 	_setup_audio()
 	_build_ui()
 	_refresh_difficulty_ui()
@@ -669,7 +687,7 @@ func _build_ui() -> void:
 	hud_label.position = Vector2(14, 12)
 	hud_label.size = Vector2(316, 52)
 	hud_label.add_theme_color_override("font_color", Color(0.95, 0.98, 1.0))
-	hud_label.add_theme_font_size_override("font_size", 14)
+	_apply_ui_font(hud_label, 14)
 	hud_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	hud_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	hud_label.autowrap_mode = TextServer.AUTOWRAP_OFF
@@ -679,7 +697,7 @@ func _build_ui() -> void:
 	hint_label.position = Vector2(14, 62)
 	hint_label.size = Vector2(316, 24)
 	hint_label.add_theme_color_override("font_color", Color(0.99, 0.89, 0.62))
-	hint_label.add_theme_font_size_override("font_size", 12)
+	_apply_ui_font(hint_label, 12)
 	hint_label.text = ""
 	root.add_child(hint_label)
 
@@ -698,7 +716,7 @@ func _build_ui() -> void:
 	warning_label.set_anchors_preset(Control.PRESET_FULL_RECT)
 	warning_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	warning_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	warning_label.add_theme_font_size_override("font_size", 14)
+	_apply_ui_font(warning_label, 14)
 	warning_label.add_theme_color_override("font_color", Color(1, 1, 1, 0))
 	warning_label.text = "코스로 돌아오세요"
 	warning_panel.add_child(warning_label)
@@ -707,6 +725,7 @@ func _build_ui() -> void:
 	start_button.text = "시작"
 	start_button.size = Vector2(104, 38)
 	start_button.position = Vector2(244, 12)
+	_apply_ui_font(start_button, 14)
 	start_button.pressed.connect(_on_start_pressed)
 	root.add_child(start_button)
 
@@ -719,12 +738,14 @@ func _build_ui() -> void:
 	easy_button = Button.new()
 	easy_button.text = "쉬움"
 	easy_button.custom_minimum_size = Vector2(64, 30)
+	_apply_ui_font(easy_button, 13)
 	easy_button.pressed.connect(_on_easy_pressed)
 	difficulty_box.add_child(easy_button)
 
 	normal_button = Button.new()
 	normal_button.text = "보통"
 	normal_button.custom_minimum_size = Vector2(66, 30)
+	_apply_ui_font(normal_button, 13)
 	normal_button.pressed.connect(_on_normal_pressed)
 	difficulty_box.add_child(normal_button)
 
@@ -916,7 +937,7 @@ func _make_hold_button(label: String, on_press: Callable, on_release: Callable) 
 	var b := Button.new()
 	b.text = label
 	b.custom_minimum_size = Vector2(92, 48)
-	b.add_theme_font_size_override("font_size", 12)
+	_apply_ui_font(b, 12)
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	b.button_down.connect(on_press)
 	b.button_up.connect(on_release)
