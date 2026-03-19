@@ -1,6 +1,6 @@
 extends Node2D
 
-const SAVE_PATH := "user://winter_ski_rush.save"
+const SAVE_PATH_PREFIX := "user://winter_ski_rush"
 
 const WORLD_WIDTH := 360.0
 const WORLD_TOP := 120.0
@@ -61,6 +61,7 @@ var _track_points: Array[Vector2] = [
 ]
 
 var rng := RandomNumberGenerator.new()
+var save_path := "%s_browser.save" % SAVE_PATH_PREFIX
 
 var player_pos := Vector2(BASE_CENTER_X, WORLD_TOP + 30.0)
 var player_vel_x := 0.0
@@ -141,6 +142,11 @@ var _left_was_pressed := false
 var _right_was_pressed := false
 var offtrack_warning_target := 0.0
 var offtrack_warning_strength := 0.0
+var music_enabled := true
+var sfx_enabled := true
+var host_paused := false
+var _host_bridge = null
+var _host_callback_ref = null
 
 
 func _localized_crash_reason(reason: String) -> String:
@@ -172,10 +178,12 @@ func _apply_ui_font(control: Control, font_size: int = -1) -> void:
 
 func _ready() -> void:
 	rng.seed = 20260307
+	_init_web_host()
 	_load_records()
 	_apply_difficulty_profile(false)
 	_load_ui_font()
 	_setup_audio()
+	_apply_audio_settings()
 	_build_ui()
 	_refresh_difficulty_ui()
 	_reset_run(false)
@@ -185,6 +193,11 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if host_paused:
+		_apply_audio_settings()
+		_update_ui_text()
+		return
+
 	if run_started and not run_finished and not crashed:
 		_try_play_bgm()
 		_try_play_ski_loop()
@@ -200,6 +213,10 @@ func _process(delta: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if host_paused:
+		queue_redraw()
+		return
+
 	_update_dynamic_obstacles(delta)
 	_update_brake_sfx()
 	_update_left_right_sfx()
@@ -403,6 +420,79 @@ func _trigger_crash(hit_pos: Vector2, reason: String) -> void:
 			"vel": Vector2(cos(ang), sin(ang)) * rng.randf_range(35.0, 95.0),
 		}
 		obstacles.append(p)
+
+
+func _sanitize_storage_suffix(raw_value: String) -> String:
+	var cleaned := ""
+	var lowered := raw_value.strip_edges().to_lower()
+	for i in range(lowered.length()):
+		var code := lowered.unicode_at(i)
+		var is_digit := code >= 48 and code <= 57
+		var is_lower := code >= 97 and code <= 122
+		if is_digit or is_lower:
+			cleaned += char(code)
+		elif not cleaned.ends_with("_"):
+			cleaned += "_"
+
+	cleaned = cleaned.trim_prefix("_").trim_suffix("_")
+	if cleaned == "":
+		return "browser"
+	return cleaned.substr(0, min(cleaned.length(), 48))
+
+
+func _init_web_host() -> void:
+	save_path = "%s_browser.save" % SAVE_PATH_PREFIX
+	if not OS.has_feature("web"):
+		return
+
+	var host = JavaScriptBridge.get_interface("WinterSkiRushGodotHost")
+	if host == null:
+		return
+
+	_host_bridge = host
+	var suffix := _sanitize_storage_suffix(String(host.storageSuffix if host.storageSuffix != null else "browser"))
+	save_path = "%s_%s.save" % [SAVE_PATH_PREFIX, suffix]
+
+	if host.musicEnabled != null:
+		music_enabled = bool(host.musicEnabled)
+	if host.sfxEnabled != null:
+		sfx_enabled = bool(host.sfxEnabled)
+
+	_host_callback_ref = JavaScriptBridge.create_callback(_on_web_host_message)
+	_host_bridge.dispatchToGodot = _host_callback_ref
+
+
+func _on_web_host_message(args: Array) -> void:
+	if args.is_empty():
+		return
+
+	var payload = args[0]
+	if payload == null:
+		return
+
+	var action := String(payload.action)
+	match action:
+		"pause":
+			_set_host_paused(true)
+		"resume":
+			_set_host_paused(false)
+		"set_music":
+			music_enabled = bool(payload.value)
+			_apply_audio_settings()
+		"set_sfx":
+			sfx_enabled = bool(payload.value)
+			_apply_audio_settings()
+
+
+func _set_host_paused(paused: bool) -> void:
+	if host_paused == paused:
+		return
+
+	host_paused = paused
+	_touch_reset()
+	_apply_audio_settings()
+	_update_ui_text()
+	queue_redraw()
 
 
 func _respawn() -> void:
@@ -851,8 +941,40 @@ func _setup_audio() -> void:
 		left_right_sfx_player.stream = left_right_stream
 
 
+func _apply_audio_settings() -> void:
+	if bgm_player != null:
+		if not music_enabled:
+			if bgm_player.playing:
+				bgm_player.stop()
+			bgm_player.stream_paused = false
+		else:
+			bgm_player.stream_paused = host_paused
+			if not host_paused and run_started and not run_finished and not crashed and not bgm_player.playing:
+				bgm_player.play()
+
+	if brake_sfx_player != null and (host_paused or not sfx_enabled) and brake_sfx_player.playing:
+		brake_sfx_player.stop()
+
+	if left_right_sfx_player != null and (host_paused or not sfx_enabled) and left_right_sfx_player.playing:
+		left_right_sfx_player.stop()
+
+	if ski_loop_player != null:
+		if host_paused and ski_loop_player.playing:
+			ski_loop_player.stream_paused = true
+		elif not sfx_enabled or not run_started or run_finished or crashed:
+			if ski_loop_player.playing:
+				ski_loop_player.stop()
+			ski_loop_player.stream_paused = false
+		else:
+			ski_loop_player.stream_paused = false
+			if not ski_loop_player.playing:
+				ski_loop_player.play()
+
+
 func _try_play_bgm() -> void:
 	if bgm_player == null:
+		return
+	if host_paused or not music_enabled:
 		return
 	if bgm_player.stream == null:
 		return
@@ -888,6 +1010,8 @@ func _update_brake_sfx() -> void:
 func _play_brake_sfx() -> void:
 	if brake_sfx_player == null:
 		return
+	if host_paused or not sfx_enabled:
+		return
 	if brake_sfx_player.stream == null:
 		return
 	if brake_sfx_player.playing:
@@ -897,6 +1021,8 @@ func _play_brake_sfx() -> void:
 
 func _try_play_ski_loop() -> void:
 	if ski_loop_player == null:
+		return
+	if host_paused or not sfx_enabled:
 		return
 	if ski_loop_player.stream == null:
 		return
@@ -909,6 +1035,7 @@ func _stop_ski_loop() -> void:
 		return
 	if ski_loop_player.playing:
 		ski_loop_player.stop()
+	ski_loop_player.stream_paused = false
 
 
 func _update_left_right_sfx() -> void:
@@ -925,6 +1052,8 @@ func _update_left_right_sfx() -> void:
 
 func _play_left_right_sfx() -> void:
 	if left_right_sfx_player == null:
+		return
+	if host_paused or not sfx_enabled:
 		return
 	if left_right_sfx_player.stream == null:
 		return
@@ -1096,7 +1225,9 @@ func _update_ui_text() -> void:
 	hud_label.text = "%s\n%s" % [main_line, sub_line]
 
 	if hint_label != null:
-		if run_finished:
+		if host_paused:
+			hint_label.text = "토스 화면 전환으로 일시정지 중..."
+		elif run_finished:
 			hint_label.text = "완주! 다시 시작을 눌러 주세요."
 		elif crashed:
 			hint_label.text = "복귀 중..."
@@ -1115,7 +1246,7 @@ func _fmt_time(sec: float) -> String:
 
 func _load_records() -> void:
 	var cfg := ConfigFile.new()
-	if cfg.load(SAVE_PATH) == OK:
+	if cfg.load(save_path) == OK:
 		best_time = float(cfg.get_value("records", "best_time", INF))
 		best_style = int(cfg.get_value("records", "best_style", 0))
 
@@ -1124,10 +1255,13 @@ func _save_records() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("records", "best_time", best_time)
 	cfg.set_value("records", "best_style", max(best_style, style_score))
-	cfg.save(SAVE_PATH)
+	cfg.save(save_path)
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if host_paused:
+		return
+
 	var user_interaction_started := false
 	if event is InputEventScreenTouch:
 		var e_touch := event as InputEventScreenTouch

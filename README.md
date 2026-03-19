@@ -153,6 +153,17 @@ npm run worm-lan-server
 - 토스 브리지 번들: `/Users/user/TapTapCho/webgame-21/toss-bridge.js`
 - 광고 메모: `/Users/user/TapTapCho/webgame-21/TOSS_ADS_PLAN.md`
 
+같은 패턴을 `Winter Ski Rush` (`/Users/user/TapTapCho/godot-winter-ski-rush-web`)에도 적용했습니다.
+
+- 게임별 README / 토스 출시 메모: `/Users/user/TapTapCho/godot-winter-ski-rush-web/README.md`
+- 토스용 셸 / 모달 / 엔진 부트스트랩: `/Users/user/TapTapCho/godot-winter-ski-rush-web/index.html`
+- 풀스크린 / Safe Area / 모달 스타일: `/Users/user/TapTapCho/godot-winter-ski-rush-web/style.css`
+- 토스 런타임 / 백그라운드 처리 / 종료 흐름: `/Users/user/TapTapCho/godot-winter-ski-rush-web/toss-runtime.js`
+- 토스 브리지 소스: `/Users/user/TapTapCho/godot-winter-ski-rush-web/toss-bridge-source.js`
+- 토스 브리지 번들: `/Users/user/TapTapCho/godot-winter-ski-rush-web/toss-bridge.js`
+- 광고 메모: `/Users/user/TapTapCho/godot-winter-ski-rush-web/TOSS_ADS_PLAN.md`
+- Godot 저장 / 외부 pause-resume 훅: `/Users/user/TapTapCho/godot-winter-ski-rush/scenes/main/Main.gd`
+
 ### 8-4) 다른 게임에도 그대로 적용할 작업 순서
 
 1. 새 게임 폴더를 만든다.
