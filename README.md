@@ -143,6 +143,16 @@ npm run worm-lan-server
 - 토스 브리지 번들: `/Users/user/TapTapCho/webgame-18/toss-bridge.js`
 - 광고 메모: `/Users/user/TapTapCho/webgame-18/TOSS_ADS_PLAN.md`
 
+같은 패턴을 `Zigzag Memory Run` (`/Users/user/TapTapCho/webgame-21`)에도 적용했습니다.
+
+- 게임별 README / 토스 출시 메모: `/Users/user/TapTapCho/webgame-21/README.md`
+- 페이지 구조: `/Users/user/TapTapCho/webgame-21/index.html`
+- 풀스크린 / Safe Area / 모달 스타일: `/Users/user/TapTapCho/webgame-21/style.css`
+- 게임 로직 / 사운드 / 백그라운드 처리 / 토스 저장소 연동: `/Users/user/TapTapCho/webgame-21/game.js`
+- 토스 브리지 소스: `/Users/user/TapTapCho/webgame-21/toss-bridge-source.js`
+- 토스 브리지 번들: `/Users/user/TapTapCho/webgame-21/toss-bridge.js`
+- 광고 메모: `/Users/user/TapTapCho/webgame-21/TOSS_ADS_PLAN.md`
+
 ### 8-4) 다른 게임에도 그대로 적용할 작업 순서
 
 1. 새 게임 폴더를 만든다.
@@ -168,7 +178,9 @@ npm run worm-lan-server
 ## 9) 토스 인앱광고 메모
 
 현재는 사업자 등록과 광고 그룹 생성 전이라 실제 광고는 붙이지 않은 상태입니다.  
-상세 메모는 `/Users/user/TapTapCho/webgame-18/TOSS_ADS_PLAN.md` 에 정리했고, 공통 원칙은 아래와 같습니다.
+`Orbit Survivor` 와 `Zigzag Memory Run` 모두 광고 없는 상태로 먼저 출시 준비를 진행하고 있고,
+상세 메모는 `/Users/user/TapTapCho/webgame-18/TOSS_ADS_PLAN.md`, `/Users/user/TapTapCho/webgame-21/TOSS_ADS_PLAN.md` 에 정리했습니다.
+공통 원칙은 아래와 같습니다.
 
 ### 9-1) 전제 조건
 
@@ -187,6 +199,8 @@ npm run worm-lan-server
 
 - `Orbit Survivor` 같은 풀스크린 액션 게임은 `보상형 광고`가 1순위다.
 - 가장 자연스러운 위치는 게임오버 모달의 `광고 보고 1회 이어하기` 버튼이다.
+- `Zigzag Memory Run` 같은 기억 퍼즐 게임도 `보상형 광고`가 1순위다.
+- 가장 자연스러운 위치는 게임오버 모달의 `광고 보고 1회 이어하기` 또는 `현재 점수 유지 후 재도전` 버튼이다.
 - 배너 광고는 게임 플레이 화면을 가리기 쉬워서 우선순위가 낮다.
 - 전면 광고는 필요하면 나중에 도입하되, 앱 진입 직후 노출은 피한다.
 
