@@ -11,5 +11,9 @@
   },
   "dependencies": {
     "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@apps-in-toss/web-framework": "^2.0.9",
+    "esbuild": "^0.27.4"
   }
 }
