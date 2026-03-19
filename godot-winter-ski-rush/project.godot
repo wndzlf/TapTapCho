@@ -12,6 +12,7 @@ window/size/viewport_width=360
 window/size/viewport_height=640
 window/size/window_width=360
 window/size/window_height=640
+window/dpi/allow_hidpi=true
 window/stretch/mode="canvas_items"
 window/stretch/aspect="keep"
 

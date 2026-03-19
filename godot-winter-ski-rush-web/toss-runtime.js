@@ -44,6 +44,8 @@
 
   const bridgeBadgeEl = $('bridgeBadge');
   const statusHintEl = $('statusHint');
+  const canvasEl = $('canvas');
+  const canvasStageEl = document.querySelector('.canvas-stage');
   const btnMusic = $('btnMusic');
   const btnSfx = $('btnSfx');
   const btnInfo = $('btnInfo');
@@ -53,6 +55,7 @@
   const btnConfirmExit = $('btnConfirmExit');
   const infoModal = $('infoModal');
   const exitModal = $('exitModal');
+  let resizeObserver = null;
 
   function safeLocalStorageGet(key) {
     try {
@@ -151,6 +154,49 @@
     }
 
     statusHintEl.textContent = '브라우저 미리보기에서도 토스용 전체 화면 레이아웃과 종료 흐름을 그대로 확인할 수 있어요.';
+  }
+
+  function syncCanvasResolution() {
+    if (!canvasEl || !canvasStageEl) {
+      return;
+    }
+
+    const rect = canvasStageEl.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) {
+      return;
+    }
+
+    const devicePixelRatio = Math.max(window.devicePixelRatio || 1, 1);
+    const targetWidth = Math.max(1, Math.round(rect.width * devicePixelRatio));
+    const targetHeight = Math.max(1, Math.round(rect.height * devicePixelRatio));
+
+    if (canvasEl.width === targetWidth && canvasEl.height === targetHeight) {
+      return;
+    }
+
+    canvasEl.width = targetWidth;
+    canvasEl.height = targetHeight;
+    window.dispatchEvent(new Event('resize'));
+  }
+
+  function queueCanvasResolutionSync() {
+    window.requestAnimationFrame(() => {
+      syncCanvasResolution();
+    });
+  }
+
+  function installCanvasResolutionSync() {
+    syncCanvasResolution();
+    queueCanvasResolutionSync();
+
+    window.addEventListener('resize', queueCanvasResolutionSync);
+
+    if ('ResizeObserver' in window && canvasStageEl) {
+      resizeObserver = new ResizeObserver(() => {
+        queueCanvasResolutionSync();
+      });
+      resizeObserver.observe(canvasStageEl);
+    }
   }
 
   function applySafeAreaInsets(insets) {
@@ -368,6 +414,7 @@
 
       state.unsubscribeSafeArea = toss.safeArea.subscribe((insets) => {
         applySafeAreaInsets(insets);
+        queueCanvasResolutionSync();
       });
     }
 
@@ -393,6 +440,7 @@
     loadPersistedSettings();
     syncHostBootstrapState();
     updateStatusHint();
+    queueCanvasResolutionSync();
   }
 
   function setStatusMode(mode) {
@@ -521,6 +569,7 @@
   window.WinterSkiRushRuntime = {
     async boot(engine, config, threadsEnabled) {
       attachUiEvents();
+      installCanvasResolutionSync();
 
       try {
         await initTossShell();
