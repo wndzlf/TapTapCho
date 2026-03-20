@@ -8,7 +8,9 @@
     "twin-temple-multi-server": "node scripts/twin-temple-multi-server.js",
     "multi-hub-server": "node scripts/taptap-multi-hub-server.js",
     "generate-thumbnails": "node scripts/generate-thumbnails.js",
-    "sync-real-estate-watch": "node scripts/sync-real-estate-watch.mjs"
+    "sync-real-estate-watch": "node scripts/sync-real-estate-watch.mjs",
+    "real-estate-watch:toss:build": "npm --prefix real-estate-watch/toss-package run build",
+    "real-estate-watch:toss:dev": "npm --prefix real-estate-watch/toss-package run dev"
   },
   "dependencies": {
     "ws": "^8.18.0"
