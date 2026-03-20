@@ -16,6 +16,8 @@ const lengthEl = document.getElementById('length');
 const bestLengthEl = document.getElementById('bestLength');
 const aliveEl = document.getElementById('alive');
 const btnStart = document.getElementById('btnStart');
+const turnPad = document.getElementById('turnPad');
+const turnKnob = document.getElementById('turnKnob');
 
 const W = canvas.width;
 const H = canvas.height;
@@ -30,6 +32,8 @@ const ROUND_DURATION = 75;
 const SAFE_RADIUS_START = 1080;
 const SAFE_RADIUS_END = 260;
 const SPAWN_GRACE_DURATION = 3;
+const TURN_PAD_MAX = 42;
+const TURN_PAD_DEADZONE = 0.18;
 const STORAGE_KEY = 'worm-arena-rush-best';
 const BEST_LENGTH_KEY = 'worm-arena-rush-best-length';
 
@@ -54,6 +58,14 @@ let camera = { x: 0, y: 0 };
 
 const pointer = { x: W * 0.5, y: H * 0.5, hasMoved: false };
 const keys = Object.create(null);
+const turnStick = {
+  active: false,
+  pointerId: null,
+  dx: 0,
+  dy: 0,
+  strength: 0,
+  angle: 0,
+};
 
 bestEl.textContent = String(best);
 
@@ -97,6 +109,67 @@ function distSq(ax, ay, bx, by) {
   const dx = ax - bx;
   const dy = ay - by;
   return dx * dx + dy * dy;
+}
+
+function pointSegmentDistanceSq(px, py, ax, ay, bx, by) {
+  const abx = bx - ax;
+  const aby = by - ay;
+  const abLenSq = abx * abx + aby * aby;
+  if (abLenSq <= 0.000001) return distSq(px, py, ax, ay);
+
+  const apx = px - ax;
+  const apy = py - ay;
+  const t = clamp((apx * abx + apy * aby) / abLenSq, 0, 1);
+  const closestX = ax + abx * t;
+  const closestY = ay + aby * t;
+  return distSq(px, py, closestX, closestY);
+}
+
+function orientation(ax, ay, bx, by, cx, cy) {
+  return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+}
+
+function isPointOnSegment(px, py, ax, ay, bx, by) {
+  return (
+    px >= Math.min(ax, bx) - 0.0001
+    && px <= Math.max(ax, bx) + 0.0001
+    && py >= Math.min(ay, by) - 0.0001
+    && py <= Math.max(ay, by) + 0.0001
+  );
+}
+
+function segmentsIntersect(ax, ay, bx, by, cx, cy, dx, dy) {
+  const o1 = orientation(ax, ay, bx, by, cx, cy);
+  const o2 = orientation(ax, ay, bx, by, dx, dy);
+  const o3 = orientation(cx, cy, dx, dy, ax, ay);
+  const o4 = orientation(cx, cy, dx, dy, bx, by);
+
+  const hasOppositeA = (o1 > 0 && o2 < 0) || (o1 < 0 && o2 > 0);
+  const hasOppositeB = (o3 > 0 && o4 < 0) || (o3 < 0 && o4 > 0);
+  if (hasOppositeA && hasOppositeB) return true;
+
+  if (Math.abs(o1) <= 0.0001 && isPointOnSegment(cx, cy, ax, ay, bx, by)) return true;
+  if (Math.abs(o2) <= 0.0001 && isPointOnSegment(dx, dy, ax, ay, bx, by)) return true;
+  if (Math.abs(o3) <= 0.0001 && isPointOnSegment(ax, ay, cx, cy, dx, dy)) return true;
+  if (Math.abs(o4) <= 0.0001 && isPointOnSegment(bx, by, cx, cy, dx, dy)) return true;
+
+  return false;
+}
+
+function segmentSegmentDistanceSq(ax, ay, bx, by, cx, cy, dx, dy) {
+  if (segmentsIntersect(ax, ay, bx, by, cx, cy, dx, dy)) return 0;
+
+  return Math.min(
+    pointSegmentDistanceSq(ax, ay, cx, cy, dx, dy),
+    pointSegmentDistanceSq(bx, by, cx, cy, dx, dy),
+    pointSegmentDistanceSq(cx, cy, ax, ay, bx, by),
+    pointSegmentDistanceSq(dx, dy, ax, ay, bx, by),
+  );
+}
+
+function getSegmentRadius(worm, index) {
+  const t = 1 - index / worm.segments.length;
+  return worm.radius * (0.68 + t * 0.34);
 }
 
 function isInsideSafeZone(x, y, margin = 0) {
@@ -195,6 +268,8 @@ function createWorm(options) {
   return {
     x: options.x,
     y: options.y,
+    prevX: options.x,
+    prevY: options.y,
     angle: options.angle,
     targetAngle: options.angle,
     turnSpeed: options.turnSpeed,
@@ -259,6 +334,7 @@ function resetGame() {
 function startGame() {
   if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
   bgmAudio?.unlock();
+  resetTurnStick();
   resetGame();
   state = 'running';
 }
@@ -286,6 +362,13 @@ function updatePlayerTarget() {
 
   if (inputX !== 0 || inputY !== 0) {
     player.targetAngle = Math.atan2(inputY, inputX);
+    return;
+  }
+
+  if (turnStick.active || turnStick.strength > 0) {
+    if (turnStick.strength >= TURN_PAD_DEADZONE) {
+      player.targetAngle = turnStick.angle;
+    }
     return;
   }
 
@@ -338,6 +421,8 @@ function moveWorm(worm, dt) {
     speed += Math.sin((tick + worm.seed) * 0.035) * (14 * speedMultiplier);
   }
 
+  worm.prevX = worm.x;
+  worm.prevY = worm.y;
   worm.x += Math.cos(worm.angle) * speed * dt;
   worm.y += Math.sin(worm.angle) * speed * dt;
 
@@ -403,10 +488,31 @@ function consumeFood(worm) {
 }
 
 function headHitsBody(headWorm, bodyWorm, bodyStart = 4) {
-  const hitRadius = (headWorm.radius + 7.5) * (headWorm.radius + 7.5);
-  for (let i = bodyStart; i < bodyWorm.segments.length; i += 2) {
-    const seg = bodyWorm.segments[i];
-    if (distSq(headWorm.x, headWorm.y, seg.x, seg.y) < hitRadius) return true;
+  const headFromX = headWorm.prevX ?? headWorm.x;
+  const headFromY = headWorm.prevY ?? headWorm.y;
+  const headToX = headWorm.x;
+  const headToY = headWorm.y;
+
+  for (let i = bodyStart; i < bodyWorm.segments.length; i += 1) {
+    const segA = bodyWorm.segments[i];
+    const segB = bodyWorm.segments[Math.min(i + 1, bodyWorm.segments.length - 1)];
+    const bodyRadius = Math.max(getSegmentRadius(bodyWorm, i), getSegmentRadius(bodyWorm, Math.min(i + 1, bodyWorm.segments.length - 1)));
+    const hitRadius = headWorm.radius + bodyRadius + 1.75;
+
+    if (
+      segmentSegmentDistanceSq(
+        headFromX,
+        headFromY,
+        headToX,
+        headToY,
+        segA.x,
+        segA.y,
+        segB.x,
+        segB.y,
+      ) <= hitRadius * hitRadius
+    ) {
+      return true;
+    }
   }
   return false;
 }
@@ -577,6 +683,44 @@ function drawWorm(worm) {
   }
 
   ctx.restore();
+}
+
+function renderTurnStick() {
+  if (!turnKnob || !turnPad) return;
+  turnKnob.style.transform = `translate(${turnStick.dx}px, ${turnStick.dy}px)`;
+  turnPad.classList.toggle('is-active', turnStick.active || turnStick.strength > TURN_PAD_DEADZONE);
+}
+
+function resetTurnStick() {
+  turnStick.active = false;
+  turnStick.pointerId = null;
+  turnStick.dx = 0;
+  turnStick.dy = 0;
+  turnStick.strength = 0;
+  renderTurnStick();
+}
+
+function updateTurnStickFromEvent(event) {
+  if (!turnPad) return;
+
+  const rect = turnPad.getBoundingClientRect();
+  const centerX = rect.left + rect.width * 0.5;
+  const centerY = rect.top + rect.height * 0.5;
+  const rawDx = event.clientX - centerX;
+  const rawDy = event.clientY - centerY;
+  const rawDistance = Math.hypot(rawDx, rawDy);
+  const clampedDistance = Math.min(TURN_PAD_MAX, rawDistance);
+  const scale = rawDistance > 0 ? clampedDistance / rawDistance : 0;
+
+  turnStick.dx = rawDx * scale;
+  turnStick.dy = rawDy * scale;
+  turnStick.strength = TURN_PAD_MAX > 0 ? clampedDistance / TURN_PAD_MAX : 0;
+
+  if (clampedDistance > 0.0001) {
+    turnStick.angle = Math.atan2(turnStick.dy, turnStick.dx);
+  }
+
+  renderTurnStick();
 }
 
 function drawSafeZone() {
@@ -795,6 +939,41 @@ function updatePointer(event) {
 }
 
 btnStart.addEventListener('click', startGame);
+
+turnPad?.addEventListener('pointerdown', (event) => {
+  event.preventDefault();
+  bgmAudio?.unlock();
+  turnStick.active = true;
+  turnStick.pointerId = event.pointerId;
+  turnPad.setPointerCapture(event.pointerId);
+  updateTurnStickFromEvent(event);
+});
+
+turnPad?.addEventListener('pointermove', (event) => {
+  if (!turnStick.active || event.pointerId !== turnStick.pointerId) return;
+  event.preventDefault();
+  updateTurnStickFromEvent(event);
+});
+
+turnPad?.addEventListener('pointerup', (event) => {
+  if (event.pointerId !== turnStick.pointerId) return;
+  if (turnPad.hasPointerCapture(event.pointerId)) {
+    turnPad.releasePointerCapture(event.pointerId);
+  }
+  resetTurnStick();
+});
+
+turnPad?.addEventListener('pointercancel', (event) => {
+  if (event.pointerId !== turnStick.pointerId) return;
+  if (turnPad.hasPointerCapture(event.pointerId)) {
+    turnPad.releasePointerCapture(event.pointerId);
+  }
+  resetTurnStick();
+});
+
+turnPad?.addEventListener('lostpointercapture', () => {
+  resetTurnStick();
+});
 
 canvas.addEventListener('pointerdown', (event) => {
   updatePointer(event);
