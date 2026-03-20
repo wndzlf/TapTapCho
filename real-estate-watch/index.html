@@ -28,7 +28,7 @@
           <h2>데이터 기준</h2>
           <p>
             국토교통부 실거래가 공개시스템과 공공데이터포털 OpenAPI를 주기적으로 수집한 뒤,
-            서울·경기 아파트 매매 거래를 묶어 첫 확인순, 거래금액순, 계약일순으로 상위 10건씩 제공합니다.
+            서울·경기 아파트 매매 거래를 묶어 거래금액 상위 10건과 계약일 최신 10건을 제공합니다.
           </p>
         </div>
         <div class="source-links">
@@ -47,23 +47,10 @@
         <section class="panel feed-panel">
           <div class="feed-head">
             <div>
-              <h2>최근 확인 거래</h2>
-              <p class="feed-note" id="recent-feed-note">상위 10건을 준비하고 있습니다.</p>
-            </div>
-            <span class="chip muted" id="snapshot-chip">예시 스냅샷</span>
-          </div>
-          <div class="feed-list" id="recent-feed-list">
-            <article class="placeholder-card">카드 목록을 준비하고 있습니다.</article>
-          </div>
-        </section>
-
-        <section class="panel feed-panel">
-          <div class="feed-head">
-            <div>
               <h2>가장 비싼 거래</h2>
               <p class="feed-note" id="price-feed-note">상위 10건을 준비하고 있습니다.</p>
             </div>
-            <span class="chip muted">거래금액 기준</span>
+            <span class="chip muted" id="snapshot-chip">자동 스냅샷</span>
           </div>
           <div class="feed-list" id="price-feed-list">
             <article class="placeholder-card">카드 목록을 준비하고 있습니다.</article>

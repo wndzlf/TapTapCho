@@ -10,8 +10,6 @@ const regionOptions = [
 ];
 
 const statsGrid = document.getElementById("stats-grid");
-const recentFeedList = document.getElementById("recent-feed-list");
-const recentFeedNote = document.getElementById("recent-feed-note");
 const priceFeedList = document.getElementById("price-feed-list");
 const priceFeedNote = document.getElementById("price-feed-note");
 const contractFeedList = document.getElementById("contract-feed-list");
@@ -105,10 +103,7 @@ function rankItems(items, mode) {
 
     const rightSeen = new Date(right.firstSeenAt || right.officialCheckedAt).getTime();
     const leftSeen = new Date(left.firstSeenAt || left.officialCheckedAt).getTime();
-    if (rightSeen !== leftSeen) {
-      return rightSeen - leftSeen;
-    }
-    return right.priceManwon - left.priceManwon;
+    return rightSeen - leftSeen;
   });
 
   return ranked;
@@ -152,12 +147,6 @@ function buildTransactionCards(items) {
             </div>
           </div>
 
-          <div class="transaction-foot">
-            <div class="checked-at">
-              첫 확인: ${formatDateTime(item.firstSeenAt || item.officialCheckedAt)}<br />
-              스냅샷 갱신: ${formatDateTime(item.officialCheckedAt)}
-            </div>
-          </div>
         </article>
       `;
     })
@@ -165,9 +154,7 @@ function buildTransactionCards(items) {
 }
 
 function renderStats(items) {
-  const visibleItems = rankItems(items, "official").slice(0, 10);
-
-  if (!visibleItems.length) {
+  if (!items.length) {
     statsGrid.innerHTML = `
       <article class="stat-card">
         <div class="stat-label">상태</div>
@@ -180,16 +167,16 @@ function renderStats(items) {
   }
 
   const average = Math.round(
-    visibleItems.reduce((total, item) => total + item.priceManwon, 0) / visibleItems.length,
+    items.reduce((total, item) => total + item.priceManwon, 0) / items.length,
   );
   const highest = rankItems(items, "price")[0];
   const latestContract = rankItems(items, "contract")[0];
-  const regionLabel = state.region === "all" ? "서울·경기 전체" : visibleItems[0].regionLabel;
+  const regionLabel = state.region === "all" ? "서울·경기 전체" : items[0].regionLabel;
 
   statsGrid.innerHTML = `
     <article class="stat-card">
-      <div class="stat-label">노출 거래</div>
-      <div class="stat-value">${visibleItems.length}건</div>
+      <div class="stat-label">수집 거래</div>
+      <div class="stat-value">${items.length}건</div>
       <div class="stat-foot">${regionLabel} 기준</div>
     </article>
     <article class="stat-card">
@@ -215,9 +202,7 @@ function renderStats(items) {
 function renderRankedFeed(target, noteTarget, items, mode) {
   const visibleItems = rankItems(items, mode).slice(0, 10);
 
-  if (mode === "official") {
-    noteTarget.textContent = `총 ${items.length}건 중 상위 ${visibleItems.length}건 · 첫 확인순`;
-  } else if (mode === "price") {
+  if (mode === "price") {
     noteTarget.textContent = `총 ${items.length}건 중 상위 ${visibleItems.length}건 · 거래금액순`;
   } else {
     noteTarget.textContent = `총 ${items.length}건 중 상위 ${visibleItems.length}건 · 계약일 최신순`;
@@ -236,7 +221,6 @@ function renderRankedFeed(target, noteTarget, items, mode) {
 function render() {
   const items = getFilteredItems();
   renderStats(items);
-  renderRankedFeed(recentFeedList, recentFeedNote, items, "official");
   renderRankedFeed(priceFeedList, priceFeedNote, items, "price");
   renderRankedFeed(contractFeedList, contractFeedNote, items, "contract");
   renderFilters(regionFilter, regionOptions, state.region, (regionId) => {
@@ -258,7 +242,6 @@ async function init() {
   } catch (error) {
     console.error(error);
     heroStatus.textContent = "데이터를 불러오지 못했습니다.";
-    recentFeedNote.textContent = "JSON 스냅샷을 확인해 주세요.";
     priceFeedNote.textContent = "JSON 스냅샷을 확인해 주세요.";
     contractFeedNote.textContent = "JSON 스냅샷을 확인해 주세요.";
     const placeholder = `
@@ -267,7 +250,6 @@ async function init() {
         <code>real-estate-watch/latest-transactions.json</code> 파일을 확인해 주세요.
       </article>
     `;
-    recentFeedList.innerHTML = placeholder;
     priceFeedList.innerHTML = placeholder;
     contractFeedList.innerHTML = placeholder;
   }
