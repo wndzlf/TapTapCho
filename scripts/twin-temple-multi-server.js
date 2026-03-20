@@ -1,7 +1,7 @@
 const http = require('http');
 const crypto = require('crypto');
 const WebSocket = require('ws');
-const { levels: LEVELS } = require('../webgame-45/shared-levels.js');
+const { levels: LEVELS } = require('../twin-temple-escape/shared-levels.js');
 
 const PORT = Number(process.env.TWIN_TEMPLE_PORT || 9092);
 const TICK_MS = 33;

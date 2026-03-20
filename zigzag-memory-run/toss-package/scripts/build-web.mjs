@@ -45,7 +45,7 @@ async function buildZigzagMemoryRunWebBundle() {
   await mkdir(OUTDIR, { recursive: true });
 
   await writeTransformedFile(
-    path.join(REPO_ROOT, 'webgame-21', 'index.html'),
+    path.join(REPO_ROOT, 'zigzag-memory-run', 'index.html'),
     path.join(OUTDIR, 'index.html'),
     (contents) =>
       contents
@@ -55,7 +55,7 @@ async function buildZigzagMemoryRunWebBundle() {
   );
 
   await writeTransformedFile(
-    path.join(REPO_ROOT, 'webgame-21', 'game.js'),
+    path.join(REPO_ROOT, 'zigzag-memory-run', 'game.js'),
     path.join(OUTDIR, 'game.js'),
     (contents) =>
       contents
@@ -63,8 +63,8 @@ async function buildZigzagMemoryRunWebBundle() {
         .replace("new URL('../', window.location.href)", "new URL('./', window.location.href)"),
   );
 
-  await copyRawFile(path.join(REPO_ROOT, 'webgame-21', 'style.css'), path.join(OUTDIR, 'style.css'));
-  await copyRawFile(path.join(REPO_ROOT, 'webgame-21', 'toss-bridge.js'), path.join(OUTDIR, 'toss-bridge.js'));
+  await copyRawFile(path.join(REPO_ROOT, 'zigzag-memory-run', 'style.css'), path.join(OUTDIR, 'style.css'));
+  await copyRawFile(path.join(REPO_ROOT, 'zigzag-memory-run', 'toss-bridge.js'), path.join(OUTDIR, 'toss-bridge.js'));
   await copyRawFile(
     path.join(REPO_ROOT, 'assets', 'audio', 'zigzag-memory-run-pixabay-488126.mp3'),
     path.join(OUTDIR, 'assets', 'audio', 'zigzag-memory-run-pixabay-488126.mp3'),
@@ -84,7 +84,7 @@ async function buildZigzagMemoryRunWebBundle() {
 }
 
 buildZigzagMemoryRunWebBundle().catch((error) => {
-  console.error('[webgame-21/toss-package] Failed to prepare web bundle.');
+  console.error('[zigzag-memory-run/toss-package] Failed to prepare web bundle.');
   console.error(error);
   process.exit(1);
 });

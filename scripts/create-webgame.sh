@@ -3,7 +3,7 @@ set -euo pipefail
 
 if [[ $# -lt 3 ]]; then
   echo "Usage: bash scripts/create-webgame.sh <folder> <title> <tags>"
-  echo "Example: bash scripts/create-webgame.sh webgame-10 \"Zigzag Rush\" \"Reflex · Zigzag\""
+  echo "Example: bash scripts/create-webgame.sh zigzag-rush \"Zigzag Rush\" \"Reflex · Zigzag\""
   exit 1
 fi
 

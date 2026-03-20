@@ -20,11 +20,11 @@ const DIRECTORY_COPIES = [
 
 const RAW_FILES = [
   {
-    source: path.join(REPO_ROOT, 'webgame-40', 'style.css'),
+    source: path.join(REPO_ROOT, 'sunken-sixway-defense', 'style.css'),
     destination: path.join(OUTDIR, 'style.css'),
   },
   {
-    source: path.join(REPO_ROOT, 'webgame-40', 'toss-bridge.js'),
+    source: path.join(REPO_ROOT, 'sunken-sixway-defense', 'toss-bridge.js'),
     destination: path.join(OUTDIR, 'toss-bridge.js'),
   },
   {
@@ -100,13 +100,13 @@ async function buildSunkenDefenseWebBundle() {
   await mkdir(OUTDIR, { recursive: true });
 
   await writeTransformedFile(
-    path.join(REPO_ROOT, 'webgame-40', 'index.html'),
+    path.join(REPO_ROOT, 'sunken-sixway-defense', 'index.html'),
     path.join(OUTDIR, 'index.html'),
     rewriteIndex,
   );
 
   await writeTransformedFile(
-    path.join(REPO_ROOT, 'webgame-40', 'game.js'),
+    path.join(REPO_ROOT, 'sunken-sixway-defense', 'game.js'),
     path.join(OUTDIR, 'game.js'),
     rewriteGame,
   );

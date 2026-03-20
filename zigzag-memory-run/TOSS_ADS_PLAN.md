@@ -48,16 +48,16 @@ That keeps the ad tied to a clear user choice and does not interrupt the active 
 
 When the ad setup blocker is removed, these files are the likely touch points:
 
-- `/Users/user/TapTapCho/webgame-21/index.html`
+- `/Users/user/TapTapCho/zigzag-memory-run/index.html`
   - add a rewarded continue button to the game over modal
-- `/Users/user/TapTapCho/webgame-21/game.js`
+- `/Users/user/TapTapCho/zigzag-memory-run/game.js`
   - preload rewarded ad
   - show rewarded ad
   - grant the continue only on reward callback
   - pause/resume audio during the ad lifecycle
-- `/Users/user/TapTapCho/webgame-21/toss-bridge-source.js`
+- `/Users/user/TapTapCho/zigzag-memory-run/toss-bridge-source.js`
   - add Toss ad bridge wrappers if we keep the current custom bridge pattern
-- `/Users/user/TapTapCho/webgame-21/toss-bridge.js`
+- `/Users/user/TapTapCho/zigzag-memory-run/toss-bridge.js`
   - rebuild after the bridge source changes
 
 ## Decision for now

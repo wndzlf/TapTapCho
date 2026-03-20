@@ -1,11 +1,11 @@
 # Sunken Defense Toss Package
 
-`webgame-40`를 토스 미니앱용 `.ait` 번들로 만들기 위한 패키지입니다. Orbit Survivor 패키지 구조를 그대로 참고했고, 토스 업로드에서 중요한 항목인 한글 UI, 가로 화면 고정, Safe Area 대응, 종료 확인, 토스 게임 계정 기준 저장 분리를 같이 반영했습니다.
+`sunken-sixway-defense`를 토스 미니앱용 `.ait` 번들로 만들기 위한 패키지입니다. Orbit Survivor 패키지 구조를 그대로 참고했고, 토스 업로드에서 중요한 항목인 한글 UI, 가로 화면 고정, Safe Area 대응, 종료 확인, 토스 게임 계정 기준 저장 분리를 같이 반영했습니다.
 
 ## 포함 내용
 
-- 게임 런타임: `webgame-40/index.html`, `webgame-40/game.js`, `webgame-40/style.css`
-- 토스 브리지 번들: `webgame-40/toss-bridge.js`
+- 게임 런타임: `sunken-sixway-defense/index.html`, `sunken-sixway-defense/game.js`, `sunken-sixway-defense/style.css`
+- 토스 브리지 번들: `sunken-sixway-defense/toss-bridge.js`
 - 공용 자산: BGM, Kenney 효과음, 적 탱크 스프라이트, 법률 페이지
 - 업로드용 스크립트: `scripts/build-web.mjs`, `scripts/dev-server.mjs`
 

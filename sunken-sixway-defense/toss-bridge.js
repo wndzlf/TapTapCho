@@ -128,9 +128,9 @@
     }
   });
 
-  // webgame-21/toss-bridge-source.js
+  // sunken-sixway-defense/toss-bridge-source.js
   var require_toss_bridge_source = __commonJS({
-    "webgame-21/toss-bridge-source.js"() {
+    "sunken-sixway-defense/toss-bridge-source.js"() {
       init_dist();
       var closeViewBridge = createAsyncBridge("closeView");
       var getUserKeyForGameBridge = createAsyncBridge("getUserKeyForGame");
@@ -167,7 +167,7 @@
       }
       function logBridgeWarning(method, error) {
         if (typeof console !== "undefined" && console.warn) {
-          console.warn(`[Zigzag Memory Run Toss Bridge] ${method} failed`, error);
+          console.warn(`[Sunken Defense Toss Bridge] ${method} failed`, error);
         }
       }
       async function callAsyncBridge(method, bridgeCall, args = [], fallback = false) {
@@ -219,7 +219,7 @@
           safeLocalStorageRemove(key);
         }
       };
-      window.ZigzagMemoryRunToss = {
+      window.SunkenDefenseToss = {
         isAvailable() {
           return hasNativeBridge();
         },
@@ -229,7 +229,7 @@
         async getUserKeyForGame() {
           return callAsyncBridge("getUserKeyForGame", getUserKeyForGameBridge, [], null);
         },
-        async setDeviceOrientation(type = "portrait") {
+        async setDeviceOrientation(type = "landscape") {
           return callAsyncBridge(
             "setDeviceOrientation",
             setDeviceOrientationBridge,

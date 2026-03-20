@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = process.cwd();
-const OUT_DIR = path.join(ROOT, 'webgame-21', 'appintos-screenshots');
+const OUT_DIR = path.join(ROOT, 'zigzag-memory-run', 'appintos-screenshots');
 
 const palette = {
   bg0: '#07121f',

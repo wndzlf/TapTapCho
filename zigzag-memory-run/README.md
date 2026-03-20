@@ -25,13 +25,13 @@ Last updated: 2026-03-19
 
 ## Key files
 
-- Toss 출시용 화면 구조: `/Users/user/TapTapCho/webgame-21/index.html`
-- Safe Area / 풀스크린 스타일: `/Users/user/TapTapCho/webgame-21/style.css`
-- 게임 로직 / 저장 / 백그라운드 처리: `/Users/user/TapTapCho/webgame-21/game.js`
-- 토스 브리지 소스: `/Users/user/TapTapCho/webgame-21/toss-bridge-source.js`
-- 토스 브리지 번들: `/Users/user/TapTapCho/webgame-21/toss-bridge.js`
-- 토스 제출 문구 / QR 체크리스트: `/Users/user/TapTapCho/webgame-21/TOSS_LAUNCH_PACK.md`
-- 광고 보류 메모: `/Users/user/TapTapCho/webgame-21/TOSS_ADS_PLAN.md`
+- Toss 출시용 화면 구조: `/Users/user/TapTapCho/zigzag-memory-run/index.html`
+- Safe Area / 풀스크린 스타일: `/Users/user/TapTapCho/zigzag-memory-run/style.css`
+- 게임 로직 / 저장 / 백그라운드 처리: `/Users/user/TapTapCho/zigzag-memory-run/game.js`
+- 토스 브리지 소스: `/Users/user/TapTapCho/zigzag-memory-run/toss-bridge-source.js`
+- 토스 브리지 번들: `/Users/user/TapTapCho/zigzag-memory-run/toss-bridge.js`
+- 토스 제출 문구 / QR 체크리스트: `/Users/user/TapTapCho/zigzag-memory-run/TOSS_LAUNCH_PACK.md`
+- 광고 보류 메모: `/Users/user/TapTapCho/zigzag-memory-run/TOSS_ADS_PLAN.md`
 
 ## Before shipping in Toss
 
@@ -48,7 +48,7 @@ Last updated: 2026-03-19
 
 - 출시 초기 버전은 광고 UI 없이 운영합니다.
 - 사업자 등록, 정산 심사, 광고 그룹 생성 이후에 보상형 광고를 우선 검토합니다.
-- 세부 계획은 `/Users/user/TapTapCho/webgame-21/TOSS_ADS_PLAN.md`를 기준으로 유지합니다.
+- 세부 계획은 `/Users/user/TapTapCho/zigzag-memory-run/TOSS_ADS_PLAN.md`를 기준으로 유지합니다.
 
 ## References
 
