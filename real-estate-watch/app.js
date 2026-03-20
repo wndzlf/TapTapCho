@@ -1,6 +1,5 @@
 const state = {
   region: "all",
-  sort: "official",
   data: null,
 };
 
@@ -10,18 +9,16 @@ const regionOptions = [
   { id: "gyeonggi", label: "경기" },
 ];
 
-const sortOptions = [
-  { id: "official", label: "첫 확인순" },
-  { id: "price", label: "거래금액순" },
-];
-
 const statsGrid = document.getElementById("stats-grid");
-const feedList = document.getElementById("feed-list");
-const feedNote = document.getElementById("feed-note");
+const recentFeedList = document.getElementById("recent-feed-list");
+const recentFeedNote = document.getElementById("recent-feed-note");
+const priceFeedList = document.getElementById("price-feed-list");
+const priceFeedNote = document.getElementById("price-feed-note");
+const contractFeedList = document.getElementById("contract-feed-list");
+const contractFeedNote = document.getElementById("contract-feed-note");
 const snapshotChip = document.getElementById("snapshot-chip");
 const heroStatus = document.getElementById("hero-status");
 const regionFilter = document.getElementById("region-filter");
-const sortFilter = document.getElementById("sort-filter");
 
 function formatEok(priceManwon) {
   return `${(priceManwon / 10000).toLocaleString("ko-KR", {
@@ -63,28 +60,6 @@ function formatDateTime(value) {
   }).format(date);
 }
 
-function getFilteredItems() {
-  if (!state.data) {
-    return [];
-  }
-
-  const filtered = state.data.items.filter((item) => {
-    return state.region === "all" ? true : item.region === state.region;
-  });
-
-  filtered.sort((left, right) => {
-    if (state.sort === "price") {
-      return right.priceManwon - left.priceManwon;
-    }
-
-    const leftSeenAt = new Date(left.firstSeenAt || left.officialCheckedAt).getTime();
-    const rightSeenAt = new Date(right.firstSeenAt || right.officialCheckedAt).getTime();
-    return rightSeenAt - leftSeenAt;
-  });
-
-  return filtered;
-}
-
 function renderFilters(target, options, selectedId, onChange) {
   target.innerHTML = "";
 
@@ -98,63 +73,49 @@ function renderFilters(target, options, selectedId, onChange) {
   });
 }
 
-function renderStats(items) {
-  const visibleItems = items.slice(0, 10);
-
-  if (!visibleItems.length) {
-    statsGrid.innerHTML = `
-      <article class="stat-card">
-        <div class="stat-label">상태</div>
-        <div class="stat-value">0건</div>
-        <div class="stat-foot">조건에 맞는 거래가 없습니다.</div>
-      </article>
-    `;
-    return;
+function getFilteredItems() {
+  if (!state.data) {
+    return [];
   }
 
-  const average = Math.round(
-    visibleItems.reduce((total, item) => total + item.priceManwon, 0) / visibleItems.length,
-  );
-  const highest = visibleItems.reduce((best, item) => {
-    return item.priceManwon > best.priceManwon ? item : best;
-  }, visibleItems[0]);
-  const regionLabel = state.region === "all" ? "서울·경기 전체" : visibleItems[0].regionLabel;
-
-  statsGrid.innerHTML = `
-    <article class="stat-card">
-      <div class="stat-label">노출 거래</div>
-      <div class="stat-value">${visibleItems.length}건</div>
-      <div class="stat-foot">${regionLabel} 기준</div>
-    </article>
-    <article class="stat-card">
-      <div class="stat-label">평균 거래금액</div>
-      <div class="stat-value">${formatEok(average)}</div>
-      <div class="stat-foot">${formatManwon(average)}</div>
-    </article>
-    <article class="stat-card">
-      <div class="stat-label">최고 거래</div>
-      <div class="stat-value">${formatEok(highest.priceManwon)}</div>
-      <div class="stat-foot">${highest.district} · ${highest.apartmentName}</div>
-    </article>
-  `;
-
-  heroStatus.textContent = `${formatDateTime(state.data.updatedAt)} 스냅샷 업데이트`;
+  return state.data.items.filter((item) => {
+    return state.region === "all" ? true : item.region === state.region;
+  });
 }
 
-function renderFeed(items) {
-  const visibleItems = items.slice(0, 10);
-  feedNote.textContent = `총 ${items.length}건 중 상위 ${visibleItems.length}건 · ${
-    state.sort === "official" ? "첫 확인순" : "거래금액순"
-  }`;
+function rankItems(items, mode) {
+  const ranked = [...items];
 
-  if (!visibleItems.length) {
-    feedList.innerHTML = `
-      <article class="placeholder-card">조건에 맞는 거래가 없습니다.</article>
-    `;
-    return;
-  }
+  ranked.sort((left, right) => {
+    if (mode === "price") {
+      if (right.priceManwon !== left.priceManwon) {
+        return right.priceManwon - left.priceManwon;
+      }
+      return new Date(right.contractDate) - new Date(left.contractDate);
+    }
 
-  feedList.innerHTML = visibleItems
+    if (mode === "contract") {
+      const rightContract = new Date(right.contractDate).getTime();
+      const leftContract = new Date(left.contractDate).getTime();
+      if (rightContract !== leftContract) {
+        return rightContract - leftContract;
+      }
+      return right.priceManwon - left.priceManwon;
+    }
+
+    const rightSeen = new Date(right.firstSeenAt || right.officialCheckedAt).getTime();
+    const leftSeen = new Date(left.firstSeenAt || left.officialCheckedAt).getTime();
+    if (rightSeen !== leftSeen) {
+      return rightSeen - leftSeen;
+    }
+    return right.priceManwon - left.priceManwon;
+  });
+
+  return ranked;
+}
+
+function buildTransactionCards(items) {
+  return items
     .map((item) => {
       return `
         <article class="transaction-card">
@@ -204,16 +165,83 @@ function renderFeed(items) {
     .join("");
 }
 
+function renderStats(items) {
+  const visibleItems = rankItems(items, "official").slice(0, 10);
+
+  if (!visibleItems.length) {
+    statsGrid.innerHTML = `
+      <article class="stat-card">
+        <div class="stat-label">상태</div>
+        <div class="stat-value">0건</div>
+        <div class="stat-foot">조건에 맞는 거래가 없습니다.</div>
+      </article>
+    `;
+    heroStatus.textContent = "조건에 맞는 거래가 없습니다.";
+    return;
+  }
+
+  const average = Math.round(
+    visibleItems.reduce((total, item) => total + item.priceManwon, 0) / visibleItems.length,
+  );
+  const highest = rankItems(items, "price")[0];
+  const latestContract = rankItems(items, "contract")[0];
+  const regionLabel = state.region === "all" ? "서울·경기 전체" : visibleItems[0].regionLabel;
+
+  statsGrid.innerHTML = `
+    <article class="stat-card">
+      <div class="stat-label">노출 거래</div>
+      <div class="stat-value">${visibleItems.length}건</div>
+      <div class="stat-foot">${regionLabel} 기준</div>
+    </article>
+    <article class="stat-card">
+      <div class="stat-label">평균 거래금액</div>
+      <div class="stat-value">${formatEok(average)}</div>
+      <div class="stat-foot">${formatManwon(average)}</div>
+    </article>
+    <article class="stat-card">
+      <div class="stat-label">최고 거래</div>
+      <div class="stat-value">${highest ? formatEok(highest.priceManwon) : "-"}</div>
+      <div class="stat-foot">${highest ? `${highest.district} · ${highest.apartmentName}` : "-"}</div>
+    </article>
+    <article class="stat-card">
+      <div class="stat-label">최근 계약일</div>
+      <div class="stat-value">${latestContract ? formatDate(latestContract.contractDate) : "-"}</div>
+      <div class="stat-foot">${latestContract ? latestContract.apartmentName : "조건에 맞는 거래 없음"}</div>
+    </article>
+  `;
+
+  heroStatus.textContent = `${formatDateTime(state.data.updatedAt)} 스냅샷 업데이트`;
+}
+
+function renderRankedFeed(target, noteTarget, items, mode) {
+  const visibleItems = rankItems(items, mode).slice(0, 10);
+
+  if (mode === "official") {
+    noteTarget.textContent = `총 ${items.length}건 중 상위 ${visibleItems.length}건 · 첫 확인순`;
+  } else if (mode === "price") {
+    noteTarget.textContent = `총 ${items.length}건 중 상위 ${visibleItems.length}건 · 거래금액순`;
+  } else {
+    noteTarget.textContent = `총 ${items.length}건 중 상위 ${visibleItems.length}건 · 계약일 최신순`;
+  }
+
+  if (!visibleItems.length) {
+    target.innerHTML = `
+      <article class="placeholder-card">조건에 맞는 거래가 없습니다.</article>
+    `;
+    return;
+  }
+
+  target.innerHTML = buildTransactionCards(visibleItems);
+}
+
 function render() {
   const items = getFilteredItems();
   renderStats(items);
-  renderFeed(items);
+  renderRankedFeed(recentFeedList, recentFeedNote, items, "official");
+  renderRankedFeed(priceFeedList, priceFeedNote, items, "price");
+  renderRankedFeed(contractFeedList, contractFeedNote, items, "contract");
   renderFilters(regionFilter, regionOptions, state.region, (regionId) => {
     state.region = regionId;
-    render();
-  });
-  renderFilters(sortFilter, sortOptions, state.sort, (sortId) => {
-    state.sort = sortId;
     render();
   });
 }
@@ -231,13 +259,18 @@ async function init() {
   } catch (error) {
     console.error(error);
     heroStatus.textContent = "데이터를 불러오지 못했습니다.";
-    feedNote.textContent = "JSON 스냅샷을 확인해 주세요.";
-    feedList.innerHTML = `
+    recentFeedNote.textContent = "JSON 스냅샷을 확인해 주세요.";
+    priceFeedNote.textContent = "JSON 스냅샷을 확인해 주세요.";
+    contractFeedNote.textContent = "JSON 스냅샷을 확인해 주세요.";
+    const placeholder = `
       <article class="placeholder-card">
         정적 데이터를 불러오지 못했습니다. <br />
         <code>real-estate-watch/latest-transactions.json</code> 파일을 확인해 주세요.
       </article>
     `;
+    recentFeedList.innerHTML = placeholder;
+    priceFeedList.innerHTML = placeholder;
+    contractFeedList.innerHTML = placeholder;
   }
 }
 

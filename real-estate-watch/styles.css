@@ -59,41 +59,14 @@ body {
   background: radial-gradient(circle, rgba(184, 107, 47, 0.24), rgba(184, 107, 47, 0));
 }
 
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--teal);
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.back-link::before {
-  content: "<";
-}
-
 .hero-copy {
   max-width: 720px;
-  margin-top: 24px;
   position: relative;
   z-index: 1;
 }
 
-.eyebrow {
-  display: inline-flex;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: rgba(15, 108, 109, 0.1);
-  color: var(--teal);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
 .hero h1 {
-  margin: 14px 0 12px;
+  margin: 0 0 12px;
   font-family: "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
   font-size: clamp(34px, 6vw, 56px);
   line-height: 0.98;
@@ -183,6 +156,10 @@ body {
   margin-top: 16px;
 }
 
+.toolbar-single {
+  grid-template-columns: 1fr;
+}
+
 .toolbar-block {
   display: flex;
   flex-wrap: wrap;
@@ -217,7 +194,7 @@ body {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 14px;
   margin-top: 16px;
 }
@@ -251,6 +228,16 @@ body {
 .note-panel {
   margin-top: 16px;
   padding: 24px;
+}
+
+.ranked-sections {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.ranked-sections .feed-panel {
+  margin-top: 0;
 }
 
 .feed-head {
