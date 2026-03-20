@@ -5,6 +5,8 @@ const ctx = canvas.getContext('2d');
 
 const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
+const timeEl = document.getElementById('time');
+const zoneEl = document.getElementById('zone');
 const lengthEl = document.getElementById('length');
 const bestLengthEl = document.getElementById('bestLength');
 const aliveEl = document.getElementById('alive');
@@ -16,9 +18,13 @@ const H = canvas.height;
 
 const WORLD_W = 2600;
 const WORLD_H = 2600;
+const SAFE_CENTER = { x: WORLD_W * 0.5, y: WORLD_H * 0.5 };
 const FOOD_COUNT = 210;
 const BOT_COUNT = 10;
 const SEG_SPACING = 14;
+const ROUND_DURATION = 75;
+const SAFE_RADIUS_START = 1080;
+const SAFE_RADIUS_END = 260;
 const STORAGE_KEY = 'worm-arena-rush-best';
 const BEST_LENGTH_KEY = 'worm-arena-rush-best-length';
 
@@ -29,6 +35,11 @@ let score = 0;
 let best = Number(localStorage.getItem(STORAGE_KEY) || 0);
 let bestLength = Number(localStorage.getItem(BEST_LENGTH_KEY) || 0);
 let tick = 0;
+let roundElapsed = 0;
+let roundProgress = 0;
+let safeRadius = SAFE_RADIUS_START;
+let speedMultiplier = 1;
+let gameOverReason = 'idle';
 
 let player;
 let bots = [];
@@ -67,6 +78,10 @@ function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
 }
 
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
 function angleDiff(target, current) {
   let diff = target - current;
   while (diff > Math.PI) diff -= Math.PI * 2;
@@ -80,10 +95,51 @@ function distSq(ax, ay, bx, by) {
   return dx * dx + dy * dy;
 }
 
+function isInsideSafeZone(x, y, margin = 0) {
+  const limit = Math.max(36, safeRadius - margin);
+  return distSq(x, y, SAFE_CENTER.x, SAFE_CENTER.y) <= limit * limit;
+}
+
+function sampleSafePoint(margin = 40, minRadius = 0) {
+  const maxRadius = Math.max(48, safeRadius - margin);
+  const innerRadius = Math.max(0, Math.min(minRadius, maxRadius - 12));
+  const innerSq = innerRadius * innerRadius;
+  const outerSq = maxRadius * maxRadius;
+
+  for (let i = 0; i < 28; i += 1) {
+    const angle = rand(0, Math.PI * 2);
+    const radius = Math.sqrt(rand(innerSq, outerSq));
+    const x = SAFE_CENTER.x + Math.cos(angle) * radius;
+    const y = SAFE_CENTER.y + Math.sin(angle) * radius;
+    if (x > 28 && x < WORLD_W - 28 && y > 28 && y < WORLD_H - 28) {
+      return { x, y };
+    }
+  }
+
+  return { x: SAFE_CENTER.x, y: SAFE_CENTER.y };
+}
+
+function updateHud() {
+  scoreEl.textContent = String(score);
+  lengthEl.textContent = String(player?.segments.length ?? 0);
+  bestLengthEl.textContent = String(bestLength);
+  aliveEl.textContent = String(bots.length);
+  timeEl.textContent = `${Math.max(0, ROUND_DURATION - roundElapsed).toFixed(1)}s`;
+  zoneEl.textContent = `${Math.round((safeRadius / SAFE_RADIUS_START) * 100)}%`;
+}
+
+function updateRoundPressure() {
+  roundProgress = clamp(roundElapsed / ROUND_DURATION, 0, 1);
+  safeRadius = lerp(SAFE_RADIUS_START, SAFE_RADIUS_END, Math.pow(roundProgress, 1.08));
+  speedMultiplier = lerp(1, 1.58, Math.pow(roundProgress, 1.15));
+  updateHud();
+}
+
 function makeFood() {
+  const point = sampleSafePoint(42);
   return {
-    x: rand(32, WORLD_W - 32),
-    y: rand(32, WORLD_H - 32),
+    x: point.x,
+    y: point.y,
     r: rand(4.5, 7.5),
     color: FOOD_COLORS[Math.floor(Math.random() * FOOD_COLORS.length)],
     value: 1,
@@ -104,9 +160,10 @@ function makeRocks() {
 }
 
 function makeBot() {
+  const spawn = sampleSafePoint(140, Math.min(280, safeRadius * 0.3));
   return createWorm({
-    x: rand(180, WORLD_W - 180),
-    y: rand(180, WORLD_H - 180),
+    x: spawn.x,
+    y: spawn.y,
     angle: rand(0, Math.PI * 2),
     segCount: 12 + Math.floor(rand(0, 8)),
     turnSpeed: rand(2.2, 3.5),
@@ -153,6 +210,11 @@ function resetGame() {
   state = 'idle';
   score = 0;
   tick = 0;
+  roundElapsed = 0;
+  roundProgress = 0;
+  safeRadius = SAFE_RADIUS_START;
+  speedMultiplier = 1;
+  gameOverReason = 'idle';
 
   player = createWorm({
     x: WORLD_W * 0.5,
@@ -180,13 +242,11 @@ function resetGame() {
   camera.y = clamp(player.y - H * 0.5, 0, WORLD_H - H);
 
   scoreEl.textContent = '0';
-  lengthEl.textContent = String(player.segments.length);
   if (player.segments.length > bestLength) {
     bestLength = player.segments.length;
     localStorage.setItem(BEST_LENGTH_KEY, String(bestLength));
   }
-  bestLengthEl.textContent = String(bestLength);
-  aliveEl.textContent = String(bots.length + 1);
+  updateHud();
 }
 
 function startGame() {
@@ -195,13 +255,16 @@ function startGame() {
   state = 'running';
 }
 
-function endGame() {
+function endGame(reason = 'crash') {
+  if (state === 'gameover') return;
   state = 'gameover';
-  beep(160, 0.24, 0.06);
+  gameOverReason = reason;
+  beep(gameOverReason === 'time' ? 320 : 160, 0.24, 0.06);
 
   best = Math.max(best, score);
   bestEl.textContent = String(best);
   localStorage.setItem(STORAGE_KEY, String(best));
+  updateHud();
 }
 
 function updatePlayerTarget() {
@@ -262,12 +325,12 @@ function moveWorm(worm, dt) {
   const diff = angleDiff(worm.targetAngle, worm.angle);
   worm.angle += clamp(diff, -turnStep, turnStep);
 
-  let speed = worm.baseSpeed;
+  let speed = worm.baseSpeed * speedMultiplier;
   if (worm.isPlayer && (keys.ShiftLeft || keys.ShiftRight || keys.Space || boostHeld)) {
-    speed += 70;
+    speed += 72 + roundProgress * 36;
   }
   if (!worm.isPlayer) {
-    speed += Math.sin((tick + worm.seed) * 0.035) * 14;
+    speed += Math.sin((tick + worm.seed) * 0.035) * (14 * speedMultiplier);
   }
 
   worm.x += Math.cos(worm.angle) * speed * dt;
@@ -311,13 +374,11 @@ function consumeFood(worm) {
 
     if (worm.isPlayer) {
       score += food.value;
-      scoreEl.textContent = String(score);
-      lengthEl.textContent = String(worm.segments.length);
       if (worm.segments.length > bestLength) {
         bestLength = worm.segments.length;
         localStorage.setItem(BEST_LENGTH_KEY, String(bestLength));
-        bestLengthEl.textContent = String(bestLength);
       }
+      updateHud();
 
       if (score % 10 === 0) {
         beep(820, 0.045, 0.02);
@@ -341,9 +402,18 @@ function scatterFoodFromWorm(worm, density = 14) {
   const stride = Math.max(2, Math.floor(worm.segments.length / density));
   for (let i = 4; i < worm.segments.length; i += stride) {
     const seg = worm.segments[i];
+    let x = clamp(seg.x + rand(-8, 8), 32, WORLD_W - 32);
+    let y = clamp(seg.y + rand(-8, 8), 32, WORLD_H - 32);
+
+    if (!isInsideSafeZone(x, y, 24)) {
+      const safeDrop = sampleSafePoint(40);
+      x = safeDrop.x;
+      y = safeDrop.y;
+    }
+
     foods.push({
-      x: clamp(seg.x + rand(-8, 8), 32, WORLD_W - 32),
-      y: clamp(seg.y + rand(-8, 8), 32, WORLD_H - 32),
+      x,
+      y,
       r: rand(4.5, 7.0),
       color: FOOD_COLORS[Math.floor(Math.random() * FOOD_COLORS.length)],
       value: 1,
@@ -396,6 +466,32 @@ function resolveCollisions() {
   beep(760, 0.05, 0.02);
 }
 
+function resolveSafeZone() {
+  if (!isInsideSafeZone(player.x, player.y, player.radius + 6)) {
+    endGame('zone');
+    return;
+  }
+
+  const deadBotIndexes = [];
+  for (let i = 0; i < bots.length; i += 1) {
+    const bot = bots[i];
+    if (!isInsideSafeZone(bot.x, bot.y, bot.radius + 6)) {
+      deadBotIndexes.push(i);
+    }
+  }
+
+  if (deadBotIndexes.length === 0) return;
+
+  deadBotIndexes.sort((a, b) => b - a);
+  for (const idx of deadBotIndexes) {
+    const deadBot = bots[idx];
+    scatterFoodFromWorm(deadBot, 14);
+    bots.splice(idx, 1);
+  }
+
+  beep(240, 0.03, 0.02);
+}
+
 function drawWorm(worm) {
   for (let i = worm.segments.length - 1; i >= 0; i -= 1) {
     const seg = worm.segments[i];
@@ -445,6 +541,27 @@ function drawWorm(worm) {
   ctx.fill();
 }
 
+function drawSafeZone() {
+  const x = SAFE_CENTER.x - camera.x;
+  const y = SAFE_CENTER.y - camera.y;
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(4, 7, 18, 0.48)';
+  ctx.beginPath();
+  ctx.rect(0, 0, W, H);
+  ctx.arc(x, y, safeRadius, 0, Math.PI * 2, true);
+  ctx.fill('evenodd');
+
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = `rgba(255, 109, 82, ${0.62 + Math.sin(tick * 0.18) * 0.12})`;
+  ctx.shadowColor = 'rgba(255, 130, 92, 0.45)';
+  ctx.shadowBlur = 18;
+  ctx.beginPath();
+  ctx.arc(x, y, safeRadius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
 function drawMiniMap() {
   const size = 108;
   const x = W - size - 12;
@@ -454,6 +571,19 @@ function drawMiniMap() {
   ctx.fillRect(x, y, size, size);
   ctx.strokeStyle = 'rgba(230, 240, 255, 0.35)';
   ctx.strokeRect(x + 0.5, y + 0.5, size - 1, size - 1);
+
+  ctx.setLineDash([4, 3]);
+  ctx.strokeStyle = 'rgba(255, 109, 82, 0.78)';
+  ctx.beginPath();
+  ctx.arc(
+    x + (SAFE_CENTER.x / WORLD_W) * size,
+    y + (SAFE_CENTER.y / WORLD_H) * size,
+    (safeRadius / WORLD_W) * size,
+    0,
+    Math.PI * 2
+  );
+  ctx.stroke();
+  ctx.setLineDash([]);
 
   for (let i = 0; i < foods.length; i += 8) {
     const f = foods[i];
@@ -528,6 +658,7 @@ function render() {
   }
   drawWorm(player);
 
+  drawSafeZone();
   drawMiniMap();
 
   ctx.fillStyle = '#eaf1ff';
@@ -535,6 +666,8 @@ function render() {
   ctx.font = 'bold 17px system-ui';
   ctx.fillText(`Score ${score}`, 14, 26);
   ctx.fillText(`Length ${player.segments.length}`, 14, 48);
+  ctx.fillText(`Time ${Math.max(0, ROUND_DURATION - roundElapsed).toFixed(1)}s`, 14, 70);
+  ctx.fillText(`Zone ${Math.round((safeRadius / SAFE_RADIUS_START) * 100)}%`, 14, 92);
 
   if (state === 'idle' || state === 'gameover') {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
@@ -542,9 +675,26 @@ function render() {
     ctx.fillStyle = '#fff';
     ctx.textAlign = 'center';
     ctx.font = 'bold 30px system-ui';
-    ctx.fillText(state === 'idle' ? 'Tap to Start' : 'Worm Crashed', W / 2, H / 2 - 12);
+    let title = '75s Arena Rush';
+    if (state === 'gameover') {
+      if (gameOverReason === 'time') {
+        title = 'Time Up';
+      } else if (gameOverReason === 'zone') {
+        title = 'Left the Safe Zone';
+      } else {
+        title = 'Worm Crashed';
+      }
+    }
+    ctx.fillText(title, W / 2, H / 2 - 12);
     ctx.font = '16px system-ui';
-    ctx.fillText('Eat food and avoid bodies', W / 2, H / 2 + 18);
+    if (state === 'idle') {
+      ctx.fillText('Stay in the shrinking circle and chase a new best.', W / 2, H / 2 + 18);
+      ctx.fillText('Food gets tougher to grab as speed ramps up.', W / 2, H / 2 + 42);
+    } else {
+      const scoreLine = score === best && score > 0 ? `New Best ${score}` : `Final Score ${score}  Best ${best}`;
+      ctx.fillText(scoreLine, W / 2, H / 2 + 18);
+      ctx.fillText('Tap, click Start, or press Space to run again.', W / 2, H / 2 + 42);
+    }
   }
 }
 
@@ -553,17 +703,28 @@ function update(dt) {
 
   if (state !== 'running') return;
 
+  roundElapsed = Math.min(ROUND_DURATION, roundElapsed + dt);
+  updateRoundPressure();
+
   updatePlayerTarget();
   for (const bot of bots) updateBotTarget(bot, dt);
 
   moveWorm(player, dt);
   for (const bot of bots) moveWorm(bot, dt);
 
+  resolveSafeZone();
+  if (state !== 'running') return;
+
   consumeFood(player);
   for (const bot of bots) consumeFood(bot);
 
   resolveCollisions();
   if (state !== 'running') return;
+
+  if (roundElapsed >= ROUND_DURATION) {
+    endGame('time');
+    return;
+  }
 
   if (bots.length < BOT_COUNT && tick % 48 === 0) {
     bots.push(makeBot());
@@ -572,9 +733,7 @@ function update(dt) {
   camera.x = clamp(player.x - W * 0.5, 0, WORLD_W - W);
   camera.y = clamp(player.y - H * 0.5, 0, WORLD_H - H);
 
-  lengthEl.textContent = String(player.segments.length);
-  bestLengthEl.textContent = String(bestLength);
-  aliveEl.textContent = String(bots.length + 1);
+  updateHud();
 }
 
 let lastTime = 0;
