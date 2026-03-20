@@ -142,7 +142,7 @@ function buildTransactionCards(items) {
               <span class="value">${formatDate(item.contractDate)}</span>
             </div>
             <div class="transaction-kv">
-              <span class="key">원문 금액</span>
+              <span class="key">실거래가</span>
               <span class="value">${formatManwon(item.priceManwon)}</span>
             </div>
           </div>

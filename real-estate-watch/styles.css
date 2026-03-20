@@ -395,14 +395,12 @@ body {
 @media (max-width: 860px) {
   .toolbar,
   .stats-grid,
-  .feed-list,
   .transaction-grid {
     grid-template-columns: 1fr;
   }
 
   .intro-panel,
   .feed-head,
-  .transaction-top,
   .transaction-foot {
     flex-direction: column;
   }
@@ -422,7 +420,99 @@ body {
   .intro-panel,
   .feed-panel,
   .note-panel {
-    padding: 20px;
+    padding: 18px;
     border-radius: 22px;
+  }
+
+  .feed-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .transaction-card {
+    padding: 14px;
+    border-radius: 20px;
+  }
+
+  .transaction-top {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .location-stack {
+    gap: 6px;
+  }
+
+  .region-badge,
+  .district-badge {
+    padding: 5px 9px;
+    font-size: 11px;
+  }
+
+  .price-label {
+    font-size: 11px;
+  }
+
+  .price-value {
+    margin-top: 2px;
+    font-size: clamp(19px, 7vw, 24px);
+  }
+
+  .transaction-title {
+    margin: 10px 0 6px;
+    font-size: 16px;
+    line-height: 1.28;
+    word-break: keep-all;
+  }
+
+  .transaction-meta {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .transaction-grid {
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .transaction-kv {
+    padding: 9px 10px;
+    border-radius: 14px;
+  }
+
+  .transaction-kv .key {
+    font-size: 11px;
+  }
+
+  .transaction-kv .value {
+    margin-top: 4px;
+    font-size: 14px;
+    line-height: 1.25;
+  }
+}
+
+@media (max-width: 420px) {
+  .feed-list {
+    gap: 8px;
+  }
+
+  .transaction-card {
+    padding: 12px;
+  }
+
+  .price-value {
+    font-size: clamp(18px, 6.8vw, 22px);
+  }
+
+  .transaction-title {
+    font-size: 15px;
+  }
+
+  .transaction-meta {
+    font-size: 11px;
+  }
+
+  .transaction-kv .value {
+    font-size: 13px;
   }
 }
