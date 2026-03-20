@@ -1,0 +1,54 @@
+name: Real Estate Watch Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      month_count:
+        description: "How many recent contract months to fetch"
+        required: false
+        default: "3"
+  schedule:
+    - cron: "17 */4 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: real-estate-watch-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sync latest transactions snapshot
+        env:
+          REAL_ESTATE_API_SERVICE_KEY: ${{ secrets.REAL_ESTATE_API_SERVICE_KEY }}
+          REAL_ESTATE_MONTH_COUNT: ${{ github.event.inputs.month_count || '3' }}
+        run: npm run sync-real-estate-watch
+
+      - name: Commit updated snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add real-estate-watch/latest-transactions.json
+          if git diff --cached --quiet; then
+            echo "No snapshot changes to commit."
+            exit 0
+          fi
+          git commit -m "chore: refresh real estate watch snapshot"
+          git push origin HEAD:${GITHUB_REF_NAME}
