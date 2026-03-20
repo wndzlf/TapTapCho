@@ -76,6 +76,7 @@ npm run worm-lan-server
 - 병렬 작업 가이드: `/Users/user/TapTapCho/agent.md`
 - 아이디어/진행 상태: `/Users/user/TapTapCho/checklist.md`
 - BMGD 도입/사용 기록: `/Users/user/TapTapCho/docs/bmad-game-dev-studio.md`
+- 토스 앱 번들 생성/업로드 가이드: `/Users/user/TapTapCho/docs/toss-app-bundle-guide.md`
 - 서비스 정책 페이지: `/Users/user/TapTapCho/about.html`, `/Users/user/TapTapCho/contact.html`, `/Users/user/TapTapCho/privacy.html`, `/Users/user/TapTapCho/terms.html`, `/Users/user/TapTapCho/dmca.html`
 
 ## 8) 토스 미니앱 게임 표준 (webgame-18 기준)
