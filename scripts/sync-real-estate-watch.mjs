@@ -138,6 +138,17 @@ function getTagValue(xml, tagName) {
   return match ? cleanXmlValue(match[1]) : "";
 }
 
+function getAnyTagValue(xml, tagNames) {
+  for (const tagName of tagNames) {
+    const value = getTagValue(xml, tagName);
+    if (value) {
+      return value;
+    }
+  }
+
+  return "";
+}
+
 function getItemBlocks(xml) {
   return Array.from(xml.matchAll(/<item>([\s\S]*?)<\/item>/g)).map((match) => match[1]);
 }
@@ -203,8 +214,9 @@ async function fetchTextWithRetry(url, attempt = 1) {
   const text = await response.text();
   const resultCode = getTagValue(text, "resultCode");
   const resultMessage = getTagValue(text, "resultMsg");
+  const successCodes = new Set(["00", "000"]);
 
-  if (resultCode && resultCode !== "00") {
+  if (resultCode && !successCodes.has(resultCode)) {
     if (attempt < 3) {
       await sleep(500 * attempt);
       return fetchTextWithRetry(url, attempt + 1);
@@ -243,15 +255,15 @@ async function fetchTransactionsByRegion(serviceKey, region, dealYearMonth) {
   }
 
   return items.map((itemXml) => {
-    const priceManwon = parsePriceManwon(getTagValue(itemXml, "거래금액"));
-    const contractYear = getTagValue(itemXml, "년");
-    const contractMonth = getTagValue(itemXml, "월");
-    const contractDay = getTagValue(itemXml, "일");
-    const neighborhood = getTagValue(itemXml, "법정동");
-    const apartmentName = getTagValue(itemXml, "아파트");
-    const jibun = getTagValue(itemXml, "지번");
-    const exclusiveAreaM2 = parseArea(getTagValue(itemXml, "전용면적"));
-    const floor = parseFloor(getTagValue(itemXml, "층"));
+    const priceManwon = parsePriceManwon(getAnyTagValue(itemXml, ["dealAmount", "거래금액"]));
+    const contractYear = getAnyTagValue(itemXml, ["dealYear", "년"]);
+    const contractMonth = getAnyTagValue(itemXml, ["dealMonth", "월"]);
+    const contractDay = getAnyTagValue(itemXml, ["dealDay", "일"]);
+    const neighborhood = getAnyTagValue(itemXml, ["umdNm", "법정동"]);
+    const apartmentName = getAnyTagValue(itemXml, ["aptNm", "아파트"]);
+    const jibun = getAnyTagValue(itemXml, ["jibun", "지번"]);
+    const exclusiveAreaM2 = parseArea(getAnyTagValue(itemXml, ["excluUseAr", "전용면적"]));
+    const floor = parseFloor(getAnyTagValue(itemXml, ["floor", "층"]));
     const contractDate = toIsoDate(contractYear, contractMonth, contractDay);
     const id = createTransactionId([
       region.code,
