@@ -49,6 +49,19 @@
       let beatTimer = null;
       let beatStep = 0;
       const settings = loadSettings();
+      const bgmLabels = {
+        on: 'BGM ON',
+        off: 'BGM OFF',
+        ...(options.bgmLabels || {})
+      };
+      const sfxLabels = {
+        on: 'SFX ON',
+        off: 'SFX OFF',
+        ...(options.sfxLabels || {})
+      };
+      const themeButtonLabel = typeof options.themeButtonLabel === 'string' && options.themeButtonLabel.trim()
+        ? options.themeButtonLabel.trim()
+        : 'TRACK';
       const showSfxToggle = options.showSfxToggle !== false;
       const mediaSrc = typeof options.mediaSrc === 'string' ? options.mediaSrc.trim() : '';
       const useMediaBgm = Boolean(mediaSrc);
@@ -140,11 +153,11 @@
       }
 
       function updateButtons() {
-        if (bgmBtn) bgmBtn.textContent = settings.bgm ? 'BGM ON' : 'BGM OFF';
-        if (sfxBtn) sfxBtn.textContent = settings.sfx ? 'SFX ON' : 'SFX OFF';
+        if (bgmBtn) bgmBtn.textContent = settings.bgm ? bgmLabels.on : bgmLabels.off;
+        if (sfxBtn) sfxBtn.textContent = settings.sfx ? sfxLabels.on : sfxLabels.off;
         if (themeBtn) {
           const theme = THEME_BY_ID[themeId] || THEMES[0];
-          themeBtn.textContent = `TRACK ${theme.label}`;
+          themeBtn.textContent = `${themeButtonLabel} ${theme.label}`;
         }
       }
 
@@ -185,7 +198,7 @@
       let sfxBtn = null;
       let themeBtn = null;
       if (hudEl) {
-        bgmBtn = buildButton(settings.bgm ? 'BGM ON' : 'BGM OFF', () => {
+        bgmBtn = buildButton(settings.bgm ? bgmLabels.on : bgmLabels.off, () => {
           unlock();
           settings.bgm = !settings.bgm;
           if (settings.bgm) startBgm();
@@ -193,7 +206,7 @@
           persist();
         });
         if (showSfxToggle) {
-          sfxBtn = buildButton(settings.sfx ? 'SFX ON' : 'SFX OFF', () => {
+          sfxBtn = buildButton(settings.sfx ? sfxLabels.on : sfxLabels.off, () => {
             unlock();
             settings.sfx = !settings.sfx;
             fx('ui');

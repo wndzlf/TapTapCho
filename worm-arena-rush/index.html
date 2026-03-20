@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Worm Arena Rush</title>
+  <title>웜 아레나 러시</title>
   
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="../assets/css/site-quality.css" />
@@ -11,30 +11,30 @@
 <body>
   <div class="wrap">
     <header>
-      <h1>Worm Arena Rush</h1>
-      <p>Stay inside the shrinking circle, outrun the speed ramp, and post the highest score before time runs out.</p>
+      <h1>웜 아레나 러시</h1>
+      <p>좁아지는 안전 구역 안에서 끝까지 버티며 최고 점수를 노리세요.</p>
     </header>
 
     <div class="hud">
-      <div>Score: <span id="score">0</span></div>
-      <div>Best: <span id="best">0</span></div>
-      <div>Time: <span id="time">75.0s</span></div>
-      <div>Zone: <span id="zone">100%</span></div>
-      <div>Length: <span id="length">0</span></div>
-      <div>Best Length: <span id="bestLength">0</span></div>
-      <div>Bots: <span id="alive">0</span></div>
-      <button id="btnStart">Start</button>
+      <div>점수: <span id="score">0</span></div>
+      <div>최고점: <span id="best">0</span></div>
+      <div>남은 시간: <span id="time">75.0초</span></div>
+      <div>안전 구역: <span id="zone">100%</span></div>
+      <div>속도: <span id="speed">100%</span></div>
+      <div>길이: <span id="length">0</span></div>
+      <div>최대 길이: <span id="bestLength">0</span></div>
+      <div>상대 수: <span id="alive">0</span></div>
+      <button id="btnStart">시작</button>
     </div>
 
     <div class="arena">
       <canvas id="game" width="420" height="700"></canvas>
-      <button class="boost-btn" id="btnBoost" type="button">BOOST</button>
     </div>
 
     <footer>
-      <small>Move: mouse/touch or WASD/Arrow · Boost: Shift/Space or BOOST button · Survive the shrinking zone for 75 seconds</small>
+      <small>조작: 터치/마우스 또는 WASD/방향키 · 75초 동안 살아남아 최고 점수를 노리세요</small>
       <br />
-      <small>BGM: Coffee - Morning Coffee Shop Music / HitsLab / Pixabay Content License</small>
+      <small>배경음악: Coffee - Morning Coffee Shop Music / HitsLab / Pixabay Content License</small>
     </footer>
   </div>
 

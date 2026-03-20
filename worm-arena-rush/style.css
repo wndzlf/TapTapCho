@@ -12,7 +12,7 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-family: "Noto Sans KR", "Apple SD Gothic Neo", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   color: var(--text);
   background: radial-gradient(1300px 700px at 50% -10%, #334f9a, var(--bg) 64%);
 }
@@ -68,6 +68,7 @@ button {
 
 .hud button {
   flex: 0 0 auto;
+  min-width: 92px;
 }
 
 button:hover {
@@ -89,28 +90,9 @@ canvas {
   touch-action: none;
 }
 
-.boost-btn {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  width: 86px;
-  height: 86px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 211, 114, 0.65);
-  background: rgba(22, 36, 73, 0.85);
-  color: #ffd372;
-  font-weight: 800;
-  letter-spacing: 0.6px;
-  touch-action: none;
-}
-
-.boost-btn:active {
-  transform: scale(0.96);
-  box-shadow: 0 0 18px rgba(255, 211, 114, 0.35);
-}
-
 footer {
   margin-top: 10px;
   opacity: 0.78;
   text-align: center;
+  line-height: 1.55;
 }

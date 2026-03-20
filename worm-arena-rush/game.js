@@ -1,5 +1,7 @@
 const bgmAudio = window.TapTapNeonAudio?.create('webgame-37', document.querySelector('.hud'), {
   mediaSrc: './assets/audio/coffee-morning-coffee-shop-music.mp3',
+  bgmLabels: { on: '배경음 켜짐', off: '배경음 꺼짐' },
+  sfxLabels: { on: '효과음 켜짐', off: '효과음 꺼짐' },
 });
 
 const canvas = document.getElementById('game');
@@ -9,11 +11,11 @@ const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
 const timeEl = document.getElementById('time');
 const zoneEl = document.getElementById('zone');
+const speedEl = document.getElementById('speed');
 const lengthEl = document.getElementById('length');
 const bestLengthEl = document.getElementById('bestLength');
 const aliveEl = document.getElementById('alive');
 const btnStart = document.getElementById('btnStart');
-const btnBoost = document.getElementById('btnBoost');
 
 const W = canvas.width;
 const H = canvas.height;
@@ -27,6 +29,7 @@ const SEG_SPACING = 14;
 const ROUND_DURATION = 75;
 const SAFE_RADIUS_START = 1080;
 const SAFE_RADIUS_END = 260;
+const SPAWN_GRACE_DURATION = 3;
 const STORAGE_KEY = 'worm-arena-rush-best';
 const BEST_LENGTH_KEY = 'worm-arena-rush-best-length';
 
@@ -51,7 +54,6 @@ let camera = { x: 0, y: 0 };
 
 const pointer = { x: W * 0.5, y: H * 0.5, hasMoved: false };
 const keys = Object.create(null);
-let boostHeld = false;
 
 bestEl.textContent = String(best);
 
@@ -126,14 +128,15 @@ function updateHud() {
   lengthEl.textContent = String(player?.segments.length ?? 0);
   bestLengthEl.textContent = String(bestLength);
   aliveEl.textContent = String(bots.length);
-  timeEl.textContent = `${Math.max(0, ROUND_DURATION - roundElapsed).toFixed(1)}s`;
+  timeEl.textContent = `${Math.max(0, ROUND_DURATION - roundElapsed).toFixed(1)}초`;
   zoneEl.textContent = `${Math.round((safeRadius / SAFE_RADIUS_START) * 100)}%`;
+  speedEl.textContent = `${Math.round(speedMultiplier * 100)}%`;
 }
 
 function updateRoundPressure() {
   roundProgress = clamp(roundElapsed / ROUND_DURATION, 0, 1);
   safeRadius = lerp(SAFE_RADIUS_START, SAFE_RADIUS_END, Math.pow(roundProgress, 1.08));
-  speedMultiplier = lerp(1, 1.58, Math.pow(roundProgress, 1.15));
+  speedMultiplier = lerp(1, 2.05, Math.pow(roundProgress, 1.08));
   updateHud();
 }
 
@@ -161,7 +164,7 @@ function makeRocks() {
   }
 }
 
-function makeBot() {
+function makeBot(spawnGrace = 0) {
   const spawn = sampleSafePoint(140, Math.min(280, safeRadius * 0.3));
   return createWorm({
     x: spawn.x,
@@ -175,6 +178,7 @@ function makeBot() {
     bodyColor: `hsl(${Math.floor(rand(180, 340))} 78% 62%)`,
     eyeColor: '#0d1a34',
     isPlayer: false,
+    spawnGrace,
   });
 }
 
@@ -205,6 +209,7 @@ function createWorm(options) {
     aiTimer: 0,
     targetFood: -1,
     seed: rand(0, 9999),
+    spawnGrace: Math.max(0, Number(options.spawnGrace || 0)),
   };
 }
 
@@ -253,6 +258,7 @@ function resetGame() {
 
 function startGame() {
   if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  bgmAudio?.unlock();
   resetGame();
   state = 'running';
 }
@@ -328,9 +334,6 @@ function moveWorm(worm, dt) {
   worm.angle += clamp(diff, -turnStep, turnStep);
 
   let speed = worm.baseSpeed * speedMultiplier;
-  if (worm.isPlayer && (keys.ShiftLeft || keys.ShiftRight || keys.Space || boostHeld)) {
-    speed += 72 + roundProgress * 36;
-  }
   if (!worm.isPlayer) {
     speed += Math.sin((tick + worm.seed) * 0.035) * (14 * speedMultiplier);
   }
@@ -362,6 +365,14 @@ function moveWorm(worm, dt) {
     const tail = worm.segments[worm.segments.length - 1];
     worm.segments.push({ x: tail.x, y: tail.y });
     worm.grow -= 1;
+  }
+}
+
+function updateSpawnGrace(dt) {
+  for (const bot of bots) {
+    if (bot.spawnGrace > 0) {
+      bot.spawnGrace = Math.max(0, bot.spawnGrace - dt);
+    }
   }
 }
 
@@ -428,24 +439,25 @@ function scatterFoodFromWorm(worm, density = 14) {
 }
 
 function resolveCollisions() {
-  // Player should die only on other worms' bodies (not own body).
   for (const bot of bots) {
+    if (bot.spawnGrace > 0) continue;
     if (headHitsBody(player, bot, 4)) {
       endGame();
       return;
     }
   }
 
-  // Bots also die when their head hits player body or another bot body.
   const deadBotIndexes = [];
 
   for (let i = 0; i < bots.length; i += 1) {
     const bot = bots[i];
+    if (bot.spawnGrace > 0) continue;
     let crashed = headHitsBody(bot, player, 4);
 
     if (!crashed) {
       for (let j = 0; j < bots.length; j += 1) {
         if (i === j) continue;
+        if (bots[j].spawnGrace > 0) continue;
         if (headHitsBody(bot, bots[j], 4)) {
           crashed = true;
           break;
@@ -495,6 +507,13 @@ function resolveSafeZone() {
 }
 
 function drawWorm(worm) {
+  const isInactive = !worm.isPlayer && worm.spawnGrace > 0;
+
+  ctx.save();
+  if (isInactive) {
+    ctx.globalAlpha = 0.45;
+  }
+
   for (let i = worm.segments.length - 1; i >= 0; i -= 1) {
     const seg = worm.segments[i];
     const sx = seg.x - camera.x;
@@ -541,6 +560,23 @@ function drawWorm(worm) {
   ctx.arc(hx + nx * eyeForward + lx * eyeOffset, hy + ny * eyeForward + ly * eyeOffset, 1.2, 0, Math.PI * 2);
   ctx.arc(hx + nx * eyeForward - lx * eyeOffset, hy + ny * eyeForward - ly * eyeOffset, 1.2, 0, Math.PI * 2);
   ctx.fill();
+
+  if (isInactive) {
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.72)';
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.arc(hx, hy, worm.radius + 7, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#f5fbff';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 11px "Noto Sans KR", system-ui';
+    ctx.fillText(`비활성 ${worm.spawnGrace.toFixed(1)}초`, hx, hy - worm.radius - 12);
+  }
+
+  ctx.restore();
 }
 
 function drawSafeZone() {
@@ -665,37 +701,38 @@ function render() {
 
   ctx.fillStyle = '#eaf1ff';
   ctx.textAlign = 'left';
-  ctx.font = 'bold 17px system-ui';
-  ctx.fillText(`Score ${score}`, 14, 26);
-  ctx.fillText(`Length ${player.segments.length}`, 14, 48);
-  ctx.fillText(`Time ${Math.max(0, ROUND_DURATION - roundElapsed).toFixed(1)}s`, 14, 70);
-  ctx.fillText(`Zone ${Math.round((safeRadius / SAFE_RADIUS_START) * 100)}%`, 14, 92);
+  ctx.font = 'bold 17px "Noto Sans KR", system-ui';
+  ctx.fillText(`점수 ${score}`, 14, 26);
+  ctx.fillText(`길이 ${player.segments.length}`, 14, 48);
+  ctx.fillText(`남은 시간 ${Math.max(0, ROUND_DURATION - roundElapsed).toFixed(1)}초`, 14, 70);
+  ctx.fillText(`안전 구역 ${Math.round((safeRadius / SAFE_RADIUS_START) * 100)}%`, 14, 92);
+  ctx.fillText(`속도 ${Math.round(speedMultiplier * 100)}%`, 14, 114);
 
   if (state === 'idle' || state === 'gameover') {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
     ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = '#fff';
     ctx.textAlign = 'center';
-    ctx.font = 'bold 30px system-ui';
-    let title = '75s Arena Rush';
+    ctx.font = 'bold 30px "Noto Sans KR", system-ui';
+    let title = '75초 웜 러시';
     if (state === 'gameover') {
       if (gameOverReason === 'time') {
-        title = 'Time Up';
+        title = '시간 종료';
       } else if (gameOverReason === 'zone') {
-        title = 'Left the Safe Zone';
+        title = '안전 구역 이탈';
       } else {
-        title = 'Worm Crashed';
+        title = '충돌로 탈락';
       }
     }
     ctx.fillText(title, W / 2, H / 2 - 12);
-    ctx.font = '16px system-ui';
+    ctx.font = '16px "Noto Sans KR", system-ui';
     if (state === 'idle') {
-      ctx.fillText('Stay in the shrinking circle and chase a new best.', W / 2, H / 2 + 18);
-      ctx.fillText('Food gets tougher to grab as speed ramps up.', W / 2, H / 2 + 42);
+      ctx.fillText('좁아지는 원 안에서 버티며 최고 점수를 노리세요.', W / 2, H / 2 + 18);
+      ctx.fillText('시간이 갈수록 모든 지렁이 속도가 더 빨라집니다.', W / 2, H / 2 + 42);
     } else {
-      const scoreLine = score === best && score > 0 ? `New Best ${score}` : `Final Score ${score}  Best ${best}`;
+      const scoreLine = score === best && score > 0 ? `신기록 ${score}` : `이번 점수 ${score}  최고 점수 ${best}`;
       ctx.fillText(scoreLine, W / 2, H / 2 + 18);
-      ctx.fillText('Tap, click Start, or press Space to run again.', W / 2, H / 2 + 42);
+      ctx.fillText('화면을 누르거나 시작 버튼, 스페이스바로 다시 시작하세요.', W / 2, H / 2 + 42);
     }
   }
 }
@@ -711,6 +748,7 @@ function update(dt) {
   updatePlayerTarget();
   for (const bot of bots) updateBotTarget(bot, dt);
 
+  updateSpawnGrace(dt);
   moveWorm(player, dt);
   for (const bot of bots) moveWorm(bot, dt);
 
@@ -729,7 +767,7 @@ function update(dt) {
   }
 
   if (bots.length < BOT_COUNT && tick % 48 === 0) {
-    bots.push(makeBot());
+    bots.push(makeBot(SPAWN_GRACE_DURATION));
   }
 
   camera.x = clamp(player.x - W * 0.5, 0, WORLD_W - W);
@@ -757,23 +795,6 @@ function updatePointer(event) {
 }
 
 btnStart.addEventListener('click', startGame);
-
-btnBoost.addEventListener('pointerdown', (event) => {
-  event.preventDefault();
-  boostHeld = true;
-  btnBoost.setPointerCapture(event.pointerId);
-  bgmAudio?.unlock();
-});
-
-btnBoost.addEventListener('pointerup', (event) => {
-  if (event.pointerId) btnBoost.releasePointerCapture(event.pointerId);
-  boostHeld = false;
-});
-
-btnBoost.addEventListener('pointercancel', (event) => {
-  if (event.pointerId) btnBoost.releasePointerCapture(event.pointerId);
-  boostHeld = false;
-});
 
 canvas.addEventListener('pointerdown', (event) => {
   updatePointer(event);
