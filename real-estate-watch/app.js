@@ -19,12 +19,20 @@ const heroStatus = document.getElementById("hero-status");
 const regionFilter = document.getElementById("region-filter");
 
 function getSnapshotCandidates() {
+  const liveSnapshotUrl = document
+    .querySelector('meta[name="live-snapshot-url"]')
+    ?.getAttribute("content")
+    ?.trim();
   const configuredPath = document
     .querySelector('meta[name="snapshot-path"]')
     ?.getAttribute("content")
     ?.trim();
 
   const candidates = [];
+
+  if (liveSnapshotUrl) {
+    candidates.push(liveSnapshotUrl);
+  }
 
   if (configuredPath) {
     candidates.push(configuredPath);
