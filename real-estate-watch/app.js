@@ -18,6 +18,23 @@ const snapshotChip = document.getElementById("snapshot-chip");
 const heroStatus = document.getElementById("hero-status");
 const regionFilter = document.getElementById("region-filter");
 
+function getSnapshotCandidates() {
+  const configuredPath = document
+    .querySelector('meta[name="snapshot-path"]')
+    ?.getAttribute("content")
+    ?.trim();
+
+  const candidates = [];
+
+  if (configuredPath) {
+    candidates.push(configuredPath);
+  }
+
+  candidates.push("./latest-transactions.json", "../latest-transactions.json");
+
+  return [...new Set(candidates)];
+}
+
 function formatEok(priceManwon) {
   return `${(priceManwon / 10000).toLocaleString("ko-KR", {
     minimumFractionDigits: 1,
@@ -231,9 +248,18 @@ function render() {
 
 async function init() {
   try {
-    const response = await fetch("./latest-transactions.json", { cache: "no-store" });
-    if (!response.ok) {
-      throw new Error(`Failed to load JSON: ${response.status}`);
+    let response = null;
+
+    for (const snapshotPath of getSnapshotCandidates()) {
+      const candidateResponse = await fetch(snapshotPath, { cache: "no-store" });
+      if (candidateResponse.ok) {
+        response = candidateResponse;
+        break;
+      }
+    }
+
+    if (!response) {
+      throw new Error("Failed to load JSON snapshot.");
     }
 
     state.data = await response.json();
