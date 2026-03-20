@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    name="description"
+    content="서울과 경기권 오피스텔 매매 실거래 데이터를 카드형으로 보여주는 정보형 앱입니다."
+  />
+  <title>Officetel Watch</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <h1>서울·경기 오피스텔 실거래 TOP 10</h1>
+        <p class="hero-text">
+          국토교통부 공개 자료를 기준으로 서울과 경기권 오피스텔 매매 실거래를 정렬해 보여주는 부동산 정보 서비스입니다.
+        </p>
+      </div>
+      <div class="hero-status" id="hero-status">데이터 불러오는 중</div>
+    </header>
+
+    <main class="content">
+      <section class="panel intro-panel">
+        <div class="intro-copy">
+          <h2>데이터 기준</h2>
+          <p>
+            국토교통부 실거래가 공개시스템과 공공데이터포털 OpenAPI를 주기적으로 수집한 뒤,
+            서울·경기 오피스텔 매매 거래를 묶어 거래금액 상위 10건과 계약일 최신 10건을 제공합니다.
+          </p>
+        </div>
+        <div class="source-links">
+          <a href="https://rt.molit.go.kr/" target="_blank" rel="noreferrer">실거래가 공개시스템</a>
+          <a href="https://www.data.go.kr/data/15126464/openapi.do" target="_blank" rel="noreferrer">공공데이터포털 OpenAPI</a>
+        </div>
+      </section>
+
+      <section class="toolbar toolbar-single">
+        <div class="toolbar-block" id="region-filter" aria-label="지역 필터"></div>
+      </section>
+
+      <section class="stats-grid" id="stats-grid" aria-label="요약 지표"></section>
+
+      <section class="ranked-sections">
+        <section class="panel feed-panel">
+          <div class="feed-head">
+            <div>
+              <h2>가장 비싼 거래</h2>
+              <p class="feed-note" id="price-feed-note">상위 10건을 준비하고 있습니다.</p>
+            </div>
+            <span class="chip muted" id="snapshot-chip">자동 스냅샷</span>
+          </div>
+          <div class="feed-list" id="price-feed-list">
+            <article class="placeholder-card">카드 목록을 준비하고 있습니다.</article>
+          </div>
+        </section>
+
+        <section class="panel feed-panel">
+          <div class="feed-head">
+            <div>
+              <h2>계약일 최신 거래</h2>
+              <p class="feed-note" id="contract-feed-note">상위 10건을 준비하고 있습니다.</p>
+            </div>
+            <span class="chip muted">계약일 기준</span>
+          </div>
+          <div class="feed-list" id="contract-feed-list">
+            <article class="placeholder-card">카드 목록을 준비하고 있습니다.</article>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
