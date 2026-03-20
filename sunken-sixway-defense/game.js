@@ -202,10 +202,22 @@ const impactSfx = (() => {
   return { play };
 })();
 
-const isMobileView = window.matchMedia('(max-width: 860px), (pointer: coarse)').matches;
-const LOGICAL_W = isMobileView ? 720 : 960;
-// Desktop canvas height should stay aligned to grid-cell multiples to avoid blocked bottom rows.
-const LOGICAL_H = isMobileView ? 960 : 510;
+const viewportWidth = Math.max(window.innerWidth || 0, document.documentElement?.clientWidth || 0);
+const viewportHeight = Math.max(window.innerHeight || 0, document.documentElement?.clientHeight || 0);
+const isCompactViewport = window.matchMedia('(max-width: 860px)').matches;
+const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+const isTossRuntime = toss.isAvailable();
+const isMobileView = isCompactViewport || isCoarsePointer;
+const isLandscapeCompactView = isMobileView && (isTossRuntime || viewportWidth > viewportHeight);
+const usesTallMobileBoard = isMobileView && !isLandscapeCompactView;
+
+if (document.body) {
+  document.body.classList.toggle('mobile-landscape', isLandscapeCompactView);
+}
+
+const LOGICAL_W = usesTallMobileBoard ? 720 : 960;
+// Keep compact portrait phones tall, but switch Toss/landscape phones to a wide board.
+const LOGICAL_H = usesTallMobileBoard ? 960 : (isMobileView ? 528 : 510);
 const RENDER_SCALE = isMobileView ? 0.85 : 1;
 canvas.width = Math.floor(LOGICAL_W * RENDER_SCALE);
 canvas.height = Math.floor(LOGICAL_H * RENDER_SCALE);
