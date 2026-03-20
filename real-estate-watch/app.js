@@ -1,6 +1,7 @@
 const state = {
   region: "all",
   data: null,
+  snapshotSource: "",
 };
 
 const regionOptions = [
@@ -18,29 +19,25 @@ const snapshotChip = document.getElementById("snapshot-chip");
 const heroStatus = document.getElementById("hero-status");
 const regionFilter = document.getElementById("region-filter");
 
+function getMetaContent(name) {
+  return document
+    .querySelector(`meta[name="${name}"]`)
+    ?.getAttribute("content")
+    ?.trim();
+}
+
 function getSnapshotCandidates() {
-  const liveSnapshotUrl = document
-    .querySelector('meta[name="live-snapshot-url"]')
-    ?.getAttribute("content")
-    ?.trim();
-  const configuredPath = document
-    .querySelector('meta[name="snapshot-path"]')
-    ?.getAttribute("content")
-    ?.trim();
+  const candidates = [
+    { url: getMetaContent("live-snapshot-url"), label: "Vercel" },
+    { url: getMetaContent("backup-snapshot-url"), label: "GitHub Raw" },
+    { url: getMetaContent("snapshot-path"), label: "번들 JSON" },
+    { url: "./latest-transactions.json", label: "번들 JSON" },
+    { url: "../latest-transactions.json", label: "번들 JSON" },
+  ].filter((candidate) => candidate.url);
 
-  const candidates = [];
-
-  if (liveSnapshotUrl) {
-    candidates.push(liveSnapshotUrl);
-  }
-
-  if (configuredPath) {
-    candidates.push(configuredPath);
-  }
-
-  candidates.push("./latest-transactions.json", "../latest-transactions.json");
-
-  return [...new Set(candidates)];
+  return candidates.filter((candidate, index, array) => {
+    return array.findIndex((entry) => entry.url === candidate.url) === index;
+  });
 }
 
 function formatEok(priceManwon) {
@@ -101,7 +98,7 @@ function getFilteredItems() {
     return [];
   }
 
-  return state.data.items.filter((item) => {
+  return (state.data.items || []).filter((item) => {
     return state.region === "all" ? true : item.region === state.region;
   });
 }
@@ -132,6 +129,48 @@ function rankItems(items, mode) {
   });
 
   return ranked;
+}
+
+function getRegionLabel(regionId) {
+  if (regionId === "seoul") {
+    return "서울";
+  }
+
+  if (regionId === "gyeonggi") {
+    return "경기";
+  }
+
+  return "서울·경기 전체";
+}
+
+function buildViewFromItems(items, regionId) {
+  const safeItems = Array.isArray(items) ? items : [];
+  const priceTop10 = rankItems(safeItems, "price").slice(0, 10);
+  const contractTop10 = rankItems(safeItems, "contract").slice(0, 10);
+
+  return {
+    label: getRegionLabel(regionId),
+    itemCount: safeItems.length,
+    averagePriceManwon: safeItems.length
+      ? Math.round(safeItems.reduce((total, item) => total + item.priceManwon, 0) / safeItems.length)
+      : 0,
+    highestPriceItem: priceTop10[0] || null,
+    latestContractItem: contractTop10[0] || null,
+    priceTop10,
+    contractTop10,
+  };
+}
+
+function getRegionView() {
+  if (!state.data) {
+    return null;
+  }
+
+  if (state.data.views?.[state.region]) {
+    return state.data.views[state.region];
+  }
+
+  return buildViewFromItems(getFilteredItems(), state.region);
 }
 
 function buildTransactionCards(items) {
@@ -178,8 +217,8 @@ function buildTransactionCards(items) {
     .join("");
 }
 
-function renderStats(items) {
-  if (!items.length) {
+function renderStats(view) {
+  if (!view || !view.itemCount) {
     statsGrid.innerHTML = `
       <article class="stat-card">
         <div class="stat-label">상태</div>
@@ -191,17 +230,15 @@ function renderStats(items) {
     return;
   }
 
-  const average = Math.round(
-    items.reduce((total, item) => total + item.priceManwon, 0) / items.length,
-  );
-  const highest = rankItems(items, "price")[0];
-  const latestContract = rankItems(items, "contract")[0];
-  const regionLabel = state.region === "all" ? "서울·경기 전체" : items[0].regionLabel;
+  const average = view.averagePriceManwon;
+  const highest = view.highestPriceItem;
+  const latestContract = view.latestContractItem;
+  const regionLabel = view.label || getRegionLabel(state.region);
 
   statsGrid.innerHTML = `
     <article class="stat-card">
       <div class="stat-label">수집 거래</div>
-      <div class="stat-value">${items.length}건</div>
+      <div class="stat-value">${view.itemCount}건</div>
       <div class="stat-foot">${regionLabel} 기준</div>
     </article>
     <article class="stat-card">
@@ -221,16 +258,17 @@ function renderStats(items) {
     </article>
   `;
 
-  heroStatus.textContent = `${formatDateTime(state.data.updatedAt)} 스냅샷 업데이트`;
+  heroStatus.textContent = `${formatDateTime(state.data.updatedAt)} 스냅샷 업데이트${state.snapshotSource ? ` · ${state.snapshotSource}` : ""}`;
 }
 
-function renderRankedFeed(target, noteTarget, items, mode) {
-  const visibleItems = rankItems(items, mode).slice(0, 10);
+function renderRankedFeed(target, noteTarget, view, mode) {
+  const visibleItems = mode === "price" ? (view?.priceTop10 || []) : (view?.contractTop10 || []);
+  const totalCount = view?.itemCount || 0;
 
   if (mode === "price") {
-    noteTarget.textContent = `총 ${items.length}건 중 상위 ${visibleItems.length}건 · 거래금액순`;
+    noteTarget.textContent = `총 ${totalCount}건 중 상위 ${visibleItems.length}건 · 거래금액순`;
   } else {
-    noteTarget.textContent = `총 ${items.length}건 중 상위 ${visibleItems.length}건 · 계약일 최신순`;
+    noteTarget.textContent = `총 ${totalCount}건 중 상위 ${visibleItems.length}건 · 계약일 최신순`;
   }
 
   if (!visibleItems.length) {
@@ -244,25 +282,42 @@ function renderRankedFeed(target, noteTarget, items, mode) {
 }
 
 function render() {
-  const items = getFilteredItems();
-  renderStats(items);
-  renderRankedFeed(priceFeedList, priceFeedNote, items, "price");
-  renderRankedFeed(contractFeedList, contractFeedNote, items, "contract");
+  const view = getRegionView();
+  renderStats(view);
+  renderRankedFeed(priceFeedList, priceFeedNote, view, "price");
+  renderRankedFeed(contractFeedList, contractFeedNote, view, "contract");
   renderFilters(regionFilter, regionOptions, state.region, (regionId) => {
     state.region = regionId;
     render();
   });
 }
 
+async function fetchSnapshotCandidate(candidate) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 4500);
+
+  try {
+    return await fetch(candidate.url, { cache: "no-store", signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function init() {
   try {
     let response = null;
+    let snapshotSource = "";
 
-    for (const snapshotPath of getSnapshotCandidates()) {
-      const candidateResponse = await fetch(snapshotPath, { cache: "no-store" });
-      if (candidateResponse.ok) {
-        response = candidateResponse;
-        break;
+    for (const candidate of getSnapshotCandidates()) {
+      try {
+        const candidateResponse = await fetchSnapshotCandidate(candidate);
+        if (candidateResponse.ok) {
+          response = candidateResponse;
+          snapshotSource = candidate.label;
+          break;
+        }
+      } catch (error) {
+        console.warn(`[real-estate-watch] Failed to fetch ${candidate.label}: ${candidate.url}`, error);
       }
     }
 
@@ -271,7 +326,10 @@ async function init() {
     }
 
     state.data = await response.json();
-    snapshotChip.textContent = state.data.snapshotMode === "demo" ? "예시 스냅샷" : "자동 스냅샷";
+    state.snapshotSource = snapshotSource;
+    snapshotChip.textContent = state.data.snapshotMode === "demo"
+      ? `예시 스냅샷${snapshotSource ? ` · ${snapshotSource}` : ""}`
+      : `자동 스냅샷${snapshotSource ? ` · ${snapshotSource}` : ""}`;
     render();
   } catch (error) {
     console.error(error);

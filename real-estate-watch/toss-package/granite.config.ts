@@ -30,7 +30,7 @@ const DEFAULT_ICON = `data:image/svg+xml;utf8,${encodeURIComponent(
 )}`;
 
 const appName = process.env.TOSS_APP_NAME ?? 'real-estate-watch';
-const displayName = process.env.TOSS_BRAND_DISPLAY_NAME ?? '서울·경기 실거래 TOP 10';
+const displayName = process.env.TOSS_BRAND_DISPLAY_NAME ?? '서울·경기 아파트 실거래';
 const icon = process.env.TOSS_BRAND_ICON_URL ?? DEFAULT_ICON;
 
 export default defineConfig({

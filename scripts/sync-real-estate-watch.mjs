@@ -6,7 +6,8 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "..");
-const outputPath = path.join(rootDir, "real-estate-watch", "latest-transactions.json");
+const appSnapshotPath = path.join(rootDir, "real-estate-watch", "latest-transactions.json");
+const fullSnapshotPath = path.join(rootDir, "real-estate-watch", "latest-transactions-full.json");
 const sourceUrl = "https://rt.molit.go.kr/";
 const apiUrl = "https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade";
 const regionLabelMap = {
@@ -185,13 +186,92 @@ function normalizeAddressHint(jibun) {
   return jibun ? `지번 ${jibun}` : "지번 정보 없음";
 }
 
-async function loadPreviousSnapshot() {
+function rankItems(items, mode) {
+  const ranked = [...items];
+
+  ranked.sort((left, right) => {
+    if (mode === "price") {
+      if (right.priceManwon !== left.priceManwon) {
+        return right.priceManwon - left.priceManwon;
+      }
+
+      return right.contractDate.localeCompare(left.contractDate);
+    }
+
+    const rightContract = Date.parse(right.contractDate || "");
+    const leftContract = Date.parse(left.contractDate || "");
+
+    if (rightContract !== leftContract) {
+      return rightContract - leftContract;
+    }
+
+    return right.priceManwon - left.priceManwon;
+  });
+
+  return ranked;
+}
+
+function buildRegionView(items, label) {
+  const priceTop10 = rankItems(items, "price").slice(0, 10);
+  const contractTop10 = rankItems(items, "contract").slice(0, 10);
+  const averagePriceManwon = items.length
+    ? Math.round(items.reduce((sum, item) => sum + item.priceManwon, 0) / items.length)
+    : 0;
+
+  return {
+    label,
+    itemCount: items.length,
+    averagePriceManwon,
+    highestPriceItem: priceTop10[0] || null,
+    latestContractItem: contractTop10[0] || null,
+    priceTop10,
+    contractTop10
+  };
+}
+
+function buildCompactPayload(fullPayload) {
+  const items = Array.isArray(fullPayload.items) ? fullPayload.items : [];
+  const seoulItems = items.filter((item) => item.region === "seoul");
+  const gyeonggiItems = items.filter((item) => item.region === "gyeonggi");
+
+  return {
+    snapshotMode: fullPayload.snapshotMode,
+    snapshotFormat: "compact",
+    updatedAt: fullPayload.updatedAt,
+    scope: fullPayload.scope,
+    source: fullPayload.source,
+    monthsQueried: fullPayload.monthsQueried,
+    regionCount: fullPayload.regionCount,
+    itemCount: fullPayload.itemCount,
+    views: {
+      all: buildRegionView(items, "서울·경기 전체"),
+      seoul: buildRegionView(seoulItems, "서울"),
+      gyeonggi: buildRegionView(gyeonggiItems, "경기")
+    }
+  };
+}
+
+async function readSnapshotFile(snapshotPath) {
   try {
-    const raw = await readFile(outputPath, "utf8");
+    const raw = await readFile(snapshotPath, "utf8");
     return JSON.parse(raw);
   } catch {
-    return { items: [] };
+    return null;
   }
+}
+
+async function loadPreviousSnapshot() {
+  const previousFullSnapshot = await readSnapshotFile(fullSnapshotPath);
+  if (Array.isArray(previousFullSnapshot?.items)) {
+    return previousFullSnapshot;
+  }
+
+  const previousAppSnapshot = await readSnapshotFile(appSnapshotPath);
+  if (Array.isArray(previousAppSnapshot?.items)) {
+    return previousAppSnapshot;
+  }
+
+  return { items: [] };
 }
 
 async function fetchTextWithRetry(url, attempt = 1) {
@@ -357,8 +437,9 @@ async function main() {
     throw new Error("No transactions were collected. The output file was not updated.");
   }
 
-  const payload = {
+  const fullPayload = {
     snapshotMode: "live",
+    snapshotFormat: "full",
     updatedAt: nowIso,
     scope: "서울·경기 아파트 매매 자동 수집 스냅샷",
     source: "국토교통부 실거래가 공개시스템 / 공공데이터포털 OpenAPI",
@@ -367,9 +448,12 @@ async function main() {
     itemCount: items.length,
     items
   };
+  const compactPayload = buildCompactPayload(fullPayload);
 
-  await writeFile(outputPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
-  process.stdout.write(`wrote ${items.length} items to ${outputPath}\n`);
+  await writeFile(fullSnapshotPath, `${JSON.stringify(fullPayload, null, 2)}\n`, "utf8");
+  await writeFile(appSnapshotPath, `${JSON.stringify(compactPayload, null, 2)}\n`, "utf8");
+  process.stdout.write(`wrote ${items.length} items to ${fullSnapshotPath}\n`);
+  process.stdout.write(`wrote compact app snapshot to ${appSnapshotPath}\n`);
 }
 
 main().catch((error) => {
