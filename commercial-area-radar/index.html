@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    name="description"
+    content="소상공인시장진흥공단 상가(상권)정보 API를 바탕으로 행정동, 업종, 점포 응답 구조를 빠르게 검증하는 상권 정보 프로토타입입니다."
+  />
+  <title>Commercial Area Radar</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">Info App Prototype</span>
+        <h1>동네 상권 레이더</h1>
+        <p class="hero-text">
+          소상공인시장진흥공단 상가(상권)정보 API의 행정동, 업종분류, 점포 목록 흐름을 한 화면에서 검증하는
+          토스용 정보 앱 시안입니다.
+        </p>
+        <div class="hero-links">
+          <a href="https://www.data.go.kr/data/15012005/openapi.do" target="_blank" rel="noreferrer">공공데이터포털 문서</a>
+          <a href="https://bigdata.sbiz.or.kr/" target="_blank" rel="noreferrer">소상공인 빅데이터 플랫폼</a>
+        </div>
+      </div>
+      <div class="hero-status" id="hero-status">스냅샷 불러오는 중</div>
+    </header>
+
+    <main class="content">
+      <section class="panel endpoint-panel">
+        <div class="section-head">
+          <div>
+            <h2>검증한 API 흐름</h2>
+            <p class="section-note">
+              문서에서 확인한 핵심 엔드포인트를 연결해 행정구역 탐색부터 업종 필터, 점포 목록까지 이어집니다.
+            </p>
+          </div>
+          <span class="chip" id="snapshot-chip">데모</span>
+        </div>
+        <div class="endpoint-grid" id="endpoint-grid"></div>
+      </section>
+
+      <section class="toolbar">
+        <div class="toolbar-block">
+          <div class="toolbar-label">행정동 기준</div>
+          <div class="filter-row" id="area-filter" aria-label="행정동 필터"></div>
+        </div>
+        <div class="toolbar-block">
+          <div class="toolbar-label">업종 기준</div>
+          <div class="filter-row" id="industry-filter" aria-label="업종 필터"></div>
+        </div>
+      </section>
+
+      <section class="stats-grid" id="stats-grid" aria-label="요약 지표"></section>
+
+      <section class="content-grid">
+        <section class="panel list-panel">
+          <div class="section-head">
+            <div>
+              <h2>업종 분포</h2>
+              <p class="section-note" id="category-note">업종 분포를 계산 중입니다.</p>
+            </div>
+          </div>
+          <div class="category-list" id="category-list">
+            <article class="placeholder-card">업종 요약을 준비하고 있습니다.</article>
+          </div>
+        </section>
+
+        <section class="panel list-panel">
+          <div class="section-head">
+            <div>
+              <h2>점포 샘플</h2>
+              <p class="section-note" id="store-note">점포 카드를 준비하고 있습니다.</p>
+            </div>
+          </div>
+          <div class="store-list" id="store-list">
+            <article class="placeholder-card">점포 목록을 준비하고 있습니다.</article>
+          </div>
+        </section>
+      </section>
+
+      <section class="panel raw-panel">
+        <div class="section-head">
+          <div>
+            <h2>응답 미리보기</h2>
+            <p class="section-note" id="raw-caption">선택한 점포 기준으로 문서형 요청 예시와 응답 필드를 보여줍니다.</p>
+          </div>
+        </div>
+        <div class="raw-grid">
+          <div class="raw-block">
+            <div class="raw-label">요청 예시</div>
+            <pre class="code-block" id="request-preview">{}</pre>
+          </div>
+          <div class="raw-block">
+            <div class="raw-label">응답 item 예시</div>
+            <pre class="code-block" id="response-preview">{}</pre>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>

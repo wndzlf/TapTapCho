@@ -9,8 +9,11 @@
     "multi-hub-server": "node scripts/taptap-multi-hub-server.js",
     "generate-thumbnails": "node scripts/generate-thumbnails.js",
     "sync-real-estate-watch": "node scripts/sync-real-estate-watch.mjs",
+    "sync-commercial-area-radar": "node scripts/sync-commercial-area-radar.mjs",
     "real-estate-watch:toss:build": "npm --prefix real-estate-watch/toss-package run build",
-    "real-estate-watch:toss:dev": "npm --prefix real-estate-watch/toss-package run dev"
+    "real-estate-watch:toss:dev": "npm --prefix real-estate-watch/toss-package run dev",
+    "commercial-area-radar:toss:build": "npm --prefix commercial-area-radar/toss-package run build",
+    "commercial-area-radar:toss:dev": "npm --prefix commercial-area-radar/toss-package run dev"
   },
   "dependencies": {
     "ws": "^8.18.0"

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title desc">
+  <title id="title">Commercial Area Radar thumbnail</title>
+  <desc id="desc">A radar-style district and storefront illustration for the commercial area information app.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0e3340" />
+      <stop offset="55%" stop-color="#14656a" />
+      <stop offset="100%" stop-color="#f48850" />
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7fdfd" />
+      <stop offset="100%" stop-color="#e8f4f2" />
+    </linearGradient>
+  </defs>
+
+  <rect width="640" height="360" rx="28" fill="url(#bg)" />
+  <circle cx="530" cy="72" r="92" fill="rgba(255,255,255,0.1)" />
+  <circle cx="112" cy="76" r="68" fill="rgba(255,255,255,0.08)" />
+
+  <rect x="54" y="88" width="532" height="230" rx="24" fill="url(#panel)" opacity="0.97" />
+
+  <rect x="84" y="118" width="160" height="18" rx="9" fill="#8dc6c8" />
+  <rect x="84" y="152" width="152" height="130" rx="20" fill="#fff" />
+  <rect x="260" y="152" width="118" height="130" rx="20" fill="#fff" />
+  <rect x="394" y="152" width="162" height="130" rx="20" fill="#fff" />
+
+  <circle cx="164" cy="216" r="44" fill="none" stroke="#d7eceb" stroke-width="8" />
+  <circle cx="164" cy="216" r="26" fill="none" stroke="#c4e2e1" stroke-width="8" />
+  <path d="M164 216 L194 190" fill="none" stroke="#f48850" stroke-width="8" stroke-linecap="round" />
+  <circle cx="164" cy="216" r="8" fill="#0e7b7d" />
+  <circle cx="194" cy="190" r="7" fill="#f48850" />
+
+  <rect x="282" y="184" width="22" height="60" rx="6" fill="#0e7b7d" />
+  <rect x="312" y="170" width="22" height="74" rx="6" fill="#f48850" />
+  <rect x="342" y="196" width="22" height="48" rx="6" fill="#205660" />
+
+  <g fill="#205660">
+    <rect x="418" y="202" width="28" height="54" rx="5" />
+    <rect x="452" y="176" width="40" height="80" rx="5" />
+    <rect x="498" y="190" width="22" height="66" rx="5" />
+  </g>
+  <path d="M416 188 L430 172 L442 188 Z" fill="#f48850" />
+  <path d="M448 160 L472 138 L496 160 Z" fill="#0e7b7d" />
+  <path d="M496 176 L509 162 L522 176 Z" fill="#f2b38d" />
+
+  <text x="84" y="74" font-family="Arial, sans-serif" font-size="33" font-weight="700" fill="#eefaf9">
+    COMMERCIAL AREA RADAR
+  </text>
+</svg>
