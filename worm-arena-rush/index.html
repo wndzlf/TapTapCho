@@ -29,10 +29,16 @@
 
     <div class="arena">
       <canvas id="game" width="420" height="700"></canvas>
+      <div class="turn-pad-wrap">
+        <small class="turn-pad-label">가상 조향</small>
+        <div class="turn-pad" id="turnPad" aria-label="가상 조향 패드" role="application">
+          <div class="turn-pad-knob" id="turnKnob" aria-hidden="true"></div>
+        </div>
+      </div>
     </div>
 
     <footer>
-      <small>조작: 터치/마우스 또는 WASD/방향키 · 75초 동안 살아남아 최고 점수를 노리세요</small>
+      <small>조작: 터치/마우스 또는 WASD/방향키 · 모바일은 우하단 가상 조향 패드 사용</small>
       <br />
       <small>배경음악: Coffee - Morning Coffee Shop Music / HitsLab / Pixabay Content License</small>
     </footer>
