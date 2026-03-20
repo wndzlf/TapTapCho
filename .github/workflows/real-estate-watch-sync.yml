@@ -37,7 +37,7 @@ jobs:
 
       - name: Sync latest transactions snapshot
         env:
-          REAL_ESTATE_API_SERVICE_KEY: ${{ secrets.REAL_ESTATE_API_SERVICE_KEY }}
+          REAL_ESTATE_API_SERVICE_KEY: ${{ secrets.REAL_ESTATE_API_SERVICE_KEY || secrets.REAL_ESTATE_APT_SERVICE_KEY || vars.REAL_ESTATE_API_SERVICE_KEY || vars.REAL_ESTATE_APT_SERVICE_KEY }}
           REAL_ESTATE_MONTH_COUNT: ${{ github.event.inputs.month_count || '3' }}
         run: npm run sync-real-estate-watch
 
