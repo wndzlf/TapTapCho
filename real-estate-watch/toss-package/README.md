@@ -13,6 +13,9 @@
   - 기본값: `서울·경기 아파트 실거래`
 - `TOSS_BRAND_ICON_URL`
   - 기본값: 내장 SVG 아이콘
+- `TOSS_INLINE_AD_GROUP_ID`
+  - 기본값: `ait-ad-test-native-image-id`
+  - 정보형 인라인 스폰서 카드에 사용할 토스 광고 그룹 ID
 
 ## 로컬 빌드
 
@@ -21,6 +24,15 @@
 ```bash
 cd /Users/user/TapTapCho
 TOSS_APP_NAME="real-estate-watch" npm run real-estate-watch:toss:build
+```
+
+실제 광고 그룹 ID를 주입하려면:
+
+```bash
+cd /Users/user/TapTapCho
+TOSS_APP_NAME="real-estate-watch" \
+TOSS_INLINE_AD_GROUP_ID="your-production-ad-group-id" \
+npm run real-estate-watch:toss:build
 ```
 
 또는 패키지 폴더에서 직접 실행:
@@ -46,4 +58,6 @@ npx ait token add
 npx ait deploy
 ```
 
-토스 번들에는 앱용 경량 스냅샷 `latest-transactions.json`만 포함됩니다. 라이브 환경에서는 `Vercel JSON -> GitHub Raw JSON -> 번들 내부 JSON` 순서로 읽습니다.
+토스 번들에는 앱용 경량 스냅샷 `latest-transactions.json`만 포함됩니다. 라이브 환경에서는 `GitHub Raw JSON -> Vercel JSON -> 번들 내부 JSON` 순서로 읽습니다.
+
+현재 광고 구성은 `가장 비싼 거래` 목록과 `계약일 최신 거래` 목록 사이에 인라인 스폰서 카드 1개만 두는 방식입니다. 웹 미리보기에서는 자리만 보이고, 토스 앱 안에서만 실제 광고 슬롯이 렌더링됩니다.

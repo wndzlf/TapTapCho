@@ -16,6 +16,7 @@
     name="description"
     content="서울·경기 아파트 실거래 데이터를 카드형으로 보여주는 부동산 정보 서비스입니다."
   />
+  <meta name="toss-inline-ad-group-id" content="ait-ad-test-native-image-id" />
   <title>서울·경기 아파트 실거래</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
@@ -67,6 +68,27 @@
           </div>
         </section>
 
+        <aside class="panel sponsor-panel" id="sponsor-panel" aria-label="스폰서 광고">
+          <div class="sponsor-head">
+            <div>
+              <div class="sponsor-eyebrow">
+                <span class="chip sponsor-chip">광고</span>
+                <span class="chip muted" id="sponsor-status-chip">웹 미리보기</span>
+              </div>
+              <h2>실거래 흐름을 해치지 않는 스폰서 카드</h2>
+              <p class="feed-note" id="sponsor-note">
+                핵심 거래 목록을 먼저 보여드린 뒤, 중간 구간에 인라인 스폰서 카드 1개만 배치합니다.
+              </p>
+            </div>
+          </div>
+          <div class="sponsor-slot" id="sponsor-slot" aria-live="polite">
+            <div class="sponsor-placeholder-card" id="sponsor-placeholder">
+              <strong>토스 앱에서 광고가 노출됩니다.</strong>
+              <span>웹 미리보기에서는 동일한 위치와 톤만 확인할 수 있습니다.</span>
+            </div>
+          </div>
+        </aside>
+
         <section class="panel feed-panel">
           <div class="feed-head">
             <div>
@@ -84,6 +106,7 @@
     </main>
   </div>
 
+  <script src="./toss-bridge.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>

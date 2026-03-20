@@ -31,12 +31,16 @@ REAL_ESTATE_API_SERVICE_KEY="your-key" npm run sync-real-estate-watch
 - 패키지 루트: `/Users/user/TapTapCho/real-estate-watch/toss-package`
 - 빠른 빌드: `TOSS_APP_NAME="your-console-app-name" npm run real-estate-watch:toss:build`
 - 미리보기: `npm run real-estate-watch:toss:dev`
+- 광고 그룹 교체: `TOSS_INLINE_AD_GROUP_ID="your-production-ad-group-id" TOSS_APP_NAME="your-console-app-name" npm run real-estate-watch:toss:build`
 
 `TOSS_APP_NAME`은 토스 콘솔에 등록한 앱 슬러그와 동일해야 합니다.
+
+현재 정보형 서비스 흐름에 맞춰, 거래 목록을 먼저 보여준 뒤 중간 구간에 인라인 스폰서 카드 1개만 노출하도록 구성되어 있습니다. 기본값은 토스 테스트 광고 그룹 ID `ait-ad-test-native-image-id`이며, 실제 출시 전에는 `TOSS_INLINE_AD_GROUP_ID`로 운영용 광고 그룹 ID를 주입하면 됩니다.
 
 ## 주의
 
 - 스케줄은 GitHub Actions 기준 UTC 크론입니다.
 - 기본 수집 범위는 최근 3개월입니다.
 - 이 앱은 정보 제공 목적 서비스이며, 투자 권유나 중개 기능은 포함하지 않습니다.
-- 앱은 `Vercel JSON -> GitHub Raw JSON -> 번들 내부 JSON` 순서로 스냅샷을 시도합니다.
+- 앱은 `GitHub Raw JSON -> Vercel JSON -> 번들 내부 JSON` 순서로 스냅샷을 시도합니다.
+- 토스 광고는 웹 미리보기에서는 노출되지 않고, 토스 앱 안에서만 실제 슬롯이 렌더링됩니다.

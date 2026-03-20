@@ -230,6 +230,12 @@ body {
   padding: 24px;
 }
 
+.sponsor-panel {
+  padding: 22px 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 247, 0.94), rgba(244, 238, 229, 0.9));
+}
+
 .ranked-sections {
   display: grid;
   gap: 16px;
@@ -245,6 +251,51 @@ body {
   justify-content: space-between;
   gap: 16px;
   align-items: flex-start;
+}
+
+.sponsor-head {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.sponsor-eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.sponsor-chip {
+  background: rgba(184, 107, 47, 0.14);
+  color: var(--accent-deep);
+}
+
+.sponsor-slot {
+  margin-top: 18px;
+  min-height: 120px;
+}
+
+.sponsor-placeholder-card {
+  display: grid;
+  gap: 8px;
+  min-height: 120px;
+  padding: 18px 20px;
+  border: 1px dashed rgba(15, 108, 109, 0.24);
+  border-radius: 20px;
+  background:
+    linear-gradient(135deg, rgba(15, 108, 109, 0.06), rgba(184, 107, 47, 0.06));
+  color: var(--ink);
+  align-content: center;
+}
+
+.sponsor-placeholder-card strong {
+  font-size: 17px;
+}
+
+.sponsor-placeholder-card span {
+  color: var(--muted);
+  line-height: 1.6;
 }
 
 .chip {
@@ -271,6 +322,7 @@ body {
 
 .transaction-card,
 .placeholder-card {
+  min-width: 0;
   padding: 18px;
   border: 1px solid var(--line);
   border-radius: 22px;
@@ -289,6 +341,7 @@ body {
   justify-content: space-between;
   gap: 14px;
   align-items: flex-start;
+  min-width: 0;
 }
 
 .location-stack {
@@ -318,6 +371,7 @@ body {
 }
 
 .price-block {
+  min-width: 0;
   text-align: right;
 }
 
@@ -336,12 +390,14 @@ body {
 .transaction-title {
   margin: 16px 0 8px;
   font-size: 22px;
+  overflow-wrap: anywhere;
 }
 
 .transaction-meta {
   color: var(--muted);
   font-size: 14px;
   line-height: 1.7;
+  overflow-wrap: anywhere;
 }
 
 .transaction-grid {
@@ -401,6 +457,7 @@ body {
 
   .intro-panel,
   .feed-head,
+  .sponsor-head,
   .transaction-foot {
     flex-direction: column;
   }
@@ -419,6 +476,7 @@ body {
   .hero,
   .intro-panel,
   .feed-panel,
+  .sponsor-panel,
   .note-panel {
     padding: 18px;
     border-radius: 22px;
@@ -462,7 +520,8 @@ body {
     margin: 10px 0 6px;
     font-size: 16px;
     line-height: 1.28;
-    word-break: keep-all;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .transaction-meta {
@@ -488,6 +547,20 @@ body {
     margin-top: 4px;
     font-size: 14px;
     line-height: 1.25;
+  }
+
+  .sponsor-slot {
+    margin-top: 14px;
+  }
+
+  .sponsor-placeholder-card {
+    min-height: 112px;
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .sponsor-placeholder-card strong {
+    font-size: 15px;
   }
 }
 

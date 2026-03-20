@@ -18,6 +18,31 @@ const contractFeedNote = document.getElementById("contract-feed-note");
 const snapshotChip = document.getElementById("snapshot-chip");
 const heroStatus = document.getElementById("hero-status");
 const regionFilter = document.getElementById("region-filter");
+const sponsorPanel = document.getElementById("sponsor-panel");
+const sponsorStatusChip = document.getElementById("sponsor-status-chip");
+const sponsorNote = document.getElementById("sponsor-note");
+const sponsorSlot = document.getElementById("sponsor-slot");
+
+const toss = window.RealEstateWatchToss || {
+  isAvailable: () => false,
+  ads: {
+    isAvailable: () => false,
+    initialize: async () => false,
+    attachInlineBanner: () => ({
+      destroy() {},
+    }),
+    destroyAll: () => {},
+  },
+};
+
+const DEFAULT_TOSS_INLINE_AD_GROUP_ID = "ait-ad-test-native-image-id";
+const RAW_TOSS_INLINE_AD_GROUP_ID = typeof window !== "undefined"
+  && typeof window.__REAL_ESTATE_WATCH_TOSS_AD_GROUP_ID === "string"
+  ? window.__REAL_ESTATE_WATCH_TOSS_AD_GROUP_ID
+  : (getMetaContent("toss-inline-ad-group-id") || DEFAULT_TOSS_INLINE_AD_GROUP_ID);
+const TOSS_INLINE_AD_GROUP_ID = RAW_TOSS_INLINE_AD_GROUP_ID.trim();
+
+let sponsorSlotHandle = null;
 
 function getMetaContent(name) {
   return document
@@ -26,10 +51,129 @@ function getMetaContent(name) {
     ?.trim();
 }
 
+function resetSponsorSlot() {
+  sponsorSlotHandle?.destroy?.();
+  sponsorSlotHandle = null;
+  if (sponsorSlot) {
+    sponsorSlot.innerHTML = "";
+  }
+}
+
+function renderSponsorPlaceholder(title, description) {
+  if (!sponsorSlot) {
+    return;
+  }
+
+  sponsorSlot.innerHTML = `
+    <div class="sponsor-placeholder-card">
+      <strong>${title}</strong>
+      <span>${description}</span>
+    </div>
+  `;
+}
+
+function setSponsorState(stateId, detail = "") {
+  if (!sponsorPanel || !sponsorStatusChip || !sponsorNote) {
+    return;
+  }
+
+  sponsorPanel.dataset.adState = stateId;
+
+  if (stateId === "loading") {
+    sponsorStatusChip.textContent = "광고 준비 중";
+    sponsorNote.textContent = "실거래 흐름을 해치지 않도록 중간 카드 1칸만 불러오고 있습니다.";
+    renderSponsorPlaceholder(
+      "토스 스폰서 슬롯을 준비하고 있습니다.",
+      "광고 준비가 끝나면 같은 위치에 인라인 카드가 표시됩니다."
+    );
+    return;
+  }
+
+  if (stateId === "live") {
+    sponsorStatusChip.textContent = "스폰서 노출 중";
+    sponsorNote.textContent = detail || "상세 거래 흐름 사이에 인라인 스폰서 카드 1개만 노출합니다.";
+    return;
+  }
+
+  if (stateId === "nofill") {
+    sponsorStatusChip.textContent = "광고 대기";
+    sponsorNote.textContent = "현재 노출 가능한 스폰서 카드가 없어 안내형 자리만 유지합니다.";
+    renderSponsorPlaceholder(
+      "지금은 노출 가능한 광고가 없습니다.",
+      "실거래 목록 흐름은 그대로 유지되고, 이후 노출 가능 시 같은 위치에 인라인 카드가 표시됩니다."
+    );
+    return;
+  }
+
+  if (stateId === "error") {
+    sponsorStatusChip.textContent = "광고 일시 중지";
+    sponsorNote.textContent = "광고를 불러오지 못해 안내형 자리만 표시합니다.";
+    renderSponsorPlaceholder(
+      "광고를 불러오지 못했습니다.",
+      "네트워크 또는 토스 광고 준비 상태에 따라 잠시 안내 카드만 유지될 수 있습니다."
+    );
+    return;
+  }
+
+  sponsorStatusChip.textContent = "웹 미리보기";
+  sponsorNote.textContent = "토스 앱에서만 스폰서 카드가 실제로 노출되고, 웹에서는 동일 위치 안내만 표시합니다.";
+  renderSponsorPlaceholder(
+    "토스 앱에서 광고가 노출됩니다.",
+    "실거래 목록을 먼저 확인한 뒤 중간 구간에 인라인 스폰서 카드 1개만 배치합니다."
+  );
+}
+
+async function initInlineSponsorAd() {
+  if (!sponsorPanel || !sponsorSlot) {
+    return;
+  }
+
+  if (!TOSS_INLINE_AD_GROUP_ID) {
+    setSponsorState("preview");
+    return;
+  }
+
+  if (toss.isAvailable() !== true || toss.ads?.isAvailable?.() !== true) {
+    setSponsorState("preview");
+    return;
+  }
+
+  setSponsorState("loading");
+
+  try {
+    await toss.ads.initialize();
+    resetSponsorSlot();
+
+    sponsorSlotHandle = toss.ads.attachInlineBanner(TOSS_INLINE_AD_GROUP_ID, sponsorSlot, {
+      theme: "light",
+      tone: "grey",
+      variant: "card",
+      callbacks: {
+        onAdRendered() {
+          setSponsorState("live");
+        },
+        onNoFill() {
+          resetSponsorSlot();
+          setSponsorState("nofill");
+        },
+        onAdFailedToRender(event) {
+          console.warn("[real-estate-watch] Failed to render Toss sponsor slot", event);
+          resetSponsorSlot();
+          setSponsorState("error");
+        },
+      },
+    });
+  } catch (error) {
+    console.warn("[real-estate-watch] Failed to initialize Toss sponsor slot", error);
+    resetSponsorSlot();
+    setSponsorState("error");
+  }
+}
+
 function getSnapshotCandidates() {
   const candidates = [
-    { url: getMetaContent("live-snapshot-url"), label: "Vercel" },
     { url: getMetaContent("backup-snapshot-url"), label: "GitHub Raw" },
+    { url: getMetaContent("live-snapshot-url"), label: "Vercel" },
     { url: getMetaContent("snapshot-path"), label: "번들 JSON" },
     { url: "./latest-transactions.json", label: "번들 JSON" },
     { url: "../latest-transactions.json", label: "번들 JSON" },
@@ -304,6 +448,9 @@ async function fetchSnapshotCandidate(candidate) {
 }
 
 async function init() {
+  setSponsorState("preview");
+  void initInlineSponsorAd();
+
   try {
     let response = null;
     let snapshotSource = "";
@@ -346,5 +493,10 @@ async function init() {
     contractFeedList.innerHTML = placeholder;
   }
 }
+
+window.addEventListener("beforeunload", () => {
+  resetSponsorSlot();
+  toss.ads?.destroyAll?.();
+});
 
 init();
