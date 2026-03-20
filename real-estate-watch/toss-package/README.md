@@ -10,7 +10,7 @@
 ## 선택 환경변수
 
 - `TOSS_BRAND_DISPLAY_NAME`
-  - 기본값: `서울·경기 실거래 TOP 10`
+  - 기본값: `서울·경기 아파트 실거래`
 - `TOSS_BRAND_ICON_URL`
   - 기본값: 내장 SVG 아이콘
 
@@ -45,3 +45,5 @@ npm run real-estate-watch:toss:dev
 npx ait token add
 npx ait deploy
 ```
+
+토스 번들에는 앱용 경량 스냅샷 `latest-transactions.json`만 포함됩니다. 라이브 환경에서는 `Vercel JSON -> GitHub Raw JSON -> 번들 내부 JSON` 순서로 읽습니다.

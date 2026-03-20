@@ -5,10 +5,11 @@
 ## 자동수집 방식
 
 - 수집 스크립트: `/Users/user/TapTapCho/scripts/sync-real-estate-watch.mjs`
-- 출력 파일: `/Users/user/TapTapCho/real-estate-watch/latest-transactions.json`
+- 앱용 출력 파일: `/Users/user/TapTapCho/real-estate-watch/latest-transactions.json`
+- 전체 거래 보관 파일: `/Users/user/TapTapCho/real-estate-watch/latest-transactions-full.json`
 - GitHub Actions: `/Users/user/TapTapCho/.github/workflows/real-estate-watch-sync.yml`
 
-GitHub Actions는 공공데이터포털 OpenAPI를 호출해 최근 계약월 데이터를 모으고, 거래 고유 키를 기준으로 스냅샷을 갱신합니다. 현재 화면은 거래금액 상위 10건과 계약일 최신 10건을 서울·경기 필터 기준으로 보여줍니다.
+GitHub Actions는 공공데이터포털 OpenAPI를 호출해 최근 계약월 데이터를 모으고, 거래 고유 키를 기준으로 전체 스냅샷을 갱신합니다. 앱이 실제로 읽는 `latest-transactions.json`은 토스 웹뷰 로딩을 위해 요약 지표와 상위 10건 목록만 담는 경량 스냅샷이며, 전체 거래 데이터는 `latest-transactions-full.json`에 별도로 보관합니다.
 
 ## GitHub Secret
 
@@ -38,3 +39,4 @@ REAL_ESTATE_API_SERVICE_KEY="your-key" npm run sync-real-estate-watch
 - 스케줄은 GitHub Actions 기준 UTC 크론입니다.
 - 기본 수집 범위는 최근 3개월입니다.
 - 이 앱은 정보 제공 목적 서비스이며, 투자 권유나 중개 기능은 포함하지 않습니다.
+- 앱은 `Vercel JSON -> GitHub Raw JSON -> 번들 내부 JSON` 순서로 스냅샷을 시도합니다.
