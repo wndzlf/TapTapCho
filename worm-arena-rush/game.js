@@ -1,4 +1,6 @@
-const bgmAudio = window.TapTapNeonAudio?.create('webgame-37', document.querySelector('.hud'), { theme: 'rush' });
+const bgmAudio = window.TapTapNeonAudio?.create('webgame-37', document.querySelector('.hud'), {
+  mediaSrc: './assets/audio/coffee-morning-coffee-shop-music.mp3',
+});
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
