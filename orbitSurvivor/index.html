@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+  />
+  <meta name="theme-color" content="#081120" />
+  <title>Orbit Survivor</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="top-panel" aria-label="게임 상태와 조작 버튼">
+      <div class="brand-row">
+        <div>
+          <p class="eyebrow">Toss Mini App Game</p>
+          <h1>Orbit Survivor</h1>
+        </div>
+        <div class="status-wrap">
+          <span id="bridgeBadge" class="badge badge-preview">웹 미리보기</span>
+          <button id="btnInfo" class="icon-button" type="button" aria-haspopup="dialog" aria-controls="infoModal">
+            안내
+          </button>
+        </div>
+      </div>
+
+      <div class="hud-grid">
+        <div class="hud-card" aria-label="현재 점수">
+          <span class="hud-label">점수</span>
+          <strong id="score">0</strong>
+        </div>
+        <div class="hud-card" aria-label="남은 목숨">
+          <span class="hud-label">목숨</span>
+          <strong id="lives">3</strong>
+        </div>
+        <div class="hud-card" aria-label="최고 기록">
+          <span class="hud-label">최고</span>
+          <strong id="best">0</strong>
+        </div>
+        <div class="hud-card" aria-label="연속 회피 수">
+          <span class="hud-label">연속</span>
+          <strong id="streak">0</strong>
+        </div>
+      </div>
+
+      <div class="control-row">
+        <button id="btnStart" class="button button-primary" type="button">시작</button>
+        <button id="btnMusic" class="button button-secondary" type="button" aria-pressed="true">BGM 켜짐</button>
+        <button id="btnSfx" class="button button-secondary" type="button" aria-pressed="true">효과음 켜짐</button>
+        <button id="btnExit" class="button button-danger" type="button">종료</button>
+      </div>
+
+      <p id="userKeyHint" class="microcopy" aria-live="polite">
+        토스 게임 계정과 저장소를 확인하고 있어요.
+      </p>
+    </section>
+
+    <section class="stage-shell" aria-label="게임 화면">
+      <div id="stageCard" class="stage-card">
+        <canvas id="game" width="420" height="700" aria-label="Orbit Survivor game board"></canvas>
+        <div id="hitFlash" class="hit-flash" aria-hidden="true"></div>
+
+        <div
+          id="gameOverModal"
+          class="stage-modal hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="gameOverTitle"
+        >
+          <div class="stage-modal-card">
+            <p class="modal-kicker">RUN END</p>
+            <h2 id="gameOverTitle">Mission Failed</h2>
+            <p>최종 점수 <strong id="finalScore">0</strong></p>
+            <p>최고 기록 <strong id="finalBest">0</strong></p>
+            <p id="rewardContinueHint" class="reward-copy hidden" aria-live="polite"></p>
+            <div class="modal-actions">
+              <button
+                id="btnRewardContinue"
+                class="button button-reward hidden"
+                type="button"
+                disabled
+              >
+                광고 준비 중...
+              </button>
+              <button id="btnRestart" class="button button-primary" type="button">다시 시작</button>
+              <button id="btnGameOverExit" class="button button-secondary" type="button">종료</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="tap-hint">탭 또는 스페이스로 공전 방향을 바꾸고 중심 코어를 지키세요.</p>
+    </section>
+  </main>
+
+  <div
+    id="exitModal"
+    class="sheet-modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="exitTitle"
+  >
+    <div class="sheet-card">
+      <p class="modal-kicker">EXIT CHECK</p>
+      <h2 id="exitTitle">Orbit Survivor를 종료할까요?</h2>
+      <p class="sheet-copy">진행 중인 라운드는 저장되지 않지만 최고 기록과 사운드 설정은 유지돼요.</p>
+      <div class="modal-actions">
+        <button id="btnCancelExit" class="button button-secondary" type="button">계속 플레이</button>
+        <button id="btnConfirmExit" class="button button-danger" type="button">종료</button>
+      </div>
+    </div>
+  </div>
+
+  <div
+    id="infoModal"
+    class="sheet-modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="infoTitle"
+  >
+    <div class="sheet-card">
+      <button id="btnCloseInfo" class="sheet-close" type="button" aria-label="안내 닫기">닫기</button>
+      <p class="modal-kicker">GAME GUIDE</p>
+      <h2 id="infoTitle">플레이 안내</h2>
+      <p class="sheet-copy">
+        Orbit Survivor는 중심 코어를 향해 날아오는 파편을 회피하는 서바이벌 게임이에요.
+        탭 또는 스페이스로 회전 방향을 즉시 전환할 수 있어요.
+      </p>
+      <p class="sheet-copy">
+        BGM과 효과음은 각각 끄고 켤 수 있고, 토스 앱이 백그라운드로 전환되면 자동으로 멈췄다가
+        돌아오면 다시 이어져요.
+      </p>
+      <div class="info-links">
+        <a href="../privacy.html">개인정보처리방침</a>
+        <a href="../terms.html">이용약관</a>
+        <a href="../contact.html">문의하기</a>
+      </div>
+      <p class="credit">
+        BGM: "Comedy Cartoon Funny Background Music" (Pixabay)
+      </p>
+    </div>
+  </div>
+
+  <script src="toss-bridge.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

@@ -128,9 +128,9 @@
     }
   });
 
-  // webgame-18/toss-bridge-source.js
+  // orbitSurvivor/toss-bridge-source.js
   var require_toss_bridge_source = __commonJS({
-    "webgame-18/toss-bridge-source.js"() {
+    "orbitSurvivor/toss-bridge-source.js"() {
       init_dist();
       var closeViewBridge = createAsyncBridge("closeView");
       var getUserKeyForGameBridge = createAsyncBridge("getUserKeyForGame");
@@ -143,6 +143,12 @@
       var safeAreaInsetsChangeBridge = createEventBridge("safeAreaInsetsChange");
       var backEventBridge = createEventBridge("backEvent");
       var homeEventBridge = createEventBridge("homeEvent");
+      var loadAppsInTossAdMobBridge = createEventBridge("loadAppsInTossAdMob");
+      var showAppsInTossAdMobBridge = createEventBridge("showAppsInTossAdMob");
+      var isAppsInTossAdMobLoadedBridge = createAsyncBridge("isAppsInTossAdMobLoaded");
+      var loadAppsInTossAdMobSupportedBridge = createConstantBridge("loadAppsInTossAdMob_isSupported");
+      var showAppsInTossAdMobSupportedBridge = createConstantBridge("showAppsInTossAdMob_isSupported");
+      var isAppsInTossAdMobLoadedSupportedBridge = createConstantBridge("isAppsInTossAdMobLoaded_isSupported");
       function hasNativeBridge() {
         return typeof window !== "undefined" && Boolean(window.ReactNativeWebView) && Boolean(window.__GRANITE_NATIVE_EMITTER);
       }
@@ -181,7 +187,18 @@
           return fallback;
         }
       }
-      function subscribeToBridge(method, bridgeSubscribe, listener, options) {
+      function callConstantBridge(method, bridgeCall, fallback = false) {
+        if (!hasNativeBridge()) {
+          return fallback;
+        }
+        try {
+          return bridgeCall();
+        } catch (error) {
+          logBridgeWarning(method, error);
+          return fallback;
+        }
+      }
+      function subscribeToBridge(method, bridgeSubscribe, listener, options, errorListener) {
         if (!hasNativeBridge()) {
           return () => {
           };
@@ -194,10 +211,12 @@
             },
             onError: (error) => {
               logBridgeWarning(method, error);
+              errorListener?.(error);
             }
           });
         } catch (error) {
           logBridgeWarning(method, error);
+          errorListener?.(error);
           return () => {
           };
         }
@@ -217,6 +236,54 @@
         async removeItem(key) {
           await callAsyncBridge("removeStorageItem", removeStorageItemBridge, [key], true);
           safeLocalStorageRemove(key);
+        }
+      };
+      var ads = {
+        isAvailable() {
+          return hasNativeBridge() && callConstantBridge("loadAppsInTossAdMob_isSupported", loadAppsInTossAdMobSupportedBridge, false) === true && callConstantBridge("showAppsInTossAdMob_isSupported", showAppsInTossAdMobSupportedBridge, false) === true;
+        },
+        async isLoaded(adGroupId) {
+          if (!hasNativeBridge() || callConstantBridge(
+            "isAppsInTossAdMobLoaded_isSupported",
+            isAppsInTossAdMobLoadedSupportedBridge,
+            false
+          ) !== true) {
+            return false;
+          }
+          return callAsyncBridge(
+            "isAppsInTossAdMobLoaded",
+            isAppsInTossAdMobLoadedBridge,
+            [{ adGroupId }],
+            false
+          );
+        },
+        load(adGroupId, { onEvent = () => {
+        }, onError } = {}) {
+          if (this.isAvailable() !== true) {
+            return () => {
+            };
+          }
+          return subscribeToBridge(
+            "loadAppsInTossAdMob",
+            loadAppsInTossAdMobBridge,
+            onEvent,
+            { adGroupId },
+            onError
+          );
+        },
+        show(adGroupId, { onEvent = () => {
+        }, onError } = {}) {
+          if (this.isAvailable() !== true) {
+            return () => {
+            };
+          }
+          return subscribeToBridge(
+            "showAppsInTossAdMob",
+            showAppsInTossAdMobBridge,
+            onEvent,
+            { adGroupId },
+            onError
+          );
         }
       };
       window.OrbitSurvivorToss = {
@@ -253,10 +320,10 @@
             try {
               const insets = getSafeAreaInsetsBridge();
               return {
-                top: Number((insets == null ? void 0 : insets.top) || 0),
-                right: Number((insets == null ? void 0 : insets.right) || 0),
-                bottom: Number((insets == null ? void 0 : insets.bottom) || 0),
-                left: Number((insets == null ? void 0 : insets.left) || 0)
+                top: Number(insets?.top || 0),
+                right: Number(insets?.right || 0),
+                bottom: Number(insets?.bottom || 0),
+                left: Number(insets?.left || 0)
               };
             } catch (error) {
               logBridgeWarning("getSafeAreaInsets", error);
@@ -269,10 +336,10 @@
               safeAreaInsetsChangeBridge,
               (insets) => {
                 listener({
-                  top: Number((insets == null ? void 0 : insets.top) || 0),
-                  right: Number((insets == null ? void 0 : insets.right) || 0),
-                  bottom: Number((insets == null ? void 0 : insets.bottom) || 0),
-                  left: Number((insets == null ? void 0 : insets.left) || 0)
+                  top: Number(insets?.top || 0),
+                  right: Number(insets?.right || 0),
+                  bottom: Number(insets?.bottom || 0),
+                  left: Number(insets?.left || 0)
                 });
               }
             );
@@ -286,7 +353,8 @@
             return subscribeToBridge("homeEvent", homeEventBridge, listener);
           }
         },
-        storage
+        storage,
+        ads
       };
     }
   });

@@ -77,12 +77,13 @@ npm run worm-lan-server
 - 아이디어/진행 상태: `/Users/user/TapTapCho/checklist.md`
 - BMGD 도입/사용 기록: `/Users/user/TapTapCho/docs/bmad-game-dev-studio.md`
 - 토스 앱 번들 생성/업로드 가이드: `/Users/user/TapTapCho/docs/toss-app-bundle-guide.md`
-- Orbit Survivor 토스 번들 패키지: `/Users/user/TapTapCho/orbit-survivor-ait`
+- Orbit Survivor 폴더: `/Users/user/TapTapCho/orbitSurvivor`
+- Orbit Survivor 토스 번들 패키지: `/Users/user/TapTapCho/orbitSurvivor/toss-package`
 - 서비스 정책 페이지: `/Users/user/TapTapCho/about.html`, `/Users/user/TapTapCho/contact.html`, `/Users/user/TapTapCho/privacy.html`, `/Users/user/TapTapCho/terms.html`, `/Users/user/TapTapCho/dmca.html`
 
-## 8) 토스 미니앱 게임 표준 (webgame-18 기준)
+## 8) 토스 미니앱 게임 표준 (Orbit Survivor 기준)
 
-`Orbit Survivor` (`/Users/user/TapTapCho/webgame-18`)를 토스 게임 미니앱 심사 기준에 맞추면서 정리한 공통 패턴입니다.  
+`Orbit Survivor` (`/Users/user/TapTapCho/orbitSurvivor`)를 토스 게임 미니앱 심사 기준에 맞추면서 정리한 공통 패턴입니다.  
 앞으로 다른 웹게임도 토스에 올릴 때 이 섹션을 기본 템플릿처럼 따라가면 됩니다.
 
 ### 8-1) 참조한 토스 공식 문서
@@ -104,15 +105,15 @@ npm run worm-lan-server
 ### 8-2) 실제로 적용한 방식
 
 - 게임 폴더를 토스 전용 단위로 독립시킨다.
-  - 예시: `/Users/user/TapTapCho/webgame-18`
+  - 예시: `/Users/user/TapTapCho/orbitSurvivor`
   - 공용 사이트 헤더/푸터/가이드 스크립트는 빼고, 게임 화면만 독립적으로 렌더링한다.
 - 레이아웃은 무조건 풀스크린 기준으로 만든다.
   - `viewport-fit=cover` 사용
   - CSS에 `--safe-top/right/bottom/left` 변수를 두고 Safe Area 값으로 반영
   - 토스 기본 X 버튼과 게임 UI가 겹치지 않게 상단 여백을 고려한다.
 - 토스 브리지는 얇은 커스텀 번들로 감싼다.
-  - 현재 구현 파일: `/Users/user/TapTapCho/webgame-18/toss-bridge-source.js`
-  - 브라우저용 번들: `/Users/user/TapTapCho/webgame-18/toss-bridge.js`
+  - 현재 구현 파일: `/Users/user/TapTapCho/orbitSurvivor/toss-bridge-source.js`
+  - 브라우저용 번들: `/Users/user/TapTapCho/orbitSurvivor/toss-bridge.js`
   - 바닐라 HTML/Canvas 게임은 이 방식이 재사용성이 좋다.
 - 게임 진입 시 토스 전용 UX를 적용한다.
   - `setDeviceOrientation({ type: 'portrait' })`
@@ -138,12 +139,12 @@ npm run worm-lan-server
 
 ### 8-3) Orbit Survivor에서 수정한 핵심 파일
 
-- 페이지 구조: `/Users/user/TapTapCho/webgame-18/index.html`
-- 풀스크린 / Safe Area / 모달 스타일: `/Users/user/TapTapCho/webgame-18/style.css`
-- 게임 로직 / 사운드 / 백그라운드 처리 / 토스 저장소 연동: `/Users/user/TapTapCho/webgame-18/game.js`
-- 토스 브리지 소스: `/Users/user/TapTapCho/webgame-18/toss-bridge-source.js`
-- 토스 브리지 번들: `/Users/user/TapTapCho/webgame-18/toss-bridge.js`
-- 광고 메모: `/Users/user/TapTapCho/webgame-18/TOSS_ADS_PLAN.md`
+- 페이지 구조: `/Users/user/TapTapCho/orbitSurvivor/index.html`
+- 풀스크린 / Safe Area / 모달 스타일: `/Users/user/TapTapCho/orbitSurvivor/style.css`
+- 게임 로직 / 사운드 / 백그라운드 처리 / 토스 저장소 연동: `/Users/user/TapTapCho/orbitSurvivor/game.js`
+- 토스 브리지 소스: `/Users/user/TapTapCho/orbitSurvivor/toss-bridge-source.js`
+- 토스 브리지 번들: `/Users/user/TapTapCho/orbitSurvivor/toss-bridge.js`
+- 광고 메모: `/Users/user/TapTapCho/orbitSurvivor/TOSS_ADS_PLAN.md`
 
 같은 패턴을 `Zigzag Memory Run` (`/Users/user/TapTapCho/webgame-21`)에도 적용했습니다.
 
@@ -190,7 +191,7 @@ npm run worm-lan-server
 
 ### 8-6) Orbit Survivor 실제 출시 절차
 
-현재 `Orbit Survivor` 토스 업로드용 패키지는 `/Users/user/TapTapCho/orbit-survivor-ait` 에 따로 정리해 두었습니다.
+현재 `Orbit Survivor` 토스 업로드용 패키지는 `/Users/user/TapTapCho/orbitSurvivor/toss-package` 에 정리해 두었습니다.
 
 중요:
 
@@ -200,44 +201,49 @@ npm run worm-lan-server
 
 실제 출시 순서:
 
-1. 패키지 폴더로 이동한다.
+1. 토스 콘솔의 `앱 정보` 또는 `미니앱 설정`에서 아이콘을 먼저 등록한다.
+
+- 업로드용 아이콘: `/Users/user/TapTapCho/orbitSurvivor/appintos-logo-600.png`
+- 정사각형 PNG, `600x600`
+
+2. 패키지 폴더로 이동한다.
 
 ```bash
-cd /Users/user/TapTapCho/orbit-survivor-ait
+cd /Users/user/TapTapCho/orbitSurvivor/toss-package
 ```
 
-2. 루트 프로젝트에서 `npm install` 이 이미 끝난 상태여야 한다.
+3. 루트 프로젝트에서 `npm install` 이 이미 끝난 상태여야 한다.
 
-3. `.ait` 파일을 다시 생성한다.
+4. `.ait` 파일을 다시 생성한다.
 
 ```bash
 npm run build
 ```
 
-4. 생성된 파일을 확인한다.
+5. 생성된 파일을 확인한다.
 
 ```bash
-ls -lh /Users/user/TapTapCho/orbit-survivor-ait/*.ait
+ls -lh /Users/user/TapTapCho/orbitSurvivor/toss-package/*.ait
 ```
 
-5. 토스 콘솔의 `앱 출시` 화면에서 아래 파일을 업로드한다.
+6. 토스 콘솔의 `앱 출시` 화면에서 아래 파일을 업로드한다.
 
-- 업로드할 파일: `/Users/user/TapTapCho/orbit-survivor-ait/orbitsuvivor.ait`
-- 업로드하면 안 되는 예전 파일: `/Users/user/TapTapCho/orbit-survivor-ait/orbit-survivor.ait`
+- 업로드할 파일: `/Users/user/TapTapCho/orbitSurvivor/toss-package/orbitsuvivor.ait`
+- 업로드하면 안 되는 예전 파일: `/Users/user/TapTapCho/orbitSurvivor/toss-package/orbit-survivor.ait`
 
-6. 업로드가 완료되면 생성된 QR 코드 또는 `intoss-private://...` 테스트 스킴으로 토스앱에서 최종 테스트한다.
+7. 업로드가 완료되면 생성된 QR 코드 또는 `intoss-private://...` 테스트 스킴으로 토스앱에서 최종 테스트한다.
 
 현재 패키지 구성:
 
-- Toss 설정: `/Users/user/TapTapCho/orbit-survivor-ait/granite.config.ts`
-- 웹 번들 준비 스크립트: `/Users/user/TapTapCho/orbit-survivor-ait/scripts/build-web.mjs`
-- 최종 산출물: `/Users/user/TapTapCho/orbit-survivor-ait/orbitsuvivor.ait`
+- Toss 설정: `/Users/user/TapTapCho/orbitSurvivor/toss-package/granite.config.ts`
+- 웹 번들 준비 스크립트: `/Users/user/TapTapCho/orbitSurvivor/toss-package/scripts/build-web.mjs`
+- 최종 산출물: `/Users/user/TapTapCho/orbitSurvivor/toss-package/orbitsuvivor.ait`
 
 ## 9) 토스 인앱광고 메모
 
-현재는 사업자 등록과 광고 그룹 생성 전이라 실제 광고는 붙이지 않은 상태입니다.  
-`Orbit Survivor` 와 `Zigzag Memory Run` 모두 광고 없는 상태로 먼저 출시 준비를 진행하고 있고,
-상세 메모는 `/Users/user/TapTapCho/webgame-18/TOSS_ADS_PLAN.md`, `/Users/user/TapTapCho/webgame-21/TOSS_ADS_PLAN.md` 에 정리했습니다.
+현재 `Orbit Survivor` 는 `토스 앱에서만 보이는 보상형 이어하기` 흐름까지는 구현되어 있습니다.  
+기본값은 Toss 테스트 ID(`ait-ad-test-rewarded-id`)이고, 일반 브라우저로 여는 기존 사이트에는 토스 광고가 나오지 않습니다.
+실광고 전환 전 메모는 `/Users/user/TapTapCho/orbitSurvivor/TOSS_ADS_PLAN.md`, `/Users/user/TapTapCho/webgame-21/TOSS_ADS_PLAN.md` 에 정리했습니다.
 공통 원칙은 아래와 같습니다.
 
 ### 9-1) 전제 조건
@@ -257,6 +263,7 @@ ls -lh /Users/user/TapTapCho/orbit-survivor-ait/*.ait
 
 - `Orbit Survivor` 같은 풀스크린 액션 게임은 `보상형 광고`가 1순위다.
 - 가장 자연스러운 위치는 게임오버 모달의 `광고 보고 1회 이어하기` 버튼이다.
+- 현재 `Orbit Survivor` 는 이 흐름을 토스 전용으로 먼저 구현해 두었다.
 - `Zigzag Memory Run` 같은 기억 퍼즐 게임도 `보상형 광고`가 1순위다.
 - 가장 자연스러운 위치는 게임오버 모달의 `광고 보고 1회 이어하기` 또는 `현재 점수 유지 후 재도전` 버튼이다.
 - 배너 광고는 게임 플레이 화면을 가리기 쉬워서 우선순위가 낮다.

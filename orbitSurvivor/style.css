@@ -170,6 +170,15 @@ h1 {
   border-color: rgba(123, 227, 255, 0.4);
 }
 
+.icon-button:disabled,
+.button:disabled,
+.sheet-close:disabled {
+  cursor: default;
+  opacity: 0.62;
+  transform: none;
+  box-shadow: none;
+}
+
 .icon-button:active,
 .button:active,
 .sheet-close:active {
@@ -251,6 +260,11 @@ h1 {
 .button-danger {
   border-color: rgba(255, 139, 126, 0.28);
   background: linear-gradient(135deg, rgba(120, 34, 32, 0.9), rgba(200, 74, 62, 0.88));
+}
+
+.button-reward {
+  border-color: rgba(141, 255, 219, 0.36);
+  background: linear-gradient(135deg, rgba(22, 108, 84, 0.96), rgba(58, 194, 153, 0.88));
 }
 
 .button[data-active="false"] {
@@ -405,6 +419,18 @@ canvas {
 .stage-modal-card p,
 .sheet-card p {
   margin: 8px 0;
+}
+
+.reward-copy {
+  min-height: 42px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(141, 255, 219, 0.18);
+  background: rgba(9, 31, 26, 0.5);
+  color: rgba(211, 247, 233, 0.88);
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .modal-actions {

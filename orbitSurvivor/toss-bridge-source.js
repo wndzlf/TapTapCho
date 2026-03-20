@@ -15,6 +15,12 @@ const getSafeAreaInsetsBridge = createConstantBridge('getSafeAreaInsets');
 const safeAreaInsetsChangeBridge = createEventBridge('safeAreaInsetsChange');
 const backEventBridge = createEventBridge('backEvent');
 const homeEventBridge = createEventBridge('homeEvent');
+const loadAppsInTossAdMobBridge = createEventBridge('loadAppsInTossAdMob');
+const showAppsInTossAdMobBridge = createEventBridge('showAppsInTossAdMob');
+const isAppsInTossAdMobLoadedBridge = createAsyncBridge('isAppsInTossAdMobLoaded');
+const loadAppsInTossAdMobSupportedBridge = createConstantBridge('loadAppsInTossAdMob_isSupported');
+const showAppsInTossAdMobSupportedBridge = createConstantBridge('showAppsInTossAdMob_isSupported');
+const isAppsInTossAdMobLoadedSupportedBridge = createConstantBridge('isAppsInTossAdMobLoaded_isSupported');
 
 function hasNativeBridge() {
   return typeof window !== 'undefined'
@@ -65,7 +71,20 @@ async function callAsyncBridge(method, bridgeCall, args = [], fallback = false) 
   }
 }
 
-function subscribeToBridge(method, bridgeSubscribe, listener, options) {
+function callConstantBridge(method, bridgeCall, fallback = false) {
+  if (!hasNativeBridge()) {
+    return fallback;
+  }
+
+  try {
+    return bridgeCall();
+  } catch (error) {
+    logBridgeWarning(method, error);
+    return fallback;
+  }
+}
+
+function subscribeToBridge(method, bridgeSubscribe, listener, options, errorListener) {
   if (!hasNativeBridge()) {
     return () => {};
   }
@@ -78,10 +97,12 @@ function subscribeToBridge(method, bridgeSubscribe, listener, options) {
       },
       onError: (error) => {
         logBridgeWarning(method, error);
+        errorListener?.(error);
       },
     });
   } catch (error) {
     logBridgeWarning(method, error);
+    errorListener?.(error);
     return () => {};
   }
 }
@@ -103,6 +124,62 @@ const storage = {
   async removeItem(key) {
     await callAsyncBridge('removeStorageItem', removeStorageItemBridge, [key], true);
     safeLocalStorageRemove(key);
+  },
+};
+
+const ads = {
+  isAvailable() {
+    return hasNativeBridge()
+      && callConstantBridge('loadAppsInTossAdMob_isSupported', loadAppsInTossAdMobSupportedBridge, false) === true
+      && callConstantBridge('showAppsInTossAdMob_isSupported', showAppsInTossAdMobSupportedBridge, false) === true;
+  },
+
+  async isLoaded(adGroupId) {
+    if (
+      !hasNativeBridge()
+      || callConstantBridge(
+        'isAppsInTossAdMobLoaded_isSupported',
+        isAppsInTossAdMobLoadedSupportedBridge,
+        false
+      ) !== true
+    ) {
+      return false;
+    }
+
+    return callAsyncBridge(
+      'isAppsInTossAdMobLoaded',
+      isAppsInTossAdMobLoadedBridge,
+      [{ adGroupId }],
+      false
+    );
+  },
+
+  load(adGroupId, { onEvent = () => {}, onError } = {}) {
+    if (this.isAvailable() !== true) {
+      return () => {};
+    }
+
+    return subscribeToBridge(
+      'loadAppsInTossAdMob',
+      loadAppsInTossAdMobBridge,
+      onEvent,
+      { adGroupId },
+      onError
+    );
+  },
+
+  show(adGroupId, { onEvent = () => {}, onError } = {}) {
+    if (this.isAvailable() !== true) {
+      return () => {};
+    }
+
+    return subscribeToBridge(
+      'showAppsInTossAdMob',
+      showAppsInTossAdMobBridge,
+      onEvent,
+      { adGroupId },
+      onError
+    );
   },
 };
 
@@ -184,4 +261,5 @@ window.OrbitSurvivorToss = {
   },
 
   storage,
+  ads,
 };

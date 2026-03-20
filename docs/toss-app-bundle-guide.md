@@ -63,7 +63,7 @@ Internal Error: Cannot find granite config: /Users/user/TapTapCho/granite.config
 예시:
 
 - [godot-winter-ski-rush-web](/Users/user/TapTapCho/godot-winter-ski-rush-web)
-- [webgame-18](/Users/user/TapTapCho/webgame-18)
+- [orbitSurvivor](/Users/user/TapTapCho/orbitSurvivor)
 - [webgame-21](/Users/user/TapTapCho/webgame-21)
 
 `Winter Ski Rush` 기준으로 실제 런타임 파일은 아래처럼 보인다.
@@ -113,7 +113,7 @@ du -sk /Users/user/TapTapCho/godot-winter-ski-rush-web
 예:
 
 - `/Users/user/TapTapCho/godot-winter-ski-rush-web`
-- `/Users/user/TapTapCho/webgame-18`
+- `/Users/user/TapTapCho/orbitSurvivor`
 - `/Users/user/TapTapCho/webgame-21`
 
 ### 2. 번들 포함 대상을 런타임 파일만 남기도록 정리한다

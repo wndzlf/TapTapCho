@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" role="img" aria-label="Orbit Survivor app logo">
+  <defs>
+    <linearGradient id="bg" x1="84" y1="36" x2="520" y2="572" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0b1529"/>
+      <stop offset="56%" stop-color="#15284a"/>
+      <stop offset="100%" stop-color="#08101d"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(218 176) rotate(90) scale(260)">
+      <stop offset="0%" stop-color="#5a7cff" stop-opacity="0.34"/>
+      <stop offset="100%" stop-color="#5a7cff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="flare" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(410 130) rotate(90) scale(170)">
+      <stop offset="0%" stop-color="#ff8b7e" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="#ff8b7e" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vignette" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(300 300) rotate(90) scale(360)">
+      <stop offset="68%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#03070d" stop-opacity="0.44"/>
+    </radialGradient>
+    <filter id="soft-shadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#02060d" flood-opacity="0.5"/>
+    </filter>
+    <filter id="glow-cyan" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="#7de3ff" flood-opacity="0.42"/>
+    </filter>
+    <filter id="glow-warn" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#ff8b7e" flood-opacity="0.38"/>
+    </filter>
+  </defs>
+
+  <rect width="600" height="600" rx="132" fill="url(#bg)"/>
+  <rect width="600" height="600" rx="132" fill="url(#halo)"/>
+  <rect width="600" height="600" rx="132" fill="url(#flare)"/>
+
+  <g opacity="0.2" fill="#eaf6ff">
+    <circle cx="116" cy="120" r="14"/>
+    <circle cx="164" cy="88" r="6"/>
+    <circle cx="486" cy="98" r="8"/>
+    <circle cx="464" cy="164" r="5"/>
+  </g>
+
+  <g filter="url(#soft-shadow)">
+    <circle cx="300" cy="314" r="148" fill="none" stroke="#10233f" stroke-width="34" opacity="0.6"/>
+  </g>
+
+  <g filter="url(#glow-cyan)">
+    <circle cx="300" cy="314" r="148" fill="none" stroke="#7de3ff" stroke-width="16" opacity="0.94"/>
+    <circle cx="300" cy="314" r="178" fill="none" stroke="#7de3ff" stroke-width="4" opacity="0.14"/>
+  </g>
+
+  <circle cx="300" cy="314" r="28" fill="#1a2c4a"/>
+  <circle cx="300" cy="314" r="11" fill="#28496f" opacity="0.72"/>
+
+  <g filter="url(#glow-cyan)">
+    <circle cx="300" cy="166" r="18" fill="#7de3ff"/>
+    <path d="M315 166L350 176L315 186Z" fill="#9aefff" opacity="0.78"/>
+  </g>
+
+  <g filter="url(#glow-warn)">
+    <circle cx="448" cy="212" r="18" fill="#ff8b7e"/>
+    <circle cx="420" cy="418" r="15" fill="#ffb66b"/>
+  </g>
+
+  <circle cx="162" cy="394" r="10" fill="#ffd86d" opacity="0.9"/>
+  <circle cx="448" cy="212" r="6" fill="#ffd7cf" opacity="0.5"/>
+  <circle cx="420" cy="418" r="5" fill="#fff1d0" opacity="0.48"/>
+
+  <rect width="600" height="600" rx="132" fill="url(#vignette)"/>
+</svg>

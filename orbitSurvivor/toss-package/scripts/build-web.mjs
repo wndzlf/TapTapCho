@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const REPO_ROOT = path.resolve(PACKAGE_ROOT, '..');
+const REPO_ROOT = path.resolve(PACKAGE_ROOT, '..', '..');
 const OUTDIR = path.join(PACKAGE_ROOT, 'dist');
 
 const LEGAL_PAGES = ['about.html', 'contact.html', 'dmca.html', 'privacy.html', 'terms.html'];
@@ -45,7 +45,7 @@ async function buildOrbitSurvivorWebBundle() {
   await mkdir(OUTDIR, { recursive: true });
 
   await writeTransformedFile(
-    path.join(REPO_ROOT, 'webgame-18', 'index.html'),
+    path.join(REPO_ROOT, 'orbitSurvivor', 'index.html'),
     path.join(OUTDIR, 'index.html'),
     (contents) =>
       contents
@@ -55,18 +55,17 @@ async function buildOrbitSurvivorWebBundle() {
   );
 
   await writeTransformedFile(
-    path.join(REPO_ROOT, 'webgame-18', 'game.js'),
+    path.join(REPO_ROOT, 'orbitSurvivor', 'game.js'),
     path.join(OUTDIR, 'game.js'),
     (contents) =>
       contents
-        .replaceAll('../assets/audio/', './assets/audio/')
         .replace("new URL('../', window.location.href)", "new URL('./', window.location.href)"),
   );
 
-  await copyRawFile(path.join(REPO_ROOT, 'webgame-18', 'style.css'), path.join(OUTDIR, 'style.css'));
-  await copyRawFile(path.join(REPO_ROOT, 'webgame-18', 'toss-bridge.js'), path.join(OUTDIR, 'toss-bridge.js'));
+  await copyRawFile(path.join(REPO_ROOT, 'orbitSurvivor', 'style.css'), path.join(OUTDIR, 'style.css'));
+  await copyRawFile(path.join(REPO_ROOT, 'orbitSurvivor', 'toss-bridge.js'), path.join(OUTDIR, 'toss-bridge.js'));
   await copyRawFile(
-    path.join(REPO_ROOT, 'assets', 'audio', 'orbit-survivor-pixabay-492540.mp3'),
+    path.join(REPO_ROOT, 'orbitSurvivor', 'assets', 'audio', 'orbit-survivor-pixabay-492540.mp3'),
     path.join(OUTDIR, 'assets', 'audio', 'orbit-survivor-pixabay-492540.mp3'),
   );
   await copyRawFile(
@@ -84,7 +83,7 @@ async function buildOrbitSurvivorWebBundle() {
 }
 
 buildOrbitSurvivorWebBundle().catch((error) => {
-  console.error('[orbit-survivor-ait] Failed to prepare web bundle.');
+  console.error('[orbitSurvivor/toss-package] Failed to prepare web bundle.');
   console.error(error);
   process.exit(1);
 });

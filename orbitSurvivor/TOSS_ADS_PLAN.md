@@ -4,9 +4,11 @@ Last checked: 2026-03-19
 
 ## Current status
 
-- In-app ads are not implemented yet.
-- The current blocker is that business registration is not complete, so we do not have an ad group ID yet.
-- Until that is done, do not add ad UI that calls a real ad flow.
+- The rewarded continue flow is now implemented in `orbitSurvivor/game.js`.
+- It is enabled only when the app is running inside Toss and the rewarded ad bridge is supported.
+- The current default ID is the Toss rewarded test ID: `ait-ad-test-rewarded-id`.
+- Before a real release, replace it with the production `adGroupId`.
+- The original browser site does not show Toss ads because the Toss native bridge is not available there.
 
 ## What we confirmed from Toss docs
 
@@ -90,7 +92,7 @@ Source:
 - Toss says app sound should pause while the ad is playing.
 - After the ad ends, sound should resume automatically.
 
-This matches the current game structure well because `webgame-18/game.js` already has centralized audio pause/resume behavior.
+This matches the current game structure well because `orbitSurvivor/game.js` already has centralized audio pause/resume behavior.
 
 Source:
 - [Ads intro](https://developers-apps-in-toss.toss.im/ads/intro.html)
@@ -153,16 +155,16 @@ Only consider banner ads if we later create a clearly separate lobby / menu / re
 
 When the blocker is removed, these files are the likely touch points:
 
-- `webgame-18/index.html`
+- `orbitSurvivor/index.html`
   - add a rewarded continue button in the game over modal
-- `webgame-18/game.js`
+- `orbitSurvivor/game.js`
   - preload ad
   - show ad on button click
   - handle reward event
   - pause / resume game audio around the ad lifecycle
-- `webgame-18/toss-bridge-source.js`
+- `orbitSurvivor/toss-bridge-source.js`
   - add ad bridge wrappers for the Toss ad APIs if we keep using the custom bridge approach
-- `webgame-18/toss-bridge.js`
+- `orbitSurvivor/toss-bridge.js`
   - rebuild after updating the source bridge file
 
 ## Implementation note for later
@@ -193,8 +195,8 @@ That means adding wrappers for:
 
 ## Decision for now
 
-Until business registration and ad group creation are done:
+Current implementation policy:
 
-- keep ads out of the shipping UI
-- keep this document as the source of truth
-- when the console is ready, implement rewarded ads first
+- keep the rewarded continue UI Toss-only
+- use the Toss test ID until the console setup is complete
+- switch to the real `adGroupId` only after business registration and settlement review are done

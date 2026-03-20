@@ -35,6 +35,19 @@ const toss = window.OrbitSurvivorToss || {
       }
     },
   },
+  ads: {
+    isAvailable: () => false,
+    isLoaded: async () => false,
+    load: () => () => {},
+    show: () => () => {},
+  },
+};
+
+toss.ads = toss.ads || {
+  isAvailable: () => false,
+  isLoaded: async () => false,
+  load: () => () => {},
+  show: () => () => {},
 };
 
 const canvas = document.getElementById('game');
@@ -58,6 +71,7 @@ const btnCancelExit = document.getElementById('btnCancelExit');
 const btnConfirmExit = document.getElementById('btnConfirmExit');
 const btnRestart = document.getElementById('btnRestart');
 const btnGameOverExit = document.getElementById('btnGameOverExit');
+const btnRewardContinue = document.getElementById('btnRewardContinue');
 
 const gameOverModal = document.getElementById('gameOverModal');
 const exitModal = document.getElementById('exitModal');
@@ -65,12 +79,20 @@ const infoModal = document.getElementById('infoModal');
 const finalScoreEl = document.getElementById('finalScore');
 const finalBestEl = document.getElementById('finalBest');
 const hitFlashEl = document.getElementById('hitFlash');
+const rewardContinueHintEl = document.getElementById('rewardContinueHint');
 
 const W = canvas.width;
 const H = canvas.height;
 const LEGACY_BEST_KEY = 'orbit-survivor-best';
 const LEGACY_SETTINGS_KEY = 'orbit-survivor-settings';
 const STORAGE_PREFIX = 'orbit-survivor';
+const DEFAULT_TOSS_REWARDED_AD_GROUP_ID = 'ait-ad-test-rewarded-id';
+const TOSS_REWARDED_AD_GROUP_ID = typeof window !== 'undefined'
+  && typeof window.__ORBIT_SURVIVOR_TOSS_REWARDED_AD_GROUP_ID === 'string'
+  && window.__ORBIT_SURVIVOR_TOSS_REWARDED_AD_GROUP_ID.trim()
+  ? window.__ORBIT_SURVIVOR_TOSS_REWARDED_AD_GROUP_ID.trim()
+  : DEFAULT_TOSS_REWARDED_AD_GROUP_ID;
+const REWARDED_CONTINUE_INVULN_TICKS = 150;
 
 const BASE_CENTER_X = W * 0.5;
 const BASE_CENTER_Y = H * 0.52;
@@ -118,12 +140,21 @@ let unsubscribeSafeArea = () => {};
 let unsubscribeBack = () => {};
 let unsubscribeHome = () => {};
 let lastStageTouchAt = 0;
+let lastGameOverStreak = 0;
+let rewardedAdSupported = false;
+let rewardedAdStatus = 'hidden';
+let rewardedContinueUsed = false;
+let rewardedAdRewardGranted = false;
+let rewardedAdUnitId = null;
+let rewardedAdLoadCleanup = () => {};
+let rewardedAdShowCleanup = () => {};
+let rewardedAdRetryTimeout = 0;
 
 const projectiles = [];
 const particles = [];
 
 const audioCtx = window.AudioContext ? new AudioContext() : null;
-const bgmAudio = new Audio('../assets/audio/orbit-survivor-pixabay-492540.mp3');
+const bgmAudio = new Audio('./assets/audio/orbit-survivor-pixabay-492540.mp3');
 bgmAudio.loop = true;
 bgmAudio.preload = 'auto';
 bgmAudio.volume = 0.42;
@@ -171,6 +202,10 @@ function showElement(element) {
 function hideElement(element) {
   element?.classList.add('hidden');
   toggleBodyModalLock();
+}
+
+function setElementHidden(element, hidden) {
+  element?.classList.toggle('hidden', hidden);
 }
 
 function setButtonState(button, isActive, activeLabel, inactiveLabel) {
@@ -398,12 +433,209 @@ function spawnProjectile() {
 
 function hideGameOverModal() {
   hideElement(gameOverModal);
+  updateRewardedContinueUi();
 }
 
 function showGameOverModal() {
   finalScoreEl.textContent = String(score);
   finalBestEl.textContent = String(best);
   showElement(gameOverModal);
+  updateRewardedContinueUi();
+}
+
+function clearRewardedAdRetry() {
+  if (rewardedAdRetryTimeout) {
+    window.clearTimeout(rewardedAdRetryTimeout);
+    rewardedAdRetryTimeout = 0;
+  }
+}
+
+function clearRewardedAdLoadSubscription() {
+  rewardedAdLoadCleanup();
+  rewardedAdLoadCleanup = () => {};
+}
+
+function clearRewardedAdShowSubscription() {
+  rewardedAdShowCleanup();
+  rewardedAdShowCleanup = () => {};
+}
+
+function scheduleRewardedAdReload() {
+  if (!rewardedAdSupported || rewardedAdRetryTimeout) return;
+
+  rewardedAdRetryTimeout = window.setTimeout(() => {
+    rewardedAdRetryTimeout = 0;
+    preloadRewardedContinueAd();
+  }, 2500);
+}
+
+function updateRewardedContinueUi() {
+  const shouldShow = rewardedAdSupported && state === 'gameover';
+  setElementHidden(btnRewardContinue, !shouldShow);
+  setElementHidden(rewardContinueHintEl, !shouldShow);
+
+  if (!shouldShow || !btnRewardContinue || !rewardContinueHintEl) {
+    return;
+  }
+
+  let buttonLabel = '광고 준비 중...';
+  let hint = '광고를 불러오는 중이에요. 준비가 끝나면 1회 이어하기를 사용할 수 있어요.';
+  let isDisabled = true;
+
+  if (rewardedContinueUsed) {
+    buttonLabel = '이번 판 이어하기 사용 완료';
+    hint = '보상형 이어하기는 한 라운드에 한 번만 사용할 수 있어요.';
+  } else if (rewardedAdStatus === 'ready') {
+    buttonLabel = '광고 보고 1회 이어하기';
+    hint = '광고 시청이 끝나면 목숨 1개와 잠깐의 보호막으로 이어서 플레이할 수 있어요.';
+    isDisabled = false;
+  } else if (rewardedAdStatus === 'showing') {
+    buttonLabel = '광고 재생 중...';
+    hint = '광고가 닫히면 이어하기 가능 여부를 바로 반영할게요.';
+  } else if (rewardedAdStatus === 'failed') {
+    buttonLabel = '광고 다시 준비 중...';
+    hint = '광고를 불러오지 못했어요. 네트워크 상태를 확인한 뒤 자동으로 다시 시도하고 있어요.';
+  }
+
+  btnRewardContinue.textContent = buttonLabel;
+  btnRewardContinue.disabled = isDisabled;
+  rewardContinueHintEl.textContent = hint;
+}
+
+function setRewardedAdStatus(nextStatus) {
+  rewardedAdStatus = nextStatus;
+  updateRewardedContinueUi();
+}
+
+function preloadRewardedContinueAd() {
+  if (!rewardedAdSupported || !TOSS_REWARDED_AD_GROUP_ID) return;
+  if (rewardedAdStatus === 'loading' || rewardedAdStatus === 'showing') return;
+
+  clearRewardedAdRetry();
+  clearRewardedAdLoadSubscription();
+  rewardedAdUnitId = null;
+  setRewardedAdStatus('loading');
+
+  rewardedAdLoadCleanup = toss.ads.load(TOSS_REWARDED_AD_GROUP_ID, {
+    onEvent: (event) => {
+      if (event?.type !== 'loaded') return;
+
+      rewardedAdUnitId = event.data?.adUnitId || null;
+      clearRewardedAdLoadSubscription();
+      setRewardedAdStatus('ready');
+    },
+    onError: () => {
+      clearRewardedAdLoadSubscription();
+      rewardedAdUnitId = null;
+      setRewardedAdStatus('failed');
+      scheduleRewardedAdReload();
+    },
+  });
+}
+
+function grantRewardedContinue() {
+  if (state !== 'gameover' || rewardedContinueUsed) return;
+
+  const playerX = center.x + Math.cos(orbitAngle) * ORBIT_R;
+  const playerY = center.y + Math.sin(orbitAngle) * ORBIT_R;
+  const restoredStreak = lastGameOverStreak;
+
+  rewardedContinueUsed = true;
+  rewardedAdRewardGranted = false;
+  state = 'running';
+  lives = Math.max(1, lives);
+  streak = Math.max(streak, restoredStreak);
+  lastGameOverStreak = 0;
+  invulnTicks = REWARDED_CONTINUE_INVULN_TICKS;
+  lifeLostTextTicks = 0;
+  shake = 6;
+  projectiles.length = 0;
+
+  addBurst(playerX, playerY, '#8dffdb', 24);
+  addBurst(center.x, center.y, '#7de3ff', 16);
+  updateLivesHud();
+  updateStreakHud();
+  hideGameOverModal();
+  updateStartButtonLabel();
+  setPauseReason(null);
+  void syncAudio();
+}
+
+async function handleRewardContinueClick() {
+  await unlockAudio();
+
+  if (state !== 'gameover' || rewardedContinueUsed || rewardedAdStatus !== 'ready') {
+    return;
+  }
+
+  clearRewardedAdRetry();
+  clearRewardedAdLoadSubscription();
+  clearRewardedAdShowSubscription();
+  rewardedAdRewardGranted = false;
+  setPauseReason('ad');
+  setRewardedAdStatus('showing');
+
+  rewardedAdShowCleanup = toss.ads.show(TOSS_REWARDED_AD_GROUP_ID, {
+    onEvent: (event) => {
+      switch (event?.type) {
+        case 'userEarnedReward':
+          rewardedAdRewardGranted = true;
+          break;
+        case 'dismissed':
+          clearRewardedAdShowSubscription();
+          if (rewardedAdRewardGranted) {
+            grantRewardedContinue();
+          } else {
+            rewardedAdRewardGranted = false;
+            setPauseReason(null);
+          }
+          preloadRewardedContinueAd();
+          break;
+        case 'failedToShow':
+          clearRewardedAdShowSubscription();
+          rewardedAdRewardGranted = false;
+          setPauseReason(null);
+          setRewardedAdStatus('failed');
+          scheduleRewardedAdReload();
+          break;
+        default:
+          break;
+      }
+    },
+    onError: () => {
+      clearRewardedAdShowSubscription();
+      rewardedAdRewardGranted = false;
+      setPauseReason(null);
+      setRewardedAdStatus('failed');
+      scheduleRewardedAdReload();
+    },
+  });
+}
+
+async function initializeRewardedAds() {
+  rewardedAdSupported = toss.isAvailable()
+    && Boolean(TOSS_REWARDED_AD_GROUP_ID)
+    && toss.ads.isAvailable() === true;
+
+  if (!rewardedAdSupported) {
+    rewardedAdUnitId = null;
+    setRewardedAdStatus('hidden');
+    return;
+  }
+
+  if (typeof toss.ads.isLoaded === 'function') {
+    try {
+      const isLoaded = await toss.ads.isLoaded(TOSS_REWARDED_AD_GROUP_ID);
+      if (isLoaded) {
+        setRewardedAdStatus('ready');
+        return;
+      }
+    } catch (error) {
+      rewardedAdUnitId = null;
+    }
+  }
+
+  preloadRewardedContinueAd();
 }
 
 function setPauseReason(nextReason) {
@@ -465,10 +697,12 @@ function resetGame() {
   score = 0;
   lives = MAX_LIVES;
   streak = 0;
+  lastGameOverStreak = 0;
   tick = 0;
   shake = 0;
   invulnTicks = 0;
   lifeLostTextTicks = 0;
+  rewardedContinueUsed = false;
 
   orbitAngle = -Math.PI * 0.5;
   orbitDir = 1;
@@ -489,6 +723,7 @@ function resetGame() {
   updateLivesHud();
   updateStreakHud();
   hideGameOverModal();
+  updateRewardedContinueUi();
   updateStartButtonLabel();
 }
 
@@ -528,6 +763,7 @@ function endGame() {
   best = Math.max(best, score);
   updateBestHud();
   void persistBest();
+  lastGameOverStreak = streak;
   streak = 0;
   updateStreakHud();
   showGameOverModal();
@@ -1011,6 +1247,7 @@ async function initializeTossBridge() {
   }
 
   await loadPersistedState();
+  await initializeRewardedAds();
 }
 
 function handleVisibilityChange() {
@@ -1143,6 +1380,9 @@ function attachEventListeners() {
   btnRestart.addEventListener('click', () => {
     void startGame();
   });
+  btnRewardContinue?.addEventListener('click', () => {
+    void handleRewardContinueClick();
+  });
   btnGameOverExit.addEventListener('click', openExitModal);
   btnExit.addEventListener('click', openExitModal);
   btnCancelExit.addEventListener('click', closeExitModal);
@@ -1180,6 +1420,9 @@ function attachEventListeners() {
   });
 
   window.addEventListener('beforeunload', () => {
+    clearRewardedAdRetry();
+    clearRewardedAdLoadSubscription();
+    clearRewardedAdShowSubscription();
     unsubscribeSafeArea();
     unsubscribeBack();
     unsubscribeHome();

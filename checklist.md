@@ -21,7 +21,7 @@
 | 15 | Drift One-Tap | 원터치 드리프트 | 제거 | webgame-15 |
 | 16 | Slide Puzzle Rush | 한 줄 퍼즐 정렬 | 완료 | webgame-16 |
 | 17 | Cross Road Micro | 타이밍 길건너기 | 완료 | webgame-17 |
-| 18 | Orbit Survivor | 궤도 회피 생존 | 완료 | webgame-18 |
+| 18 | Orbit Survivor | 궤도 회피 생존 | 완료 | orbitSurvivor |
 | 19 | Merge 2048 Tiny | 숫자 병합 | 완료 | webgame-19 |
 | 20 | Lights Out Rush | 격자 토글 퍼즐 | 완료 | webgame-20 |
 | 21 | Zigzag Memory Run | 좌우 패턴 기억 | 완료 | webgame-21 |
