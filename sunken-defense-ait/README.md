@@ -20,6 +20,7 @@ npm run build
 ## 업로드 전 체크
 
 1. `granite.config.ts`의 `appName`이 토스 개발자센터에 등록한 실제 앱 이름과 정확히 같은지 확인합니다.
+   현재 설정값은 `sunkendefense`입니다.
 2. `npm run build` 후 생성된 `.ait` 파일을 토스 콘솔 또는 `npx ait deploy`로 업로드합니다.
 3. 토스앱 QR 테스트에서 아래 항목을 확인합니다.
 
