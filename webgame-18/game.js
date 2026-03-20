@@ -117,6 +117,7 @@ let userHash = null;
 let unsubscribeSafeArea = () => {};
 let unsubscribeBack = () => {};
 let unsubscribeHome = () => {};
+let lastStageTouchAt = 0;
 
 const projectiles = [];
 const particles = [];
@@ -1070,7 +1071,37 @@ function handleCanvasPress() {
   void startGame();
 }
 
+function installTouchZoomGuard() {
+  if (!stageCard) return;
+
+  const preventZoomGesture = (event) => {
+    event.preventDefault();
+  };
+
+  const preventMultiTouchZoom = (event) => {
+    if (event.touches.length > 1) {
+      event.preventDefault();
+    }
+  };
+
+  const preventDoubleTapZoom = (event) => {
+    const now = performance.now();
+    if (now - lastStageTouchAt < 280) {
+      event.preventDefault();
+    }
+    lastStageTouchAt = now;
+  };
+
+  stageCard.addEventListener('touchstart', preventMultiTouchZoom, { passive: false });
+  stageCard.addEventListener('touchmove', preventMultiTouchZoom, { passive: false });
+  stageCard.addEventListener('touchend', preventDoubleTapZoom, { passive: false });
+  document.addEventListener('gesturestart', preventZoomGesture, { passive: false });
+  document.addEventListener('gesturechange', preventZoomGesture, { passive: false });
+  document.addEventListener('gestureend', preventZoomGesture, { passive: false });
+}
+
 function attachEventListeners() {
+  installTouchZoomGuard();
   window.addEventListener('resize', resizeStage);
   window.addEventListener('orientationchange', resizeStage);
   document.addEventListener('visibilitychange', handleVisibilityChange);

@@ -77,6 +77,7 @@ npm run worm-lan-server
 - 아이디어/진행 상태: `/Users/user/TapTapCho/checklist.md`
 - BMGD 도입/사용 기록: `/Users/user/TapTapCho/docs/bmad-game-dev-studio.md`
 - 토스 앱 번들 생성/업로드 가이드: `/Users/user/TapTapCho/docs/toss-app-bundle-guide.md`
+- Orbit Survivor 토스 번들 패키지: `/Users/user/TapTapCho/orbit-survivor-ait`
 - 서비스 정책 페이지: `/Users/user/TapTapCho/about.html`, `/Users/user/TapTapCho/contact.html`, `/Users/user/TapTapCho/privacy.html`, `/Users/user/TapTapCho/terms.html`, `/Users/user/TapTapCho/dmca.html`
 
 ## 8) 토스 미니앱 게임 표준 (webgame-18 기준)
@@ -186,6 +187,51 @@ npm run worm-lan-server
   - 실제 서비스: `https://<appName>.apps.tossmini.com`
   - QR 테스트: `https://<appName>.private-apps.tossmini.com`
 - 테스트 환경에서 되더라도 라이브 환경에서 다시 확인한다.
+
+### 8-6) Orbit Survivor 실제 출시 절차
+
+현재 `Orbit Survivor` 토스 업로드용 패키지는 `/Users/user/TapTapCho/orbit-survivor-ait` 에 따로 정리해 두었습니다.
+
+중요:
+
+- 토스 콘솔의 실제 `appName` 은 `orbitsuvivor` 이다.
+- 오타처럼 보여도 콘솔 값과 완전히 같아야 한다.
+- `appName` 이 다르면 업로드 시 `.ait 번들 내 appName이 다릅니다.` 오류가 난다.
+
+실제 출시 순서:
+
+1. 패키지 폴더로 이동한다.
+
+```bash
+cd /Users/user/TapTapCho/orbit-survivor-ait
+```
+
+2. 루트 프로젝트에서 `npm install` 이 이미 끝난 상태여야 한다.
+
+3. `.ait` 파일을 다시 생성한다.
+
+```bash
+npm run build
+```
+
+4. 생성된 파일을 확인한다.
+
+```bash
+ls -lh /Users/user/TapTapCho/orbit-survivor-ait/*.ait
+```
+
+5. 토스 콘솔의 `앱 출시` 화면에서 아래 파일을 업로드한다.
+
+- 업로드할 파일: `/Users/user/TapTapCho/orbit-survivor-ait/orbitsuvivor.ait`
+- 업로드하면 안 되는 예전 파일: `/Users/user/TapTapCho/orbit-survivor-ait/orbit-survivor.ait`
+
+6. 업로드가 완료되면 생성된 QR 코드 또는 `intoss-private://...` 테스트 스킴으로 토스앱에서 최종 테스트한다.
+
+현재 패키지 구성:
+
+- Toss 설정: `/Users/user/TapTapCho/orbit-survivor-ait/granite.config.ts`
+- 웹 번들 준비 스크립트: `/Users/user/TapTapCho/orbit-survivor-ait/scripts/build-web.mjs`
+- 최종 산출물: `/Users/user/TapTapCho/orbit-survivor-ait/orbitsuvivor.ait`
 
 ## 9) 토스 인앱광고 메모
 
