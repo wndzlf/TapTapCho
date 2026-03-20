@@ -146,15 +146,15 @@ npm run worm-lan-server
 - 토스 브리지 번들: `/Users/user/TapTapCho/orbitSurvivor/toss-bridge.js`
 - 광고 메모: `/Users/user/TapTapCho/orbitSurvivor/TOSS_ADS_PLAN.md`
 
-같은 패턴을 `Zigzag Memory Run` (`/Users/user/TapTapCho/webgame-21`)에도 적용했습니다.
+같은 패턴을 `Zigzag Memory Run` (`/Users/user/TapTapCho/zigzag-memory-run`)에도 적용했습니다.
 
-- 게임별 README / 토스 출시 메모: `/Users/user/TapTapCho/webgame-21/README.md`
-- 페이지 구조: `/Users/user/TapTapCho/webgame-21/index.html`
-- 풀스크린 / Safe Area / 모달 스타일: `/Users/user/TapTapCho/webgame-21/style.css`
-- 게임 로직 / 사운드 / 백그라운드 처리 / 토스 저장소 연동: `/Users/user/TapTapCho/webgame-21/game.js`
-- 토스 브리지 소스: `/Users/user/TapTapCho/webgame-21/toss-bridge-source.js`
-- 토스 브리지 번들: `/Users/user/TapTapCho/webgame-21/toss-bridge.js`
-- 광고 메모: `/Users/user/TapTapCho/webgame-21/TOSS_ADS_PLAN.md`
+- 게임별 README / 토스 출시 메모: `/Users/user/TapTapCho/zigzag-memory-run/README.md`
+- 페이지 구조: `/Users/user/TapTapCho/zigzag-memory-run/index.html`
+- 풀스크린 / Safe Area / 모달 스타일: `/Users/user/TapTapCho/zigzag-memory-run/style.css`
+- 게임 로직 / 사운드 / 백그라운드 처리 / 토스 저장소 연동: `/Users/user/TapTapCho/zigzag-memory-run/game.js`
+- 토스 브리지 소스: `/Users/user/TapTapCho/zigzag-memory-run/toss-bridge-source.js`
+- 토스 브리지 번들: `/Users/user/TapTapCho/zigzag-memory-run/toss-bridge.js`
+- 광고 메모: `/Users/user/TapTapCho/zigzag-memory-run/TOSS_ADS_PLAN.md`
 
 같은 패턴을 `Winter Ski Rush` (`/Users/user/TapTapCho/godot-winter-ski-rush-web`)에도 적용했습니다.
 
@@ -310,7 +310,7 @@ ls -lh /Users/user/TapTapCho/orbitSurvivor/toss-package/*.ait
 
 현재 `Orbit Survivor` 는 `토스 앱에서만 보이는 보상형 이어하기` 흐름까지는 구현되어 있습니다.  
 기본값은 Toss 테스트 ID(`ait-ad-test-rewarded-id`)이고, 일반 브라우저로 여는 기존 사이트에는 토스 광고가 나오지 않습니다.
-실광고 전환 전 메모는 `/Users/user/TapTapCho/orbitSurvivor/TOSS_ADS_PLAN.md`, `/Users/user/TapTapCho/webgame-21/TOSS_ADS_PLAN.md` 에 정리했습니다.
+실광고 전환 전 메모는 `/Users/user/TapTapCho/orbitSurvivor/TOSS_ADS_PLAN.md`, `/Users/user/TapTapCho/zigzag-memory-run/TOSS_ADS_PLAN.md` 에 정리했습니다.
 공통 원칙은 아래와 같습니다.
 
 ### 9-1) 전제 조건
