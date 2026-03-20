@@ -9,8 +9,11 @@
     "multi-hub-server": "node scripts/taptap-multi-hub-server.js",
     "generate-thumbnails": "node scripts/generate-thumbnails.js",
     "sync-real-estate-watch": "node scripts/sync-real-estate-watch.mjs",
+    "sync-officetel-watch": "node scripts/sync-officetel-watch.mjs",
     "real-estate-watch:toss:build": "npm --prefix real-estate-watch/toss-package run build",
-    "real-estate-watch:toss:dev": "npm --prefix real-estate-watch/toss-package run dev"
+    "real-estate-watch:toss:dev": "npm --prefix real-estate-watch/toss-package run dev",
+    "officetel-watch:toss:build": "npm --prefix officetel-watch/toss-package run build",
+    "officetel-watch:toss:dev": "npm --prefix officetel-watch/toss-package run dev"
   },
   "dependencies": {
     "ws": "^8.18.0"
