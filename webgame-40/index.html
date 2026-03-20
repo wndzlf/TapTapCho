@@ -1,212 +1,232 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Sunken Sixway Defense</title>
-  
-  <link rel="stylesheet" href="style.css?v=20260309a" />
-  <link rel="stylesheet" href="../assets/css/site-quality.css" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+  />
+  <meta name="theme-color" content="#07101c" />
+  <title>선큰 식스웨이 디펜스</title>
+  <link rel="stylesheet" href="style.css?v=20260320a" />
 </head>
 <body>
   <div class="wrap">
-    <header>
+    <header class="game-header">
+      <div class="utility-bar">
+        <div class="bridge-group">
+          <span id="bridgeBadge" class="bridge-badge badge-preview">웹 미리보기</span>
+          <p id="userKeyHint" class="bridge-copy">토스 게임 계정과 저장소를 확인하고 있어요.</p>
+        </div>
+        <div class="utility-actions">
+          <button id="btnInfo" class="utility-btn" type="button">안내</button>
+          <button id="btnMusic" class="utility-btn" type="button" aria-pressed="true">BGM 켜짐</button>
+          <button id="btnSfx" class="utility-btn" type="button" aria-pressed="true">효과음 켜짐</button>
+          <button id="btnExit" class="utility-btn utility-btn-danger" type="button">종료</button>
+        </div>
+      </div>
+
+      <div class="title-block">
+        <div>
+          <p class="eyebrow">토스 미니앱 게임</p>
+          <h1>선큰 식스웨이 디펜스</h1>
+          <p class="header-copy">
+            육방향 방어선 위에 선큰을 배치하고, 코어 공방으로 성장하며, 50 스테이지까지 황제를 지켜내세요.
+          </p>
+        </div>
+      </div>
+
       <div class="top-row">
-        <div class="mode-tabs left-group">
-          <button class="mode-tab active" id="tabSingle" type="button">Single</button>
-          <a class="mode-tab" href="./multi.html">Multi</a>
+        <div class="mode-tabs left-group" aria-label="게임 모드">
+          <button class="mode-tab active" id="tabSingle" type="button">싱글</button>
+          <a class="mode-tab" href="./multi.html">멀티</a>
         </div>
-        <div class="mode-tabs right-group">
-          <button class="mode-tab rank-toggle" id="btnRankToggle" type="button">Rank</button>
-          <button class="mode-tab detail-toggle" id="btnDetailToggle" type="button">Detail</button>
+        <div class="mode-tabs right-group" aria-label="패널 전환">
+          <button class="mode-tab rank-toggle" id="btnRankToggle" type="button">랭킹</button>
+          <button class="mode-tab detail-toggle" id="btnDetailToggle" type="button">유닛 안내</button>
         </div>
-        <section class="single-rank rank-hidden" id="singleRankPanel" aria-label="Single leaderboard">
+        <section class="single-rank rank-hidden" id="singleRankPanel" aria-label="싱글 랭킹">
           <div class="rank-head">
-            <strong>Single Leaderboard</strong>
-            <span id="rankScope">LOCAL</span>
+            <strong>싱글 랭킹</strong>
+            <span id="rankScope">로컬</span>
           </div>
           <div class="rank-controls rank-controls-main">
-            <input id="rankName" type="text" maxlength="14" placeholder="Name" />
-            <button id="rankSave" type="button">Save</button>
-            <button id="rankRefresh" type="button">Refresh</button>
+            <input id="rankName" type="text" maxlength="14" placeholder="닉네임" />
+            <button id="rankSave" type="button">저장</button>
+            <button id="rankRefresh" type="button">새로고침</button>
           </div>
           <ol class="rank-list" id="rankList"></ol>
-          <div class="rank-status" id="rankStatus">Loading local leaderboard...</div>
+          <div class="rank-status" id="rankStatus">로컬 랭킹을 불러오는 중...</div>
         </section>
-        <section class="sunken-detail detail-hidden" id="detailPanel" aria-label="Sunken details">
-          <div class="detail-head">Sunken Details</div>
+        <section class="sunken-detail detail-hidden" id="detailPanel" aria-label="선큰 유닛 안내">
+          <div class="detail-head">선큰 유닛 안내</div>
           <div class="detail-grid">
             <article class="detail-card">
               <div class="detail-icon" data-kind="sunken"></div>
               <div class="detail-body">
-                <h3>Sunken</h3>
-                <div class="detail-stats">DMG 30 · Range 105 · Reload 0.50s · HP 250</div>
-                <div class="detail-story">Born in the first tide, it fires clean and true. No tricks, just steady pressure. It anchors the line.</div>
+                <h3>기본 선큰</h3>
+                <div class="detail-stats">공격력 30 · 사거리 105 · 재장전 0.50초 · 체력 250</div>
+                <div class="detail-story">가장 안정적인 기본 전력입니다. 초반 방어선의 뼈대를 세우고 후반 융합의 출발점이 됩니다.</div>
               </div>
             </article>
             <article class="detail-card">
               <div class="detail-icon" data-kind="speedSunken"></div>
               <div class="detail-body">
-                <h3>Speed Sunken</h3>
-                <div class="detail-stats">DMG 18 · Range 124 · Reload 0.28s · HP 190</div>
-                <div class="detail-story">It never slows. Short bursts carve openings fast. Use it to keep the lane thin.</div>
+                <h3>속사 선큰</h3>
+                <div class="detail-stats">공격력 18 · 사거리 124 · 재장전 0.28초 · 체력 190</div>
+                <div class="detail-story">연사력이 뛰어나 얇게 새는 적을 빠르게 정리합니다. 긴 구간 압박을 유지할 때 특히 강합니다.</div>
               </div>
             </article>
             <article class="detail-card">
               <div class="detail-icon" data-kind="tankerSunken"></div>
               <div class="detail-body">
-                <h3>Tanker Sunken</h3>
-                <div class="detail-stats">DMG 12 · Range 92 · Reload 0.96s · HP 760</div>
-                <div class="detail-story">It absorbs the worst waves. The steel shell was built to endure. Enemies stall and fade.</div>
+                <h3>탱커 선큰</h3>
+                <div class="detail-stats">공격력 12 · 사거리 92 · 재장전 0.96초 · 체력 760</div>
+                <div class="detail-story">강한 내구력으로 적 시선을 끌어 전선을 버팁니다. 보스가 밀고 들어오는 구간에서 시간을 벌어줍니다.</div>
               </div>
             </article>
             <article class="detail-card">
               <div class="detail-icon" data-kind="sunkenHammer"></div>
               <div class="detail-body">
-                <h3>Hammer Sunken</h3>
-                <div class="detail-stats">DMG 46 · Range 84 · Reload 0.95s · HP 320</div>
-                <div class="detail-story">Every hit feels heavy. One strike breaks a push. It punishes anything that gets close.</div>
+                <h3>해머 선큰</h3>
+                <div class="detail-stats">공격력 46 · 사거리 84 · 재장전 0.95초 · 체력 320</div>
+                <div class="detail-story">짧은 사거리 대신 강한 한 방을 갖춘 근접 화력형입니다. 좁은 길목과 보스 저지선에 잘 맞습니다.</div>
               </div>
             </article>
             <article class="detail-card">
               <div class="detail-icon" data-kind="sunkenSplash"></div>
               <div class="detail-body">
-                <h3>Splash Sunken</h3>
-                <div class="detail-stats">DMG 36 · Range 114 · Reload 0.90s · HP 290</div>
-                <div class="detail-story">Its shots bloom outward. Crowds melt in seconds. The lane stays clear.</div>
+                <h3>광역 선큰</h3>
+                <div class="detail-stats">공격력 36 · 사거리 114 · 재장전 0.90초 · 체력 290</div>
+                <div class="detail-story">폭발 범위 피해로 밀집 웨이브를 녹여냅니다. 중반 이후 적 수가 급격히 늘어날 때 핵심 광역딜 역할을 맡습니다.</div>
               </div>
             </article>
             <article class="detail-card">
               <div class="detail-icon" data-kind="sunkenNova"></div>
               <div class="detail-body">
-                <h3>Nova Sunken</h3>
-                <div class="detail-stats">DMG 15 · Range 124 · Reload 1.05s · HP 275</div>
-                <div class="detail-story">Six cursed emerald lights sweep the field. Enemies panic and scatter. The glow never rests.</div>
+                <h3>노바 선큰</h3>
+                <div class="detail-stats">공격력 15 · 사거리 124 · 재장전 1.05초 · 체력 275</div>
+                <div class="detail-story">여섯 갈래 탄환으로 넓은 범위를 지속 견제합니다. 라인이 갈라지는 구간에서 안정성이 높습니다.</div>
               </div>
             </article>
             <article class="detail-card">
               <div class="detail-icon" data-kind="sunkenStun"></div>
               <div class="detail-body">
-                <h3>Stun Sunken</h3>
-                <div class="detail-stats">DMG 20 · Range 120 · Reload 1.12s · HP 300</div>
-                <div class="detail-story">It freezes a charge at the edge. One shock can lock a chain. Time becomes your ally.</div>
+                <h3>기절 선큰</h3>
+                <div class="detail-stats">공격력 20 · 사거리 120 · 재장전 1.12초 · 체력 300</div>
+                <div class="detail-story">적을 멈춰 세우는 제어 특화 유닛입니다. 위기 구간을 버티게 해 주지만 특정 보스 스테이지에는 효율이 떨어집니다.</div>
               </div>
             </article>
             <article class="detail-card">
               <div class="detail-icon" data-kind="lottoSunken"></div>
               <div class="detail-body">
-                <h3>Lotto Sunken</h3>
-                <div class="detail-stats">DMG 22 · Range 104 · Reload 0.95s · HP 280</div>
-                <div class="detail-story">Built from lucky scraps, it surprises often. Poison lingers after each hit. Risk pays in waves.</div>
+                <h3>행운 선큰</h3>
+                <div class="detail-stats">공격력 22 · 사거리 104 · 재장전 0.95초 · 체력 280</div>
+                <div class="detail-story">추첨에 성공해야 배치할 수 있는 희귀 선큰입니다. 독 피해가 누적돼 긴 교전에서 의외의 힘을 냅니다.</div>
               </div>
             </article>
           </div>
         </section>
       </div>
-      <h1>Sunken Sixway Defense</h1>
     </header>
 
     <div class="hud" id="hud">
-      <div class="stat">Stage <b id="stageText">1</b>/50</div>
-      <div class="stat">Kills <b id="killsText">0</b></div>
-      <div class="stat">Time <b id="timeText">0:00</b></div>
-      <div class="stat stat-gold">Gold <b id="goldText">0</b></div>
-      <div class="stat">Core <b id="coreText">0</b></div>
-      <div class="stat">Speed <b id="speedText">1.00x</b></div>
-      <div class="stat">Emperor <b id="baseText">20/20</b></div>
-      <div class="stat">Alive <b id="aliveText">0</b></div>
-      <div class="stat">Queue <b id="queueText">0</b></div>
+      <div class="stat">스테이지 <b id="stageText">1</b>/50</div>
+      <div class="stat">처치 <b id="killsText">0</b></div>
+      <div class="stat">시간 <b id="timeText">0:00</b></div>
+      <div class="stat stat-gold">골드 <b id="goldText">0</b></div>
+      <div class="stat">코어 <b id="coreText">0</b></div>
+      <div class="stat">배속 <b id="speedText">1.00x</b></div>
+      <div class="stat">황제 <b id="baseText">20/20</b></div>
+      <div class="stat">남은 적 <b id="aliveText">0</b></div>
+      <div class="stat">대기열 <b id="queueText">0</b></div>
     </div>
 
     <div class="quick-build" id="quickBuild">
       <button class="build-btn" data-kind="sunken" id="btnSunken" type="button">
         <span class="icon">S</span>
-        <span class="name">Sunken</span>
+        <span class="name">기본 선큰</span>
         <span class="cost">40</span>
       </button>
-      <!-- Slow Sunken removed -->
-      <!-- Long Sunken removed -->
       <button class="build-btn" data-kind="speedSunken" id="btnSpeedSunken" type="button">
         <span class="icon">P</span>
-        <span class="name">Speed Sunken</span>
+        <span class="name">속사 선큰</span>
         <span class="cost">70</span>
       </button>
       <button class="build-btn" data-kind="tankerSunken" id="btnTankerSunken" type="button">
         <span class="icon">K</span>
-        <span class="name">Tanker Sunken</span>
+        <span class="name">탱커 선큰</span>
         <span class="cost">95</span>
       </button>
       <button class="build-btn" data-kind="sunkenHammer" id="btnSunkenHammer" type="button">
         <span class="icon">H</span>
-        <span class="name">Hammer Sunken</span>
+        <span class="name">해머 선큰</span>
         <span class="cost">120</span>
       </button>
       <button class="build-btn" data-kind="sunkenSplash" id="btnSunkenSplash" type="button">
         <span class="icon">X</span>
-        <span class="name">Splash Sunken</span>
+        <span class="name">광역 선큰</span>
         <span class="cost">130</span>
       </button>
       <button class="build-btn" data-kind="sunkenNova" id="btnSunkenNova" type="button">
         <span class="icon">V</span>
-        <span class="name">Nova Sunken</span>
+        <span class="name">노바 선큰</span>
         <span class="cost">145</span>
       </button>
       <button class="build-btn" data-kind="sunkenStun" id="btnSunkenStun" type="button">
         <span class="icon">T</span>
-        <span class="name">Stun Sunken</span>
+        <span class="name">기절 선큰</span>
         <span class="cost">165</span>
       </button>
-      <!-- Obelisk removed -->
-      <!-- Snare removed -->
       <button class="build-btn mode-btn" id="btnSellMode" data-action="toggle-sell" type="button">
         <span class="icon">E</span>
-        <span class="name">SELL OFF</span>
-        <span class="cost">Sell mode</span>
+        <span class="name">판매 OFF</span>
+        <span class="cost">판매 모드</span>
       </button>
       <button class="build-btn mode-btn" id="btnSpeedUp" data-action="speed-up" type="button">
         <span class="icon">+</span>
-        <span class="name">Speed +</span>
+        <span class="name">배속 +</span>
         <span class="cost">+0.25x</span>
       </button>
       <button class="build-btn mode-btn" id="btnSpeedDown" data-action="speed-down" type="button">
         <span class="icon">-</span>
-        <span class="name">Speed -</span>
+        <span class="name">배속 -</span>
         <span class="cost">-0.25x</span>
       </button>
       <button class="build-btn mode-btn pause-btn" id="btnPause" data-action="toggle-pause" type="button">
         <span class="icon">⏸</span>
-        <span class="name">Pause</span>
-        <span class="cost">Pause</span>
+        <span class="name">일시정지</span>
+        <span class="cost">일시정지</span>
       </button>
       <button class="build-btn mode-btn" id="btnMerge" data-action="toggle-merge" type="button">
         <span class="icon">⛓</span>
-        <span class="name">Merge</span>
-        <span class="cost">Merge 0/5</span>
+        <span class="name">융합</span>
+        <span class="cost">융합 0/5</span>
       </button>
       <button class="build-btn mode-btn" id="btnChoLotto" data-action="cho-lotto" type="button">
         <span class="icon">🎲</span>
-        <span class="name">Lotto Sunken</span>
-        <span class="cost">1000 Gold</span>
+        <span class="name">행운 추첨</span>
+        <span class="cost">1000 골드</span>
       </button>
       <button class="build-btn mode-btn" id="btnCull" data-action="cull-enemies" type="button">
         <span class="icon">☠</span>
-        <span class="name">-50% ALL ENEMY HP</span>
-        <span class="cost">10000 Gold</span>
+        <span class="name">적 약화</span>
+        <span class="cost">10000 골드</span>
       </button>
       <button class="build-btn mode-btn core-btn" id="btnCoreWorkshop" data-action="open-workshop" type="button">
         <span class="icon">C</span>
-        <span class="name">Core Workshop</span>
-        <span class="cost">Core 0</span>
+        <span class="name">코어 공방</span>
+        <span class="cost">코어 0</span>
       </button>
       <button class="build-btn mode-btn ad-reward-btn" id="btnRewardGold" data-action="reward-gold" type="button">
         <span class="icon">🎁</span>
-        <span class="name">Supply Drop</span>
-        <span class="cost">+220 Gold</span>
+        <span class="name">보급 투하</span>
+        <span class="cost">+220 골드</span>
       </button>
       <button class="build-btn mode-btn ult-btn" id="btnEmperorShield" data-action="emperor-shield" type="button">
         <span class="icon">R</span>
-        <span class="name">EMPEROR SHIELD</span>
-        <span class="cost">1000 Gold / 10s</span>
+        <span class="name">황제 보호막</span>
+        <span class="cost">1000 골드 / 10초</span>
       </button>
     </div>
 
@@ -215,16 +235,60 @@
     </div>
 
     <div class="arena">
-      <canvas id="game" width="960" height="540"></canvas>
+      <canvas id="game" width="960" height="540" aria-label="선큰 식스웨이 디펜스 게임 화면"></canvas>
       <div class="overlay" id="overlay"></div>
     </div>
 
     <footer></footer>
   </div>
 
+  <div
+    id="exitModal"
+    class="sheet-modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="exitTitle"
+  >
+    <div class="sheet-card">
+      <p class="modal-kicker">종료 확인</p>
+      <h2 id="exitTitle">선큰 식스웨이 디펜스를 종료할까요?</h2>
+      <p class="sheet-copy">진행 중인 스테이지는 저장되지 않지만 코어 성장, 랭킹 기록, 사운드 설정은 유지돼요.</p>
+      <div class="modal-actions">
+        <button id="btnCancelExit" class="sheet-button" type="button">계속 플레이</button>
+        <button id="btnConfirmExit" class="sheet-button sheet-button-danger" type="button">종료</button>
+      </div>
+    </div>
+  </div>
+
+  <div
+    id="infoModal"
+    class="sheet-modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="infoTitle"
+  >
+    <div class="sheet-card">
+      <button id="btnCloseInfo" class="sheet-close" type="button" aria-label="안내 닫기">닫기</button>
+      <p class="modal-kicker">플레이 가이드</p>
+      <h2 id="infoTitle">플레이 안내</h2>
+      <p class="sheet-copy">
+        선큰을 길목에 배치해 적의 이동을 조절하고, 업그레이드와 융합으로 화력을 키워 황제의 체력이 0이 되지 않도록 막아내는 타워 디펜스 게임입니다.
+      </p>
+      <p class="sheet-copy">
+        토스 버전에서는 가로 화면 고정, 종료 확인 모달, Safe Area 대응, 토스 게임 계정 기준 저장, BGM/효과음 토글을 함께 지원합니다.
+      </p>
+      <div class="info-links">
+        <a href="../privacy.html">개인정보처리방침</a>
+        <a href="../terms.html">이용약관</a>
+        <a href="../contact.html">문의하기</a>
+      </div>
+      <p class="credit">BGM: battleThemeA · 효과음: Kenney · 적 탱크 스프라이트: Kenney</p>
+    </div>
+  </div>
+
   <script src="../assets/js/neon-audio.js"></script>
   <script src="../assets/js/server-config.js"></script>
-  <script src="game.js?v=20260309b"></script>
-  <script src="../assets/js/site-quality.js"></script>
+  <script src="toss-bridge.js"></script>
+  <script src="game.js?v=20260320a"></script>
 </body>
 </html>

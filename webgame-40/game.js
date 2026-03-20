@@ -40,22 +40,49 @@ const btnCoreWorkshop = document.getElementById('btnCoreWorkshop');
 const btnRewardGold = document.getElementById('btnRewardGold');
 const btnEmperorShield = document.getElementById('btnEmperorShield');
 const btnSunken = document.getElementById('btnSunken');
-try {
-  const audioKey = 'taptapcho_neon_audio_v1';
-  const raw = localStorage.getItem(audioKey);
-  const parsed = raw ? JSON.parse(raw) : {};
-  parsed.bgm = true;
-  parsed.sfx = true;
-  if (typeof parsed.volume !== 'number') parsed.volume = 0.32;
-  localStorage.setItem(audioKey, JSON.stringify(parsed));
-} catch (_) {}
+const bridgeBadgeEl = document.getElementById('bridgeBadge');
+const userKeyHintEl = document.getElementById('userKeyHint');
+const btnInfo = document.getElementById('btnInfo');
+const btnMusic = document.getElementById('btnMusic');
+const btnSfx = document.getElementById('btnSfx');
+const btnExit = document.getElementById('btnExit');
+const exitModal = document.getElementById('exitModal');
+const infoModal = document.getElementById('infoModal');
+const btnCancelExit = document.getElementById('btnCancelExit');
+const btnConfirmExit = document.getElementById('btnConfirmExit');
+const btnCloseInfo = document.getElementById('btnCloseInfo');
 
-const bgmAudio = window.TapTapNeonAudio?.create('webgame-40', null, {
-  theme: 'rush',
-  mediaSrc: '../assets/audio/battleThemeA.mp3',
-  showThemeToggle: false,
-  showSfxToggle: false,
-});
+const toss = window.SunkenDefenseToss || {
+  isAvailable: () => false,
+  closeView: async () => false,
+  setDeviceOrientation: async () => false,
+  setIosSwipeGestureEnabled: async () => false,
+  getUserKeyForGame: async () => null,
+  safeArea: {
+    get: async () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+    subscribe: () => () => {},
+  },
+  events: {
+    onBack: () => () => {},
+    onHome: () => () => {},
+  },
+};
+
+const AUDIO_SETTINGS_KEY = 'sunken-sixway-defense-audio-v1';
+const STORAGE_PREFIX = 'sunken-defense';
+
+const audioSettings = {
+  bgmEnabled: true,
+  sfxEnabled: true,
+};
+
+let bgmAudio = null;
+let userHash = null;
+let unsubscribeSafeArea = () => {};
+let unsubscribeBack = () => {};
+let unsubscribeHome = () => {};
+let runtimePauseReason = '';
+let backgroundPauseActive = false;
 
 const ENEMY_TANK_SOURCES = {
   ghoul: '../assets/kenney_tanks/png/tanks_tankGreen1.png',
@@ -118,7 +145,7 @@ const IMPACT_SFX_SOURCES = {
 };
 
 function isSfxEnabled() {
-  return true;
+  return audioSettings.sfxEnabled;
 }
 
 const impactSfx = (() => {
@@ -211,10 +238,10 @@ const singleRankState = {
 
 const SUNKEN_META_KEY = 'taptapcho_web40_meta_v2';
 const META_UPGRADES = {
-  startGold: { label: 'Start Gold', max: 5, costBase: 12, costScale: 1.65, valuePerLv: 40 },
-  towerPower: { label: 'Tower Power', max: 5, costBase: 14, costScale: 1.72, valuePerLv: 0.06 },
-  emperorFort: { label: 'Emperor Fort', max: 5, costBase: 10, costScale: 1.6, valuePerLv: 2 },
-  bossBounty: { label: 'Boss Bounty', max: 5, costBase: 15, costScale: 1.78, valuePerLv: 0.12 },
+  startGold: { label: '시작 골드', max: 5, costBase: 12, costScale: 1.65, valuePerLv: 40 },
+  towerPower: { label: '타워 화력', max: 5, costBase: 14, costScale: 1.72, valuePerLv: 0.06 },
+  emperorFort: { label: '황제 내구', max: 5, costBase: 10, costScale: 1.6, valuePerLv: 2 },
+  bossBounty: { label: '보스 현상금', max: 5, costBase: 15, costScale: 1.78, valuePerLv: 0.12 },
 };
 
 const GRID = {
@@ -231,7 +258,7 @@ const MAX_SIM_SUBSTEP = 1 / 70;
 const TOWER_TYPES = {
   sunken: {
     id: 'sunken',
-    name: 'Sunken',
+    name: '기본 선큰',
     cost: 40,
     color: '#8f5bff',
     range: 105 * BALANCE_SCALE,
@@ -244,7 +271,7 @@ const TOWER_TYPES = {
   // Long Sunken removed
   sunkenSplash: {
     id: 'sunkenSplash',
-    name: 'Splash Sunken',
+    name: '광역 선큰',
     cost: 130,
     color: '#111214',
     range: 114 * BALANCE_SCALE,
@@ -258,7 +285,7 @@ const TOWER_TYPES = {
   },
   sunkenHammer: {
     id: 'sunkenHammer',
-    name: 'Hammer Sunken',
+    name: '해머 선큰',
     cost: 120,
     color: '#ff4d4d',
     range: 84 * BALANCE_SCALE,
@@ -272,7 +299,7 @@ const TOWER_TYPES = {
   },
   lottoSunken: {
     id: 'lottoSunken',
-    name: 'Lotto Sunken',
+    name: '행운 선큰',
     cost: 1000,
     color: '#63ff9a',
     range: 104 * BALANCE_SCALE,
@@ -288,7 +315,7 @@ const TOWER_TYPES = {
   },
   sunkenNova: {
     id: 'sunkenNova',
-    name: 'Nova Sunken',
+    name: '노바 선큰',
     cost: 145,
     color: '#c69bff',
     range: 124 * BALANCE_SCALE,
@@ -300,7 +327,7 @@ const TOWER_TYPES = {
   },
   sunkenStun: {
     id: 'sunkenStun',
-    name: 'Stun Sunken',
+    name: '기절 선큰',
     cost: 165,
     color: '#7cff8d',
     range: 120 * BALANCE_SCALE,
@@ -315,7 +342,7 @@ const TOWER_TYPES = {
   },
   speedSunken: {
     id: 'speedSunken',
-    name: 'Speed Sunken',
+    name: '속사 선큰',
     cost: 70,
     color: '#ffffff',
     range: 124 * BALANCE_SCALE,
@@ -327,7 +354,7 @@ const TOWER_TYPES = {
   },
   tankerSunken: {
     id: 'tankerSunken',
-    name: 'Tanker Sunken',
+    name: '탱커 선큰',
     cost: 95,
     color: '#7fe0a7',
     range: 92 * BALANCE_SCALE,
@@ -449,8 +476,8 @@ const STUN_IMMUNE_BOSS_STAGES = [5, 15, 25, 35, 45];
 
 const DAILY_MUTATORS = [
   {
-    label: 'Blitz Payday',
-    desc: '+Start Gold, +Core reward, enemies are tougher',
+    label: '돌격 보급',
+    desc: '시작 골드와 코어 보상이 늘지만 적이 더 단단해집니다.',
     coreMul: 1.22,
     startGoldAdd: 140,
     towerPowerAdd: 0,
@@ -459,8 +486,8 @@ const DAILY_MUTATORS = [
     oneTimeCoreBonus: 12,
   },
   {
-    label: 'Arc Overdrive',
-    desc: '+Tower power, +Boss bounty, enemies are tougher',
+    label: '아크 과부하',
+    desc: '타워 화력과 보스 보상이 늘지만 적 체력이 강화됩니다.',
     coreMul: 1.18,
     startGoldAdd: 0,
     towerPowerAdd: 0.1,
@@ -469,8 +496,8 @@ const DAILY_MUTATORS = [
     oneTimeCoreBonus: 10,
   },
   {
-    label: 'Fortress March',
-    desc: '+Base fortification, steady cores',
+    label: '요새 행군',
+    desc: '황제 내구가 늘고 코어 수급이 안정적입니다.',
     coreMul: 1.1,
     startGoldAdd: 80,
     towerPowerAdd: 0.03,
@@ -479,8 +506,8 @@ const DAILY_MUTATORS = [
     oneTimeCoreBonus: 9,
   },
   {
-    label: 'Snow Drift',
-    desc: 'Easier waves, lower core payout',
+    label: '설원 완화',
+    desc: '웨이브가 쉬워지지만 코어 보상은 줄어듭니다.',
     coreMul: 0.92,
     startGoldAdd: 40,
     towerPowerAdd: 0,
@@ -533,6 +560,166 @@ function clamp(v, min, max) {
 
 function rand(min, max) {
   return min + Math.random() * (max - min);
+}
+
+function safeLocalStorageGet(key) {
+  try {
+    return window.localStorage.getItem(key);
+  } catch (error) {
+    return null;
+  }
+}
+
+function safeLocalStorageSet(key, value) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch (error) {
+    // Ignore preview storage failures.
+  }
+}
+
+function safeLocalStorageRemove(key) {
+  try {
+    window.localStorage.removeItem(key);
+  } catch (error) {
+    // Ignore preview storage failures.
+  }
+}
+
+function getScopedStorageKey(name) {
+  const scope = userHash ? `user:${userHash}` : 'browser';
+  return `${STORAGE_PREFIX}:${scope}:${name}`;
+}
+
+function readStoredValue(name, legacyKeys = []) {
+  const keys = [getScopedStorageKey(name), ...legacyKeys, name];
+  const seen = new Set();
+  for (const key of keys) {
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    const value = safeLocalStorageGet(key);
+    if (value != null) return value;
+  }
+  return null;
+}
+
+function writeStoredValue(name, value) {
+  safeLocalStorageSet(getScopedStorageKey(name), value);
+}
+
+function removeStoredValue(name) {
+  safeLocalStorageRemove(getScopedStorageKey(name));
+}
+
+function applySafeAreaInsets(insets) {
+  const top = Math.max(0, Number(insets?.top || 0));
+  const right = Math.max(0, Number(insets?.right || 0));
+  const bottom = Math.max(0, Number(insets?.bottom || 0));
+  const left = Math.max(0, Number(insets?.left || 0));
+  document.documentElement.style.setProperty('--safe-top', `${top}px`);
+  document.documentElement.style.setProperty('--safe-right', `${right}px`);
+  document.documentElement.style.setProperty('--safe-bottom', `${bottom}px`);
+  document.documentElement.style.setProperty('--safe-left', `${left}px`);
+}
+
+function updateBridgeBadge(text, className) {
+  if (!bridgeBadgeEl) return;
+  bridgeBadgeEl.textContent = text;
+  bridgeBadgeEl.className = `bridge-badge ${className || ''}`.trim();
+}
+
+function updateUserKeyHint(text) {
+  if (!userKeyHintEl) return;
+  userKeyHintEl.textContent = text;
+}
+
+function isElementHidden(element) {
+  return element?.classList.contains('hidden');
+}
+
+function refreshRuntimePauseReason() {
+  const modalOpen = !isElementHidden(exitModal) || !isElementHidden(infoModal);
+  runtimePauseReason = backgroundPauseActive ? 'background' : (modalOpen ? 'modal' : '');
+  document.body.classList.toggle('modal-open', modalOpen);
+}
+
+function showSheetModal(element) {
+  element?.classList.remove('hidden');
+  refreshRuntimePauseReason();
+}
+
+function hideSheetModal(element) {
+  element?.classList.add('hidden');
+  refreshRuntimePauseReason();
+}
+
+function hideAllSheetModals() {
+  hideSheetModal(exitModal);
+  hideSheetModal(infoModal);
+}
+
+function isRuntimePaused() {
+  return Boolean(runtimePauseReason);
+}
+
+function mirrorAudioSettingsToLegacyKey() {
+  try {
+    const raw = safeLocalStorageGet('taptapcho_neon_audio_v1');
+    const parsed = raw ? JSON.parse(raw) : {};
+    parsed.bgm = audioSettings.bgmEnabled;
+    parsed.sfx = audioSettings.sfxEnabled;
+    if (typeof parsed.volume !== 'number') parsed.volume = 0.32;
+    safeLocalStorageSet('taptapcho_neon_audio_v1', JSON.stringify(parsed));
+  } catch (error) {
+    // Ignore invalid legacy audio payloads.
+  }
+}
+
+function saveAudioSettings() {
+  writeStoredValue(AUDIO_SETTINGS_KEY, JSON.stringify(audioSettings));
+  mirrorAudioSettingsToLegacyKey();
+}
+
+function loadAudioSettings() {
+  try {
+    const raw = readStoredValue(AUDIO_SETTINGS_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    audioSettings.bgmEnabled = parsed.bgmEnabled !== false;
+    audioSettings.sfxEnabled = parsed.sfxEnabled !== false;
+  } catch (error) {
+    audioSettings.bgmEnabled = true;
+    audioSettings.sfxEnabled = true;
+  }
+  mirrorAudioSettingsToLegacyKey();
+}
+
+function syncAudioButtons() {
+  if (btnMusic) {
+    btnMusic.textContent = audioSettings.bgmEnabled ? 'BGM 켜짐' : 'BGM 꺼짐';
+    btnMusic.setAttribute('aria-pressed', String(audioSettings.bgmEnabled));
+  }
+  if (btnSfx) {
+    btnSfx.textContent = audioSettings.sfxEnabled ? '효과음 켜짐' : '효과음 꺼짐';
+    btnSfx.setAttribute('aria-pressed', String(audioSettings.sfxEnabled));
+  }
+}
+
+function syncAudioRuntime() {
+  if (!bgmAudio) return;
+  bgmAudio.setSfxEnabled(audioSettings.sfxEnabled);
+  bgmAudio.setBgmEnabled(audioSettings.bgmEnabled && !backgroundPauseActive);
+}
+
+function initializeAudioSystem() {
+  loadAudioSettings();
+  bgmAudio = window.TapTapNeonAudio?.create('webgame-40', null, {
+    theme: 'rush',
+    mediaSrc: '../assets/audio/battleThemeA.mp3',
+    showThemeToggle: false,
+    showSfxToggle: false,
+  }) || null;
+  syncAudioRuntime();
+  syncAudioButtons();
 }
 
 function hashString(input) {
@@ -610,7 +797,7 @@ function normalizePersistentMeta(raw) {
 
 function loadPersistentMeta() {
   try {
-    const raw = JSON.parse(localStorage.getItem(SUNKEN_META_KEY) || '{}');
+    const raw = JSON.parse(readStoredValue(SUNKEN_META_KEY) || '{}');
     return normalizePersistentMeta(raw);
   } catch (_) {
     return createDefaultPersistentMeta();
@@ -627,7 +814,7 @@ function savePersistentMeta() {
     dailyClaimed: Boolean(state.daily.claimed),
   };
   try {
-    localStorage.setItem(SUNKEN_META_KEY, JSON.stringify(payload));
+    writeStoredValue(SUNKEN_META_KEY, JSON.stringify(payload));
   } catch (_) {}
 }
 
@@ -685,7 +872,7 @@ function grantCores(amount, reason = '', silent = false) {
   state.cores = clamp(state.cores + n, 0, 999999);
   savePersistentMeta();
   if (!silent) {
-    flashBanner(reason ? `${reason} +${n} Core` : `+${n} Core`, 0.8);
+    flashBanner(reason ? `${reason} +${n} 코어` : `+${n} 코어`, 0.8);
   }
 }
 
@@ -705,7 +892,7 @@ function maybeClaimDailyCoreBonus() {
     return 0;
   }
   state.daily.claimed = true;
-  grantCores(bonus, 'Daily milestone', true);
+  grantCores(bonus, '일일 돌파 보너스', true);
   savePersistentMeta();
   return bonus;
 }
@@ -716,27 +903,27 @@ function renderCoreWorkshop(returnMode = 'menu') {
     const nextCost = getMetaUpgradeCost(key);
     const maxed = lv >= def.max;
     const deltaLabel = getMetaUpgradeDeltaLabel(key);
-    const costText = maxed ? 'MAX' : `${nextCost} Core`;
+    const costText = maxed ? '최대' : `${nextCost} 코어`;
     const disabled = maxed || state.cores < nextCost;
     return `
       <button class="reward-btn" data-action="meta:buy:${key}" ${disabled ? 'disabled' : ''} type="button">
         <strong>${def.label} Lv.${lv}/${def.max}</strong>
-        <span>Per Lv ${deltaLabel}</span>
+        <span>레벨당 ${deltaLabel}</span>
         <span>${costText}</span>
       </button>
     `;
   }).join('');
 
   const returnAction = returnMode === 'reward' ? 'meta:back-reward' : 'meta:close';
-  const returnLabel = returnMode === 'reward' ? 'Back to stage clear' : 'Close';
+  const returnLabel = returnMode === 'reward' ? '스테이지 결과로 돌아가기' : '닫기';
 
   overlayEl.classList.remove('hidden');
   overlayEl.classList.remove('banner-passive');
   overlayEl.classList.add('reward-mode');
   overlayEl.innerHTML = `
     <div class="modal core-modal">
-      <h2>Core Workshop</h2>
-      <p>Core ${state.cores} · Daily ${state.daily.label}</p>
+      <h2>코어 공방</h2>
+      <p>코어 ${state.cores} · 오늘의 변이 ${state.daily.label}</p>
       <p>${state.daily.desc}</p>
       <div class="reward-grid">${rows}</div>
       <div class="actions">
@@ -787,12 +974,12 @@ function buyMetaUpgrade(key) {
   if (!def) return;
   const current = clamp(Math.floor(state.meta.upgrades[key] || 0), 0, def.max);
   if (current >= def.max) {
-    flashBanner('Upgrade maxed', 0.55, true);
+    flashBanner('이미 최대 레벨입니다', 0.55, true);
     return;
   }
   const cost = getMetaUpgradeCost(key);
   if (state.cores < cost) {
-    flashBanner('Need Core', 0.55, true);
+    flashBanner('코어가 부족합니다', 0.55, true);
     return;
   }
   state.cores -= cost;
@@ -979,7 +1166,7 @@ function sanitizeRankName(raw) {
 
 function normalizeRankName(raw) {
   const name = sanitizeRankName(raw);
-  return name || `Player${Math.floor(rand(100, 999))}`;
+  return name || `플레이어${Math.floor(rand(100, 999))}`;
 }
 
 function normalizeRankRow(raw) {
@@ -1015,18 +1202,18 @@ function isBetterRankRow(next, prev) {
 
 function saveRankProfile() {
   try {
-    localStorage.setItem(SINGLE_RANK.profileKey, JSON.stringify({
+    writeStoredValue(SINGLE_RANK.profileKey, JSON.stringify({
       playerId: singleRankState.playerId,
       playerName: singleRankState.playerName,
       serverUrl: singleRankState.serverUrl,
     }));
-    localStorage.setItem(SINGLE_RANK.serverKey, singleRankState.serverUrl || '');
+    writeStoredValue(SINGLE_RANK.serverKey, singleRankState.serverUrl || '');
   } catch (_) {}
 }
 
 function loadRankProfile() {
   try {
-    const parsed = JSON.parse(localStorage.getItem(SINGLE_RANK.profileKey) || '{}');
+    const parsed = JSON.parse(readStoredValue(SINGLE_RANK.profileKey) || '{}');
     const playerId = String(parsed.playerId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 36);
     const playerName = sanitizeRankName(parsed.playerName || '');
     const serverUrl = String(parsed.serverUrl || '').trim();
@@ -1038,13 +1225,13 @@ function loadRankProfile() {
 
 function saveLocalRankRows() {
   try {
-    localStorage.setItem(SINGLE_RANK.localKey, JSON.stringify(singleRankState.localRows));
+    writeStoredValue(SINGLE_RANK.localKey, JSON.stringify(singleRankState.localRows));
   } catch (_) {}
 }
 
 function loadLocalRankRows() {
   try {
-    const parsed = JSON.parse(localStorage.getItem(SINGLE_RANK.localKey) || '[]');
+    const parsed = JSON.parse(readStoredValue(SINGLE_RANK.localKey) || '[]');
     if (!Array.isArray(parsed)) return [];
     return parsed
       .map(normalizeRankRow)
@@ -1070,7 +1257,7 @@ function renderSingleRank() {
 
   if (!rows.length) {
     const li = document.createElement('li');
-    li.textContent = 'No records';
+    li.textContent = '기록이 아직 없어요';
     rankListEl.appendChild(li);
     return;
   }
@@ -1078,8 +1265,8 @@ function renderSingleRank() {
   rows.forEach((row, idx) => {
     const li = document.createElement('li');
     if (idx === 0) li.classList.add('top1');
-    const meTag = row.playerId === singleRankState.playerId ? ' · YOU' : '';
-    li.textContent = `${idx + 1}. ${row.playerName} · Stage ${row.stage} · Kills ${row.kills} · Time ${formatTime(row.timeSec)}${meTag}`;
+    const meTag = row.playerId === singleRankState.playerId ? ' · 내 기록' : '';
+    li.textContent = `${idx + 1}. ${row.playerName} · 스테이지 ${row.stage} · 처치 ${row.kills} · 시간 ${formatTime(row.timeSec)}${meTag}`;
     rankListEl.appendChild(li);
   });
 }
@@ -1174,8 +1361,8 @@ function sendRankIdentityToServer(ws = singleRankState.ws) {
 
 function ensureRankIdentityRegistered() {
   if (singleRankState.playerName) return true;
-  setRankStatus('Set a name to save online.');
-  flashBanner('Name required', 0.9, true);
+  setRankStatus('온라인 저장을 위해 닉네임을 입력해 주세요.');
+  flashBanner('닉네임을 입력해 주세요', 0.9, true);
   const isCoarsePointer = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
   if (rankNameEl && !isCoarsePointer) {
     rankNameEl.focus();
@@ -1202,9 +1389,9 @@ function applyRankProfileFromInput(connectNow = false) {
 
   if (singleRankState.connected && singleRankState.ws && singleRankState.ws.readyState === WebSocket.OPEN) {
     sendRankIdentityToServer(singleRankState.ws);
-    setRankStatus('Name saved · waiting for sync');
+    setRankStatus('닉네임 저장 완료 · 서버 동기화를 기다리는 중');
   } else {
-    setRankStatus(singleRankState.serverUrl ? 'Name saved · connecting...' : 'Name saved · local mode');
+    setRankStatus(singleRankState.serverUrl ? '닉네임 저장 완료 · 서버에 연결 중' : '닉네임 저장 완료 · 로컬 모드');
   }
 
   if (connectNow) {
@@ -1222,8 +1409,8 @@ function openRankSocket(force = false) {
 
   const url = fixedRankServerUrl() || singleRankState.serverUrl || defaultRankServerUrl();
   if (!url) {
-    setRankScope('LOCAL');
-    setRankStatus('No server URL · local mode');
+    setRankScope('로컬');
+    setRankStatus('서버 주소가 없어 로컬 랭킹만 사용합니다');
     renderSingleRank();
     return;
   }
@@ -1237,14 +1424,14 @@ function openRankSocket(force = false) {
   try {
     ws = new WebSocket(url);
   } catch (_) {
-    setRankScope('LOCAL');
-    setRankStatus('Server connect failed · local mode');
+    setRankScope('로컬');
+    setRankStatus('서버 연결에 실패해 로컬 랭킹만 사용합니다');
     renderSingleRank();
     return;
   }
 
   singleRankState.ws = ws;
-  setRankStatus('Connecting to rank server...');
+  setRankStatus('랭킹 서버에 연결하는 중...');
 
   ws.addEventListener('open', () => {
     if (singleRankState.ws !== ws) return;
@@ -1252,8 +1439,8 @@ function openRankSocket(force = false) {
     singleRankState.serverUrl = url;
     syncRankInputs();
     saveRankProfile();
-    setRankScope('ONLINE');
-    setRankStatus(singleRankState.playerName ? 'Online leaderboard connected' : 'Connected · set name');
+    setRankScope('온라인');
+    setRankStatus(singleRankState.playerName ? '온라인 랭킹 연결 완료' : '연결 완료 · 닉네임을 입력해 주세요');
 
     sendRankIdentityToServer(ws);
     ws.send(JSON.stringify({ type: 'single_rank_list', limit: SINGLE_RANK.showCount }));
@@ -1276,7 +1463,7 @@ function openRankSocket(force = false) {
         .sort(compareRankRows)
         .slice(0, SINGLE_RANK.maxSave);
       renderSingleRank();
-      setRankStatus(singleRankState.remoteRows.length ? 'Online leaderboard updated' : 'No online records');
+      setRankStatus(singleRankState.remoteRows.length ? '온라인 랭킹을 불러왔습니다' : '온라인 랭킹 기록이 아직 없어요');
       return;
     }
 
@@ -1289,7 +1476,7 @@ function openRankSocket(force = false) {
       }
       saveRankProfile();
       syncRankInputs();
-      setRankStatus('Player registered');
+      setRankStatus('플레이어 등록 완료');
       return;
     }
 
@@ -1303,7 +1490,7 @@ function openRankSocket(force = false) {
         renderSingleRank();
       }
       if (Number.isFinite(Number(msg.rank))) {
-        setRankStatus(`Rank updated · #${Math.floor(Number(msg.rank))}`);
+        setRankStatus(`순위가 갱신됐어요 · #${Math.floor(Number(msg.rank))}`);
       }
     }
   });
@@ -1312,8 +1499,8 @@ function openRankSocket(force = false) {
     if (singleRankState.ws !== ws) return;
     singleRankState.connected = false;
     singleRankState.ws = null;
-    setRankScope('LOCAL');
-    setRankStatus('Offline · local leaderboard');
+    setRankScope('로컬');
+    setRankStatus('오프라인 상태라 로컬 랭킹을 보여줍니다');
     renderSingleRank();
   });
 
@@ -1321,8 +1508,8 @@ function openRankSocket(force = false) {
     if (singleRankState.ws !== ws) return;
     singleRankState.connected = false;
     singleRankState.ws = null;
-    setRankScope('LOCAL');
-    setRankStatus('Server error · local leaderboard');
+    setRankScope('로컬');
+    setRankStatus('서버 오류로 로컬 랭킹을 보여줍니다');
     renderSingleRank();
   });
 }
@@ -1347,7 +1534,7 @@ function submitSingleRank(resultMode = 'defeat') {
 
   updateLocalRank(row);
   renderSingleRank();
-  setRankStatus(`Local saved · Stage ${row.stage} / Kills ${row.kills}`);
+  setRankStatus(`로컬 저장 완료 · 스테이지 ${row.stage} / 처치 ${row.kills}`);
 
   if (singleRankState.connected && singleRankState.ws && singleRankState.ws.readyState === WebSocket.OPEN) {
     singleRankState.ws.send(JSON.stringify({
@@ -1368,7 +1555,7 @@ function initSingleRank() {
   const profile = loadRankProfile();
   let savedServerUrl = '';
   try {
-    savedServerUrl = String(localStorage.getItem(SINGLE_RANK.serverKey) || '').trim();
+    savedServerUrl = String(readStoredValue(SINGLE_RANK.serverKey) || '').trim();
   } catch (_) {}
   singleRankState.playerId = profile.playerId || randomPlayerId();
   singleRankState.playerName = sanitizeRankName(profile.playerName || '');
@@ -1409,7 +1596,7 @@ function initSingleRank() {
     rankRefreshEl.addEventListener('click', () => {
       if (singleRankState.connected && singleRankState.ws && singleRankState.ws.readyState === WebSocket.OPEN) {
         singleRankState.ws.send(JSON.stringify({ type: 'single_rank_list', limit: SINGLE_RANK.showCount }));
-        setRankStatus('Refreshing online leaderboard...');
+        setRankStatus('온라인 랭킹을 새로고침하는 중...');
       } else {
         openRankSocket(true);
       }
@@ -1418,8 +1605,8 @@ function initSingleRank() {
 
   syncRankInputs();
   saveRankProfile();
-  setRankScope('LOCAL');
-  setRankStatus(singleRankState.playerName ? 'Profile loaded' : 'Set name and Save');
+  setRankScope('로컬');
+  setRankStatus(singleRankState.playerName ? '프로필을 불러왔어요' : '닉네임을 입력하고 저장해 주세요');
   renderSingleRank();
   openRankSocket(false);
 }
@@ -1610,9 +1797,11 @@ function neighborStep(c, r, enemy = null) {
 function flashBanner(text, ttl = 1.2, warn = false) {
   if (isMobileView && state.mode === 'playing') {
     const noisyCombatBanner = (
-      text.startsWith('BASE -')
-      || text.includes('DESTROYED')
-      || text.includes('Snare:')
+      text.startsWith('황제 체력 -')
+      || text.includes('타워가 파괴되었습니다')
+      || text.includes('속박:')
+      || text.includes('기절 연쇄')
+      || text.includes('보호막이 공격을 막았습니다')
     );
     if (noisyCombatBanner) return;
     ttl = Math.min(ttl, 0.58);
@@ -1778,7 +1967,7 @@ function upgradeTower(tower) {
     sum + upgradeCost({ level: lv, baseCost: TOWER_TYPES[kind]?.cost || tower.baseCost || 0 })
   ), 0);
   if (state.gold < cost) {
-    flashBanner('Need Gold', 0.9, true);
+    flashBanner('골드가 부족합니다', 0.9, true);
     return false;
   }
 
@@ -1797,12 +1986,12 @@ function upgradeTower(tower) {
   tower.hp = Math.min(tower.maxHp, tower.hp + tower.maxHp * 0.25);
   normalizeTowerCombatStats(tower);
 
-  let banner = `UPGRADE Lv.${tower.level} (Fused)`;
+  let banner = `강화 Lv.${tower.level} (융합)`;
   if (!state.onboarding.firstUpgrade) {
     state.onboarding.firstUpgrade = true;
     const bonus = 40;
     state.gold += bonus;
-    banner = `UPGRADE Lv.${tower.level} +${bonus} GOLD`;
+    banner = `강화 Lv.${tower.level} +${bonus} 골드`;
   }
   flashBanner(banner, 0.75);
   sfx(660, 0.07, 'triangle', 0.022);
@@ -1820,18 +2009,18 @@ function tryPlaceTower(c, r) {
   if (!placement) return;
 
   if (state.selectedTower === 'lottoSunken' && !state.choLottoActive) {
-    flashBanner('Win Lotto Sunken first', 0.7, true);
+    flashBanner('먼저 행운 선큰 추첨에 성공해야 합니다', 0.7, true);
     return;
   }
 
   if (state.gold < placement.cost) {
-    flashBanner('Need Gold', 0.9, true);
+    flashBanner('골드가 부족합니다', 0.9, true);
     return;
   }
 
   const footprintCells = getFootprintCells(c, r, placement.footprint);
   if (!canUseFootprint(footprintCells)) {
-    flashBanner('Invalid spot', 0.85, true);
+    flashBanner('여기에는 배치할 수 없습니다', 0.85, true);
     sfx(180, 0.06, 'sawtooth', 0.02);
     return;
   }
@@ -1845,7 +2034,7 @@ function tryPlaceTower(c, r) {
       state.blocked.delete(keyOf(cell.c, cell.r));
     }
     buildDistanceMap();
-    flashBanner('Path blocked', 1.1, true);
+    flashBanner('이 배치로 길이 막힙니다', 1.1, true);
     sfx(170, 0.08, 'sawtooth', 0.03);
     return;
   }
@@ -1866,7 +2055,7 @@ function tryPlaceTower(c, r) {
     state.onboarding.firstBuild = true;
     const bonus = 80;
     state.gold += bonus;
-    flashBanner(`FIRST BUILD +${bonus} GOLD`, 0.9);
+    flashBanner(`첫 배치 보너스 +${bonus} 골드`, 0.9);
     sfx(520, 0.07, 'triangle', 0.02);
   }
 
@@ -1883,7 +2072,7 @@ function sellTower(c, r) {
   const refund = Math.floor(tower.spent);
   state.gold += refund;
   removeTower(tower);
-  flashBanner(`SELL +${refund}`, 0.8);
+  flashBanner(`판매 +${refund} 골드`, 0.8);
   impactSfx.play('build', { volume: 0.2, minGap: 0.05, rateMin: 0.92, rateMax: 0.98 });
   sfx(340, 0.06, 'triangle', 0.018);
 }
@@ -2309,7 +2498,7 @@ function startStage(stage) {
   state.spawnQueue = makeStageQueue(stage);
   state.spawnTimer = 0.45;
   state.stageStartAt = performance.now();
-  flashBanner(`STAGE ${stage}`, 1.4);
+  flashBanner(`스테이지 ${stage}`, 1.4);
   bgmAudio?.fx('success');
 }
 
@@ -2389,10 +2578,10 @@ function setDefeat() {
   overlayEl.classList.remove('hidden');
   overlayEl.innerHTML = `
     <div class="modal">
-      <h2>Defeat</h2>
-      <p>Stage ${state.stage} · Kills ${state.kills} · Gold ${state.gold}</p>
+      <h2>방어 실패</h2>
+      <p>스테이지 ${state.stage} · 처치 ${state.kills} · 골드 ${state.gold}</p>
       <div class="actions">
-        <button type="button" data-action="restart">Retry</button>
+        <button type="button" data-action="restart">다시 도전</button>
       </div>
     </div>
   `;
@@ -2402,7 +2591,7 @@ function setDefeat() {
 
 function setVictory() {
   const victoryCore = Math.max(12, Math.floor((18 + state.maxStage * 0.22) * (state.daily.coreMul || 1)));
-  grantCores(victoryCore, 'Victory bonus', true);
+  grantCores(victoryCore, '최종 승리 보너스', true);
   updateMetaRunRecords(state.maxStage, state.kills);
   submitSingleRank('victory');
   state.mode = 'victory';
@@ -2412,11 +2601,11 @@ function setVictory() {
   overlayEl.classList.remove('hidden');
   overlayEl.innerHTML = `
     <div class="modal">
-      <h2>Victory</h2>
-      <p>Stage ${state.maxStage} · Kills ${state.kills} · Base HP ${state.baseHp}</p>
-      <p>+${victoryCore} Core</p>
+      <h2>최종 승리</h2>
+      <p>스테이지 ${state.maxStage} · 처치 ${state.kills} · 황제 체력 ${state.baseHp}</p>
+      <p>+${victoryCore} 코어</p>
       <div class="actions">
-        <button type="button" data-action="restart">New Run</button>
+        <button type="button" data-action="restart">새 게임</button>
       </div>
     </div>
   `;
@@ -2436,7 +2625,7 @@ function showStageReward(options = {}) {
     state.onboarding.firstClear = true;
     const bonus = 120;
     clearGold += bonus;
-    bonusTag = ` · First Clear +${bonus}`;
+    bonusTag = ` · 첫 클리어 +${bonus}`;
   }
   const autoRushBonus = 0.25;
 
@@ -2447,7 +2636,7 @@ function showStageReward(options = {}) {
     state.pendingStageCore = clearCore + dailyCoreBonus;
     state.gold += clearGold;
     state.rushDamageBonus += autoRushBonus;
-    grantCores(state.pendingStageCore, 'Stage clear', true);
+    grantCores(state.pendingStageCore, '스테이지 클리어', true);
   } else {
     clearGold = state.pendingStageBonusGold || clearGold;
     clearCore = state.pendingStageCore || clearCore;
@@ -2463,13 +2652,13 @@ function showStageReward(options = {}) {
   overlayEl.classList.remove('hidden');
   overlayEl.innerHTML = `
     <div class="modal reward-modal">
-      <h2>Mission Success</h2>
-      <p>Stage ${state.stage} · Time ${formatTime(stageTimeSec)} · Kills ${state.kills}</p>
-      <p>Towers ${towerCount} · +${clearGold} Gold${bonusTag}</p>
-      <p>+${clearCore} Core${dailyCoreBonus > 0 ? ` · Daily +${dailyCoreBonus}` : ''}</p>
+      <h2>스테이지 성공</h2>
+      <p>스테이지 ${state.stage} · 시간 ${formatTime(stageTimeSec)} · 처치 ${state.kills}</p>
+      <p>타워 ${towerCount}기 · +${clearGold} 골드${bonusTag}</p>
+      <p>+${clearCore} 코어${dailyCoreBonus > 0 ? ` · 일일 +${dailyCoreBonus}` : ''}</p>
       <div class="actions">
-        <button type="button" data-action="reward:next" disabled>Next Stage</button>
-        <button type="button" data-action="reward:workshop" disabled>Core Workshop</button>
+        <button type="button" data-action="reward:next" disabled>다음 스테이지</button>
+        <button type="button" data-action="reward:workshop" disabled>코어 공방</button>
       </div>
     </div>
   `;
@@ -2490,7 +2679,7 @@ function applyStageReward(kind) {
     return;
   }
   if (kind !== 'next') return;
-  flashBanner(`Rush total +${Math.round(state.rushDamageBonus * 100)}%`, 0.9);
+  flashBanner(`누적 러시 보너스 +${Math.round(state.rushDamageBonus * 100)}%`, 0.9);
   sfx(620, 0.07, 'triangle', 0.028);
 
   state.mode = 'playing';
@@ -2552,22 +2741,22 @@ function refreshHud() {
   if (btnCull) {
     const nameEl = btnCull.querySelector('.name');
     const costEl = btnCull.querySelector('.cost');
-    if (nameEl && isMobileView) nameEl.textContent = '-50% ENEMY HP';
+    if (nameEl && isMobileView) nameEl.textContent = '적 약화';
     if (costEl) costEl.textContent = isMobileView
       ? `${formatCompactNumber(CULL_COST)} (${state.cullUses}/${CULL_MAX_USES})`
-      : `${CULL_COST} Gold (${state.cullUses}/${CULL_MAX_USES})`;
+      : `${CULL_COST} 골드 (${state.cullUses}/${CULL_MAX_USES})`;
   }
   if (btnChoLotto) {
     const nameEl = btnChoLotto.querySelector('.name');
     const costEl = btnChoLotto.querySelector('.cost');
-    if (nameEl && isMobileView) nameEl.textContent = 'Lotto';
+    if (nameEl && isMobileView) nameEl.textContent = '행운';
     if (costEl) costEl.textContent = isMobileView
       ? formatCompactNumber(CHO_LOTTO_COST)
-      : `${CHO_LOTTO_COST} Gold`;
+      : `${CHO_LOTTO_COST} 골드`;
   }
   if (btnCoreWorkshop) {
     const costEl = btnCoreWorkshop.querySelector('.cost');
-    if (costEl) costEl.textContent = isMobileView ? `Core ${formatCompactNumber(state.cores)}` : `Core ${state.cores}`;
+    if (costEl) costEl.textContent = isMobileView ? `코어 ${formatCompactNumber(state.cores)}` : `코어 ${state.cores}`;
   }
   if (btnRewardGold) {
     const nameEl = btnRewardGold.querySelector('.name');
@@ -2575,19 +2764,19 @@ function refreshHud() {
     const usesLeft = Math.max(0, REWARD_GOLD_MAX_USES - state.rewardGoldUses);
     const canUse = state.rewardGoldCooldown <= 0.01 && usesLeft > 0 && state.mode === 'playing';
     btnRewardGold.classList.toggle('locked', !canUse);
-    if (nameEl) nameEl.textContent = canUse ? 'Supply Drop' : (usesLeft <= 0 ? 'Supply End' : 'Cooldown');
+    if (nameEl) nameEl.textContent = canUse ? '보급 투하' : (usesLeft <= 0 ? '보급 종료' : '재사용 대기');
     if (costEl) {
       if (usesLeft <= 0) {
         costEl.textContent = isMobileView
           ? `${REWARD_GOLD_MAX_USES}/${REWARD_GOLD_MAX_USES}`
-          : `Used ${REWARD_GOLD_MAX_USES}/${REWARD_GOLD_MAX_USES}`;
+          : `사용 완료 ${REWARD_GOLD_MAX_USES}/${REWARD_GOLD_MAX_USES}`;
       } else if (!canUse) {
-        costEl.textContent = `${state.rewardGoldCooldown.toFixed(1)}s · ${usesLeft}/${REWARD_GOLD_MAX_USES}`;
+        costEl.textContent = `${state.rewardGoldCooldown.toFixed(1)}초 · ${usesLeft}/${REWARD_GOLD_MAX_USES}`;
       } else {
         const gain = Math.floor(220 + state.stage * 20 + Math.max(0, state.stage - 20) * 8);
         costEl.textContent = isMobileView
           ? `+${formatCompactNumber(gain)} · ${usesLeft}/${REWARD_GOLD_MAX_USES}`
-          : `+${gain} Gold · Left ${usesLeft}/${REWARD_GOLD_MAX_USES}`;
+          : `+${gain} 골드 · 남음 ${usesLeft}/${REWARD_GOLD_MAX_USES}`;
       }
     }
   }
@@ -2606,25 +2795,25 @@ function setSellMode(enabled) {
   if (!btnSellMode) return;
   btnSellMode.classList.toggle('active', state.sellMode);
   const nameEl = btnSellMode.querySelector('.name');
-  if (nameEl) nameEl.textContent = state.sellMode ? 'SELL ON' : 'SELL OFF';
+  if (nameEl) nameEl.textContent = state.sellMode ? '판매 ON' : '판매 OFF';
   const costEl = btnSellMode.querySelector('.cost');
-  if (costEl && isMobileView) costEl.textContent = 'Sell';
+  if (costEl && isMobileView) costEl.textContent = '판매';
 }
 
 function syncPauseButton() {
   if (!btnPause) return;
   btnPause.classList.toggle('active', state.paused);
   const nameEl = btnPause.querySelector('.name');
-  if (nameEl) nameEl.textContent = state.paused ? 'PAUSED' : 'PAUSE';
+  if (nameEl) nameEl.textContent = state.paused ? '일시정지 중' : '일시정지';
   const costEl = btnPause.querySelector('.cost');
-  if (costEl) costEl.textContent = state.paused ? `On (${state.pauseUses}/5)` : `Use (${state.pauseUses}/5)`;
+  if (costEl) costEl.textContent = state.paused ? `사용 중 (${state.pauseUses}/5)` : `사용 횟수 (${state.pauseUses}/5)`;
 }
 
 function setPaused(enabled) {
   const next = Boolean(enabled);
   if (next && !state.paused) {
     if (state.pauseUses >= 5) {
-      flashBanner('Pause limit reached', 0.7, true);
+      flashBanner('일시정지 사용 한도에 도달했습니다', 0.7, true);
       return;
     }
     state.pauseUses += 1;
@@ -2756,25 +2945,25 @@ function refreshMergeButton(selectionCount = null) {
   btnMerge.classList.toggle('locked', lockedByCap && !state.mergeMode);
 
   const nameEl = btnMerge.querySelector('.name');
-  if (nameEl) nameEl.textContent = state.mergeMode ? 'Merging' : 'Merge';
+  if (nameEl) nameEl.textContent = state.mergeMode ? '융합 선택 중' : '융합';
 
   const costEl = btnMerge.querySelector('.cost');
   if (!costEl) return;
   if (state.mergeMode) {
     costEl.textContent = isMobileView
       ? `${selected}/2 · ${merged}/${MERGE_FUSION_MAX}`
-      : `Pick ${selected}/2 · Merge ${merged}/${MERGE_FUSION_MAX}`;
+      : `선택 ${selected}/2 · 융합 ${merged}/${MERGE_FUSION_MAX}`;
   } else {
     costEl.textContent = isMobileView
       ? `${merged}/${MERGE_FUSION_MAX}`
-      : `Merge ${merged}/${MERGE_FUSION_MAX}`;
+      : `융합 ${merged}/${MERGE_FUSION_MAX}`;
   }
 }
 
 function setMergeMode(enabled) {
   const next = Boolean(enabled);
   if (next && getFusionTowerCount() >= MERGE_FUSION_MAX && isMergeSystemSaturated()) {
-    flashBanner(`Merge cap ${MERGE_FUSION_MAX}/${MERGE_FUSION_MAX}`, 0.75, true);
+    flashBanner(`융합 한도 ${MERGE_FUSION_MAX}/${MERGE_FUSION_MAX}`, 0.75, true);
     state.mergeMode = false;
     state.mergePick = null;
     refreshMergeButton(0);
@@ -2795,7 +2984,7 @@ function changeSimSpeed(delta) {
   const before = state.simSpeed;
   setSimSpeed(state.simSpeed + delta);
   if (Math.abs(state.simSpeed - before) > 0.001) {
-    flashBanner(`Speed ${state.simSpeed.toFixed(2)}x`, 0.55);
+    flashBanner(`배속 ${state.simSpeed.toFixed(2)}x`, 0.55);
     sfx(430 + state.simSpeed * 40, 0.05, 'triangle', 0.013);
   }
 }
@@ -2809,43 +2998,43 @@ function refreshEmperorShieldButton() {
   if (active) {
     btnEmperorShield.classList.add('active');
     btnEmperorShield.classList.remove('locked');
-    if (nameEl) nameEl.textContent = 'SHIELD ON';
+    if (nameEl) nameEl.textContent = '보호막 ON';
     if (costEl) costEl.textContent = isMobileView
-      ? `${state.emperorShieldTimer.toFixed(1)}s · ${usesLeft}/${EMPEROR_SHIELD_MAX_USES}`
-      : `${state.emperorShieldTimer.toFixed(1)}s · Left ${usesLeft}/${EMPEROR_SHIELD_MAX_USES}`;
+      ? `${state.emperorShieldTimer.toFixed(1)}초 · ${usesLeft}/${EMPEROR_SHIELD_MAX_USES}`
+      : `${state.emperorShieldTimer.toFixed(1)}초 · 남음 ${usesLeft}/${EMPEROR_SHIELD_MAX_USES}`;
     return;
   }
   btnEmperorShield.classList.remove('active');
   if (usesLeft <= 0) {
     btnEmperorShield.classList.add('locked');
-    if (nameEl) nameEl.textContent = 'SHIELD END';
+    if (nameEl) nameEl.textContent = '보호막 종료';
     if (costEl) costEl.textContent = isMobileView
       ? `${EMPEROR_SHIELD_MAX_USES}/${EMPEROR_SHIELD_MAX_USES}`
-      : `Used (${EMPEROR_SHIELD_MAX_USES}/${EMPEROR_SHIELD_MAX_USES})`;
+      : `사용 완료 (${EMPEROR_SHIELD_MAX_USES}/${EMPEROR_SHIELD_MAX_USES})`;
     return;
   }
   const notEnoughGold = state.gold < EMPEROR_SHIELD_COST;
   btnEmperorShield.classList.toggle('locked', notEnoughGold);
-  if (nameEl) nameEl.textContent = isMobileView ? 'SHIELD' : 'EMPEROR SHIELD';
+  if (nameEl) nameEl.textContent = isMobileView ? '보호막' : '황제 보호막';
   if (costEl) costEl.textContent = isMobileView
-    ? `${formatCompactNumber(EMPEROR_SHIELD_COST)} /10s · ${usesLeft}/${EMPEROR_SHIELD_MAX_USES}`
-    : `${EMPEROR_SHIELD_COST} Gold / 10s · Left ${usesLeft}/${EMPEROR_SHIELD_MAX_USES}`;
+    ? `${formatCompactNumber(EMPEROR_SHIELD_COST)} /10초 · ${usesLeft}/${EMPEROR_SHIELD_MAX_USES}`
+    : `${EMPEROR_SHIELD_COST} 골드 / 10초 · 남음 ${usesLeft}/${EMPEROR_SHIELD_MAX_USES}`;
 }
 
 function castEmperorShield() {
   if (state.mode !== 'playing') return;
   if (state.emperorShieldUses >= EMPEROR_SHIELD_MAX_USES) {
-    flashBanner(`Shield cap ${EMPEROR_SHIELD_MAX_USES}/${EMPEROR_SHIELD_MAX_USES}`, 0.75, true);
+    flashBanner(`보호막 한도 ${EMPEROR_SHIELD_MAX_USES}/${EMPEROR_SHIELD_MAX_USES}`, 0.75, true);
     sfx(160, 0.09, 'sawtooth', 0.022);
     return;
   }
   if (state.emperorShieldTimer > 0.001) {
-    flashBanner('Shield active', 0.45);
+    flashBanner('보호막이 이미 활성화되어 있습니다', 0.45);
     sfx(500, 0.04, 'triangle', 0.013);
     return;
   }
   if (state.gold < EMPEROR_SHIELD_COST) {
-    flashBanner(`Need ${EMPEROR_SHIELD_COST} Gold`, 0.6, true);
+    flashBanner(`${EMPEROR_SHIELD_COST} 골드가 필요합니다`, 0.6, true);
     sfx(180, 0.08, 'sawtooth', 0.022);
     return;
   }
@@ -2855,7 +3044,7 @@ function castEmperorShield() {
   state.emperorShieldTimer = EMPEROR_SHIELD_DURATION;
   state.emperorShieldFx = Math.max(state.emperorShieldFx, 0.8);
   state.emperorShieldHitCooldown = 0;
-  flashBanner(`Shield ON 10s (${state.emperorShieldUses}/${EMPEROR_SHIELD_MAX_USES})`, 0.95);
+  flashBanner(`보호막 활성화 10초 (${state.emperorShieldUses}/${EMPEROR_SHIELD_MAX_USES})`, 0.95);
   impactSfx.play('build', { volume: 0.42, minGap: 0.08, rateMin: 0.88, rateMax: 0.95 });
   sfx(860, 0.12, 'triangle', 0.03);
   refreshHud();
@@ -2864,12 +3053,12 @@ function castEmperorShield() {
 function castCull() {
   if (state.mode !== 'playing') return;
   if (state.cullUses >= CULL_MAX_USES) {
-    flashBanner(`Cull used (${CULL_MAX_USES}/${CULL_MAX_USES})`, 0.7, true);
+    flashBanner(`적 약화 사용 완료 (${CULL_MAX_USES}/${CULL_MAX_USES})`, 0.7, true);
     sfx(160, 0.09, 'sawtooth', 0.022);
     return;
   }
   if (state.gold < CULL_COST) {
-    flashBanner(`Need ${CULL_COST} Gold`, 0.6, true);
+    flashBanner(`${CULL_COST} 골드가 필요합니다`, 0.6, true);
     sfx(180, 0.08, 'sawtooth', 0.022);
     return;
   }
@@ -2878,7 +3067,7 @@ function castCull() {
   for (const enemy of state.enemies) {
     enemy.hp = Math.max(1, Math.floor(enemy.hp * CULL_HP_MULT));
   }
-  flashBanner(`Enemy HP -${(1 - CULL_HP_MULT) * 100 | 0}% (${state.cullUses}/${CULL_MAX_USES})`, 0.7);
+  flashBanner(`적 체력 -${(1 - CULL_HP_MULT) * 100 | 0}% (${state.cullUses}/${CULL_MAX_USES})`, 0.7);
   impactSfx.play('enemyHitHeavy', { volume: 0.32, minGap: 0.06, rateMin: 0.9, rateMax: 1.0 });
   sfx(520, 0.08, 'triangle', 0.02);
   refreshHud();
@@ -2887,18 +3076,18 @@ function castCull() {
 function castRewardGold() {
   if (state.mode !== 'playing') return;
   if (state.rewardGoldUses >= REWARD_GOLD_MAX_USES) {
-    flashBanner(`Reward used (${REWARD_GOLD_MAX_USES}/${REWARD_GOLD_MAX_USES})`, 0.65, true);
+    flashBanner(`보급 투하 사용 완료 (${REWARD_GOLD_MAX_USES}/${REWARD_GOLD_MAX_USES})`, 0.65, true);
     return;
   }
   if (state.rewardGoldCooldown > 0.01) {
-    flashBanner(`Cooldown ${state.rewardGoldCooldown.toFixed(1)}s`, 0.48, true);
+    flashBanner(`재사용 대기 ${state.rewardGoldCooldown.toFixed(1)}초`, 0.48, true);
     return;
   }
   const gain = Math.floor(220 + state.stage * 20 + Math.max(0, state.stage - 20) * 8);
   state.gold += gain;
   state.rewardGoldUses += 1;
   state.rewardGoldCooldown = REWARD_GOLD_COOLDOWN;
-  flashBanner(`Supply +${gain} Gold`, 0.72);
+  flashBanner(`보급 투하 +${gain} 골드`, 0.72);
   impactSfx.play('build', { volume: 0.24, minGap: 0.05, rateMin: 1.02, rateMax: 1.1 });
   sfx(500, 0.06, 'triangle', 0.016);
   refreshHud();
@@ -2918,9 +3107,9 @@ function showChoLottoWin() {
   overlayEl.classList.remove('banner-passive');
   overlayEl.innerHTML = `
     <div class="modal">
-      <h2>Lotto Sunken!</h2>
+      <h2>행운 선큰 획득!</h2>
       <div class="actions">
-        <button type="button" data-action="cho-ack">Place</button>
+        <button type="button" data-action="cho-ack">배치하러 가기</button>
       </div>
     </div>
   `;
@@ -2936,25 +3125,25 @@ function buildTowerPerLevelChangeLine(kind) {
   const apsMul = 1 / reloadMul;
 
   const parts = [
-    `Damage +${Math.round((damageMul - 1) * 100)}%`,
-    `Rate +${Math.round((apsMul - 1) * 100)}%`,
-    `Range +${Math.round((rangeMul - 1) * 100)}%`,
+    `공격력 +${Math.round((damageMul - 1) * 100)}%`,
+    `공속 +${Math.round((apsMul - 1) * 100)}%`,
+    `사거리 +${Math.round((rangeMul - 1) * 100)}%`,
   ];
 
   if (kind === 'sunkenSplash') {
-    parts.push('Splash +15%');
+    parts.push('광역 범위 +15%');
   } else if (kind === 'sunkenHammer') {
-    parts.push('Splash +12%');
+    parts.push('광역 범위 +12%');
   } else if (kind === 'tankerSunken') {
-    parts.push('Taunt +8%');
-    parts.push('DR +3%');
+    parts.push('도발 범위 +8%');
+    parts.push('피해 감소 +3%');
   } else if (kind === 'lottoSunken') {
-    parts.push('Poison Time +15%');
-    parts.push('Poison DPS +12%');
+    parts.push('독 지속시간 +15%');
+    parts.push('독 DPS +12%');
   } else if (kind === 'sunkenStun') {
-    parts.push('Stun Time +10%');
-    parts.push('Stun Range +6%');
-    parts.push('Stun Count +1 (Lv3/5/7)');
+    parts.push('기절 시간 +10%');
+    parts.push('기절 범위 +6%');
+    parts.push('기절 연쇄 +1 (Lv3/5/7)');
   }
 
   return parts.join(' · ');
@@ -2992,32 +3181,32 @@ function refreshTowerGuide() {
   const attacksPerSec = placement.reload > 0 ? (1 / placement.reload) : 0;
   const damagePerSec = placement.reload > 0 ? placement.damage / placement.reload : placement.damage;
   const badges = [
-    `Cost ${placement.cost}`,
-    `Damage/Shot ${Math.round(placement.damage)}`,
-    `Shots/s ${attacksPerSec.toFixed(2)}`,
-    `Damage/s ${Math.round(damagePerSec)}`,
-    `Range ${Math.round(placement.range / BALANCE_SCALE)}`,
-    `Max Lv${MAX_TOWER_LEVEL}`,
+    `비용 ${placement.cost}`,
+    `1회 피해 ${Math.round(placement.damage)}`,
+    `초당 발사 ${attacksPerSec.toFixed(2)}`,
+    `초당 피해 ${Math.round(damagePerSec)}`,
+    `사거리 ${Math.round(placement.range / BALANCE_SCALE)}`,
+    `최대 Lv${MAX_TOWER_LEVEL}`,
   ];
 
-  if (placement.pierce > 0) badges.push(`Pierce ${placement.pierce}`);
-  if (placement.splashRadius > 0) badges.push(`Splash ${Math.round(placement.splashRadius / BALANCE_SCALE)}`);
-  if (placement.tauntRadius > 0) badges.push(`Taunt ${Math.round(placement.tauntRadius / BALANCE_SCALE)}`);
-  if (placement.damageMitigation > 0) badges.push(`DR ${Math.round(placement.damageMitigation * 100)}%`);
-  if (tower.snareDuration && tower.snareSlow) badges.push(`Slow ${Math.round((1 - tower.snareSlow) * 100)}%`);
-  if (tower.stunDuration && tower.stunChain) badges.push(`Stun ${tower.stunChain}`);
+  if (placement.pierce > 0) badges.push(`관통 ${placement.pierce}`);
+  if (placement.splashRadius > 0) badges.push(`광역 ${Math.round(placement.splashRadius / BALANCE_SCALE)}`);
+  if (placement.tauntRadius > 0) badges.push(`도발 ${Math.round(placement.tauntRadius / BALANCE_SCALE)}`);
+  if (placement.damageMitigation > 0) badges.push(`피해 감소 ${Math.round(placement.damageMitigation * 100)}%`);
+  if (tower.snareDuration && tower.snareSlow) badges.push(`감속 ${Math.round((1 - tower.snareSlow) * 100)}%`);
+  if (tower.stunDuration && tower.stunChain) badges.push(`기절 ${tower.stunChain}`);
 
   const perLevelSummary = buildTowerPerLevelChangeLine(state.selectedTower);
   const upgradeCostSummary = buildTowerUpgradeCostLine(placement.cost);
-  const runBonusSummary = `Run Bonus: Tower x${(state.metaTowerDamageMul || 1).toFixed(2)} · Enemy HP x${(state.daily.enemyHpMul || 1).toFixed(2)} · Boss Bounty x${(state.metaBossBountyMul || 1).toFixed(2)}`;
+  const runBonusSummary = `이번 런 보너스: 타워 x${(state.metaTowerDamageMul || 1).toFixed(2)} · 적 체력 x${(state.daily.enemyHpMul || 1).toFixed(2)} · 보스 보상 x${(state.metaBossBountyMul || 1).toFixed(2)}`;
 
   towerGuideEl.innerHTML = `
     <div class="line">
       <span class="name">${tower.name}</span>
       ${badges.map((label) => `<span class="badge">${label}</span>`).join('')}
     </div>
-    <div class="growth">Per Lv +1: ${perLevelSummary}</div>
-    <div class="growth">Upgrade Cost (+1): ${upgradeCostSummary}</div>
+    <div class="growth">레벨당 성장: ${perLevelSummary}</div>
+    <div class="growth">강화 비용(+1): ${upgradeCostSummary}</div>
     <div class="growth">${runBonusSummary}</div>
   `;
 }
@@ -3327,11 +3516,11 @@ function hurtEnemy(enemy, damage, sourceKind = '', secondary = false) {
 
     if (enemy.boss) {
       const bossCore = Math.max(2, Math.floor((4 + state.stage * 0.18) * (state.daily.coreMul || 1)));
-      grantCores(bossCore, 'Boss bounty', true);
+      grantCores(bossCore, '보스 현상금', true);
       bgmAudio?.fx('win');
       impactSfx.play('enemyHitHeavy', { volume: 0.46, minGap: 0.12, rateMin: 0.88, rateMax: 0.95 });
       sfx(280, 0.2, 'sawtooth', 0.04);
-      flashBanner(`BOSS DOWN +${bossCore} Core`, 0.9);
+      flashBanner(`보스 격파 +${bossCore} 코어`, 0.9);
     } else {
       if (Math.random() < 0.35) {
         sfx(560, 0.04, 'triangle', 0.013);
@@ -3649,7 +3838,7 @@ function updateBullets(dt) {
       if (b.towerKind === 'sunkenStun') {
         if (!enemy.stunImmune) {
           applyStunChain(enemy, b);
-          if (Math.random() < 0.08) flashBanner('Stun chain', 0.42);
+          if (Math.random() < 0.08) flashBanner('기절 연쇄 발동', 0.42);
         }
         hurtEnemy(enemy, b.damage, b.towerKind, false);
         state.bullets.splice(i, 1);
@@ -3665,7 +3854,7 @@ function updateBullets(dt) {
         spawnTowerHitVfx(enemy.x, enemy.y, b.towerKind, false, false);
         const damage = b.damage * 0.55;
         hurtEnemy(enemy, damage, b.towerKind, false);
-        if (Math.random() < 0.28) flashBanner('Snare: slow/weaken', 0.45);
+        if (Math.random() < 0.28) flashBanner('속박: 감속/약화', 0.45);
         state.bullets.splice(i, 1);
         removed = true;
       } else {
@@ -3907,7 +4096,7 @@ function updateEnemy(enemy, dt) {
       }
       if (targetTower.hp <= 0) {
         removeTower(targetTower);
-        flashBanner('TOWER DESTROYED', 0.6, true);
+        flashBanner('타워가 파괴되었습니다', 0.6, true);
         impactSfx.play('enemyHitHeavy', { volume: 0.32, minGap: 0.05, rateMin: 0.9, rateMax: 1.02 });
         sfx(220, 0.06, 'sawtooth', 0.02);
         for (const e of state.enemies) e.repath = 0;
@@ -3922,14 +4111,14 @@ function updateEnemy(enemy, dt) {
     if (state.emperorShieldTimer > 0.001) {
       state.emperorShieldFx = Math.max(state.emperorShieldFx, 0.62);
       if (state.emperorShieldHitCooldown <= 0) {
-        flashBanner('Shield blocked hit', 0.45);
+        flashBanner('보호막이 공격을 막았습니다', 0.45);
         impactSfx.play('towerHit', { volume: 0.35, minGap: 0.05, rateMin: 1.02, rateMax: 1.12 });
         sfx(760, 0.05, 'triangle', 0.02);
         state.emperorShieldHitCooldown = 0.12;
       }
     } else {
       state.baseHp -= enemy.leak;
-      flashBanner(`BASE -${enemy.leak}`, 0.6, true);
+      flashBanner(`황제 체력 -${enemy.leak}`, 0.6, true);
       impactSfx.play('baseHit', { volume: 0.4, minGap: 0.06, rateMin: 0.9, rateMax: 1.01 });
       sfx(180, 0.09, 'sawtooth', 0.03);
       if (state.baseHp <= 0) {
@@ -3990,7 +4179,7 @@ function spawnOne() {
   state.spawnSerial += 1;
   state.enemies.push(enemy);
   if (enemy.boss) {
-    flashBanner(`STAGE ${state.stage} BOSS`, 1.2, true);
+    flashBanner(`스테이지 ${state.stage} 보스 출현`, 1.2, true);
     bgmAudio?.fx('fail');
   }
 }
@@ -5575,7 +5764,7 @@ function step(dt) {
     return;
   }
 
-  if (state.paused) {
+  if (state.paused || isRuntimePaused()) {
     draw();
     refreshHud();
     return;
@@ -5659,13 +5848,13 @@ function handleControlsClick(event) {
 
   if (event.target.closest('[data-action="toggle-pause"]')) {
     setPaused(!state.paused);
-    if (state.paused) flashBanner('PAUSED', 0.5);
+    if (state.paused) flashBanner('일시정지', 0.5);
     return;
   }
 
   if (event.target.closest('[data-action="cho-lotto"]')) {
     if (state.gold < CHO_LOTTO_COST) {
-      flashBanner(`Need ${CHO_LOTTO_COST} Gold`, 0.6, true);
+      flashBanner(`${CHO_LOTTO_COST} 골드가 필요합니다`, 0.6, true);
       return;
     }
     state.gold -= CHO_LOTTO_COST;
@@ -5674,7 +5863,7 @@ function handleControlsClick(event) {
       state.choLottoActive = true;
       showChoLottoWin();
     } else {
-      flashBanner('Miss...', 0.6, true);
+      flashBanner('꽝입니다...', 0.6, true);
     }
     refreshHud();
     return;
@@ -5714,7 +5903,7 @@ canvas.addEventListener('contextmenu', (event) => {
 });
 
 function handleCanvasAction(event) {
-  if (state.mode !== 'playing') return;
+  if (state.mode !== 'playing' || isRuntimePaused()) return;
 
   const rect = canvas.getBoundingClientRect();
   const x = (event.clientX - rect.left) * (W / rect.width);
@@ -5727,28 +5916,28 @@ function handleCanvasAction(event) {
 
   if (state.mergeMode) {
     if (getFusionTowerCount() >= MERGE_FUSION_MAX && isMergeSystemSaturated()) {
-      flashBanner(`Merge cap ${MERGE_FUSION_MAX}/${MERGE_FUSION_MAX}`, 0.75, true);
+      flashBanner(`융합 한도 ${MERGE_FUSION_MAX}/${MERGE_FUSION_MAX}`, 0.75, true);
       setMergeMode(false);
       return;
     }
 
     const tapped = getTower(cell.c, cell.r);
     if (!tapped) {
-      flashBanner('Pick tower', 0.55);
+      flashBanner('먼저 타워를 하나 선택해 주세요', 0.55);
       return;
     }
 
     if (!state.mergePick) {
       state.mergePick = tapped;
       refreshMergeButton(1);
-      flashBanner('Pick second tower', 0.55);
+      flashBanner('이제 두 번째 타워를 선택해 주세요', 0.55);
       return;
     }
 
     const baseTower = state.mergePick;
     const targetTower = tapped;
     if (baseTower === targetTower) {
-      flashBanner('Pick different tower', 0.55, true);
+      flashBanner('서로 다른 타워를 선택해 주세요', 0.55, true);
       return;
     }
 
@@ -5756,47 +5945,47 @@ function handleCanvasAction(event) {
     const targetKinds = targetTower.fusedKinds || [targetTower.kind];
 
     if (baseKinds.includes('sunkenStun') || targetKinds.includes('sunkenStun')) {
-      flashBanner('Stun Sunken cannot merge', 0.75, true);
+      flashBanner('기절 선큰은 융합할 수 없습니다', 0.75, true);
       return;
     }
 
     if (baseKinds.includes('lottoSunken') || targetKinds.includes('lottoSunken')) {
-      flashBanner('Lotto Sunken cannot merge', 0.75, true);
+      flashBanner('행운 선큰은 융합할 수 없습니다', 0.75, true);
       return;
     }
 
     if (baseKinds.includes('tankerSunken') || targetKinds.includes('tankerSunken')) {
-      flashBanner('Tanker Sunken cannot merge', 0.75, true);
+      flashBanner('탱커 선큰은 융합할 수 없습니다', 0.75, true);
       return;
     }
 
     const overlap = targetKinds.some((k) => baseKinds.includes(k));
     if (overlap) {
       refreshMergeButton(1);
-      flashBanner('Same type blocked', 0.7, true);
+      flashBanner('같은 종류끼리는 융합할 수 없습니다', 0.7, true);
       return;
     }
 
     if ((baseTower.footprint || 1) > 1 || (targetTower.footprint || 1) > 1) {
-      flashBanner('Merge only 1x1', 0.7, true);
+      flashBanner('1x1 타워만 융합할 수 있습니다', 0.7, true);
       return;
     }
 
     if (baseKinds.length + targetKinds.length > 5) {
-      flashBanner('One Fusion max 5 types', 0.7, true);
+      flashBanner('하나의 융합 타워에는 최대 5종만 담을 수 있습니다', 0.7, true);
       return;
     }
 
     const projectedFusionCount = projectedFusionCountAfterMerge(baseTower, targetTower);
     if (projectedFusionCount > MERGE_FUSION_MAX) {
-      flashBanner(`Merge cap ${MERGE_FUSION_MAX}/${MERGE_FUSION_MAX}`, 0.75, true);
+      flashBanner(`융합 한도 ${MERGE_FUSION_MAX}/${MERGE_FUSION_MAX}`, 0.75, true);
       return;
     }
 
     const mergeCost = Math.floor(baseTower.spent * 0.5);
     const totalCost = mergeCost + targetTower.spent;
     if (state.gold < totalCost) {
-      flashBanner('Not enough Gold', 0.9, true);
+      flashBanner('골드가 부족합니다', 0.9, true);
       return;
     }
 
@@ -5841,7 +6030,7 @@ function handleCanvasAction(event) {
       enemy.repath = 0;
     }
 
-    flashBanner(`Merge done`, 0.7);
+    flashBanner('융합 완료', 0.7);
     impactSfx.play('build', { volume: 0.32, minGap: 0.05, rateMin: 0.96, rateMax: 1.06 });
     state.mergePick = null;
     setMergeMode(false);
@@ -6019,6 +6208,123 @@ overlayEl.addEventListener('click', (event) => {
   if (action === 'start' || action === 'restart') startRun();
 });
 
+function setBackgroundPause(active) {
+  backgroundPauseActive = Boolean(active);
+  refreshRuntimePauseReason();
+  syncAudioRuntime();
+}
+
+function handleVisibilityChange() {
+  setBackgroundPause(document.hidden);
+}
+
+async function closeCurrentView() {
+  hideAllSheetModals();
+  setBackgroundPause(false);
+  await toss.setIosSwipeGestureEnabled(true);
+  await toss.setDeviceOrientation('portrait');
+  const closedInToss = await toss.closeView();
+  if (closedInToss !== false) return;
+
+  if (window.history.length > 1) {
+    window.history.back();
+  } else {
+    window.location.href = '../index.html';
+  }
+}
+
+function bindShellControls() {
+  btnInfo?.addEventListener('click', () => {
+    showSheetModal(infoModal);
+  });
+
+  btnCloseInfo?.addEventListener('click', () => {
+    hideSheetModal(infoModal);
+  });
+
+  btnExit?.addEventListener('click', () => {
+    showSheetModal(exitModal);
+  });
+
+  btnCancelExit?.addEventListener('click', () => {
+    hideSheetModal(exitModal);
+  });
+
+  btnConfirmExit?.addEventListener('click', () => {
+    void closeCurrentView();
+  });
+
+  btnMusic?.addEventListener('click', () => {
+    audioSettings.bgmEnabled = !audioSettings.bgmEnabled;
+    saveAudioSettings();
+    syncAudioButtons();
+    syncAudioRuntime();
+    if (audioSettings.bgmEnabled) bgmAudio?.unlock();
+  });
+
+  btnSfx?.addEventListener('click', () => {
+    audioSettings.sfxEnabled = !audioSettings.sfxEnabled;
+    saveAudioSettings();
+    syncAudioButtons();
+    syncAudioRuntime();
+  });
+}
+
+function cleanupTossShell() {
+  unsubscribeSafeArea();
+  unsubscribeBack();
+  unsubscribeHome();
+  void toss.setIosSwipeGestureEnabled(true);
+  void toss.setDeviceOrientation('portrait');
+}
+
+async function initializeTossShell() {
+  if (toss.isAvailable()) {
+    try {
+      const insets = await toss.safeArea.get();
+      applySafeAreaInsets(insets);
+    } catch (error) {
+      applySafeAreaInsets({ top: 0, right: 0, bottom: 0, left: 0 });
+    }
+
+    unsubscribeSafeArea = toss.safeArea.subscribe((insets) => {
+      applySafeAreaInsets(insets);
+    });
+
+    await toss.setDeviceOrientation('landscape');
+    await toss.setIosSwipeGestureEnabled(false);
+
+    unsubscribeBack = toss.events.onBack(() => {
+      showSheetModal(exitModal);
+    });
+
+    unsubscribeHome = toss.events.onHome(() => {
+      setBackgroundPause(true);
+    });
+  } else {
+    applySafeAreaInsets({ top: 0, right: 0, bottom: 0, left: 0 });
+  }
+
+  const userKeyResult = await toss.getUserKeyForGame();
+  const resolvedUserHash = typeof userKeyResult?.hash === 'string'
+    ? userKeyResult.hash
+    : typeof userKeyResult === 'string'
+      ? userKeyResult
+      : '';
+
+  if (resolvedUserHash) {
+    userHash = resolvedUserHash;
+    updateBridgeBadge('토스 게임 연동', 'badge-live');
+    updateUserKeyHint('토스 게임 계정 기준으로 코어 성장, 랭킹, 사운드 설정을 분리 저장합니다.');
+  } else if (toss.isAvailable()) {
+    updateBridgeBadge('토스 미리보기', 'badge-fallback');
+    updateUserKeyHint('토스 브리지는 연결됐지만 게임 계정 키를 받지 못해 로컬 저장을 함께 사용합니다.');
+  } else {
+    updateBridgeBadge('웹 미리보기', 'badge-preview');
+    updateUserKeyHint('브라우저 미리보기에서는 로컬 저장으로 동일한 흐름을 확인할 수 있어요.');
+  }
+}
+
 function showMenu() {
   state.mode = 'menu';
   document.body.classList.remove('playing');
@@ -6027,25 +6333,16 @@ function showMenu() {
   overlayEl.classList.remove('hidden');
   overlayEl.innerHTML = `
     <div class="modal">
-      <h2>Sunken Sixway Defense</h2>
-      <p>Daily: ${state.daily.label} · Core x${(state.daily.coreMul || 1).toFixed(2)}</p>
+      <h2>선큰 식스웨이 디펜스</h2>
+      <p>오늘의 변이: ${state.daily.label} · 코어 x${(state.daily.coreMul || 1).toFixed(2)}</p>
       <div class="actions">
-        <button type="button" data-action="start">Start</button>
-        <button type="button" data-action="open-workshop">Core Workshop</button>
+        <button type="button" data-action="start">게임 시작</button>
+        <button type="button" data-action="open-workshop">코어 공방</button>
       </div>
     </div>
   `;
 }
 
-loadMetaProgression();
-showMenu();
-renderBuildButtonIcons();
-refreshMergeableTowerBadge();
-setSelectedButton();
-setSellMode(false);
-refreshBuildHint();
-buildDistanceMap();
-refreshHud();
 if (rankToggleBtn && rankPanelEl) {
   const setRankVisible = (show) => {
     rankPanelEl.classList.toggle('rank-hidden', !show);
@@ -6091,7 +6388,28 @@ if (singleTabEl) {
     document.body.classList.toggle('detail-mode', false);
   });
 }
-initSingleRank();
 
-loadEnemySprites();
-requestAnimationFrame(frame);
+bindShellControls();
+document.addEventListener('visibilitychange', handleVisibilityChange);
+window.addEventListener('focus', () => setBackgroundPause(false));
+window.addEventListener('pageshow', () => setBackgroundPause(false));
+window.addEventListener('pagehide', cleanupTossShell);
+
+async function bootstrap() {
+  await initializeTossShell();
+  initializeAudioSystem();
+  loadMetaProgression();
+  showMenu();
+  renderBuildButtonIcons();
+  refreshMergeableTowerBadge();
+  setSelectedButton();
+  setSellMode(false);
+  refreshBuildHint();
+  buildDistanceMap();
+  refreshHud();
+  initSingleRank();
+  loadEnemySprites();
+  requestAnimationFrame(frame);
+}
+
+void bootstrap();

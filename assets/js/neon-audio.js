@@ -230,6 +230,28 @@
         id: gameId,
         unlock,
         fx,
+        getState() {
+          return {
+            bgm: settings.bgm !== false,
+            sfx: settings.sfx !== false,
+            volume: settings.volume,
+            themeId
+          };
+        },
+        setBgmEnabled(enabled) {
+          settings.bgm = enabled !== false;
+          if (settings.bgm) {
+            unlock();
+            startBgm();
+          } else {
+            stopBgm();
+          }
+          persist();
+        },
+        setSfxEnabled(enabled) {
+          settings.sfx = enabled !== false;
+          persist();
+        },
         setTheme(nextThemeId) {
           if (useMediaBgm) return;
           if (!THEME_BY_ID[nextThemeId]) return;
