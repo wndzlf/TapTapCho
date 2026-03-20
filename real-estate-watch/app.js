@@ -157,7 +157,6 @@ function buildTransactionCards(items) {
               첫 확인: ${formatDateTime(item.firstSeenAt || item.officialCheckedAt)}<br />
               스냅샷 갱신: ${formatDateTime(item.officialCheckedAt)}
             </div>
-            <a class="transaction-link" href="${item.sourceUrl}" target="_blank" rel="noreferrer">공식 출처</a>
           </div>
         </article>
       `;
