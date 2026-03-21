@@ -93,6 +93,19 @@ function randomColorExcept(current) {
   return candidate;
 }
 
+function shuffleColors(values) {
+  const arr = [...values];
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function getGapAngle() {
+  return slowTimer > 0 ? BASE_GAP_ANGLE + 0.03 : BASE_GAP_ANGLE;
+}
+
 function createSfx() {
   const Ctx = window.AudioContext || window.webkitAudioContext;
   let audioCtx = null;
@@ -224,7 +237,8 @@ function makeObstacle(y) {
     rotSpeed: (Math.random() > 0.5 ? 1 : -1) * rand(0.0042, 0.0082),
     kind,
     cleared: false,
-    checkedThisPass: false,
+    contactZone: null,
+    segmentColors: shuffleColors(COLORS),
   };
 }
 
@@ -343,10 +357,6 @@ function handleObstacle(obs, dt) {
   const rotMul = slowTimer > 0 ? 0.7 : 1;
   obs.rot += obs.rotSpeed * rotMul * dt * 60;
 
-  if (!obs.cleared && obs.checkedThisPass && player.y > obs.y + obs.r + 30) {
-    obs.checkedThisPass = false;
-  }
-
   if (obs.cleared) return true;
 
   const dy = player.y - obs.y;
@@ -356,30 +366,34 @@ function handleObstacle(obs, dt) {
 
   const intersectsBand = radial + player.r > inner && radial - player.r < outer;
 
-  if (!obs.checkedThisPass && intersectsBand && player.vy < 0 && dy > 0) {
-    obs.checkedThisPass = true;
-    const contactAngle = dy < 0 ? -Math.PI / 2 : Math.PI / 2;
-    const localAngle = normalizeAngle(contactAngle - obs.rot);
-    const angleInSegment = localAngle % SEGMENT_ARC;
-    const gapAngle = slowTimer > 0 ? BASE_GAP_ANGLE + 0.03 : BASE_GAP_ANGLE;
+  if (!intersectsBand) {
+    obs.contactZone = null;
+  } else {
+    const zone = dy >= 0 ? 'lower' : 'upper';
+    if (obs.contactZone !== zone) {
+      obs.contactZone = zone;
+      const contactAngle = zone === 'lower' ? Math.PI / 2 : -Math.PI / 2;
+      const localAngle = normalizeAngle(contactAngle - obs.rot);
+      const angleInSegment = localAngle % SEGMENT_ARC;
+      const gapAngle = getGapAngle();
 
-    if (angleInSegment < gapAngle || angleInSegment > SEGMENT_ARC - gapAngle) {
-      return true;
-    }
+      if (angleInSegment >= gapAngle && angleInSegment <= SEGMENT_ARC - gapAngle) {
+        const segmentIndex = Math.floor(localAngle / SEGMENT_ARC) % 4;
+        const segmentColor = obs.segmentColors[segmentIndex];
 
-    const segmentIndex = Math.floor(localAngle / SEGMENT_ARC) % 4;
-    const segmentColor = COLORS[segmentIndex];
-
-    if (segmentColor !== player.color) {
-      if (!absorbHit()) {
-        endGame();
-        return false;
+        if (segmentColor !== player.color) {
+          if (!absorbHit()) {
+            endGame();
+            return false;
+          }
+        }
       }
     }
   }
 
   if (!obs.cleared && player.y < obs.y - obs.r - 16) {
     obs.cleared = true;
+    obs.contactZone = null;
     combo += 1;
     if (combo > bestCombo) {
       bestCombo = combo;
@@ -476,14 +490,14 @@ function update(dt) {
   if (flash > 0) flash -= 1;
 }
 
-function obstacleColor(kind, index) {
+function obstacleAccentColor(kind) {
   if (kind === 'bonus') {
-    return ['#ffd166', '#ffe08a', '#ffbf69', '#ffe29f'][index];
+    return 'rgba(255, 224, 138, 0.24)';
   }
   if (kind === 'slow') {
-    return ['#9fd8ff', '#77d6ff', '#8fc7ff', '#9fd8ff'][index];
+    return 'rgba(159, 216, 255, 0.2)';
   }
-  return COLORS[index];
+  return null;
 }
 
 function drawObstacle(obs) {
@@ -491,12 +505,24 @@ function drawObstacle(obs) {
   if (y < -130 || y > H + 130) return;
 
   ctx.lineCap = 'round';
+  const gapAngle = getGapAngle();
+  const accentColor = obstacleAccentColor(obs.kind);
+
+  if (accentColor) {
+    ctx.strokeStyle = accentColor;
+    ctx.lineWidth = obs.thickness + 8;
+    ctx.shadowColor = accentColor;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(W / 2, y, obs.r, 0, TAU);
+    ctx.stroke();
+  }
 
   for (let i = 0; i < 4; i += 1) {
-    const start = obs.rot + i * SEGMENT_ARC + BASE_GAP_ANGLE;
-    const end = obs.rot + (i + 1) * SEGMENT_ARC - BASE_GAP_ANGLE;
+    const start = obs.rot + i * SEGMENT_ARC + gapAngle;
+    const end = obs.rot + (i + 1) * SEGMENT_ARC - gapAngle;
 
-    const color = obstacleColor(obs.kind, i);
+    const color = obs.segmentColors[i];
     ctx.strokeStyle = color;
     ctx.lineWidth = obs.thickness;
     ctx.shadowColor = color;
@@ -606,7 +632,7 @@ function render(dt) {
     ctx.font = 'bold 30px system-ui';
     ctx.fillText(state === 'idle' ? 'Tap to Jump' : 'Game Over', W / 2, H / 2 - 14);
     ctx.font = '16px system-ui';
-    ctx.fillText('같은 색 구간만 통과하세요', W / 2, H / 2 + 18);
+    ctx.fillText('같은 색 구간 또는 빈 틈만 통과하세요', W / 2, H / 2 + 18);
     ctx.fillText('실드/체크포인트로 안정적으로 성장', W / 2, H / 2 + 42);
   }
 
