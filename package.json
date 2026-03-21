@@ -7,16 +7,16 @@
     "sunken-multi-server": "node scripts/sunken-multi-server.js",
     "twin-temple-multi-server": "node scripts/twin-temple-multi-server.js",
     "multi-hub-server": "node scripts/taptap-multi-hub-server.js",
-    "generate-thumbnails": "node scripts/generate-thumbnails.js",
-    "sync-real-estate-watch": "node scripts/sync-real-estate-watch.mjs",
-    "sync-commercial-area-radar": "node scripts/sync-commercial-area-radar.mjs",
-    "sync-officetel-watch": "node scripts/sync-officetel-watch.mjs",
-    "real-estate-watch:toss:build": "npm --prefix real-estate-watch/toss-package run build",
-    "real-estate-watch:toss:dev": "npm --prefix real-estate-watch/toss-package run dev",
-    "commercial-area-radar:toss:build": "npm --prefix commercial-area-radar/toss-package run build",
-    "commercial-area-radar:toss:dev": "npm --prefix commercial-area-radar/toss-package run dev",
-    "officetel-watch:toss:build": "npm --prefix officetel-watch/toss-package run build",
-    "officetel-watch:toss:dev": "npm --prefix officetel-watch/toss-package run dev"
+    "generate-thumbnails": "node meta/tools/generate-thumbnails.js",
+    "sync-real-estate-watch": "node meta/tools/sync-real-estate-watch.mjs",
+    "sync-commercial-area-radar": "node meta/tools/sync-commercial-area-radar.mjs",
+    "sync-officetel-watch": "node meta/tools/sync-officetel-watch.mjs",
+    "real-estate-watch:toss:build": "npm --prefix games/real-estate-watch/toss-package run build",
+    "real-estate-watch:toss:dev": "npm --prefix games/real-estate-watch/toss-package run dev",
+    "commercial-area-radar:toss:build": "npm --prefix games/commercial-area-radar/toss-package run build",
+    "commercial-area-radar:toss:dev": "npm --prefix games/commercial-area-radar/toss-package run dev",
+    "officetel-watch:toss:build": "npm --prefix games/officetel-watch/toss-package run build",
+    "officetel-watch:toss:dev": "npm --prefix games/officetel-watch/toss-package run dev"
   },
   "dependencies": {
     "ws": "^8.18.0"

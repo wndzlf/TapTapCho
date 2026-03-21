@@ -14,11 +14,11 @@ const MAX_PLAYERS = 4;
 const SLOT_COUNT = 8;
 const ACTION_MEMORY = 240;
 const SINGLE_RANK_MAX = 300;
-const SINGLE_RANK_FILE = path.join(__dirname, '..', 'data', 'sunken-single-ranks.json');
+const SINGLE_RANK_FILE = path.join(__dirname, 'data', 'sunken-single-ranks.json');
 const SINGLE_PLAYER_MAX = 2000;
-const SINGLE_PLAYER_FILE = path.join(__dirname, '..', 'data', 'sunken-single-players.json');
+const SINGLE_PLAYER_FILE = path.join(__dirname, 'data', 'sunken-single-players.json');
 const MULTI_STATE_MAX_ROOMS = 120;
-const MULTI_STATE_FILE = path.join(__dirname, '..', 'data', 'sunken-multi-state.json');
+const MULTI_STATE_FILE = path.join(__dirname, 'data', 'sunken-multi-state.json');
 const MULTI_STATE_SAVE_MS = 2000;
 
 const LANES = ['north', 'east', 'south', 'west'];

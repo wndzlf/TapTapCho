@@ -1,0 +1,125 @@
+# 서드파티 라이선스 고지
+
+이 프로젝트에서 사용한 외부 에셋의 라이선스를 아래와 같이 고지합니다.
+
+## 오디오
+
+### AirStrikerLite BGM
+- 트랙명: The Dawn Unfolds Remix
+- 제작자: Konijn
+- 출처: https://opengameart.org/content/the-dawn-unfolds-remix
+- 라이선스: Creative Commons Attribution 4.0 International (CC BY 4.0)
+- 라이선스 원문: https://creativecommons.org/licenses/by/4.0/
+- 프로젝트 내 파일: `assets/audio/the_dawn_unfolds_v2.m4a`
+
+표기 문구:
+- "The Dawn Unfolds Remix by Konijn, licensed under CC BY 4.0"
+
+### Sunken Sixway Defense BGM
+- 트랙명: Battle Theme A
+- 제작자: cynicmusic.com / pixelsphere.org
+- 출처: https://opengameart.org/content/battle-theme-a
+- 라이선스: Creative Commons Zero (CC0 1.0)
+- 라이선스 원문: https://creativecommons.org/publicdomain/zero/1.0/
+- 프로젝트 내 파일: `assets/audio/battleThemeA.mp3`
+
+고지 참고:
+- CC0는 저작권 표기 의무가 없으나, 출처/제작자 표기를 권장함.
+
+### Orbit Survivor BGM
+- 트랙명: Comedy Cartoon Funny Background Music
+- 제작자: Oleg Starostin Music
+- 출처: https://pixabay.com/music/comedy-comedy-cartoon-funny-background-music-492540/
+- 라이선스: Pixabay Content License (무료 상업적 사용 가능, 출처 표기 의무 없음)
+- 라이선스 요약: https://pixabay.com/service/license-summary/
+- 라이선스 원문: https://pixabay.com/service/terms/#license
+- 프로젝트 내 파일: `orbitSurvivor/assets/audio/orbit-survivor-pixabay-492540.mp3`
+
+고지 참고:
+- Pixabay 라이선스는 일반적인 사용에서 출처 표기를 요구하지 않지만, 프로젝트 내 라이선스 문서에 출처/제작자를 명시해 추적 가능하게 유지함.
+
+### Zigzag Memory Run BGM
+- 트랙명: Magical Wizard School Orchestral Fantasy
+- 제작자: domartistudios
+- 출처: https://pixabay.com/music/modern-classical-magical-wizard-school-orchestral-fantasy-488126/
+- 라이선스: Pixabay Content License (무료 상업적 사용 가능, 출처 표기 의무 없음)
+- 라이선스 요약: https://pixabay.com/service/license-summary/
+- 라이선스 원문: https://pixabay.com/service/terms/#license
+- 프로젝트 내 파일: `assets/audio/zigzag-memory-run-pixabay-488126.mp3`
+
+고지 참고:
+- Pixabay 라이선스는 일반적인 사용에서 출처 표기를 요구하지 않지만, 프로젝트 내 라이선스 문서에 출처/제작자를 명시해 추적 가능하게 유지함.
+
+### Winter Ski Rush BGM
+- 트랙명: Christmas Instrumental Celebration Music
+- 제작자: lnplusmusic
+- 출처: https://pixabay.com/music/upbeat-christmas-instrumental-celebration-music-286213/
+- 라이선스: Pixabay Content License (무료 상업적 사용 가능, 출처 표기 의무 없음)
+- 라이선스 요약: https://pixabay.com/service/license-summary/
+- 라이선스 원문: https://pixabay.com/service/terms/#license
+- 프로젝트 내 파일: `assets/audio/winter-ski-rush-pixabay-286213.mp3`
+
+고지 참고:
+- Pixabay 라이선스는 일반적인 사용에서 출처 표기를 요구하지 않지만, 프로젝트 내 라이선스 문서에 출처/제작자를 명시해 추적 가능하게 유지함.
+
+### Winter Ski Rush Brake SFX
+- 트랙명: Avalanche Hit
+- 제작자: freesound_community
+- 출처: https://pixabay.com/ko/sound-effects/%ec%98%81%ed%99%94-%eb%b0%8f-%ed%8a%b9%ec%88%98-%ed%9a%a8%ea%b3%bc-avalanche-hit-46042/
+- 라이선스: Pixabay Content License (무료 상업적 사용 가능, 출처 표기 의무 없음)
+- 라이선스 요약: https://pixabay.com/service/license-summary/
+- 라이선스 원문: https://pixabay.com/service/terms/#license
+- 프로젝트 내 파일: `assets/audio/winter-ski-rush-brake-pixabay-46042.mp3`
+
+고지 참고:
+- Pixabay 라이선스는 일반적인 사용에서 출처 표기를 요구하지 않지만, 프로젝트 내 라이선스 문서에 출처/제작자를 명시해 추적 가능하게 유지함.
+
+### Twin Temple Escape BGM
+- 트랙명: Roblox Minecraft Fortnite Video Game Music
+- 제작자: BackgroundMusicForVideos (composer: Maksym Malko)
+- 출처: https://pixabay.com/music/video-games-roblox-minecraft-fortnite-video-game-music-358426/
+- 라이선스: Pixabay Content License (무료 상업적 사용 가능, 출처 표기 의무 없음)
+- 라이선스 요약: https://pixabay.com/service/license-summary/
+- 라이선스 원문: https://pixabay.com/service/terms/#license
+- 프로젝트 내 파일: `assets/audio/twin-temple-escape-pixabay-358426.mp3`
+
+고지 참고:
+- Pixabay 라이선스는 일반적인 사용에서 출처 표기를 요구하지 않지만, 프로젝트 내 라이선스 문서에 출처/제작자를 명시해 추적 가능하게 유지함.
+
+### Sunken Sixway Defense Impact SFX
+- 팩명: Impact Sounds (1.0)
+- 제작자: Kenney Vleugels (www.kenney.nl)
+- 출처: https://kenney.nl/assets/impact-sounds
+- 라이선스: Creative Commons Zero (CC0 1.0)
+- 라이선스 원문: https://creativecommons.org/publicdomain/zero/1.0/
+- 프로젝트 내 경로: `assets/audio/kenney_impact/`
+- 참고 파일: `assets/audio/kenney_impact/License.txt`
+
+고지 참고:
+- CC0는 저작권 표기 의무가 없으나, 출처/제작자 표기를 권장함.
+
+## 이미지/스프라이트
+
+### Sunken Sixway Defense 몹 탱크 에셋
+- 팩명: Tanks
+- 제작자: Kenney Vleugels (Kenney.nl)
+- 출처: https://kenney.nl/assets/tanks
+- 라이선스: Creative Commons Zero (CC0 1.0)
+- 라이선스 원문: https://creativecommons.org/publicdomain/zero/1.0/
+- 프로젝트 내 경로: `assets/kenney_tanks/png/`
+
+고지 참고:
+- `assets/kenney_tanks/png/License.txt` 기준으로 개인/상업 프로젝트에서 사용 가능.
+- 크레딧 표기는 의무가 아니지만 권장.
+
+### Hyperfold 외계인/UFO 에셋
+- 팩명: Alien UFO pack
+- 제작자: Kenney Vleugels (Kenney.nl)
+- 출처: https://kenney.nl/assets/alien-ufo-pack
+- 라이선스: Creative Commons Zero (CC0 1.0)
+- 라이선스 원문: https://creativecommons.org/publicdomain/zero/1.0/
+- 프로젝트 내 경로: `godot-hyperfold/assets/kenney_alien-ufo-pack/`
+
+고지 참고:
+- 해당 팩의 `License.txt`에 따라 개인/상업 프로젝트에서 사용 가능.
+- 크레딧 표기는 의무가 아니지만 권장.

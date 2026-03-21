@@ -1,0 +1,6 @@
+meta/_bmad/
+meta/_bmad-output/
+static/vendor/
+games/*/toss-package/dist/
+games/*/toss-package/.granite/
+node_modules/
