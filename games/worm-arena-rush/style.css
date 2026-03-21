@@ -10,8 +10,16 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  height: 100%;
+}
+
 body {
   margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: manipulation;
   font-family: "Noto Sans KR", "Apple SD Gothic Neo", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   color: var(--text);
   background: radial-gradient(1300px 700px at 50% -10%, #334f9a, var(--bg) 64%);
@@ -19,7 +27,11 @@ body {
 
 .wrap {
   width: min(460px, 95vw);
-  margin: 20px auto;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: 10px 0 8px;
+  display: flex;
+  flex-direction: column;
 }
 
 header h1 {
@@ -78,11 +90,19 @@ button:hover {
 
 .arena {
   position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 canvas {
-  width: 100%;
+  width: auto;
   height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 420 / 700;
   display: block;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -168,8 +188,9 @@ canvas {
 }
 
 footer {
-  margin-top: 10px;
+  margin-top: 8px;
   opacity: 0.78;
   text-align: center;
   line-height: 1.55;
+  flex: 0 0 auto;
 }
