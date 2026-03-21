@@ -15,6 +15,28 @@ const stickZoneEl = document.getElementById('stickZone');
 const stickKnobEl = document.getElementById('stickKnob');
 const btnDashEl = document.getElementById('btnDash');
 const btnSigEl = document.getElementById('btnSig');
+const bridgeBadgeEl = document.getElementById('bridgeBadge');
+const bridgeHintEl = document.getElementById('bridgeHint');
+const btnExitEl = document.getElementById('btnExit');
+const exitModalEl = document.getElementById('exitModal');
+const btnCancelExitEl = document.getElementById('btnCancelExit');
+const btnConfirmExitEl = document.getElementById('btnConfirmExit');
+
+const toss = window.CrimsonHunterTrialsToss || window.ZigzagMemoryRunToss || {
+  isAvailable: () => false,
+  closeView: async () => false,
+  setDeviceOrientation: async () => false,
+  setIosSwipeGestureEnabled: async () => false,
+  getUserKeyForGame: async () => null,
+  safeArea: {
+    get: async () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+    subscribe: () => () => {},
+  },
+  events: {
+    onBack: () => () => {},
+    onHome: () => () => {},
+  },
+};
 
 const bgmAudio = window.TapTapNeonAudio?.create('webgame-39', hudEl, { theme: 'mystic' });
 
@@ -25,6 +47,16 @@ function vibrate(pattern) {
 const W = canvas.width;
 const H = canvas.height;
 const TAU = Math.PI * 2;
+const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches
+  || (navigator.maxTouchPoints || 0) > 0;
+const STICK_MAX = 40;
+const STICK_CENTER = 44;
+
+let pauseReason = '';
+let unsubscribeSafeArea = () => {};
+let unsubscribeBack = () => {};
+let unsubscribeHome = () => {};
+let lastCanvasTouchAt = 0;
 
 const THEME_BY_TRIAL = [
   { bgA: '#161022', bgB: '#0d0916', fog: '#3b2758' },
@@ -170,6 +202,80 @@ function circleHit(a, b) {
   const dy = a.y - b.y;
   const rr = a.r + b.r;
   return dx * dx + dy * dy <= rr * rr;
+}
+
+function normalizeAngle(angle) {
+  let value = angle;
+  while (value > Math.PI) value -= TAU;
+  while (value < -Math.PI) value += TAU;
+  return value;
+}
+
+function lerpAngle(from, to, ratio) {
+  const diff = normalizeAngle(to - from);
+  return from + diff * clamp(ratio, 0, 1);
+}
+
+function updateBridgeBadge(text, className) {
+  if (!bridgeBadgeEl) return;
+  bridgeBadgeEl.textContent = text;
+  bridgeBadgeEl.className = `bridge-badge ${className}`;
+}
+
+function setBridgeHint(text) {
+  if (!bridgeHintEl) return;
+  bridgeHintEl.textContent = text;
+}
+
+function applySafeAreaInsets(insets) {
+  if (!insets) {
+    document.documentElement.style.removeProperty('--safe-top');
+    document.documentElement.style.removeProperty('--safe-right');
+    document.documentElement.style.removeProperty('--safe-bottom');
+    document.documentElement.style.removeProperty('--safe-left');
+    return;
+  }
+
+  document.documentElement.style.setProperty('--safe-top', `${Math.max(0, Number(insets.top || 0))}px`);
+  document.documentElement.style.setProperty('--safe-right', `${Math.max(0, Number(insets.right || 0))}px`);
+  document.documentElement.style.setProperty('--safe-bottom', `${Math.max(0, Number(insets.bottom || 0))}px`);
+  document.documentElement.style.setProperty('--safe-left', `${Math.max(0, Number(insets.left || 0))}px`);
+}
+
+function setPauseReason(reason) {
+  pauseReason = reason || '';
+}
+
+function isRuntimePaused() {
+  return pauseReason.length > 0;
+}
+
+function isExitModalOpen() {
+  return exitModalEl && !exitModalEl.classList.contains('hidden');
+}
+
+function syncBodyModalLock() {
+  document.body.classList.toggle('modal-open', isExitModalOpen());
+}
+
+function openExitModal() {
+  if (!exitModalEl) return;
+  exitModalEl.classList.remove('hidden');
+  syncBodyModalLock();
+  if (state.mode === 'playing') setPauseReason('exit');
+}
+
+function closeExitModal() {
+  if (!exitModalEl) return;
+  exitModalEl.classList.add('hidden');
+  syncBodyModalLock();
+  if (pauseReason === 'exit') setPauseReason('');
+}
+
+function canUsePointerAim(event) {
+  if (!event) return !isCoarsePointer;
+  if (event.pointerType === 'mouse' || event.pointerType === 'pen') return true;
+  return !isCoarsePointer;
 }
 
 function createPlayer(preset) {
@@ -447,7 +553,25 @@ function getAimAngle(player, moveVec) {
     return Math.atan2(dy, dx);
   }
 
-  const near = nearestEnemy(player.x, player.y);
+  let near = null;
+  let bestScore = Infinity;
+  for (const enemy of state.enemies) {
+    const dx = enemy.x - player.x;
+    const dy = enemy.y - player.y;
+    const distSq = dx * dx + dy * dy;
+    let score = distSq;
+
+    if (moveVec.x !== 0 || moveVec.y !== 0) {
+      const dot = (dx * moveVec.x + dy * moveVec.y) / (Math.hypot(dx, dy) || 1);
+      score -= Math.max(0, dot) * 18000;
+    }
+
+    if (score < bestScore) {
+      bestScore = score;
+      near = enemy;
+    }
+  }
+
   if (near) return Math.atan2(near.y - player.y, near.x - player.x);
 
   if (moveVec.x !== 0 || moveVec.y !== 0) return Math.atan2(moveVec.y, moveVec.x);
@@ -583,7 +707,9 @@ function updatePlayer(dt) {
   p.damageFlash = Math.max(0, p.damageFlash - dt);
 
   const mv = getMoveVector();
-  p.aim = getAimAngle(p, mv);
+  const desiredAim = getAimAngle(p, mv);
+  const aimSmoothing = clamp(dt * (isCoarsePointer ? 10 : 18), 0, 1);
+  p.aim = lerpAngle(p.aim, desiredAim, aimSmoothing);
 
   let speed = p.speed * state.mods.speedMul;
   let vx = mv.x * speed;
@@ -1290,6 +1416,18 @@ function drawFx() {
   }
 }
 
+function drawPauseOverlay() {
+  if (!isRuntimePaused() || state.mode !== 'playing') return;
+  ctx.fillStyle = 'rgba(2, 4, 10, 0.38)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#f7f2ff';
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 34px "Pretendard", "Noto Sans KR", sans-serif';
+  ctx.fillText('PAUSED', W * 0.5, H * 0.5 - 10);
+  ctx.font = '16px "Pretendard", "Noto Sans KR", sans-serif';
+  ctx.fillText('앱으로 돌아오면 자동으로 이어집니다.', W * 0.5, H * 0.5 + 20);
+}
+
 function render() {
   ctx.save();
 
@@ -1306,12 +1444,13 @@ function render() {
   drawPlayer();
   drawParticles();
   drawFx();
+  drawPauseOverlay();
 
   ctx.restore();
 }
 
 function step(dt) {
-  if (state.mode !== 'playing') {
+  if (state.mode !== 'playing' || isRuntimePaused()) {
     render();
     return;
   }
@@ -1365,6 +1504,112 @@ function onRelicChosen(id) {
   }
 }
 
+function handleBackRequest() {
+  if (isExitModalOpen()) {
+    closeExitModal();
+    return;
+  }
+  openExitModal();
+}
+
+async function leaveGame() {
+  await toss.setIosSwipeGestureEnabled(true);
+
+  const closedInToss = await toss.closeView();
+  if (closedInToss !== false) {
+    return;
+  }
+
+  if (window.history.length > 1) {
+    window.history.back();
+    return;
+  }
+
+  window.location.href = new URL('../', window.location.href).toString();
+}
+
+function handleVisibilityChange() {
+  if (document.hidden) {
+    if (state.mode === 'playing' && !isRuntimePaused()) {
+      setPauseReason('background');
+    }
+    return;
+  }
+
+  if (pauseReason === 'background' && !isExitModalOpen()) {
+    setPauseReason('');
+  }
+}
+
+function installTouchZoomGuard() {
+  const preventZoomGesture = (event) => {
+    event.preventDefault();
+  };
+
+  const preventMultiTouchZoom = (event) => {
+    if (event.touches.length > 1) {
+      event.preventDefault();
+    }
+  };
+
+  const preventDoubleTapZoom = (event) => {
+    const now = performance.now();
+    if (now - lastCanvasTouchAt < 280) {
+      event.preventDefault();
+    }
+    lastCanvasTouchAt = now;
+  };
+
+  canvas.addEventListener('touchstart', preventMultiTouchZoom, { passive: false });
+  canvas.addEventListener('touchmove', preventMultiTouchZoom, { passive: false });
+  canvas.addEventListener('touchend', preventDoubleTapZoom, { passive: false });
+  document.addEventListener('gesturestart', preventZoomGesture, { passive: false });
+  document.addEventListener('gesturechange', preventZoomGesture, { passive: false });
+  document.addEventListener('gestureend', preventZoomGesture, { passive: false });
+}
+
+async function initializeTossBridge() {
+  updateBridgeBadge('웹 미리보기', 'badge-preview');
+  setBridgeHint('모바일 터치 우선 조작 · 자동 조준 보정 활성화');
+
+  if (toss.isAvailable()) {
+    try {
+      const insets = await toss.safeArea.get();
+      applySafeAreaInsets(insets);
+    } catch (error) {
+      applySafeAreaInsets(null);
+    }
+
+    unsubscribeSafeArea = toss.safeArea.subscribe((insets) => {
+      applySafeAreaInsets(insets);
+    });
+  } else {
+    applySafeAreaInsets(null);
+  }
+
+  await toss.setDeviceOrientation('portrait');
+  await toss.setIosSwipeGestureEnabled(false);
+
+  unsubscribeBack = toss.events.onBack(() => {
+    handleBackRequest();
+  });
+
+  unsubscribeHome = toss.events.onHome(() => {
+    if (state.mode === 'playing' && !isRuntimePaused()) {
+      setPauseReason('background');
+    }
+  });
+
+  const userKeyResult = await toss.getUserKeyForGame();
+  if (userKeyResult && userKeyResult.type === 'HASH') {
+    updateBridgeBadge('토스 게임 연동', 'badge-live');
+    setBridgeHint('토스 게임 계정으로 실행 중입니다. 기기 세이프에어리어와 뒤로가기를 자동 반영합니다.');
+  } else if (toss.isAvailable()) {
+    updateBridgeBadge('토스 미리보기', 'badge-fallback');
+    setBridgeHint('토스 브리지 연결은 정상입니다. 계정 키를 받지 못해 브라우저 저장을 함께 사용합니다.');
+  }
+}
+
 panelEl.addEventListener('click', (event) => {
   const button = event.target.closest('[data-action]');
   if (!button) return;
@@ -1387,6 +1632,13 @@ panelEl.addEventListener('click', (event) => {
 });
 
 window.addEventListener('keydown', (event) => {
+  if (event.code === 'Escape') {
+    event.preventDefault();
+    handleBackRequest();
+    return;
+  }
+
+  if (isExitModalOpen()) return;
   input.keys[event.code] = true;
 
   if (event.code === 'Space' || event.code === 'ShiftLeft' || event.code === 'ShiftRight') {
@@ -1404,6 +1656,10 @@ window.addEventListener('keyup', (event) => {
 });
 
 function syncPointer(event) {
+  if (!canUsePointerAim(event)) {
+    input.pointer.hasAim = false;
+    return;
+  }
   const rect = canvas.getBoundingClientRect();
   input.pointer.x = (event.clientX - rect.left) * (W / rect.width);
   input.pointer.y = (event.clientY - rect.top) * (H / rect.height);
@@ -1423,13 +1679,17 @@ canvas.addEventListener('pointerleave', () => {
   input.pointer.hasAim = false;
 });
 
+canvas.addEventListener('pointercancel', () => {
+  input.pointer.hasAim = false;
+});
+
 function updateStick(clientX, clientY) {
   const rect = stickZoneEl.getBoundingClientRect();
   const cx = rect.left + rect.width * 0.5;
   const cy = rect.top + rect.height * 0.5;
   let dx = clientX - cx;
   let dy = clientY - cy;
-  const max = 40;
+  const max = STICK_MAX;
   const d = Math.hypot(dx, dy);
   if (d > max) {
     dx = (dx / d) * max;
@@ -1438,8 +1698,8 @@ function updateStick(clientX, clientY) {
 
   input.stick.x = dx / max;
   input.stick.y = dy / max;
-  stickKnobEl.style.left = `${44 + dx}px`;
-  stickKnobEl.style.top = `${44 + dy}px`;
+  stickKnobEl.style.left = `${STICK_CENTER + dx}px`;
+  stickKnobEl.style.top = `${STICK_CENTER + dy}px`;
 }
 
 function resetStick() {
@@ -1447,8 +1707,8 @@ function resetStick() {
   input.stick.id = -1;
   input.stick.x = 0;
   input.stick.y = 0;
-  stickKnobEl.style.left = '44px';
-  stickKnobEl.style.top = '44px';
+  stickKnobEl.style.left = `${STICK_CENTER}px`;
+  stickKnobEl.style.top = `${STICK_CENTER}px`;
 }
 
 stickZoneEl.addEventListener('pointerdown', (event) => {
@@ -1486,6 +1746,45 @@ btnSigEl.addEventListener('pointerdown', (event) => {
   bgmAudio?.unlock();
 });
 
+btnExitEl?.addEventListener('click', () => {
+  openExitModal();
+});
+
+btnCancelExitEl?.addEventListener('click', () => {
+  closeExitModal();
+});
+
+btnConfirmExitEl?.addEventListener('click', () => {
+  void leaveGame();
+});
+
+exitModalEl?.addEventListener('click', (event) => {
+  if (event.target === exitModalEl) {
+    closeExitModal();
+  }
+});
+
+document.addEventListener('visibilitychange', handleVisibilityChange);
+window.addEventListener('pagehide', () => {
+  if (state.mode === 'playing' && !isRuntimePaused()) {
+    setPauseReason('background');
+  }
+});
+window.addEventListener('pageshow', () => {
+  if (pauseReason === 'background' && !document.hidden && !isExitModalOpen()) {
+    setPauseReason('');
+  }
+});
+
+window.addEventListener('beforeunload', () => {
+  unsubscribeSafeArea();
+  unsubscribeBack();
+  unsubscribeHome();
+  void toss.setIosSwipeGestureEnabled(true);
+});
+
+installTouchZoomGuard();
 showClassPanel();
 refreshHUD();
 requestAnimationFrame(frame);
+void initializeTossBridge();

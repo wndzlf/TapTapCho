@@ -16,7 +16,9 @@
     "commercial-area-radar:toss:build": "npm --prefix games/commercial-area-radar/toss-package run build",
     "commercial-area-radar:toss:dev": "npm --prefix games/commercial-area-radar/toss-package run dev",
     "officetel-watch:toss:build": "npm --prefix games/officetel-watch/toss-package run build",
-    "officetel-watch:toss:dev": "npm --prefix games/officetel-watch/toss-package run dev"
+    "officetel-watch:toss:dev": "npm --prefix games/officetel-watch/toss-package run dev",
+    "crimson-hunter-trials:toss:build": "npm --prefix games/crimson-hunter-trials/toss-package run build",
+    "crimson-hunter-trials:toss:dev": "npm --prefix games/crimson-hunter-trials/toss-package run dev"
   },
   "dependencies": {
     "ws": "^8.18.0"
