@@ -914,6 +914,7 @@ function render() {
       const y = BOARD_Y + r * (CELL + GAP);
       const id = idx(r, c);
       const cell = board[id];
+      if (!cell) continue;
 
       const showMine = state === 'gameover' && cell.mine;
 
@@ -1232,6 +1233,7 @@ function attachEventListeners() {
 }
 
 attachEventListeners();
+beginRound();
 updateHud();
 resizeStage();
 render();
