@@ -15,3 +15,8 @@ data/
 
 # Editor swap
 *.swp
+
+# Apps in Toss build artifacts
+**/toss-package/.granite/
+**/toss-package/dist/
+**/toss-package/*.ait
