@@ -2442,47 +2442,58 @@ function drawControlHints(alpha = 0.92) {
 function drawTopInfo(difficulty) {
   const plane = selectedPlane();
   const stageCfg = currentStageConfig();
-  ctx.fillStyle = 'rgba(7, 13, 27, 0.34)';
-  ctx.fillRect(12, 48, 276, 72);
+  ctx.fillStyle = 'rgba(7, 13, 27, 0.38)';
+  ctx.fillRect(12, 44, 286, 84);
   ctx.strokeStyle = 'rgba(145, 186, 245, 0.32)';
-  ctx.strokeRect(12, 48, 276, 72);
+  ctx.strokeRect(12, 44, 286, 84);
 
   ctx.fillStyle = '#d7e8ff';
-  ctx.font = 'bold 12px system-ui';
+  ctx.font = 'bold 11px system-ui';
   ctx.textAlign = 'left';
-  ctx.fillText(`S${stage}  W${wave}/${stageCfg.wavesToBoss}  보스${bossesDefeated}`, 20, 67);
+  ctx.fillText(`스테이지 ${stage}`, 20, 62);
+  ctx.fillText(`웨이브 ${wave}/${stageCfg.wavesToBoss}`, 20, 76);
   ctx.fillStyle = 'rgba(205, 230, 255, 0.82)';
-  ctx.font = '11px system-ui';
-  ctx.fillText(`난도 ${difficulty.level}`, 212, 67);
+  ctx.fillText(`보스 격파 ${bossesDefeated}`, 154, 62);
+  ctx.fillText(`난이도 ${difficulty.level}`, 154, 76);
+
+  ctx.fillStyle = 'rgba(214, 234, 255, 0.84)';
+  ctx.font = '10px system-ui';
+  ctx.fillText('기체', 20, 90);
+  ctx.fillText('실드', 20, 104);
 
   const hpCap = Math.max(3, maxHp);
   for (let i = 0; i < hpCap; i += 1) {
-    const x = 20 + i * 12;
-    const y = 82;
+    const x = 54 + i * 12;
+    const y = 83;
     ctx.fillStyle = i < hp ? '#ff9a96' : 'rgba(255, 154, 150, 0.22)';
     ctx.fillRect(x, y, 8, 8);
   }
 
   for (let i = 0; i < 6; i += 1) {
-    const x = 20 + i * 10;
-    const y = 96;
+    const x = 54 + i * 10;
+    const y = 97;
     ctx.fillStyle = i < player.shield ? '#8deeff' : 'rgba(141, 238, 255, 0.2)';
     ctx.fillRect(x, y, 7, 5);
   }
 
   const spRatio = clamp(specialCharge / 100, 0, 1);
   ctx.fillStyle = 'rgba(40, 58, 96, 0.78)';
-  ctx.fillRect(126, 90, 154, 12);
+  ctx.fillRect(132, 90, 154, 13);
   ctx.fillStyle = specialCharge >= 100 && specialCooldown <= 0 ? '#ffe690' : '#9ed3ff';
-  ctx.fillRect(126, 90, 154 * spRatio, 12);
+  ctx.fillRect(132, 90, 154 * spRatio, 13);
   ctx.strokeStyle = 'rgba(190, 220, 255, 0.5)';
-  ctx.strokeRect(126, 90, 154, 12);
+  ctx.strokeRect(132, 90, 154, 13);
+
+  const specialReady = specialCharge >= 100 && specialCooldown <= 0;
+  const specialText = specialReady ? '필살기 준비' : `필살기 ${Math.floor(specialCharge)}%`;
   ctx.fillStyle = '#eff7ff';
-  ctx.font = 'bold 10px system-ui';
-  ctx.fillText('SP', 130, 100);
+  ctx.font = 'bold 9px system-ui';
+  ctx.textAlign = 'center';
+  ctx.fillText(specialText, 132 + 77, 100);
+  ctx.textAlign = 'left';
 
   ctx.save();
-  ctx.translate(252, 78);
+  ctx.translate(274, 78);
   ctx.fillStyle = plane.primary;
   ctx.beginPath();
   ctx.moveTo(0, -10);
