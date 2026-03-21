@@ -12,7 +12,7 @@
 - `TOSS_BRAND_DISPLAY_NAME`
   - 기본값: `서울·경기 아파트 실거래`
 - `TOSS_BRAND_ICON_URL`
-  - 기본값: 내장 SVG 아이콘
+  - 기본값: `https://static.toss.im/appsintoss/29647/18a3c412-0033-4217-89c2-7219a4e43034.png`
 
 ## 로컬 빌드
 
