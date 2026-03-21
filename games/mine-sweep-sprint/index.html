@@ -1,36 +1,144 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mine Sweep Sprint</title>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+  />
+  <meta name="theme-color" content="#08111f" />
+  <title>지뢰찾기 스프린트</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>Mine Sweep Sprint</h1>
-      <p>Reveal safe tiles, flag mines, clear the board.</p>
-    </header>
+  <main class="app-shell">
+    <section class="top-panel" aria-label="게임 상태와 조작 버튼">
+      <div class="brand-row">
+        <div class="brand-copy">
+          <p class="eyebrow">Toss Mini App Game</p>
+          <h1>지뢰찾기 스프린트</h1>
+          <p class="lede">안전 타일을 연속으로 열어 콤보를 쌓고, 남은 시간 보너스로 점수를 폭발시키세요.</p>
+        </div>
+        <div class="status-wrap">
+          <span id="bridgeBadge" class="badge badge-preview">웹 미리보기</span>
+          <button
+            id="btnInfo"
+            class="icon-button"
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="infoModal"
+          >
+            안내
+          </button>
+        </div>
+      </div>
 
-    <div class="hud">
-      <div>Score: <span id="score">0</span></div>
-      <div>Best: <span id="best">0</span></div>
-      <div>Streak: <span id="streak">0</span></div>
-      <div>Best Streak: <span id="bestStreak">0</span></div>
-      <div>Mines Left: <span id="minesLeft">0</span></div>
-      <button id="btnStart">Start</button>
-      <button id="btnMode">Mode: Reveal</button>
+      <div class="hud-grid">
+        <div class="hud-card" aria-label="현재 점수">
+          <span class="hud-label">점수</span>
+          <strong id="score">0</strong>
+        </div>
+        <div class="hud-card" aria-label="최고 점수">
+          <span class="hud-label">최고</span>
+          <strong id="best">0</strong>
+        </div>
+        <div class="hud-card" aria-label="연속 라운드">
+          <span class="hud-label">연속</span>
+          <strong id="streak">0</strong>
+        </div>
+        <div class="hud-card" aria-label="최고 연속 라운드">
+          <span class="hud-label">최고 연속</span>
+          <strong id="bestStreak">0</strong>
+        </div>
+        <div class="hud-card" aria-label="콤보">
+          <span class="hud-label">콤보</span>
+          <strong id="combo">0</strong>
+        </div>
+        <div class="hud-card" aria-label="남은 지뢰 수">
+          <span class="hud-label">남은 지뢰</span>
+          <strong id="minesLeft">0</strong>
+        </div>
+        <div class="hud-card" aria-label="현재 라운드">
+          <span class="hud-label">라운드</span>
+          <strong id="round">1</strong>
+        </div>
+        <div class="hud-card" aria-label="남은 시간">
+          <span class="hud-label">시간</span>
+          <strong id="timer">0.0</strong>
+        </div>
+      </div>
+
+      <div class="control-row" id="controlRow">
+        <button id="btnStart" class="button button-primary" type="button">시작</button>
+        <button id="btnMode" class="button button-secondary" type="button">모드: 열기</button>
+        <button id="btnHint" class="button button-secondary" type="button">힌트 2</button>
+        <button id="btnExit" class="button button-danger" type="button">종료</button>
+      </div>
+
+      <p id="statusLine" class="microcopy" aria-live="polite">
+        안전 타일을 모두 열면 다음 라운드로 넘어가고, 시간 보너스와 깃발 정확도 보너스를 얻습니다.
+      </p>
+      <p id="userKeyHint" class="microcopy secondary" aria-live="polite">
+        토스 게임 계정 연결 상태를 확인하고 있어요.
+      </p>
+    </section>
+
+    <section class="stage-shell" aria-label="게임 화면">
+      <div id="stageCard" class="stage-card">
+        <canvas id="game" width="420" height="760" aria-label="지뢰찾기 게임 보드"></canvas>
+      </div>
+      <p class="tap-hint">
+        탭: 열기 · 길게 누름(모바일)/우클릭: 깃발 · 숫자 칸 다시 탭: 주변 자동 열기
+      </p>
+    </section>
+  </main>
+
+  <div
+    id="exitModal"
+    class="sheet-modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="exitTitle"
+  >
+    <div class="sheet-card">
+      <p class="modal-kicker">종료 확인</p>
+      <h2 id="exitTitle">지뢰찾기 스프린트를 종료할까요?</h2>
+      <p class="sheet-copy">진행 중인 라운드는 저장되지 않지만 최고 기록과 설정은 유지됩니다.</p>
+      <div class="modal-actions">
+        <button id="btnCancelExit" class="button button-secondary" type="button">계속 플레이</button>
+        <button id="btnConfirmExit" class="button button-danger" type="button">종료</button>
+      </div>
     </div>
+  </div>
 
-    <canvas id="game" width="420" height="700"></canvas>
-
-    <footer>
-      <small>Tap: reveal/flag · F: mode toggle · Right click: flag</small>
-    </footer>
+  <div
+    id="infoModal"
+    class="sheet-modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="infoTitle"
+  >
+    <div class="sheet-card">
+      <button id="btnCloseInfo" class="sheet-close" type="button" aria-label="안내 닫기">닫기</button>
+      <p class="modal-kicker">플레이 가이드</p>
+      <h2 id="infoTitle">빠르게 익히기</h2>
+      <p class="sheet-copy">
+        길게 누르기(모바일) 또는 우클릭으로 지뢰 칸에 깃발을 꽂으세요. 숫자 칸의 숫자와 깃발 수가 같으면,
+        해당 칸을 다시 탭해 주변 칸을 빠르게 열 수 있습니다.
+      </p>
+      <p class="sheet-copy">
+        콤보가 높을수록 기본 획득 점수가 커지고, 라운드 종료 시 남은 시간과 깃발 정확도에 따라 보너스를 받습니다.
+      </p>
+      <div class="info-links">
+        <a href="../privacy.html">개인정보처리방침</a>
+        <a href="../terms.html">이용약관</a>
+        <a href="../contact.html">문의하기</a>
+      </div>
+    </div>
   </div>
 
   <script src="../assets/js/neon-audio.js"></script>
+  <script src="toss-bridge.js"></script>
   <script src="game.js"></script>
 </body>
 </html>
