@@ -1,5 +1,45 @@
+const toss = window.AirStrikerLiteToss || {
+  isAvailable: () => false,
+  closeView: async () => false,
+  setDeviceOrientation: async () => false,
+  setIosSwipeGestureEnabled: async () => false,
+  getUserKeyForGame: async () => null,
+  safeArea: {
+    get: async () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+    subscribe: () => () => {},
+  },
+  events: {
+    onBack: () => () => {},
+    onHome: () => () => {},
+  },
+  storage: {
+    getItem: async (key) => {
+      try {
+        return window.localStorage.getItem(key);
+      } catch (error) {
+        return null;
+      }
+    },
+    setItem: async (key, value) => {
+      try {
+        window.localStorage.setItem(key, value);
+      } catch (error) {
+        // Ignore preview storage failures.
+      }
+    },
+    removeItem: async (key) => {
+      try {
+        window.localStorage.removeItem(key);
+      } catch (error) {
+        // Ignore preview storage failures.
+      }
+    },
+  },
+};
+
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
+const stageCard = document.getElementById('stageCard');
 
 const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
@@ -10,29 +50,42 @@ const waveEl = document.getElementById('wave');
 const bossesEl = document.getElementById('bosses');
 const comboEl = document.getElementById('combo');
 const spEl = document.getElementById('sp');
+const bridgeBadgeEl = document.getElementById('bridgeBadge');
+const userKeyHintEl = document.getElementById('userKeyHint');
+
 const btnStart = document.getElementById('btnStart');
 const btnSound = document.getElementById('btnSound');
 const btnSpecial = document.getElementById('btnSpecial');
+const btnExit = document.getElementById('btnExit');
+const btnInfo = document.getElementById('btnInfo');
+const btnCloseInfo = document.getElementById('btnCloseInfo');
+const btnCancelExit = document.getElementById('btnCancelExit');
+const btnConfirmExit = document.getElementById('btnConfirmExit');
 const touchSpecialBtn = document.getElementById('touchSpecial');
 const touchButtons = document.querySelectorAll('[data-touch]');
 
+const exitModal = document.getElementById('exitModal');
+const infoModal = document.getElementById('infoModal');
+
 const W = canvas.width;
 const H = canvas.height;
-const STORAGE_KEY = 'air-striker-lite-best';
+const LEGACY_BEST_KEY = 'air-striker-lite-best';
+const LEGACY_SETTINGS_KEY = 'air-striker-lite-settings';
+const STORAGE_PREFIX = 'air-striker-lite';
 
 const DIFFICULTY_LABELS = [
-  'Rookie',
-  'Pilot',
-  'Ace',
-  'Elite',
-  'Veteran',
-  'Nightmare',
+  '입문',
+  '파일럿',
+  '에이스',
+  '엘리트',
+  '베테랑',
+  '악몽',
 ];
 
 const PLANES = [
   {
     id: 'falcon',
-    name: 'Falcon Mk-I',
+    name: '팔콘 Mk-I',
     role: '표준형',
     pros: '조작 쉬움',
     cons: '폭딜 낮음',
@@ -54,7 +107,7 @@ const PLANES = [
   },
   {
     id: 'raptor',
-    name: 'Raptor-X',
+    name: '랩터-X',
     role: '화력형',
     pros: '보스 딜 강함',
     cons: 'HP 낮음',
@@ -76,7 +129,7 @@ const PLANES = [
   },
   {
     id: 'phantom',
-    name: 'Phantom-Z',
+    name: '팬텀-Z',
     role: '회피형',
     pros: '속도/무적',
     cons: '화력 약함',
@@ -98,7 +151,7 @@ const PLANES = [
   },
   {
     id: 'guardian',
-    name: 'Guardian-G',
+    name: '가디언-G',
     role: '방어형',
     pros: '생존 최고',
     cons: '느림',
@@ -120,7 +173,7 @@ const PLANES = [
   },
   {
     id: 'tempest',
-    name: 'Tempest-A',
+    name: '템페스트-A',
     role: '제압형',
     pros: '광역 제압',
     cons: '보스 약함',
@@ -145,7 +198,7 @@ const PLANES = [
 const STAGES = [
   {
     id: 1,
-    name: 'Aegean Front',
+    name: '에게해 전선',
     wavesToBoss: 3,
     bgTop: '#2b57a8',
     bgBottom: '#14294f',
@@ -156,7 +209,7 @@ const STAGES = [
   },
   {
     id: 2,
-    name: 'Crimson Canyon',
+    name: '크림슨 협곡',
     wavesToBoss: 4,
     bgTop: '#69456f',
     bgBottom: '#3a2248',
@@ -167,7 +220,7 @@ const STAGES = [
   },
   {
     id: 3,
-    name: 'Void Fortress',
+    name: '공허 요새',
     wavesToBoss: 5,
     bgTop: '#24245c',
     bgBottom: '#111133',
@@ -201,7 +254,7 @@ let state = 'idle'; // idle | running | gameover | clear
 let score = 0;
 let hp = 3;
 let maxHp = 3;
-let best = Number(localStorage.getItem(STORAGE_KEY) || 0);
+let best = 0;
 let tick = 0;
 let survivalTime = 0;
 let spawnTimer = 0;
@@ -258,6 +311,17 @@ let particles = [];
 let powerUps = [];
 let boss = null;
 
+const settings = {
+  soundEnabled: true,
+};
+
+let pauseReason = null;
+let userHash = null;
+let unsubscribeSafeArea = () => {};
+let unsubscribeBack = () => {};
+let unsubscribeHome = () => {};
+let lastStageTouchAt = 0;
+
 bestEl.textContent = String(best);
 
 function rand(min, max) {
@@ -278,17 +342,96 @@ function dist2(ax, ay, bx, by) {
   return dx * dx + dy * dy;
 }
 
+function safeLocalStorageGet(key) {
+  try {
+    return window.localStorage.getItem(key);
+  } catch (error) {
+    return null;
+  }
+}
+
+function safeLocalStorageSet(key, value) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch (error) {
+    // Ignore preview storage failures.
+  }
+}
+
+function getScopedStorageKey(name) {
+  const scope = userHash ? `user:${userHash}` : 'browser';
+  return `${STORAGE_PREFIX}:${scope}:${name}`;
+}
+
+function isHidden(element) {
+  return element?.classList.contains('hidden');
+}
+
+function toggleBodyModalLock() {
+  const modalOpen = !isHidden(exitModal) || !isHidden(infoModal);
+  document.body.classList.toggle('modal-open', modalOpen);
+}
+
+function showElement(element) {
+  element?.classList.remove('hidden');
+  toggleBodyModalLock();
+}
+
+function hideElement(element) {
+  element?.classList.add('hidden');
+  toggleBodyModalLock();
+}
+
+function updateBridgeBadge(text, className) {
+  if (!bridgeBadgeEl) return;
+  bridgeBadgeEl.textContent = text;
+  bridgeBadgeEl.className = `badge ${className}`;
+}
+
+function applySafeAreaInsets(insets) {
+  if (!insets) {
+    document.documentElement.style.removeProperty('--safe-top');
+    document.documentElement.style.removeProperty('--safe-right');
+    document.documentElement.style.removeProperty('--safe-bottom');
+    document.documentElement.style.removeProperty('--safe-left');
+    return;
+  }
+
+  document.documentElement.style.setProperty('--safe-top', `${Math.max(0, Number(insets?.top || 0))}px`);
+  document.documentElement.style.setProperty('--safe-right', `${Math.max(0, Number(insets?.right || 0))}px`);
+  document.documentElement.style.setProperty('--safe-bottom', `${Math.max(0, Number(insets?.bottom || 0))}px`);
+  document.documentElement.style.setProperty('--safe-left', `${Math.max(0, Number(insets?.left || 0))}px`);
+}
+
+function resizeStage() {
+  if (!stageCard) return;
+
+  const bounds = stageCard.getBoundingClientRect();
+  const padding = 24;
+  const availableWidth = Math.max(180, bounds.width - padding);
+  const availableHeight = Math.max(260, bounds.height - padding);
+  const ratio = W / H;
+  const displayWidth = Math.min(availableWidth, availableHeight * ratio);
+  const displayHeight = displayWidth / ratio;
+
+  canvas.style.width = `${displayWidth}px`;
+  canvas.style.height = `${displayHeight}px`;
+}
+
 function createBgm() {
-  const track = new Audio('../assets/audio/the_dawn_unfolds_v2.m4a');
+  const track = new Audio('../assets/audio/air-striker-lite-bgm-pixabay-301284.mp3');
   track.preload = 'auto';
   track.loop = true;
-  track.volume = 0.34;
+  track.volume = 0.32;
   track.playbackRate = 1;
+  track.setAttribute('playsinline', '');
 
   let enabled = true;
   let unlocked = false;
+  let suspended = false;
 
   function safePlay() {
+    if (!enabled || !unlocked || suspended || document.hidden) return;
     const p = track.play();
     if (p && typeof p.catch === 'function') {
       p.catch(() => {});
@@ -307,10 +450,18 @@ function createBgm() {
         track.pause();
         return;
       }
-      if (unlocked) safePlay();
+      safePlay();
     },
     isEnabled() {
       return enabled;
+    },
+    setSuspended(next) {
+      suspended = !!next;
+      if (suspended) {
+        track.pause();
+      } else {
+        safePlay();
+      }
     },
     setTheme(themeId) {
       if (themeId === 'stage1') track.playbackRate = 0.98;
@@ -328,10 +479,12 @@ function createSfx() {
   const Ctx = window.AudioContext || window.webkitAudioContext;
   let audioCtx = null;
   let enabled = true;
+  let suspended = false;
 
   function ensure() {
     if (!Ctx) return;
     if (!audioCtx) audioCtx = new Ctx();
+    if (!enabled || suspended) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
   }
 
@@ -343,7 +496,7 @@ function createSfx() {
     type = 'square',
     attack = 0.005,
   }) {
-    if (!enabled || !audioCtx) return;
+    if (!enabled || suspended || !audioCtx || document.hidden) return;
     const now = audioCtx.currentTime;
     const osc = audioCtx.createOscillator();
     const env = audioCtx.createGain();
@@ -368,10 +521,34 @@ function createSfx() {
     ensure,
     toggle() {
       enabled = !enabled;
+      if (!audioCtx) return enabled;
+      if (!enabled && audioCtx.state === 'running') {
+        audioCtx.suspend().catch(() => {});
+      } else if (enabled && !suspended && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
       return enabled;
+    },
+    setEnabled(next) {
+      enabled = !!next;
+      if (!audioCtx) return;
+      if (!enabled && audioCtx.state === 'running') {
+        audioCtx.suspend().catch(() => {});
+      } else if (enabled && !suspended && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
     },
     isEnabled() {
       return enabled;
+    },
+    setSuspended(next) {
+      suspended = !!next;
+      if (!audioCtx) return;
+      if (suspended && audioCtx.state === 'running') {
+        audioCtx.suspend().catch(() => {});
+      } else if (!suspended && enabled && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
     },
     shoot() {
       tone({ freq: 840, endFreq: 520, gain: 0.02, duration: 0.045, type: 'triangle' });
@@ -402,9 +579,186 @@ function createSfx() {
 
 const sfx = createSfx();
 
+function syncAudioState() {
+  bgmAudio.setEnabled(settings.soundEnabled);
+  sfx.setEnabled(settings.soundEnabled);
+
+  const shouldSuspend = !settings.soundEnabled || state !== 'running' || !!pauseReason || document.hidden;
+  bgmAudio.setSuspended(shouldSuspend);
+  sfx.setSuspended(shouldSuspend);
+}
+
+function getRuntimeHintText() {
+  if (pauseReason === 'background') {
+    return '백그라운드 전환으로 자동 일시정지되었습니다.';
+  }
+  if (pauseReason === 'info') {
+    return '안내 창이 열려 있어 게임이 잠시 멈춰 있습니다.';
+  }
+  if (pauseReason === 'exit') {
+    return '종료 확인 중에는 게임이 일시정지됩니다.';
+  }
+  if (toss.isAvailable() && userHash) {
+    return '최고 기록과 사운드 설정이 토스 게임 계정 기준으로 저장됩니다.';
+  }
+  if (toss.isAvailable()) {
+    return '토스 브리지는 연결되었지만 게임 계정 키를 받지 못해 로컬 저장소를 함께 사용합니다.';
+  }
+  return '브라우저 미리보기에서도 동일한 플레이를 확인할 수 있습니다.';
+}
+
+function updateRuntimeHint() {
+  if (!userKeyHintEl) return;
+  userKeyHintEl.textContent = getRuntimeHintText();
+}
+
+function setPauseReason(nextReason) {
+  pauseReason = nextReason;
+  if (pauseReason) {
+    pointer.active = false;
+    releaseTouchInput();
+    for (const code of Object.keys(keys)) {
+      keys[code] = false;
+    }
+  }
+  syncAudioState();
+  updateRuntimeHint();
+}
+
+async function persistBest() {
+  await toss.storage.setItem(getScopedStorageKey('best'), String(best));
+  safeLocalStorageSet(LEGACY_BEST_KEY, String(best));
+}
+
+async function persistSettings() {
+  const payload = JSON.stringify({
+    soundEnabled: settings.soundEnabled,
+  });
+  await toss.storage.setItem(getScopedStorageKey('settings'), payload);
+  safeLocalStorageSet(LEGACY_SETTINGS_KEY, payload);
+}
+
+async function loadPersistedState() {
+  const storedBest = Number(await toss.storage.getItem(getScopedStorageKey('best')) || 0);
+  const legacyBest = Number(safeLocalStorageGet(LEGACY_BEST_KEY) || 0);
+  best = Math.max(storedBest, legacyBest);
+  bestEl.textContent = String(best);
+
+  const settingsRaw = await toss.storage.getItem(getScopedStorageKey('settings'))
+    || safeLocalStorageGet(LEGACY_SETTINGS_KEY);
+  if (settingsRaw) {
+    try {
+      const parsed = JSON.parse(settingsRaw);
+      settings.soundEnabled = parsed.soundEnabled !== false;
+    } catch (error) {
+      settings.soundEnabled = true;
+    }
+  }
+
+  updateSoundButton();
+  syncAudioState();
+  if (best > 0) {
+    void persistBest();
+  }
+  void persistSettings();
+}
+
+function openInfoModal() {
+  if (!isHidden(exitModal)) {
+    hideElement(exitModal);
+  }
+  showElement(infoModal);
+  if (state === 'running' && (!pauseReason || pauseReason === 'exit')) {
+    setPauseReason('info');
+  } else {
+    updateRuntimeHint();
+  }
+}
+
+function closeInfoModal() {
+  hideElement(infoModal);
+  if (pauseReason === 'info') {
+    setPauseReason(null);
+  } else {
+    updateRuntimeHint();
+  }
+}
+
+function openExitModal() {
+  if (!isHidden(infoModal)) {
+    hideElement(infoModal);
+  }
+  showElement(exitModal);
+  if (state === 'running' && (!pauseReason || pauseReason === 'info')) {
+    setPauseReason('exit');
+  } else {
+    updateRuntimeHint();
+  }
+}
+
+function closeExitModal() {
+  hideElement(exitModal);
+  if (pauseReason === 'exit') {
+    setPauseReason(null);
+  } else {
+    updateRuntimeHint();
+  }
+}
+
+function handleBackRequest() {
+  if (!isHidden(infoModal)) {
+    closeInfoModal();
+    return;
+  }
+
+  if (!isHidden(exitModal)) {
+    closeExitModal();
+    return;
+  }
+
+  openExitModal();
+}
+
+async function leaveGame() {
+  await toss.setIosSwipeGestureEnabled(true);
+  const closedInToss = await toss.closeView();
+  if (closedInToss !== false) {
+    return;
+  }
+
+  if (window.history.length > 1) {
+    window.history.back();
+    return;
+  }
+
+  window.location.href = new URL('../', window.location.href).toString();
+}
+
+function handleVisibilityChange() {
+  if (document.hidden) {
+    if (state === 'running' && !pauseReason) {
+      setPauseReason('background');
+    } else {
+      syncAudioState();
+    }
+    return;
+  }
+
+  if (pauseReason === 'background') {
+    setPauseReason(null);
+  } else {
+    syncAudioState();
+  }
+}
+
+function updateStartButtonLabel() {
+  btnStart.textContent = state === 'running' ? '재출격' : '출격';
+}
+
 function updateSoundButton() {
-  const enabled = sfx.isEnabled() && bgmAudio.isEnabled();
-  btnSound.textContent = `Sound: ${enabled ? 'On' : 'Off'}`;
+  btnSound.dataset.active = settings.soundEnabled ? 'true' : 'false';
+  btnSound.setAttribute('aria-pressed', String(settings.soundEnabled));
+  btnSound.textContent = settings.soundEnabled ? '사운드 켜짐' : '사운드 꺼짐';
 }
 
 function selectedPlane() {
@@ -422,18 +776,18 @@ function setSelectedPlane(index) {
 }
 
 function canUseSpecial() {
-  return state === 'running' && !upgradeMenu.active && specialCharge >= 100 && specialCooldown <= 0;
+  return state === 'running' && !pauseReason && !upgradeMenu.active && specialCharge >= 100 && specialCooldown <= 0;
 }
 
 function updateSpecialUi() {
   const ready = canUseSpecial();
   if (spEl) spEl.textContent = `${Math.floor(specialCharge)}%`;
   if (btnSpecial) {
-    btnSpecial.textContent = ready ? 'SP!' : `SP ${Math.floor(specialCharge)}`;
+    btnSpecial.textContent = ready ? '특수 준비!' : `특수 ${Math.floor(specialCharge)}%`;
     btnSpecial.disabled = !ready;
   }
   if (touchSpecialBtn) {
-    touchSpecialBtn.textContent = ready ? 'SP!' : 'SP';
+    touchSpecialBtn.textContent = ready ? '특수!' : '특수';
     touchSpecialBtn.disabled = !ready;
   }
 }
@@ -653,24 +1007,24 @@ function spawnPowerUp(x, y) {
 const UPGRADE_POOL = [
   {
     id: 'fire',
-    title: 'Overclock',
-    desc: 'Fire rate +10%',
+    title: '오버클록',
+    desc: '발사 속도 +10%',
     apply() {
       perks.fireRate += 1;
     },
   },
   {
     id: 'damage',
-    title: 'Core Cannon',
-    desc: 'Bullet damage +1',
+    title: '코어 캐논',
+    desc: '탄환 피해 +1',
     apply() {
       perks.damage += 1;
     },
   },
   {
     id: 'shield',
-    title: 'Aegis Cell',
-    desc: 'Max HP +1 and shield +1',
+    title: '이지스 셀',
+    desc: '최대 HP +1, 실드 +1',
     apply() {
       perks.shield += 1;
       maxHp = Math.min(9, maxHp + 1);
@@ -681,24 +1035,24 @@ const UPGRADE_POOL = [
   },
   {
     id: 'drone',
-    title: 'Wing Drone',
-    desc: 'Add support drone fire',
+    title: '윙 드론',
+    desc: '지원 드론 사격 추가',
     apply() {
       perks.drone += 1;
     },
   },
   {
     id: 'combo',
-    title: 'Combo Drive',
-    desc: 'Combo duration and bonus up',
+    title: '콤보 드라이브',
+    desc: '콤보 지속시간과 보너스 강화',
     apply() {
       perks.combo += 1;
     },
   },
   {
     id: 'magnet',
-    title: 'Magnet Core',
-    desc: 'Power-up pickup range up',
+    title: '마그넷 코어',
+    desc: '파워업 획득 범위 증가',
     apply() {
       perks.magnet += 1;
     },
@@ -712,9 +1066,9 @@ function missionTarget(type) {
 }
 
 function missionLabel(type) {
-  if (type === 'kill') return 'Eliminate';
-  if (type === 'survive') return 'Survive';
-  return 'Collect Powerups';
+  if (type === 'kill') return '격추';
+  if (type === 'survive') return '생존';
+  return '파워업 수집';
 }
 
 function createMission() {
@@ -837,30 +1191,43 @@ function resetGame() {
   resetCombo();
   createMission();
   updateSpecialUi();
+  updateStartButtonLabel();
+  syncAudioState();
+  updateRuntimeHint();
 }
 
 function startGame() {
   sfx.ensure();
   bgmAudio.ensure();
+  hideElement(exitModal);
+  hideElement(infoModal);
+  setPauseReason(null);
   resetGame();
   state = 'running';
   updateSpecialUi();
+  updateStartButtonLabel();
+  syncAudioState();
+  updateRuntimeHint();
 }
 
 function endGame() {
   state = 'gameover';
   best = Math.max(best, score);
   bestEl.textContent = String(best);
-  localStorage.setItem(STORAGE_KEY, String(best));
+  void persistBest();
   updateSpecialUi();
+  updateStartButtonLabel();
+  syncAudioState();
 }
 
 function clearGame() {
   state = 'clear';
   best = Math.max(best, score);
   bestEl.textContent = String(best);
-  localStorage.setItem(STORAGE_KEY, String(best));
+  void persistBest();
   updateSpecialUi();
+  updateStartButtonLabel();
+  syncAudioState();
 }
 
 function currentFireCadence() {
@@ -994,7 +1361,7 @@ function killBoss() {
   boss = null;
 
   if (wasFinalStage) {
-    waveBannerText = 'FINAL BOSS DOWN';
+    waveBannerText = '최종 보스 격파';
     waveBanner = 2.6;
     clearGame();
     return;
@@ -1014,7 +1381,7 @@ function killBoss() {
   updateStageUi();
   updateWaveUi();
   const nextStage = currentStageConfig();
-  waveBannerText = `STAGE ${stage}: ${nextStage.name}`;
+  waveBannerText = `스테이지 ${stage}: ${nextStage.name}`;
   waveBanner = 2.6;
   bgmAudio.setTheme(`stage${stage}`);
 }
@@ -1749,7 +2116,7 @@ function drawBoss() {
   ctx.fillStyle = '#ffe3bd';
   ctx.font = 'bold 12px system-ui';
   ctx.textAlign = 'left';
-  ctx.fillText(`STAGE ${boss.stageId} · BOSS PHASE ${boss.phase}`, 32, 22);
+  ctx.fillText(`스테이지 ${boss.stageId} · 보스 페이즈 ${boss.phase}`, 32, 22);
 }
 
 function drawPowerUps() {
@@ -2073,10 +2440,10 @@ function drawTopInfo(difficulty) {
   ctx.fillStyle = '#d7e8ff';
   ctx.font = 'bold 12px system-ui';
   ctx.textAlign = 'left';
-  ctx.fillText(`S${stage}  W${wave}/${stageCfg.wavesToBoss}  B${bossesDefeated}`, 20, 67);
+  ctx.fillText(`S${stage}  W${wave}/${stageCfg.wavesToBoss}  보스${bossesDefeated}`, 20, 67);
   ctx.fillStyle = 'rgba(205, 230, 255, 0.82)';
   ctx.font = '11px system-ui';
-  ctx.fillText(`Lv${difficulty.level}`, 212, 67);
+  ctx.fillText(`난도 ${difficulty.level}`, 212, 67);
 
   const hpCap = Math.max(3, maxHp);
   for (let i = 0; i < hpCap; i += 1) {
@@ -2140,7 +2507,7 @@ function renderOverlay() {
     ctx.fillStyle = '#fff';
     ctx.textAlign = 'center';
     ctx.font = 'bold 22px system-ui';
-    ctx.fillText(waveBannerText || `Wave ${wave}`, W / 2, 164);
+    ctx.fillText(waveBannerText || `웨이브 ${wave}`, W / 2, 164);
   }
 
   if (state === 'idle' || state === 'gameover' || state === 'clear') {
@@ -2156,11 +2523,11 @@ function renderOverlay() {
       ctx.fillStyle = '#fff';
       ctx.textAlign = 'center';
       ctx.font = 'bold 34px system-ui';
-      const title = state === 'clear' ? 'STAGE CLEAR!' : 'Game Over';
+      const title = state === 'clear' ? '스테이지 클리어!' : '게임 오버';
       ctx.fillText(title, W / 2, H / 2 - 26);
       ctx.fillStyle = '#ffe082';
       ctx.font = 'bold 19px system-ui';
-      ctx.fillText(`Final Score: ${score}`, W / 2, H / 2 + 56);
+      ctx.fillText(`최종 점수: ${score}`, W / 2, H / 2 + 56);
     }
 
     drawControlHints(0.95);
@@ -2201,13 +2568,25 @@ function renderOverlay() {
     }
   }
 
+  if (state === 'running' && pauseReason) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.36)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 28px system-ui';
+    ctx.fillText('일시정지', W / 2, H * 0.46);
+    ctx.fillStyle = '#d9e9ff';
+    ctx.font = 'bold 15px system-ui';
+    ctx.fillText('토스 앱 상태에 맞춰 자동으로 멈췄습니다.', W / 2, H * 0.46 + 34);
+  }
+
   if (upgradeMenu.active) {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.56)';
     ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = '#fff';
     ctx.textAlign = 'center';
     ctx.font = 'bold 28px system-ui';
-    ctx.fillText('UPGRADE', W / 2, 182);
+    ctx.fillText('업그레이드', W / 2, 182);
 
     const boxW = W - 56;
     const boxH = 92;
@@ -2288,6 +2667,7 @@ function update(dt) {
   updateParticles(dt);
 
   if (state !== 'running') return;
+  if (pauseReason) return;
   if (upgradeMenu.active) return;
 
   survivalTime += dt;
@@ -2302,7 +2682,7 @@ function update(dt) {
       spawnWavePack(wv + (stage - 1) * 4);
     }
     wave = cappedWave;
-    waveBannerText = `Wave ${wave}`;
+    waveBannerText = `웨이브 ${wave}`;
     waveBanner = 1.5;
     updateWaveUi();
   }
@@ -2332,7 +2712,7 @@ function update(dt) {
   if (score > best) {
     best = score;
     bestEl.textContent = String(best);
-    localStorage.setItem(STORAGE_KEY, String(best));
+    void persistBest();
   }
 }
 
@@ -2370,154 +2750,295 @@ function releaseTouchInput() {
   touchInput.right = false;
 }
 
-btnStart.addEventListener('click', () => {
-  startGame();
-});
+function installTouchZoomGuard() {
+  if (!stageCard) return;
 
-btnSound.addEventListener('click', () => {
-  const enabled = sfx.toggle();
-  if (enabled) {
-    sfx.ensure();
-    bgmAudio.ensure();
-  }
-  bgmAudio.setEnabled(enabled);
-  updateSoundButton();
-});
+  const preventZoomGesture = (event) => {
+    event.preventDefault();
+  };
 
-btnSpecial.addEventListener('click', () => {
-  sfx.ensure();
-  bgmAudio.ensure();
-  activateSpecial();
-});
-
-canvas.addEventListener('pointerdown', (event) => {
-  sfx.ensure();
-  bgmAudio.ensure();
-  updatePointer(event);
-  if (upgradeMenu.active) {
-    const idx = pickUpgradeIndexAt(pointer.x, pointer.y);
-    if (idx >= 0) applyUpgrade(idx);
-    return;
-  }
-
-  if (state !== 'running') {
-    const planeIdx = pickPlaneIndexAt(pointer.x, pointer.y);
-    if (planeIdx >= 0) {
-      setSelectedPlane(planeIdx);
-      return;
+  const preventMultiTouchZoom = (event) => {
+    if (event.touches.length > 1) {
+      event.preventDefault();
     }
+  };
+
+  const preventDoubleTapZoom = (event) => {
+    const now = performance.now();
+    if (now - lastStageTouchAt < 280) {
+      event.preventDefault();
+    }
+    lastStageTouchAt = now;
+  };
+
+  stageCard.addEventListener('touchstart', preventMultiTouchZoom, { passive: false });
+  stageCard.addEventListener('touchmove', preventMultiTouchZoom, { passive: false });
+  stageCard.addEventListener('touchend', preventDoubleTapZoom, { passive: false });
+  document.addEventListener('gesturestart', preventZoomGesture, { passive: false });
+  document.addEventListener('gesturechange', preventZoomGesture, { passive: false });
+  document.addEventListener('gestureend', preventZoomGesture, { passive: false });
+}
+
+async function initializeTossBridge() {
+  updateBridgeBadge('웹 미리보기', 'badge-preview');
+  updateRuntimeHint();
+
+  if (toss.isAvailable()) {
+    try {
+      applySafeAreaInsets(await toss.safeArea.get());
+    } catch (error) {
+      applySafeAreaInsets(null);
+    }
+
+    unsubscribeSafeArea = toss.safeArea.subscribe((insets) => {
+      applySafeAreaInsets(insets);
+      resizeStage();
+    });
+  } else {
+    applySafeAreaInsets(null);
   }
 
-  pointer.active = true;
-  if (state !== 'running') startGame();
-});
+  await toss.setDeviceOrientation('portrait');
+  await toss.setIosSwipeGestureEnabled(false);
 
-canvas.addEventListener('pointermove', (event) => {
-  updatePointer(event);
-});
+  unsubscribeBack = toss.events.onBack(() => {
+    handleBackRequest();
+  });
 
-window.addEventListener('pointerup', () => {
-  pointer.active = false;
-  releaseTouchInput();
-});
+  unsubscribeHome = toss.events.onHome(() => {
+    if (state === 'running' && !pauseReason) {
+      setPauseReason('background');
+    }
+  });
 
-touchButtons.forEach((btn) => {
-  const dir = btn.getAttribute('data-touch');
-  if (!dir) return;
-  const down = (event) => {
-    event.preventDefault();
-    touchInput[dir] = true;
-  };
-  const up = (event) => {
-    event.preventDefault();
-    touchInput[dir] = false;
-  };
-  btn.addEventListener('pointerdown', down);
-  btn.addEventListener('pointerup', up);
-  btn.addEventListener('pointercancel', up);
-  btn.addEventListener('pointerleave', up);
-});
+  const userKeyResult = await toss.getUserKeyForGame();
+  if (userKeyResult && userKeyResult.type === 'HASH') {
+    userHash = userKeyResult.hash;
+    updateBridgeBadge('토스 게임 연동', 'badge-live');
+  } else if (toss.isAvailable()) {
+    updateBridgeBadge('토스 미리보기', 'badge-fallback');
+  }
+  updateRuntimeHint();
 
-if (touchSpecialBtn) {
-  touchSpecialBtn.addEventListener('pointerdown', (event) => {
-    event.preventDefault();
+  await loadPersistedState();
+}
+
+function attachEventListeners() {
+  installTouchZoomGuard();
+
+  window.addEventListener('resize', resizeStage);
+  window.addEventListener('orientationchange', resizeStage);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener('pagehide', () => {
+    if (state === 'running' && !pauseReason) {
+      setPauseReason('background');
+    } else {
+      syncAudioState();
+    }
+  });
+  window.addEventListener('pageshow', () => {
+    if (pauseReason === 'background' && !document.hidden) {
+      setPauseReason(null);
+    }
+  });
+
+  btnStart.addEventListener('click', () => {
+    startGame();
+  });
+
+  btnSound.addEventListener('click', () => {
+    settings.soundEnabled = !settings.soundEnabled;
+    updateSoundButton();
+    if (settings.soundEnabled) {
+      sfx.ensure();
+      bgmAudio.ensure();
+    }
+    syncAudioState();
+    void persistSettings();
+  });
+
+  btnSpecial.addEventListener('click', () => {
     sfx.ensure();
     bgmAudio.ensure();
     activateSpecial();
   });
-}
 
-window.addEventListener('keydown', (event) => {
-  if (upgradeMenu.active) {
-    if (event.code === 'Digit1') applyUpgrade(0);
-    if (event.code === 'Digit2') applyUpgrade(1);
-    if (event.code === 'Digit3') applyUpgrade(2);
-    if (event.code === 'ArrowUp') {
-      event.preventDefault();
-      upgradeMenu.selected = (upgradeMenu.selected + 2) % 3;
+  btnExit?.addEventListener('click', openExitModal);
+  btnCancelExit?.addEventListener('click', closeExitModal);
+  btnConfirmExit?.addEventListener('click', () => {
+    void leaveGame();
+  });
+
+  btnInfo?.addEventListener('click', openInfoModal);
+  btnCloseInfo?.addEventListener('click', closeInfoModal);
+  infoModal?.addEventListener('click', (event) => {
+    if (event.target === infoModal) {
+      closeInfoModal();
     }
-    if (event.code === 'ArrowDown') {
-      event.preventDefault();
-      upgradeMenu.selected = (upgradeMenu.selected + 1) % 3;
+  });
+  exitModal?.addEventListener('click', (event) => {
+    if (event.target === exitModal) {
+      closeExitModal();
     }
-    if (event.code === 'Enter' || event.code === 'Space') {
-      event.preventDefault();
-      applyUpgrade(upgradeMenu.selected);
-    }
-    return;
-  }
+  });
 
-  if (event.code === 'ArrowLeft' && state !== 'running') {
-    event.preventDefault();
-    setSelectedPlane(selectedPlaneIndex - 1);
-    return;
-  }
-  if (event.code === 'ArrowRight' && state !== 'running') {
-    event.preventDefault();
-    setSelectedPlane(selectedPlaneIndex + 1);
-    return;
-  }
-  if (event.code === 'Digit1' && state !== 'running') {
-    setSelectedPlane(0);
-    return;
-  }
-  if (event.code === 'Digit2' && state !== 'running') {
-    setSelectedPlane(1);
-    return;
-  }
-  if (event.code === 'Digit3' && state !== 'running') {
-    setSelectedPlane(2);
-    return;
-  }
-  if (event.code === 'Digit4' && state !== 'running') {
-    setSelectedPlane(3);
-    return;
-  }
-  if (event.code === 'Digit5' && state !== 'running') {
-    setSelectedPlane(4);
-    return;
-  }
-
-  keys[event.code] = true;
-
-  if (SPECIAL_KEYS.includes(event.code) && state === 'running') {
-    event.preventDefault();
-    if (!event.repeat) activateSpecial();
-    return;
-  }
-
-  if ((event.code === 'Space' || event.code === 'Enter') && state !== 'running') {
-    event.preventDefault();
+  canvas.addEventListener('pointerdown', (event) => {
     sfx.ensure();
     bgmAudio.ensure();
-    startGame();
+    updatePointer(event);
+    if (upgradeMenu.active) {
+      const idx = pickUpgradeIndexAt(pointer.x, pointer.y);
+      if (idx >= 0) applyUpgrade(idx);
+      return;
+    }
+
+    if (state !== 'running') {
+      const planeIdx = pickPlaneIndexAt(pointer.x, pointer.y);
+      if (planeIdx >= 0) {
+        setSelectedPlane(planeIdx);
+        return;
+      }
+    }
+
+    pointer.active = true;
+    if (state !== 'running') startGame();
+  });
+
+  canvas.addEventListener('pointermove', (event) => {
+    updatePointer(event);
+  });
+
+  window.addEventListener('pointermove', (event) => {
+    if (!pointer.active) return;
+    updatePointer(event);
+  });
+
+  window.addEventListener('pointerup', () => {
+    pointer.active = false;
+    releaseTouchInput();
+  });
+
+  touchButtons.forEach((btn) => {
+    const dir = btn.getAttribute('data-touch');
+    if (!dir) return;
+    const down = (event) => {
+      event.preventDefault();
+      touchInput[dir] = true;
+    };
+    const up = (event) => {
+      event.preventDefault();
+      touchInput[dir] = false;
+    };
+    btn.addEventListener('pointerdown', down);
+    btn.addEventListener('pointerup', up);
+    btn.addEventListener('pointercancel', up);
+    btn.addEventListener('pointerleave', up);
+  });
+
+  if (touchSpecialBtn) {
+    touchSpecialBtn.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      sfx.ensure();
+      bgmAudio.ensure();
+      activateSpecial();
+    });
   }
-});
 
-window.addEventListener('keyup', (event) => {
-  keys[event.code] = false;
-});
+  window.addEventListener('keydown', (event) => {
+    if (event.code === 'Escape') {
+      event.preventDefault();
+      handleBackRequest();
+      return;
+    }
 
+    if (upgradeMenu.active) {
+      if (event.code === 'Digit1') applyUpgrade(0);
+      if (event.code === 'Digit2') applyUpgrade(1);
+      if (event.code === 'Digit3') applyUpgrade(2);
+      if (event.code === 'ArrowUp') {
+        event.preventDefault();
+        upgradeMenu.selected = (upgradeMenu.selected + 2) % 3;
+      }
+      if (event.code === 'ArrowDown') {
+        event.preventDefault();
+        upgradeMenu.selected = (upgradeMenu.selected + 1) % 3;
+      }
+      if (event.code === 'Enter' || event.code === 'Space') {
+        event.preventDefault();
+        applyUpgrade(upgradeMenu.selected);
+      }
+      return;
+    }
+
+    if (event.code === 'ArrowLeft' && state !== 'running') {
+      event.preventDefault();
+      setSelectedPlane(selectedPlaneIndex - 1);
+      return;
+    }
+    if (event.code === 'ArrowRight' && state !== 'running') {
+      event.preventDefault();
+      setSelectedPlane(selectedPlaneIndex + 1);
+      return;
+    }
+    if (event.code === 'Digit1' && state !== 'running') {
+      setSelectedPlane(0);
+      return;
+    }
+    if (event.code === 'Digit2' && state !== 'running') {
+      setSelectedPlane(1);
+      return;
+    }
+    if (event.code === 'Digit3' && state !== 'running') {
+      setSelectedPlane(2);
+      return;
+    }
+    if (event.code === 'Digit4' && state !== 'running') {
+      setSelectedPlane(3);
+      return;
+    }
+    if (event.code === 'Digit5' && state !== 'running') {
+      setSelectedPlane(4);
+      return;
+    }
+
+    if (pauseReason && state === 'running') {
+      return;
+    }
+
+    keys[event.code] = true;
+
+    if (SPECIAL_KEYS.includes(event.code) && state === 'running') {
+      event.preventDefault();
+      if (!event.repeat) activateSpecial();
+      return;
+    }
+
+    if ((event.code === 'Space' || event.code === 'Enter') && state !== 'running') {
+      event.preventDefault();
+      sfx.ensure();
+      bgmAudio.ensure();
+      startGame();
+    }
+  });
+
+  window.addEventListener('keyup', (event) => {
+    keys[event.code] = false;
+  });
+
+  window.addEventListener('beforeunload', () => {
+    unsubscribeSafeArea();
+    unsubscribeBack();
+    unsubscribeHome();
+    void toss.setIosSwipeGestureEnabled(true);
+  });
+}
+
+attachEventListeners();
 updateSoundButton();
+updateStartButtonLabel();
+applySafeAreaInsets(null);
+updateRuntimeHint();
+resizeStage();
 resetGame();
 requestAnimationFrame(loop);
+void initializeTossBridge();
