@@ -1,40 +1,49 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="Commercial Area Radar thumbnail">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title desc">
+  <title id="title">Commercial Area Radar thumbnail</title>
+  <desc id="desc">A radar-style district and storefront illustration for the commercial area information app.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#0a1326"/>
-      <stop offset="45%" stop-color="hsl(316 84% 56%)" stop-opacity="0.75"/>
-      <stop offset="100%" stop-color="#121a31"/>
+      <stop offset="0%" stop-color="#0e3340" />
+      <stop offset="55%" stop-color="#14656a" />
+      <stop offset="100%" stop-color="#f48850" />
     </linearGradient>
-    <radialGradient id="flare" cx="0.18" cy="0.2" r="0.8">
-      <stop offset="0%" stop-color="hsl(2 82% 50%)" stop-opacity="0.75"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="strip" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0%" stop-color="hsl(76 86% 58%)" stop-opacity="0.32"/>
-      <stop offset="100%" stop-color="hsl(2 82% 50%)" stop-opacity="0"/>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7fdfd" />
+      <stop offset="100%" stop-color="#e8f4f2" />
     </linearGradient>
   </defs>
 
-  <rect width="640" height="360" fill="url(#bg)"/>
-  <rect width="640" height="360" fill="url(#flare)"/>
-  <path d="M-20 286 C145 208, 266 330, 420 272 C512 238, 590 204, 680 256 L680 380 L-20 380 Z" fill="url(#strip)"/>
+  <rect width="640" height="360" rx="28" fill="url(#bg)" />
+  <circle cx="530" cy="72" r="92" fill="rgba(255,255,255,0.1)" />
+  <circle cx="112" cy="76" r="68" fill="rgba(255,255,255,0.08)" />
 
-  <g opacity="0.18" fill="#ffffff">
-    <circle cx="86" cy="74" r="18"/>
-    <circle cx="142" cy="46" r="7"/>
-    <circle cx="204" cy="78" r="12"/>
-    <circle cx="248" cy="42" r="5"/>
+  <rect x="54" y="88" width="532" height="230" rx="24" fill="url(#panel)" opacity="0.97" />
+
+  <rect x="84" y="118" width="160" height="18" rx="9" fill="#8dc6c8" />
+  <rect x="84" y="152" width="152" height="130" rx="20" fill="#fff" />
+  <rect x="260" y="152" width="118" height="130" rx="20" fill="#fff" />
+  <rect x="394" y="152" width="162" height="130" rx="20" fill="#fff" />
+
+  <circle cx="164" cy="216" r="44" fill="none" stroke="#d7eceb" stroke-width="8" />
+  <circle cx="164" cy="216" r="26" fill="none" stroke="#c4e2e1" stroke-width="8" />
+  <path d="M164 216 L194 190" fill="none" stroke="#f48850" stroke-width="8" stroke-linecap="round" />
+  <circle cx="164" cy="216" r="8" fill="#0e7b7d" />
+  <circle cx="194" cy="190" r="7" fill="#f48850" />
+
+  <rect x="282" y="184" width="22" height="60" rx="6" fill="#0e7b7d" />
+  <rect x="312" y="170" width="22" height="74" rx="6" fill="#f48850" />
+  <rect x="342" y="196" width="22" height="48" rx="6" fill="#205660" />
+
+  <g fill="#205660">
+    <rect x="418" y="202" width="28" height="54" rx="5" />
+    <rect x="452" y="176" width="40" height="80" rx="5" />
+    <rect x="498" y="190" width="22" height="66" rx="5" />
   </g>
+  <path d="M416 188 L430 172 L442 188 Z" fill="#f48850" />
+  <path d="M448 160 L472 138 L496 160 Z" fill="#0e7b7d" />
+  <path d="M496 176 L509 162 L522 176 Z" fill="#f2b38d" />
 
-  <text x="36" y="126" fill="#ffffff" fill-opacity="0.12" font-size="108" font-family="Arial, sans-serif" font-weight="700">C</text>
-  <g opacity="0.94" stroke="hsl(76 86% 58%)" stroke-width="9" fill="none" stroke-linecap="round">
-    <path d="M452 84 L592 84"/>
-    <path d="M432 126 L572 126"/>
-    <path d="M472 168 L612 168"/>
-  </g>
-
-  <rect x="22" y="258" width="596" height="82" rx="12" fill="#050916" fill-opacity="0.44"/>
-  <text x="40" y="300" fill="#f4f9ff" font-family="Arial, sans-serif" font-weight="700" font-size="34">Commercial Area Radar</text>
-  <text x="40" y="328" fill="#d1ddf6" font-family="Arial, sans-serif" font-size="20">Official Data - Store / D...</text>
+  <text x="84" y="74" font-family="Arial, sans-serif" font-size="33" font-weight="700" fill="#eefaf9">
+    COMMERCIAL AREA RADAR
+  </text>
 </svg>

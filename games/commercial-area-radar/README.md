@@ -44,6 +44,6 @@ REAL_ESTATE_API_SERVICE_KEY="your-key" npm run sync-commercial-area-radar
 
 ## 토스 앱 번들
 
-- 패키지 루트: `/Users/user/TapTapCho/commercial-area-radar/toss-package`
+- 패키지 루트: `/Users/user/TapTapCho/games/commercial-area-radar/toss-package`
 - 빠른 빌드: `TOSS_APP_NAME="commercial-area-radar" npm run commercial-area-radar:toss:build`
 - 미리보기: `npm run commercial-area-radar:toss:dev`

@@ -5,7 +5,7 @@ const bgmAudio = window.TapTapNeonAudio?.create('webgame-37', document.querySele
 });
 
 const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext('2d', { alpha: false });
 
 const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
@@ -16,8 +16,11 @@ const lengthEl = document.getElementById('length');
 const bestLengthEl = document.getElementById('bestLength');
 const aliveEl = document.getElementById('alive');
 const btnStart = document.getElementById('btnStart');
+const btnFullscreen = document.getElementById('btnFullscreen');
 const turnPad = document.getElementById('turnPad');
 const turnKnob = document.getElementById('turnKnob');
+const wrap = document.querySelector('.wrap');
+const arena = document.querySelector('.arena');
 
 const W = canvas.width;
 const H = canvas.height;
@@ -28,7 +31,7 @@ const SAFE_CENTER = { x: WORLD_W * 0.5, y: WORLD_H * 0.5 };
 const FOOD_COUNT = 210;
 const BOT_COUNT = 10;
 const SEG_SPACING = 14;
-const ROUND_DURATION = 75;
+const ROUND_DURATION = 90;
 const SAFE_RADIUS_START = 1080;
 const SAFE_RADIUS_END = 260;
 const SPAWN_GRACE_DURATION = 3;
@@ -36,6 +39,10 @@ const TURN_PAD_MAX = 42;
 const TURN_PAD_DEADZONE = 0.18;
 const STORAGE_KEY = 'worm-arena-rush-best';
 const BEST_LENGTH_KEY = 'worm-arena-rush-best-length';
+const PSEUDO_FULLSCREEN_CLASS = 'is-pseudo-fullscreen';
+const OPPONENT_BODY_START = 0;
+const isTouchDevice = (window.matchMedia && window.matchMedia('(pointer: coarse)').matches)
+  || (navigator.maxTouchPoints || 0) > 0;
 
 const FOOD_COLORS = ['#ff7b74', '#ffe08a', '#9df2ff', '#b8ffa2', '#f7b8ff'];
 
@@ -56,7 +63,7 @@ let foods = [];
 let rocks = [];
 let camera = { x: 0, y: 0 };
 
-const pointer = { x: W * 0.5, y: H * 0.5, hasMoved: false };
+const pointer = { x: W * 0.5, y: H * 0.5, hasMoved: false, active: false, pointerId: null };
 const keys = Object.create(null);
 const turnStick = {
   active: false,
@@ -96,6 +103,24 @@ function clamp(v, min, max) {
 
 function lerp(a, b, t) {
   return a + (b - a) * t;
+}
+
+function stabilizeViewport() {
+  if (window.scrollX !== 0 || window.scrollY !== 0) {
+    window.scrollTo(0, 0);
+  }
+  window.requestAnimationFrame(() => {
+    if (window.scrollX !== 0 || window.scrollY !== 0) {
+      window.scrollTo(0, 0);
+    }
+  });
+}
+
+function preventBrowserGesture(event) {
+  if (event?.cancelable) {
+    event.preventDefault();
+  }
+  stabilizeViewport();
 }
 
 function angleDiff(target, current) {
@@ -259,9 +284,13 @@ function createWorm(options) {
   const segCount = options.segCount;
   const segments = [];
   for (let i = 0; i < segCount; i += 1) {
+    const x = options.x - Math.cos(options.angle) * i * SEG_SPACING;
+    const y = options.y - Math.sin(options.angle) * i * SEG_SPACING;
     segments.push({
-      x: options.x - Math.cos(options.angle) * i * SEG_SPACING,
-      y: options.y - Math.sin(options.angle) * i * SEG_SPACING,
+      x,
+      y,
+      prevX: x,
+      prevY: y,
     });
   }
 
@@ -329,6 +358,7 @@ function resetGame() {
     localStorage.setItem(BEST_LENGTH_KEY, String(bestLength));
   }
   updateHud();
+  updateFullscreenButton();
 }
 
 function startGame() {
@@ -337,6 +367,8 @@ function startGame() {
   resetTurnStick();
   resetGame();
   state = 'running';
+  stabilizeViewport();
+  updateFullscreenButton();
 }
 
 function endGame(reason = 'crash') {
@@ -349,6 +381,7 @@ function endGame(reason = 'crash') {
   bestEl.textContent = String(best);
   localStorage.setItem(STORAGE_KEY, String(best));
   updateHud();
+  updateFullscreenButton();
 }
 
 function updatePlayerTarget() {
@@ -412,6 +445,11 @@ function updateBotTarget(bot, dt) {
 }
 
 function moveWorm(worm, dt) {
+  for (const segment of worm.segments) {
+    segment.prevX = segment.x;
+    segment.prevY = segment.y;
+  }
+
   const turnStep = worm.turnSpeed * dt;
   const diff = angleDiff(worm.targetAngle, worm.angle);
   worm.angle += clamp(diff, -turnStep, turnStep);
@@ -448,7 +486,12 @@ function moveWorm(worm, dt) {
 
   while (worm.grow >= 1) {
     const tail = worm.segments[worm.segments.length - 1];
-    worm.segments.push({ x: tail.x, y: tail.y });
+    worm.segments.push({
+      x: tail.x,
+      y: tail.y,
+      prevX: tail.prevX ?? tail.x,
+      prevY: tail.prevY ?? tail.y,
+    });
     worm.grow -= 1;
   }
 }
@@ -487,19 +530,43 @@ function consumeFood(worm) {
   }
 }
 
-function headHitsBody(headWorm, bodyWorm, bodyStart = 4) {
+function headHitsHead(headWorm, otherWorm) {
+  const headFromX = headWorm.prevX ?? headWorm.x;
+  const headFromY = headWorm.prevY ?? headWorm.y;
+  const headToX = headWorm.x;
+  const headToY = headWorm.y;
+  const otherFromX = otherWorm.prevX ?? otherWorm.x;
+  const otherFromY = otherWorm.prevY ?? otherWorm.y;
+  const otherToX = otherWorm.x;
+  const otherToY = otherWorm.y;
+  const hitRadius = headWorm.radius + otherWorm.radius + 2;
+
+  return (
+    segmentSegmentDistanceSq(
+      headFromX,
+      headFromY,
+      headToX,
+      headToY,
+      otherFromX,
+      otherFromY,
+      otherToX,
+      otherToY,
+    ) <= hitRadius * hitRadius
+  );
+}
+
+function headHitsBody(headWorm, bodyWorm, bodyStart = OPPONENT_BODY_START) {
   const headFromX = headWorm.prevX ?? headWorm.x;
   const headFromY = headWorm.prevY ?? headWorm.y;
   const headToX = headWorm.x;
   const headToY = headWorm.y;
 
-  for (let i = bodyStart; i < bodyWorm.segments.length; i += 1) {
+  for (let i = bodyStart; i < bodyWorm.segments.length - 1; i += 1) {
     const segA = bodyWorm.segments[i];
-    const segB = bodyWorm.segments[Math.min(i + 1, bodyWorm.segments.length - 1)];
-    const bodyRadius = Math.max(getSegmentRadius(bodyWorm, i), getSegmentRadius(bodyWorm, Math.min(i + 1, bodyWorm.segments.length - 1)));
-    const hitRadius = headWorm.radius + bodyRadius + 1.75;
-
-    if (
+    const segB = bodyWorm.segments[i + 1];
+    const bodyRadius = Math.max(getSegmentRadius(bodyWorm, i), getSegmentRadius(bodyWorm, i + 1));
+    const hitRadius = headWorm.radius + bodyRadius + 2.5;
+    const distanceSq = Math.min(
       segmentSegmentDistanceSq(
         headFromX,
         headFromY,
@@ -509,8 +576,20 @@ function headHitsBody(headWorm, bodyWorm, bodyStart = 4) {
         segA.y,
         segB.x,
         segB.y,
-      ) <= hitRadius * hitRadius
-    ) {
+      ),
+      segmentSegmentDistanceSq(
+        headFromX,
+        headFromY,
+        headToX,
+        headToY,
+        segA.prevX ?? segA.x,
+        segA.prevY ?? segA.y,
+        segB.prevX ?? segB.x,
+        segB.prevY ?? segB.y,
+      ),
+    );
+
+    if (distanceSq <= hitRadius * hitRadius) {
       return true;
     }
   }
@@ -547,7 +626,7 @@ function scatterFoodFromWorm(worm, density = 14) {
 function resolveCollisions() {
   for (const bot of bots) {
     if (bot.spawnGrace > 0) continue;
-    if (headHitsBody(player, bot, 4)) {
+    if (headHitsHead(player, bot) || headHitsBody(player, bot, OPPONENT_BODY_START)) {
       endGame();
       return;
     }
@@ -558,13 +637,13 @@ function resolveCollisions() {
   for (let i = 0; i < bots.length; i += 1) {
     const bot = bots[i];
     if (bot.spawnGrace > 0) continue;
-    let crashed = headHitsBody(bot, player, 4);
+    let crashed = headHitsHead(bot, player) || headHitsBody(bot, player, OPPONENT_BODY_START);
 
     if (!crashed) {
       for (let j = 0; j < bots.length; j += 1) {
         if (i === j) continue;
         if (bots[j].spawnGrace > 0) continue;
-        if (headHitsBody(bot, bots[j], 4)) {
+        if (headHitsHead(bot, bots[j]) || headHitsBody(bot, bots[j], OPPONENT_BODY_START)) {
           crashed = true;
           break;
         }
@@ -858,7 +937,7 @@ function render() {
     ctx.fillStyle = '#fff';
     ctx.textAlign = 'center';
     ctx.font = 'bold 30px "Noto Sans KR", system-ui';
-    let title = '75초 웜 러시';
+    let title = `${ROUND_DURATION}초 웜 러시`;
     if (state === 'gameover') {
       if (gameOverReason === 'time') {
         title = '시간 종료';
@@ -938,10 +1017,93 @@ function updatePointer(event) {
   pointer.hasMoved = true;
 }
 
+function clearPointerInput() {
+  pointer.active = false;
+  pointer.pointerId = null;
+}
+
+function isTouchPointerEvent(event) {
+  return event.pointerType === 'touch' || event.pointerType === 'pen';
+}
+
+function isFullscreenActive() {
+  return document.fullscreenElement === wrap;
+}
+
+function isPseudoFullscreenActive() {
+  return document.body.classList.contains(PSEUDO_FULLSCREEN_CLASS);
+}
+
+function updateFullscreenButton() {
+  if (!btnFullscreen) return;
+  const active = isFullscreenActive() || isPseudoFullscreenActive();
+  const shouldShow = isTouchDevice || state !== 'idle' || active;
+  const label = btnFullscreen.querySelector('span');
+
+  btnFullscreen.classList.toggle('visible', shouldShow);
+  btnFullscreen.classList.toggle('active', active);
+  btnFullscreen.setAttribute('aria-pressed', active ? 'true' : 'false');
+  if (label) {
+    label.textContent = active ? '해제' : '전체';
+  }
+}
+
+function tryLockPortrait() {
+  screen.orientation?.lock?.('portrait').catch(() => {});
+}
+
+function tryUnlockOrientation() {
+  if (typeof screen.orientation?.unlock === 'function') {
+    screen.orientation.unlock();
+  }
+}
+
+async function toggleFullscreen() {
+  if (!wrap) return;
+
+  const shouldExit = isFullscreenActive() || isPseudoFullscreenActive();
+  if (shouldExit) {
+    if (isFullscreenActive() && typeof document.exitFullscreen === 'function') {
+      try {
+        await document.exitFullscreen();
+      } catch (error) {
+        document.body.classList.remove(PSEUDO_FULLSCREEN_CLASS);
+      }
+    } else {
+      document.body.classList.remove(PSEUDO_FULLSCREEN_CLASS);
+    }
+    tryUnlockOrientation();
+    stabilizeViewport();
+    updateFullscreenButton();
+    return;
+  }
+
+  const canUseNativeFullscreen = document.fullscreenEnabled && typeof wrap.requestFullscreen === 'function';
+  if (canUseNativeFullscreen) {
+    try {
+      await wrap.requestFullscreen({ navigationUI: 'hide' });
+    } catch (error) {
+      document.body.classList.add(PSEUDO_FULLSCREEN_CLASS);
+    }
+  } else {
+    document.body.classList.add(PSEUDO_FULLSCREEN_CLASS);
+  }
+
+  tryLockPortrait();
+  stabilizeViewport();
+  updateFullscreenButton();
+}
+
 btnStart.addEventListener('click', startGame);
+btnFullscreen?.addEventListener('click', () => {
+  bgmAudio?.unlock();
+  stabilizeViewport();
+  toggleFullscreen();
+});
 
 turnPad?.addEventListener('pointerdown', (event) => {
-  event.preventDefault();
+  preventBrowserGesture(event);
+  event.stopPropagation();
   bgmAudio?.unlock();
   turnStick.active = true;
   turnStick.pointerId = event.pointerId;
@@ -951,12 +1113,15 @@ turnPad?.addEventListener('pointerdown', (event) => {
 
 turnPad?.addEventListener('pointermove', (event) => {
   if (!turnStick.active || event.pointerId !== turnStick.pointerId) return;
-  event.preventDefault();
+  preventBrowserGesture(event);
+  event.stopPropagation();
   updateTurnStickFromEvent(event);
 });
 
 turnPad?.addEventListener('pointerup', (event) => {
   if (event.pointerId !== turnStick.pointerId) return;
+  preventBrowserGesture(event);
+  event.stopPropagation();
   if (turnPad.hasPointerCapture(event.pointerId)) {
     turnPad.releasePointerCapture(event.pointerId);
   }
@@ -965,6 +1130,8 @@ turnPad?.addEventListener('pointerup', (event) => {
 
 turnPad?.addEventListener('pointercancel', (event) => {
   if (event.pointerId !== turnStick.pointerId) return;
+  preventBrowserGesture(event);
+  event.stopPropagation();
   if (turnPad.hasPointerCapture(event.pointerId)) {
     turnPad.releasePointerCapture(event.pointerId);
   }
@@ -976,6 +1143,10 @@ turnPad?.addEventListener('lostpointercapture', () => {
 });
 
 canvas.addEventListener('pointerdown', (event) => {
+  preventBrowserGesture(event);
+  pointer.active = true;
+  pointer.pointerId = event.pointerId;
+  canvas.setPointerCapture?.(event.pointerId);
   updatePointer(event);
   if (state !== 'running') {
     startGame();
@@ -983,8 +1154,44 @@ canvas.addEventListener('pointerdown', (event) => {
 });
 
 canvas.addEventListener('pointermove', (event) => {
+  if (pointer.active && event.pointerId !== pointer.pointerId) return;
+  if (isTouchPointerEvent(event)) preventBrowserGesture(event);
   updatePointer(event);
 });
+
+canvas.addEventListener('pointerup', (event) => {
+  if (event.pointerId !== pointer.pointerId) return;
+  preventBrowserGesture(event);
+  if (canvas.hasPointerCapture?.(event.pointerId)) {
+    canvas.releasePointerCapture(event.pointerId);
+  }
+  clearPointerInput();
+});
+
+canvas.addEventListener('pointercancel', (event) => {
+  if (event.pointerId !== pointer.pointerId) return;
+  preventBrowserGesture(event);
+  if (canvas.hasPointerCapture?.(event.pointerId)) {
+    canvas.releasePointerCapture(event.pointerId);
+  }
+  clearPointerInput();
+});
+
+canvas.addEventListener('lostpointercapture', clearPointerInput);
+
+document.addEventListener('fullscreenchange', () => {
+  if (!isFullscreenActive()) {
+    tryUnlockOrientation();
+  }
+  stabilizeViewport();
+  updateFullscreenButton();
+});
+document.addEventListener('touchmove', (event) => {
+  if (arena && event.target instanceof Node && arena.contains(event.target)) {
+    event.preventDefault();
+    stabilizeViewport();
+  }
+}, { passive: false });
 
 window.addEventListener('keydown', (event) => {
   keys[event.code] = true;
@@ -992,11 +1199,30 @@ window.addEventListener('keydown', (event) => {
     event.preventDefault();
     if (state !== 'running') startGame();
   }
+  if (event.code === 'Escape' && isPseudoFullscreenActive()) {
+    document.body.classList.remove(PSEUDO_FULLSCREEN_CLASS);
+    tryUnlockOrientation();
+    stabilizeViewport();
+    updateFullscreenButton();
+  }
 });
 
 window.addEventListener('keyup', (event) => {
   keys[event.code] = false;
 });
 
+window.addEventListener('blur', () => {
+  clearPointerInput();
+  resetTurnStick();
+  for (const code of Object.keys(keys)) {
+    keys[code] = false;
+  }
+});
+
+window.addEventListener('resize', stabilizeViewport);
+window.visualViewport?.addEventListener('resize', stabilizeViewport);
+window.addEventListener('scroll', stabilizeViewport, { passive: true });
+
 resetGame();
+updateFullscreenButton();
 requestAnimationFrame(loop);

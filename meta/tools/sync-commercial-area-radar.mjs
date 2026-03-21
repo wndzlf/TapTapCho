@@ -7,39 +7,23 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "..", "..");
 const outputPath = path.join(rootDir, "games", "commercial-area-radar", "latest-commercial-area-snapshot.json");
 const apiBaseUrl = "https://apis.data.go.kr/B553077/api/open/sdsc2";
-
-const endpointDefinitions = [
-  {
-    label: "행정경계조회",
-    path: "/baroApi",
-    summary: "시도, 시군구, 행정동 리소스를 단계적으로 탐색합니다.",
-    requestHint: "resId=dong · catId=mega",
-  },
-  {
-    label: "업종 대분류 조회",
-    path: "/largeUpjongList",
-    summary: "상권정보 업종 대분류 목록을 불러옵니다.",
-    requestHint: "type=json",
-  },
-  {
-    label: "업종 중분류 조회",
-    path: "/middleUpjongList",
-    summary: "대분류 코드 아래의 중분류 업종을 확인합니다.",
-    requestHint: "indsLclsCd=I2",
-  },
-  {
-    label: "업종 소분류 조회",
-    path: "/smallUpjongList",
-    summary: "중분류 하위 업종 코드와 이름을 확인합니다.",
-    requestHint: "indsLclsCd=I2 · indsMclsCd=I212",
-  },
-  {
-    label: "행정동 상가업소 조회",
-    path: "/storeListInDong",
-    summary: "행정동 코드와 업종 코드를 조합해 점포 목록을 확인합니다.",
-    requestHint: "divId=adongCd · key=11680640",
-  },
+const defaultScopes = [
+  { divId: "signguCd", key: "11110", label: "서울 종로구" },
+  { divId: "signguCd", key: "11200", label: "서울 성동구" },
+  { divId: "signguCd", key: "11440", label: "서울 마포구" },
+  { divId: "signguCd", key: "11560", label: "서울 영등포구" },
+  { divId: "signguCd", key: "11650", label: "서울 서초구" },
+  { divId: "signguCd", key: "11680", label: "서울 강남구" },
+  { divId: "signguCd", key: "11710", label: "서울 송파구" },
+  { divId: "signguCd", key: "41117", label: "경기 수원 영통구" },
+  { divId: "signguCd", key: "41135", label: "경기 성남 분당구" },
 ];
+
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
 
 function normalizeServiceKey(value) {
   const trimmed = String(value || "").trim();
@@ -82,20 +66,6 @@ function collectArrays(node, accumulator = []) {
   return accumulator;
 }
 
-function collectObjects(node, accumulator = []) {
-  if (Array.isArray(node)) {
-    node.forEach((entry) => collectObjects(entry, accumulator));
-    return accumulator;
-  }
-
-  if (node && typeof node === "object") {
-    accumulator.push(node);
-    Object.values(node).forEach((value) => collectObjects(value, accumulator));
-  }
-
-  return accumulator;
-}
-
 function extractItems(payload, expectedKeys) {
   const arrayCandidates = collectArrays(payload)
     .filter((candidate) => candidate.some((item) => item && typeof item === "object" && !Array.isArray(item)))
@@ -117,15 +87,19 @@ function extractItems(payload, expectedKeys) {
     return arrayCandidates[0].candidate.filter((entry) => entry && typeof entry === "object" && !Array.isArray(entry));
   }
 
-  const objectCandidates = collectObjects(payload)
-    .map((candidate) => ({ candidate, score: scoreObject(candidate, expectedKeys) }))
-    .sort((left, right) => right.score - left.score);
-
-  if (objectCandidates[0]?.score > 1) {
-    return [objectCandidates[0].candidate];
-  }
-
   return [];
+}
+
+function groupBy(items, selector) {
+  return items.reduce((accumulator, item) => {
+    const key = selector(item);
+    if (!key) {
+      return accumulator;
+    }
+
+    accumulator.set(key, [...(accumulator.get(key) || []), item]);
+    return accumulator;
+  }, new Map());
 }
 
 async function fetchJson(endpoint, params, serviceKey) {
@@ -164,22 +138,6 @@ async function fetchJson(endpoint, params, serviceKey) {
   }
 }
 
-function buildQueryExample(scope) {
-  return {
-    storeListInDong: {
-      ServiceKey: "{REAL_ESTATE_API_SERVICE_KEY}",
-      pageNo: 1,
-      numOfRows: scope.numOfRows,
-      divId: scope.divId,
-      key: scope.key,
-      indsLclsCd: scope.indsLclsCd,
-      ...(scope.indsMclsCd ? { indsMclsCd: scope.indsMclsCd } : {}),
-      ...(scope.indsSclsCd ? { indsSclsCd: scope.indsSclsCd } : {}),
-      type: "json",
-    },
-  };
-}
-
 function compactStoreItem(item) {
   return {
     stdrYm: item.stdrYm || "",
@@ -192,21 +150,126 @@ function compactStoreItem(item) {
     indsMclsNm: item.indsMclsNm || "",
     indsSclsCd: item.indsSclsCd || "",
     indsSclsNm: item.indsSclsNm || "",
-    ksicCd: item.ksicCd || "",
-    ksicNm: item.ksicNm || "",
     ctprvnCd: item.ctprvnCd || "",
     ctprvnNm: item.ctprvnNm || "",
     signguCd: item.signguCd || "",
     signguNm: item.signguNm || "",
     adongCd: item.adongCd || "",
     adongNm: item.adongNm || "",
-    ldongCd: item.ldongCd || "",
-    ldongNm: item.ldongNm || "",
     lnoAdr: item.lnoAdr || "",
     rdnmAdr: item.rdnmAdr || "",
     lon: item.lon || item.longitude || "",
     lat: item.lat || item.latitude || "",
   };
+}
+
+function getScopeList(defaultDivId) {
+  const rawScopeKeys = String(process.env.COMMERCIAL_AREA_SCOPE_KEYS || "").trim();
+  if (!rawScopeKeys) {
+    return defaultScopes;
+  }
+
+  return rawScopeKeys
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .map((key) => ({
+      divId: defaultDivId,
+      key,
+      label: `${defaultDivId}:${key}`,
+    }));
+}
+
+function buildLocations(items) {
+  return Array.from(groupBy(items, (item) => item.adongCd || item.signguCd).values())
+    .map((groupedItems) => {
+      const item = groupedItems[0];
+      return {
+        ctprvnCd: item.ctprvnCd,
+        ctprvnNm: item.ctprvnNm,
+        signguCd: item.signguCd,
+        signguNm: item.signguNm,
+        adongCd: item.adongCd,
+        adongNm: item.adongNm,
+      };
+    })
+    .sort((left, right) => {
+      return `${left.signguNm} ${left.adongNm}`.localeCompare(`${right.signguNm} ${right.adongNm}`, "ko");
+    });
+}
+
+function buildUniqueCategories(items, codeKey, nameKey, parentKey, parentNameKey) {
+  const uniqueMap = new Map();
+
+  items.forEach((item) => {
+    const code = item[codeKey];
+    const name = item[nameKey];
+    if (!code || !name || uniqueMap.has(code)) {
+      return;
+    }
+
+    uniqueMap.set(code, {
+      [codeKey]: code,
+      [nameKey]: name,
+      ...(parentKey ? { [parentKey]: item[parentKey] || "" } : {}),
+      ...(parentNameKey ? { [parentNameKey]: item[parentNameKey] || "" } : {}),
+    });
+  });
+
+  return Array.from(uniqueMap.values()).sort((left, right) => {
+    return String(left[nameKey]).localeCompare(String(right[nameKey]), "ko");
+  });
+}
+
+function buildQueryExample(scope) {
+  return {
+    storeListInDong: {
+      ServiceKey: "{REAL_ESTATE_API_SERVICE_KEY}",
+      pageNo: 1,
+      numOfRows: scope.numOfRows,
+      divId: scope.divId,
+      key: scope.key,
+      ...(scope.indsLclsCd ? { indsLclsCd: scope.indsLclsCd } : {}),
+      ...(scope.indsMclsCd ? { indsMclsCd: scope.indsMclsCd } : {}),
+      ...(scope.indsSclsCd ? { indsSclsCd: scope.indsSclsCd } : {}),
+      type: "json",
+    },
+  };
+}
+
+async function fetchStoresByScope(serviceKey, scope, options) {
+  const collected = [];
+
+  for (let pageNo = 1; pageNo <= options.maxPages; pageNo += 1) {
+    const payload = await fetchJson(
+      "storeListInDong",
+      {
+        pageNo,
+        numOfRows: options.numOfRows,
+        divId: scope.divId,
+        key: scope.key,
+        indsLclsCd: options.indsLclsCd,
+        indsMclsCd: options.indsMclsCd,
+        indsSclsCd: options.indsSclsCd,
+      },
+      serviceKey,
+    );
+
+    const pageItems = extractItems(payload, ["bizesId", "bizesNm", "rdnmAdr"]).map(compactStoreItem);
+    collected.push(...pageItems);
+
+    process.stdout.write(
+      `synced ${scope.label} (${scope.divId}:${scope.key}) page ${pageNo} -> ${pageItems.length} items\n`,
+    );
+
+    if (pageItems.length < options.numOfRows) {
+      break;
+    }
+
+    await sleep(120);
+  }
+
+  return collected;
 }
 
 async function main() {
@@ -220,98 +283,70 @@ async function main() {
     throw new Error("REAL_ESTATE_API_SERVICE_KEY is required to fetch the commercial area snapshot.");
   }
 
-  const scope = {
+  const options = {
     divId: process.env.COMMERCIAL_AREA_SCOPE_DIV_ID || "signguCd",
-    key: process.env.COMMERCIAL_AREA_SCOPE_KEY || "11680",
-    indsLclsCd: process.env.COMMERCIAL_AREA_INDS_LCLS_CD || "I2",
+    indsLclsCd: process.env.COMMERCIAL_AREA_INDS_LCLS_CD || "",
     indsMclsCd: process.env.COMMERCIAL_AREA_INDS_MCLS_CD || "",
     indsSclsCd: process.env.COMMERCIAL_AREA_INDS_SCLS_CD || "",
-    numOfRows: Math.max(1, Number.parseInt(process.env.COMMERCIAL_AREA_NUM_OF_ROWS || "80", 10) || 80),
+    numOfRows: Math.max(1, Number.parseInt(process.env.COMMERCIAL_AREA_NUM_OF_ROWS || "120", 10) || 120),
+    maxPages: Math.max(1, Number.parseInt(process.env.COMMERCIAL_AREA_MAX_PAGES || "2", 10) || 2),
   };
+  const scopes = getScopeList(options.divId);
+  const mergedItems = new Map();
 
-  const largeUpjongPayload = await fetchJson("largeUpjongList", {}, serviceKey);
-  const largeCategories = extractItems(largeUpjongPayload, ["indsLclsCd", "indsLclsNm"]);
+  for (const scope of scopes) {
+    const scopeItems = await fetchStoresByScope(serviceKey, scope, options);
 
-  const middleUpjongPayload = await fetchJson(
-    "middleUpjongList",
-    { indsLclsCd: scope.indsLclsCd },
-    serviceKey,
-  );
-  const middleCategories = extractItems(middleUpjongPayload, ["indsMclsCd", "indsMclsNm"]);
+    scopeItems.forEach((item) => {
+      if (!item.bizesId) {
+        return;
+      }
 
-  if (!scope.indsMclsCd && middleCategories[0]?.indsMclsCd) {
-    scope.indsMclsCd = middleCategories[0].indsMclsCd;
+      mergedItems.set(item.bizesId, item);
+    });
+
+    await sleep(140);
   }
 
-  const smallUpjongPayload = await fetchJson(
-    "smallUpjongList",
-    {
-      indsLclsCd: scope.indsLclsCd,
-      indsMclsCd: scope.indsMclsCd,
-    },
-    serviceKey,
-  );
-  const smallCategories = extractItems(smallUpjongPayload, ["indsSclsCd", "indsSclsNm"]);
+  const storeItems = Array.from(mergedItems.values()).sort((left, right) => {
+    const areaCompared = `${left.signguNm} ${left.adongNm}`.localeCompare(
+      `${right.signguNm} ${right.adongNm}`,
+      "ko",
+    );
+    if (areaCompared !== 0) {
+      return areaCompared;
+    }
 
-  const storeListPayload = await fetchJson(
-    "storeListInDong",
-    {
-      pageNo: 1,
-      numOfRows: scope.numOfRows,
-      divId: scope.divId,
-      key: scope.key,
-      indsLclsCd: scope.indsLclsCd,
-      indsMclsCd: scope.indsMclsCd,
-      indsSclsCd: scope.indsSclsCd,
-    },
-    serviceKey,
-  );
-  const storeItems = extractItems(storeListPayload, ["bizesId", "bizesNm", "rdnmAdr"]).map(compactStoreItem);
+    return left.bizesNm.localeCompare(right.bizesNm, "ko");
+  });
 
   if (!storeItems.length) {
     throw new Error("No store items were extracted from the API response.");
   }
 
-  const areaGroups = new Map();
-  storeItems.forEach((item) => {
-    if (!item.adongCd) {
-      return;
-    }
-
-    if (areaGroups.has(item.adongCd)) {
-      return;
-    }
-
-    areaGroups.set(item.adongCd, {
-      ctprvnCd: item.ctprvnCd,
-      ctprvnNm: item.ctprvnNm,
-      signguCd: item.signguCd,
-      signguNm: item.signguNm,
-      adongCd: item.adongCd,
-      adongNm: item.adongNm,
-    });
-  });
-
   const payload = {
     snapshotMode: "live",
     updatedAt: new Date().toISOString(),
-    scope: `${scope.divId}:${scope.key} 실 API 스냅샷`,
+    scope: `${scopes.length}개 권역 자동 수집 스냅샷`,
     source: "소상공인시장진흥공단_상가(상권)정보_API / 공공데이터포털",
     serviceUrl: apiBaseUrl,
     appIds: {
       primary: "commercial-area-radar",
       alternatives: ["dong-store-radar", "storezone-radar", "sanggwon-radar"],
     },
-    endpoints: endpointDefinitions,
-    queryExamples: buildQueryExample(scope),
+    queryExamples: buildQueryExample({
+      divId: scopes[0].divId,
+      key: scopes[0].key,
+      numOfRows: options.numOfRows,
+      indsLclsCd: options.indsLclsCd,
+      indsMclsCd: options.indsMclsCd,
+      indsSclsCd: options.indsSclsCd,
+    }),
     hierarchy: {
-      locations: Array.from(areaGroups.values()),
-      largeCategories,
-      middleCategories,
-      smallCategories,
-    },
-    rawSamples: {
-      storeItem: storeItems[0],
+      locations: buildLocations(storeItems),
+      largeCategories: buildUniqueCategories(storeItems, "indsLclsCd", "indsLclsNm"),
+      middleCategories: buildUniqueCategories(storeItems, "indsMclsCd", "indsMclsNm", "indsLclsCd", "indsLclsNm"),
+      smallCategories: buildUniqueCategories(storeItems, "indsSclsCd", "indsSclsNm", "indsMclsCd", "indsMclsNm"),
     },
     items: storeItems,
   };

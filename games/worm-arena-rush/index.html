@@ -21,27 +21,30 @@
     <div class="hud">
       <div>점수: <span id="score">0</span></div>
       <div>최고점: <span id="best">0</span></div>
-      <div>남은 시간: <span id="time">75.0초</span></div>
+      <div>남은 시간: <span id="time">90.0초</span></div>
       <div>안전 구역: <span id="zone">100%</span></div>
       <div>속도: <span id="speed">100%</span></div>
       <div>길이: <span id="length">0</span></div>
       <div>최대 길이: <span id="bestLength">0</span></div>
       <div>상대 수: <span id="alive">0</span></div>
-      <button id="btnStart">시작</button>
+      <button id="btnStart" type="button">시작</button>
     </div>
 
     <div class="arena">
       <canvas id="game" width="420" height="700"></canvas>
       <div class="turn-pad-wrap">
-        <small class="turn-pad-label">가상 조향</small>
-        <div class="turn-pad" id="turnPad" aria-label="가상 조향 패드" role="application">
+        <div class="turn-pad" id="turnPad" aria-label="조향 패드" role="application">
           <div class="turn-pad-knob" id="turnKnob" aria-hidden="true"></div>
         </div>
       </div>
     </div>
 
+    <button id="btnFullscreen" class="fullscreen-fab" type="button" aria-label="전체화면 전환" aria-pressed="false">
+      <span>전체</span>
+    </button>
+
     <footer>
-      <small>조작: 터치/마우스 또는 WASD/방향키 · 모바일은 우하단 가상 조향 패드 사용</small>
+      <small>조작: 터치/마우스 또는 WASD/방향키 · 모바일은 우하단 조향 패드 사용</small>
       <br />
       <small>배경음악: Coffee - Morning Coffee Shop Music / HitsLab / Pixabay Content License</small>
     </footer>
