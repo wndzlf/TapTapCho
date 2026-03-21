@@ -18,7 +18,9 @@
     "officetel-watch:toss:build": "npm --prefix games/officetel-watch/toss-package run build",
     "officetel-watch:toss:dev": "npm --prefix games/officetel-watch/toss-package run dev",
     "crimson-hunter-trials:toss:build": "npm --prefix games/crimson-hunter-trials/toss-package run build",
-    "crimson-hunter-trials:toss:dev": "npm --prefix games/crimson-hunter-trials/toss-package run dev"
+    "crimson-hunter-trials:toss:dev": "npm --prefix games/crimson-hunter-trials/toss-package run dev",
+    "air-striker-lite:toss:build": "npm --prefix games/godot-air-striker-web/toss-package run build",
+    "air-striker-lite:toss:dev": "npm --prefix games/godot-air-striker-web/toss-package run dev"
   },
   "dependencies": {
     "ws": "^8.18.0"
