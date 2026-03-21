@@ -232,6 +232,17 @@ const STAGES = [
 ];
 
 const SPECIAL_KEYS = ['KeyX', 'ShiftLeft', 'ShiftRight'];
+const IS_COARSE_POINTER = typeof window !== 'undefined'
+  && typeof window.matchMedia === 'function'
+  && window.matchMedia('(pointer: coarse)').matches;
+
+const POWERUP_UI = {
+  rapid: { short: '연사', full: '연사 강화', fill: '#9be8ff' },
+  shield: { short: '실드', full: '실드 충전', fill: '#8ee8d4' },
+  repair: { short: '회복', full: '체력 회복', fill: '#a8ff9b' },
+  weapon: { short: '강화', full: '무기 강화', fill: '#ffe18e' },
+  burst: { short: '폭발', full: '화면 정리', fill: '#ffb89f' },
+};
 
 const player = {
   x: W * 0.5,
@@ -279,6 +290,8 @@ let selectedPlaneIndex = 0;
 let specialCharge = 0;
 let specialCooldown = 0;
 let specialPulse = 0;
+let specialReadyHintTimer = 0;
+let prevSpecialReady = false;
 let hintTimer = 0;
 let specialFx = {
   type: null,
@@ -781,14 +794,21 @@ function canUseSpecial() {
 
 function updateSpecialUi() {
   const ready = canUseSpecial();
+  if (ready && !prevSpecialReady && state === 'running') {
+    specialReadyHintTimer = 2.2;
+  }
+  prevSpecialReady = ready;
+
   if (spEl) spEl.textContent = `${Math.floor(specialCharge)}%`;
   if (btnSpecial) {
-    btnSpecial.textContent = ready ? '특수 준비!' : `특수 ${Math.floor(specialCharge)}%`;
+    btnSpecial.textContent = ready ? '필살기 준비!' : `필살기 ${Math.floor(specialCharge)}%`;
     btnSpecial.disabled = !ready;
+    btnSpecial.dataset.ready = ready ? 'true' : 'false';
   }
   if (touchSpecialBtn) {
-    touchSpecialBtn.textContent = ready ? '특수!' : '특수';
+    touchSpecialBtn.textContent = ready ? '필살기!' : `필살 ${Math.floor(specialCharge)}%`;
     touchSpecialBtn.disabled = !ready;
+    touchSpecialBtn.dataset.ready = ready ? 'true' : 'false';
   }
 }
 
@@ -997,7 +1017,7 @@ function spawnPowerUp(x, y) {
     x,
     y,
     vy: rand(90, 140),
-    r: 12,
+    r: 14,
     type,
     rot: rand(0, Math.PI * 2),
     life: 7,
@@ -1150,6 +1170,8 @@ function resetGame() {
   specialCharge = 55;
   specialCooldown = 0;
   specialPulse = 0;
+  specialReadyHintTimer = 0;
+  prevSpecialReady = false;
   hintTimer = 7.5;
   specialFx.type = null;
   specialFx.timer = 0;
@@ -2125,21 +2147,9 @@ function drawPowerUps() {
     ctx.translate(p.x, p.y);
     ctx.rotate(p.rot);
 
-    let fill = '#9be8ff';
-    let label = 'R';
-    if (p.type === 'shield') {
-      fill = '#8ee8d4';
-      label = 'S';
-    } else if (p.type === 'repair') {
-      fill = '#a8ff9b';
-      label = 'H';
-    } else if (p.type === 'weapon') {
-      fill = '#ffe18e';
-      label = 'W';
-    } else if (p.type === 'burst') {
-      fill = '#ffb89f';
-      label = 'B';
-    }
+    const ui = POWERUP_UI[p.type] || POWERUP_UI.rapid;
+    const fill = ui.fill;
+    const label = ui.short;
 
     ctx.fillStyle = fill;
     ctx.beginPath();
@@ -2147,7 +2157,7 @@ function drawPowerUps() {
     ctx.fill();
 
     ctx.fillStyle = '#0c1b38';
-    ctx.font = 'bold 12px system-ui';
+    ctx.font = 'bold 9px system-ui';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(label, 0, 0);
@@ -2484,6 +2494,70 @@ function drawTopInfo(difficulty) {
   ctx.restore();
 }
 
+function drawPowerupLegend() {
+  if (!IS_COARSE_POINTER || state !== 'running') return;
+
+  ctx.save();
+  const x = W - 156;
+  const y = 48;
+  const w = 144;
+  const h = 96;
+
+  ctx.fillStyle = 'rgba(8, 16, 34, 0.44)';
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = 'rgba(170, 206, 255, 0.28)';
+  ctx.strokeRect(x, y, w, h);
+  ctx.fillStyle = '#d9ecff';
+  ctx.font = 'bold 10px system-ui';
+  ctx.textAlign = 'left';
+  ctx.fillText('파워업', x + 8, y + 14);
+
+  const rows = ['repair', 'shield', 'rapid', 'weapon', 'burst'];
+  for (let i = 0; i < rows.length; i += 1) {
+    const key = rows[i];
+    const ui = POWERUP_UI[key];
+    const rowY = y + 26 + i * 14;
+    ctx.fillStyle = ui.fill;
+    ctx.beginPath();
+    ctx.arc(x + 13, rowY, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#e8f4ff';
+    ctx.font = '9px system-ui';
+    ctx.fillText(ui.full, x + 22, rowY + 3);
+  }
+  ctx.restore();
+}
+
+function drawMobileSpecialHint() {
+  if (!IS_COARSE_POINTER || state !== 'running') return;
+
+  ctx.save();
+  const baseY = H - 152;
+  if (hintTimer > 0) {
+    ctx.fillStyle = 'rgba(11, 22, 45, 0.62)';
+    ctx.fillRect(W - 194, baseY, 184, 28);
+    ctx.strokeStyle = 'rgba(166, 207, 255, 0.36)';
+    ctx.strokeRect(W - 194, baseY, 184, 28);
+    ctx.fillStyle = '#dcedff';
+    ctx.font = 'bold 11px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('오른쪽 아래 필살기 버튼 탭', W - 102, baseY + 18);
+  }
+
+  if (specialReadyHintTimer > 0) {
+    const alpha = 0.42 + Math.sin(tick * 0.42) * 0.2;
+    ctx.fillStyle = `rgba(96, 165, 255, ${alpha})`;
+    ctx.fillRect(W * 0.24, H - 198, W * 0.52, 34);
+    ctx.strokeStyle = 'rgba(206, 232, 255, 0.64)';
+    ctx.strokeRect(W * 0.24, H - 198, W * 0.52, 34);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 14px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('필살기 준비! 버튼을 눌러 발동', W / 2, H - 176);
+  }
+  ctx.restore();
+}
+
 function renderOverlay() {
   if (flash > 0) {
     ctx.fillStyle = `rgba(255, 123, 116, ${0.06 + flash / 280})`;
@@ -2641,6 +2715,8 @@ function render() {
   drawPlayer();
   drawParticles();
   drawTopInfo(difficulty);
+  drawPowerupLegend();
+  drawMobileSpecialHint();
   renderOverlay();
 
   ctx.restore();
@@ -2651,6 +2727,7 @@ function update(dt) {
   if (flash > 0) flash -= 1;
   if (shake > 0) shake = Math.max(0, shake - dt * 34);
   if (specialPulse > 0) specialPulse = Math.max(0, specialPulse - dt);
+  if (specialReadyHintTimer > 0) specialReadyHintTimer = Math.max(0, specialReadyHintTimer - dt);
   if (hintTimer > 0) hintTimer = Math.max(0, hintTimer - dt);
   if (specialFx.timer > 0) {
     specialFx.timer = Math.max(0, specialFx.timer - dt);

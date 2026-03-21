@@ -188,6 +188,11 @@ button {
   border: 1px solid rgba(255, 154, 170, 0.4);
 }
 
+#btnSpecial[data-ready="true"] {
+  background: linear-gradient(180deg, #8cc8ff 0%, #4f8fe6 100%);
+  border-color: rgba(238, 249, 255, 0.78);
+}
+
 .button:disabled,
 .touch-btn:disabled {
   opacity: 0.5;
@@ -290,13 +295,33 @@ canvas {
   position: absolute;
   right: clamp(10px, 3vw, 18px);
   bottom: clamp(16px, 3vh, 24px);
-  width: clamp(88px, 22vw, 108px);
-  height: clamp(88px, 22vw, 108px);
+  width: clamp(94px, 23vw, 116px);
+  height: clamp(94px, 23vw, 116px);
   border-radius: 999px;
-  font-size: clamp(13px, 3vw, 16px);
+  font-size: clamp(12px, 2.9vw, 15px);
   letter-spacing: -0.01em;
   background: rgba(35, 81, 152, 0.85);
   pointer-events: auto;
+}
+
+.touch-btn.special[data-ready="true"] {
+  background: linear-gradient(180deg, rgba(120, 191, 255, 0.95) 0%, rgba(58, 124, 225, 0.95) 100%);
+  border-color: rgba(237, 248, 255, 0.9);
+  color: #ffffff;
+  box-shadow: 0 0 0 6px rgba(119, 196, 255, 0.2), 0 0 16px rgba(135, 203, 255, 0.64);
+  animation: special-ready-pulse 0.9s ease-in-out infinite;
+}
+
+@keyframes special-ready-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .sheet-modal {
