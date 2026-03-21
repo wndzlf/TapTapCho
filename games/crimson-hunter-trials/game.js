@@ -1133,7 +1133,7 @@ function showRelicPanel(message) {
 
   panelEl.innerHTML = `
     <div class="modal">
-      <h2>Relic Choice</h2>
+      <h2>강화 선택</h2>
       <p>${message}</p>
       <div class="choice-grid">
         ${picks.map((r) => `
@@ -1153,14 +1153,14 @@ function showClassPanel() {
   panelEl.classList.remove('hidden');
   panelEl.innerHTML = `
     <div class="modal">
-      <h2>Vampire Hunt</h2>
+      <h2>헌터 선택</h2>
       <p>헌터를 선택하면 즉시 전투가 시작됩니다.</p>
       <div class="choice-grid">
         ${PLAYER_PRESETS.map((preset) => `
           <button class="choice" type="button" data-action="class" data-id="${preset.id}">
             <span class="tag">${preset.icon}</span>
             <strong>${preset.name}</strong>
-            <small>HP ${preset.hp} · SPD ${Math.round(preset.speed)} · SIG ${(preset.signatureCd).toFixed(1)}s</small>
+            <small>체력 ${preset.hp} · 이동 ${Math.round(preset.speed)} · 시그니처 ${(preset.signatureCd).toFixed(1)}초</small>
           </button>
         `).join('')}
       </div>
@@ -1174,10 +1174,10 @@ function setDefeat() {
   panelEl.innerHTML = `
     <div class="modal">
       <h2>사냥 실패</h2>
-      <p>Trial ${state.trial} · 처치 ${state.kills} · 에센스 ${state.essence}</p>
+      <p>시련 ${state.trial} · 처치 ${state.kills} · 정수 ${state.essence}</p>
       <div class="choice-grid">
         <button class="choice" type="button" data-action="restart">
-          <span class="tag">RST</span>
+          <span class="tag">다시</span>
           <strong>다시 시작</strong>
           <small>헌터 선택 화면으로 돌아갑니다.</small>
         </button>
@@ -1193,10 +1193,10 @@ function setVictory() {
   panelEl.innerHTML = `
     <div class="modal">
       <h2>사냥 성공</h2>
-      <p>최종 기록: Trial 3 클리어 · 처치 ${state.kills} · 에센스 ${state.essence}</p>
+      <p>최종 기록: 시련 3 클리어 · 처치 ${state.kills} · 정수 ${state.essence}</p>
       <div class="choice-grid">
         <button class="choice" type="button" data-action="restart">
-          <span class="tag">NEW</span>
+          <span class="tag">새로</span>
           <strong>새 런 시작</strong>
           <small>다른 헌터 조합으로 다시 도전합니다.</small>
         </button>
@@ -1215,7 +1215,7 @@ function refreshHUD() {
   hpFillEl.style.width = `${(hpRatio * 100).toFixed(1)}%`;
   hpTextEl.textContent = `${Math.ceil(p.hp)} / ${Math.ceil(p.maxHp)}`;
   trialTextEl.textContent = String(state.trial);
-  waveTextEl.textContent = state.isBossWave ? `${state.wave} (BOSS)` : String(state.wave);
+  waveTextEl.textContent = state.isBossWave ? `${state.wave} (보스)` : String(state.wave);
   essenceTextEl.textContent = String(Math.floor(state.essence));
   bestEssenceTextEl.textContent = String(bestEssence);
   killTextEl.textContent = String(state.kills);
@@ -1423,7 +1423,7 @@ function drawPauseOverlay() {
   ctx.fillStyle = '#f7f2ff';
   ctx.textAlign = 'center';
   ctx.font = 'bold 34px "Pretendard", "Noto Sans KR", sans-serif';
-  ctx.fillText('PAUSED', W * 0.5, H * 0.5 - 10);
+  ctx.fillText('일시정지', W * 0.5, H * 0.5 - 10);
   ctx.font = '16px "Pretendard", "Noto Sans KR", sans-serif';
   ctx.fillText('앱으로 돌아오면 자동으로 이어집니다.', W * 0.5, H * 0.5 + 20);
 }
