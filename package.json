@@ -3,7 +3,6 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "worm-lan-server": "node scripts/worm-lan-server.js",
     "sunken-multi-server": "node scripts/sunken-multi-server.js",
     "twin-temple-multi-server": "node scripts/twin-temple-multi-server.js",
     "multi-hub-server": "node scripts/taptap-multi-hub-server.js",

@@ -27,7 +27,7 @@
 | 21 | Zigzag Memory Run | 좌우 패턴 기억 | 완료 | zigzag-memory-run |
 | 22 | Mine Sweep Sprint | 지뢰찾기 퍼즐 | 완료 | mine-sweep-sprint |
 | 37 | Worm Arena Rush | 먹이 성장/회피 | 완료 | worm-arena-rush |
-| 38 | Worm Arena LAN | 같은 와이파이 룸 대전 | 완료 | worm-arena-lan |
+| 38 | Worm Arena LAN | 같은 와이파이 룸 대전 | 제거 | worm-arena-lan |
 | 39 | Air Striker Lite (Godot) | 2D 비행 슈팅 | 완료 | godot-air-striker |
 | 40 | Hyperfold: Golden Hunt (Godot) | 4D 레이어+리와인드 레이스 | 완료 | godot-hyperfold |
 | 41 | Crimson Hunter Trials | 뱀파이어 사냥 로그라이트 액션 | 완료 | crimson-hunter-trials |

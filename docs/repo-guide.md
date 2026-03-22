@@ -50,12 +50,6 @@ Sunken 멀티 + 싱글 랭킹 서버:
 npm run sunken-multi-server
 ```
 
-Worm LAN 서버:
-
-```bash
-npm run worm-lan-server
-```
-
 ## 5) 개발 운영 원칙
 1. 점수표 우선: `game-evaluation.md` 기준으로만 개선 우선순위 결정
 2. 집중 개발: 동시 집중 게임은 최대 2~3개
