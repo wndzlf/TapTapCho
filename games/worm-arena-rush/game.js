@@ -248,11 +248,11 @@ function sampleSafePoint(margin = 40, minRadius = 0) {
 function updateHud() {
   scoreEl.textContent = String(score);
   lengthEl.textContent = String(player?.segments.length ?? 0);
-  bestLengthEl.textContent = String(bestLength);
-  aliveEl.textContent = String(bots.length);
-  timeEl.textContent = `${Math.max(0, ROUND_DURATION - roundElapsed).toFixed(1)}초`;
-  zoneEl.textContent = `${Math.round((safeRadius / SAFE_RADIUS_START) * 100)}%`;
-  speedEl.textContent = `${Math.round(speedMultiplier * 100)}%`;
+  if (bestLengthEl) bestLengthEl.textContent = String(bestLength);
+  if (aliveEl) aliveEl.textContent = String(bots.length);
+  if (timeEl) timeEl.textContent = `${Math.max(0, ROUND_DURATION - roundElapsed).toFixed(1)}초`;
+  if (zoneEl) zoneEl.textContent = `${Math.round((safeRadius / SAFE_RADIUS_START) * 100)}%`;
+  if (speedEl) speedEl.textContent = `${Math.round(speedMultiplier * 100)}%`;
 }
 
 function syncBestLength() {
@@ -355,7 +355,7 @@ function triggerScoreMilestone(targetScore, originX, originY) {
     colors: ['#ffd372', '#fff6c1', '#9df2ff', '#ff9b73'],
   });
   addCelebrationBanner(`점수 ${targetScore}`, '속도를 유지하면 더 크게 터집니다', 'score');
-  addCelebrationFlyout(`Score ${targetScore}!`, originX, originY - 12, {
+  addCelebrationFlyout(`점수 ${targetScore}!`, originX, originY - 12, {
     color: '#fff1a7',
     size: 22,
     life: 1.08,
@@ -380,7 +380,7 @@ function triggerLengthGain(lengthValue, isMilestone = false) {
 
   if (isMilestone) {
     addCelebrationBanner(`길이 ${lengthValue}`, '몸집이 커졌습니다. 급회전을 줄이세요', 'length');
-    addCelebrationFlyout(`Length ${lengthValue}!`, player.x, player.y - 18, {
+    addCelebrationFlyout(`길이 ${lengthValue}!`, player.x, player.y - 18, {
       color: '#ffd986',
       size: 21,
       life: 1,
@@ -618,6 +618,20 @@ function startGame() {
   state = 'running';
   stabilizeViewport();
   updateFullscreenButton();
+}
+
+async function startGameFromGesture(preferFullscreen = false) {
+  bgmAudio?.unlock();
+
+  if (
+    preferFullscreen
+    && !isFullscreenActive()
+    && !isPseudoFullscreenActive()
+  ) {
+    await toggleFullscreen();
+  }
+
+  startGame();
 }
 
 function endGame(reason = 'crash') {
@@ -1092,59 +1106,6 @@ function drawSafeZone() {
   ctx.restore();
 }
 
-function drawMiniMap() {
-  const size = 108;
-  const x = W - size - 12;
-  const y = 12;
-
-  ctx.fillStyle = 'rgba(4, 8, 24, 0.72)';
-  ctx.fillRect(x, y, size, size);
-  ctx.strokeStyle = 'rgba(230, 240, 255, 0.35)';
-  ctx.strokeRect(x + 0.5, y + 0.5, size - 1, size - 1);
-
-  ctx.setLineDash([4, 3]);
-  ctx.strokeStyle = 'rgba(255, 109, 82, 0.78)';
-  ctx.beginPath();
-  ctx.arc(
-    x + (SAFE_CENTER.x / WORLD_W) * size,
-    y + (SAFE_CENTER.y / WORLD_H) * size,
-    (safeRadius / WORLD_W) * size,
-    0,
-    Math.PI * 2
-  );
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  for (let i = 0; i < foods.length; i += 8) {
-    const f = foods[i];
-    const mx = x + (f.x / WORLD_W) * size;
-    const my = y + (f.y / WORLD_H) * size;
-    ctx.fillStyle = '#dce6ff';
-    ctx.fillRect(mx, my, 1.6, 1.6);
-  }
-
-  for (const bot of bots) {
-    const mx = x + (bot.x / WORLD_W) * size;
-    const my = y + (bot.y / WORLD_H) * size;
-    ctx.fillStyle = '#ff7b74';
-    ctx.fillRect(mx - 1, my - 1, 2.2, 2.2);
-  }
-
-  const px = x + (player.x / WORLD_W) * size;
-  const py = y + (player.y / WORLD_H) * size;
-  ctx.fillStyle = '#7effb6';
-  ctx.beginPath();
-  ctx.arc(px, py, 3.2, 0, Math.PI * 2);
-  ctx.fill();
-
-  const cw = (W / WORLD_W) * size;
-  const ch = (H / WORLD_H) * size;
-  const cx = x + (camera.x / WORLD_W) * size;
-  const cy = y + (camera.y / WORLD_H) * size;
-  ctx.strokeStyle = 'rgba(126, 255, 182, 0.55)';
-  ctx.strokeRect(cx, cy, cw, ch);
-}
-
 function drawCelebrationParticles() {
   ctx.save();
   for (const particle of celebrationParticles) {
@@ -1316,7 +1277,6 @@ function render() {
   drawSafeZone();
   drawCelebrationParticles();
   drawCelebrationFlyouts();
-  drawMiniMap();
 
   ctx.fillStyle = '#eaf1ff';
   ctx.textAlign = 'left';
@@ -1325,7 +1285,6 @@ function render() {
   ctx.fillText(`길이 ${player.segments.length}`, 14, 48);
   ctx.fillText(`남은 시간 ${Math.max(0, ROUND_DURATION - roundElapsed).toFixed(1)}초`, 14, 70);
   ctx.fillText(`안전 구역 ${Math.round((safeRadius / SAFE_RADIUS_START) * 100)}%`, 14, 92);
-  ctx.fillText(`속도 ${Math.round(speedMultiplier * 100)}%`, 14, 114);
   drawScreenPulse();
   drawCelebrationBanners();
 
@@ -1437,7 +1396,7 @@ function isPseudoFullscreenActive() {
 function updateFullscreenButton() {
   if (!btnFullscreen) return;
   const active = isFullscreenActive() || isPseudoFullscreenActive();
-  const shouldShow = isTouchDevice || state !== 'idle' || active;
+  const shouldShow = active || state !== 'idle';
   const label = btnFullscreen.querySelector('span');
 
   btnFullscreen.classList.toggle('visible', shouldShow);
@@ -1494,7 +1453,9 @@ async function toggleFullscreen() {
   updateFullscreenButton();
 }
 
-btnStart.addEventListener('click', startGame);
+btnStart.addEventListener('click', () => {
+  startGameFromGesture(isTouchDevice);
+});
 btnFullscreen?.addEventListener('click', () => {
   bgmAudio?.unlock();
   stabilizeViewport();
@@ -1549,7 +1510,7 @@ canvas.addEventListener('pointerdown', (event) => {
   canvas.setPointerCapture?.(event.pointerId);
   updatePointer(event);
   if (state !== 'running') {
-    startGame();
+    startGameFromGesture(isTouchPointerEvent(event));
   }
 });
 

@@ -403,6 +403,28 @@
     return document.body.dataset.siteGuideMode || '';
   }
 
+  function getGuideLang() {
+    if (!document.body || !document.body.dataset) return '';
+    return document.body.dataset.siteGuideLang || '';
+  }
+
+  function getGuideButtonLabel() {
+    if (!document.body || !document.body.dataset) return 'Game Guide';
+    return document.body.dataset.siteGuideLabel || 'Game Guide';
+  }
+
+  function getGuideCloseLabel() {
+    if (!document.body || !document.body.dataset) return 'Close';
+    return document.body.dataset.siteGuideCloseLabel || 'Close';
+  }
+
+  function getGuideHeading(title) {
+    if (getGuideLang() === 'ko') {
+      return title + ' 가이드';
+    }
+    return title + ' Guide';
+  }
+
   function buildFixedLinkNav() {
     var fixed = document.createElement('nav');
     fixed.className = 'site-nav-inline no-wrap-nav';
@@ -547,8 +569,8 @@
     }).join('');
 
     return (
-      '<section class="game-guide" aria-label="Game guide">' +
-      '<h2>' + escapeHtml(meta.title) + ' Guide</h2>' +
+      '<section class="game-guide" aria-label="' + escapeHtml(getGuideHeading(meta.title)) + '">' +
+      '<h2>' + escapeHtml(getGuideHeading(meta.title)) + '</h2>' +
       '<p class="lead">' + escapeHtml(meta.lead) + '</p>' +
       '<div class="game-guide-grid">' +
       '<article class="game-guide-card"><h3>게임 목표</h3><p>' + escapeHtml(meta.goal) + '</p></article>' +
@@ -581,11 +603,11 @@
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'floating-guide-btn';
-    btn.textContent = 'Game Guide';
+    btn.textContent = getGuideButtonLabel();
 
     var layer = document.createElement('div');
     layer.className = 'floating-guide';
-    layer.innerHTML = '<div class="floating-guide-panel"><button type="button" class="floating-guide-close">Close</button>' + html + '</div>';
+    layer.innerHTML = '<div class="floating-guide-panel"><button type="button" class="floating-guide-close">' + escapeHtml(getGuideCloseLabel()) + '</button>' + html + '</div>';
 
     document.body.appendChild(btn);
     document.body.appendChild(layer);
