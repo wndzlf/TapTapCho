@@ -1,14 +1,19 @@
 const RANK_LIMIT = 6;
 const FILTER_PREVIEW_LIMIT = 8;
 const SEARCH_RESULT_LIMIT = 8;
+const RECENT_SELECTION_LIMIT = 3;
 
 const state = {
   area: "all",
   industry: "all",
+  areaBasis: "context",
+  industryBasis: "context",
   areaQuery: "",
   industryQuery: "",
   pickerType: null,
   pickerQuery: "",
+  recentAreas: [],
+  recentIndustries: [],
   data: null,
 };
 
@@ -33,9 +38,11 @@ const refs = {
   signalGrid: document.getElementById("signal-grid"),
   areaSectionTitle: document.getElementById("area-section-title"),
   areaNote: document.getElementById("area-note"),
+  areaActions: document.getElementById("area-actions"),
   areaList: document.getElementById("area-list"),
   categorySectionTitle: document.getElementById("category-section-title"),
   categoryNote: document.getElementById("category-note"),
+  categoryActions: document.getElementById("category-actions"),
   categoryList: document.getElementById("category-list"),
   filterPicker: document.getElementById("filter-picker"),
   pickerBackdrop: document.getElementById("picker-backdrop"),
@@ -150,6 +157,45 @@ function groupBy(items, selector) {
     accumulator.set(key, [...(accumulator.get(key) || []), item]);
     return accumulator;
   }, new Map());
+}
+
+function getRecentStorageKey(type) {
+  return `commercial-area-radar-recent-${type}`;
+}
+
+function loadRecentSelections(type) {
+  try {
+    const rawValue = window.localStorage.getItem(getRecentStorageKey(type));
+    const parsed = rawValue ? JSON.parse(rawValue) : [];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .filter((value) => typeof value === "string")
+      .slice(0, RECENT_SELECTION_LIMIT);
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentSelections(type, values) {
+  try {
+    window.localStorage.setItem(getRecentStorageKey(type), JSON.stringify(values));
+  } catch {
+    // Ignore storage failures and keep the in-memory fallback.
+  }
+}
+
+function rememberSelection(type, id) {
+  if (id === "all") {
+    return;
+  }
+
+  const stateKey = type === "area" ? "recentAreas" : "recentIndustries";
+  const nextValues = [id, ...state[stateKey].filter((value) => value !== id)].slice(0, RECENT_SELECTION_LIMIT);
+  state[stateKey] = nextValues;
+  saveRecentSelections(type, nextValues);
 }
 
 function getAllItems() {
@@ -656,7 +702,16 @@ function getFilterHelperText(type, totalCount, previewCount, matchCount) {
   return `${totalCount}개 ${label} 중 지금 볼 ${previewCount}개만 먼저 보여줍니다. 나머지는 전체 보기에서 찾습니다.`;
 }
 
+function formatTopPercentLabel(rank, total) {
+  if (!rank || !total) {
+    return null;
+  }
+
+  return `상위 ${formatPercent((rank / total) * 100)}`;
+}
+
 function selectFilter(type, id, shouldClosePicker = false) {
+  rememberSelection(type, id);
   state[type] = id;
   state[`${type}Query`] = "";
 
@@ -808,6 +863,21 @@ function renderPickerOption(option, selectedId) {
   `;
 }
 
+function renderPickerQuickSection(title, options, selectedId) {
+  if (!options.length) {
+    return "";
+  }
+
+  return `
+    <section class="picker-quick-section">
+      <div class="picker-quick-title">${escapeHtml(title)}</div>
+      <div class="picker-option-grid">
+        ${options.map((option) => renderPickerOption(option, selectedId)).join("")}
+      </div>
+    </section>
+  `;
+}
+
 function openPicker(type) {
   state.pickerType = type;
   state.pickerQuery = "";
@@ -843,6 +913,15 @@ function renderPicker() {
   const quickOptions = [options[0], getOptionById(options, selectedId)].filter((option, index, array) => {
     return option && array.findIndex((candidate) => candidate.id === option.id) === index;
   });
+  const recentStateKey = type === "area" ? "recentAreas" : "recentIndustries";
+  const recentOptions = state[recentStateKey]
+    .map((id) => getOptionById(options, id))
+    .filter((option, index, array) => {
+      return option
+        && option.id !== "all"
+        && array.findIndex((candidate) => candidate.id === option.id) === index
+        && !quickOptions.some((quickOption) => quickOption.id === option.id);
+    });
   const visibleOptions = query
     ? getMatchedOptions(options, query, Number.MAX_SAFE_INTEGER).filter((option) => option.id !== "all")
     : options.slice(1);
@@ -860,9 +939,12 @@ function renderPicker() {
     : "예: 카페, 편의점, 병의원";
   refs.pickerSearch.value = state.pickerQuery;
 
-  refs.pickerQuick.innerHTML = quickOptions.length
-    ? quickOptions.map((option) => renderPickerOption(option, selectedId)).join("")
-    : "";
+  refs.pickerQuick.innerHTML = [
+    renderPickerQuickSection("빠른 선택", quickOptions, selectedId),
+    renderPickerQuickSection("최근 선택", recentOptions, selectedId),
+  ]
+    .filter(Boolean)
+    .join("");
 
   refs.pickerGroups.innerHTML = groups.length
     ? groups
@@ -885,6 +967,50 @@ function renderPicker() {
   refs.filterPicker.querySelectorAll("[data-picker-option-id]").forEach((button) => {
     button.addEventListener("click", () => {
       selectFilter(type, button.getAttribute("data-picker-option-id"), true);
+    });
+  });
+}
+
+function renderComparisonActions(target, type, basis, canToggleContext, rank, total) {
+  const percentileLabel = formatTopPercentLabel(rank, total);
+  const rankLabel = rank && total ? `${rank} / ${formatNumber(total)}위` : null;
+  const parts = [];
+
+  if (canToggleContext) {
+    parts.push(`
+      <div class="comparison-toggle" role="group" aria-label="${type === "area" ? "동네" : "업종"} 비교 기준">
+        <button
+          type="button"
+          class="comparison-toggle-button${basis === "context" ? " is-active" : ""}"
+          data-comparison-basis="context"
+        >
+          현재 필터 기준
+        </button>
+        <button
+          type="button"
+          class="comparison-toggle-button${basis === "nationwide" ? " is-active" : ""}"
+          data-comparison-basis="nationwide"
+        >
+          전국 기준
+        </button>
+      </div>
+    `);
+  }
+
+  if (percentileLabel) {
+    parts.push(`<span class="comparison-pill">${escapeHtml(percentileLabel)}</span>`);
+  }
+
+  if (rankLabel) {
+    parts.push(`<span class="comparison-pill comparison-pill-muted">${escapeHtml(rankLabel)}</span>`);
+  }
+
+  target.innerHTML = parts.join("");
+  target.hidden = parts.length === 0;
+  target.querySelectorAll("[data-comparison-basis]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state[`${type}Basis`] = button.getAttribute("data-comparison-basis");
+      render();
     });
   });
 }
@@ -1294,33 +1420,55 @@ function renderRankList(target, entries, selectedId, totalCount, type, onChange)
 
 function renderAreaRadar() {
   const allItems = getAllItems();
-  const areaEntries = buildAreaEntries(allItems);
-  const selectedArea = getSelectedAreaEntry(areaEntries);
+  const allAreaEntries = buildAreaEntries(allItems);
+  const selectedArea = getSelectedAreaEntry(allAreaEntries);
   const industryEntries = buildIndustryEntries(allItems);
   const selectedIndustry = getSelectedIndustryEntry(industryEntries);
-  const sourceItems = selectedIndustry
+  const useContextBasis = state.areaBasis === "context" && Boolean(selectedIndustry);
+  const sourceItems = useContextBasis
     ? allItems.filter((item) => getIndustryId(item) === selectedIndustry.id)
     : allItems;
+  const comparisonEntries = buildAreaEntries(sourceItems);
   const entries = withMissingSelection(
-    buildAreaEntries(sourceItems),
+    comparisonEntries,
     selectedArea,
     `${selectedIndustry?.label || "선택 업종"} 기준 표본이 아직 없습니다.`,
   );
+  const selectedAreaRank = selectedArea ? getEntryRank(comparisonEntries, selectedArea.id) : null;
 
-  if (selectedIndustry) {
+  renderComparisonActions(
+    refs.areaActions,
+    "area",
+    useContextBasis ? "context" : "nationwide",
+    Boolean(selectedIndustry),
+    selectedAreaRank,
+    comparisonEntries.length,
+  );
+
+  if (useContextBasis) {
     refs.areaSectionTitle.textContent = `${selectedIndustry.label}가 많이 보이는 동네`;
-    refs.areaNote.textContent = `${selectedIndustry.label} 표본 ${formatNumber(sourceItems.length)}건을 기준으로 비교합니다.`;
+    refs.areaNote.textContent = selectedArea
+      ? `${selectedIndustry.label} 기준 ${selectedArea.label}은 ${
+        selectedAreaRank ? `${selectedAreaRank}위` : "비포착"
+      }입니다. 총 ${formatNumber(sourceItems.length)}건을 기준으로 비교합니다.`
+      : `${selectedIndustry.label} 표본 ${formatNumber(sourceItems.length)}건을 기준으로 비교합니다.`;
   } else if (selectedArea) {
     refs.areaSectionTitle.textContent = `${selectedArea.label}의 전체 동네 순위`;
-    refs.areaNote.textContent = `${selectedArea.label}가 전체 ${formatNumber(areaEntries.length)}개 동네 중 어디쯤 있는지 주변 순위와 같이 봅니다.`;
+    refs.areaNote.textContent = selectedIndustry
+      ? `전국 기준으로 다시 보면 ${selectedArea.label}은 전체 ${formatNumber(comparisonEntries.length)}개 동네 중 ${
+        selectedAreaRank ? `${selectedAreaRank}위` : "순위 밖"
+      }입니다. 선택 업종은 비교축에서 제외했습니다.`
+      : `${selectedArea.label}가 전체 ${formatNumber(comparisonEntries.length)}개 동네 중 어디쯤 있는지 주변 순위와 같이 봅니다.`;
+  } else if (selectedIndustry) {
+    refs.areaSectionTitle.textContent = "점포가 많이 잡히는 동네";
+    refs.areaNote.textContent = `전국 기준으로 다시 비교 중입니다. 선택 업종을 제외한 전체 ${formatNumber(sourceItems.length)}건 스냅샷 순서입니다.`;
   } else {
     refs.areaSectionTitle.textContent = "점포가 많이 잡히는 동네";
     refs.areaNote.textContent = `전체 ${formatNumber(sourceItems.length)}건 스냅샷에서 많이 포착된 동네 순서입니다.`;
   }
 
   renderRankList(refs.areaList, entries, state.area, sourceItems.length, "area", (areaId) => {
-    state.area = areaId;
-    render();
+    selectFilter("area", areaId);
   });
 }
 
@@ -1330,21 +1478,44 @@ function renderIndustryRadar() {
   const selectedArea = getSelectedAreaEntry(areaEntries);
   const allIndustryEntries = buildIndustryEntries(allItems);
   const selectedIndustry = getSelectedIndustryEntry(allIndustryEntries);
-  const sourceItems = selectedArea
+  const useContextBasis = state.industryBasis === "context" && Boolean(selectedArea);
+  const sourceItems = useContextBasis
     ? allItems.filter((item) => getAreaId(item) === selectedArea.id)
     : allItems;
+  const comparisonEntries = buildIndustryEntries(sourceItems);
   const industryEntries = withMissingSelection(
-    buildIndustryEntries(sourceItems),
+    comparisonEntries,
     selectedIndustry,
     `${selectedArea?.label || "선택 동네"} 안에서는 아직 포착되지 않았습니다.`,
   );
+  const selectedIndustryRank = selectedIndustry ? getEntryRank(comparisonEntries, selectedIndustry.id) : null;
 
-  if (selectedArea) {
+  renderComparisonActions(
+    refs.categoryActions,
+    "industry",
+    useContextBasis ? "context" : "nationwide",
+    Boolean(selectedArea),
+    selectedIndustryRank,
+    comparisonEntries.length,
+  );
+
+  if (useContextBasis) {
     refs.categorySectionTitle.textContent = `${selectedArea.label}에서 많이 보이는 업종`;
-    refs.categoryNote.textContent = `${selectedArea.label} 표본 ${formatNumber(sourceItems.length)}건을 기준으로 비교합니다.`;
+    refs.categoryNote.textContent = selectedIndustry
+      ? `${selectedArea.label} 기준 ${selectedIndustry.label}은 ${
+        selectedIndustryRank ? `${selectedIndustryRank}위` : "비포착"
+      }입니다. 총 ${formatNumber(sourceItems.length)}건을 기준으로 비교합니다.`
+      : `${selectedArea.label} 표본 ${formatNumber(sourceItems.length)}건을 기준으로 비교합니다.`;
   } else if (selectedIndustry) {
     refs.categorySectionTitle.textContent = `${selectedIndustry.label}의 전체 업종 순위`;
-    refs.categoryNote.textContent = `${selectedIndustry.label}가 전체 ${formatNumber(allIndustryEntries.length)}개 업종 중 어디쯤 있는지 주변 순위와 같이 봅니다.`;
+    refs.categoryNote.textContent = selectedArea
+      ? `전국 기준으로 다시 보면 ${selectedIndustry.label}는 전체 ${formatNumber(comparisonEntries.length)}개 업종 중 ${
+        selectedIndustryRank ? `${selectedIndustryRank}위` : "순위 밖"
+      }입니다. 선택 동네는 비교축에서 제외했습니다.`
+      : `${selectedIndustry.label}가 전체 ${formatNumber(comparisonEntries.length)}개 업종 중 어디쯤 있는지 주변 순위와 같이 봅니다.`;
+  } else if (selectedArea) {
+    refs.categorySectionTitle.textContent = "자주 보이는 업종";
+    refs.categoryNote.textContent = `전국 기준으로 다시 비교 중입니다. 선택 동네를 제외한 전체 ${formatNumber(sourceItems.length)}건 스냅샷 순서입니다.`;
   } else {
     refs.categorySectionTitle.textContent = "자주 보이는 업종";
     refs.categoryNote.textContent = `전체 ${formatNumber(sourceItems.length)}건 스냅샷에서 자주 보이는 업종 순서입니다.`;
@@ -1357,8 +1528,7 @@ function renderIndustryRadar() {
     sourceItems.length,
     "industry",
     (industryId) => {
-      state.industry = industryId;
-      render();
+      selectFilter("industry", industryId);
     },
   );
 }
@@ -1397,6 +1567,9 @@ function render() {
 }
 
 async function init() {
+  state.recentAreas = loadRecentSelections("area");
+  state.recentIndustries = loadRecentSelections("industry");
+
   refs.areaSearch.addEventListener("input", (event) => {
     state.areaQuery = event.target.value;
     render();
