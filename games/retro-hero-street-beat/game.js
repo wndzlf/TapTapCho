@@ -69,6 +69,7 @@ const btnMusic = document.getElementById('btnMusic');
 const btnSfx = document.getElementById('btnSfx');
 const btnTrackPrev = document.getElementById('btnTrackPrev');
 const btnTrackNext = document.getElementById('btnTrackNext');
+const btnPreview = document.getElementById('btnPreview');
 const btnSkin = document.getElementById('btnSkin');
 const btnExit = document.getElementById('btnExit');
 const btnDiffEasy = document.getElementById('btnDiffEasy');
@@ -95,6 +96,11 @@ const finalBestEl = document.getElementById('finalBest');
 const rewardContinueHintEl = document.getElementById('rewardContinueHint');
 const trackTitleEl = document.getElementById('trackTitle');
 const trackMetaEl = document.getElementById('trackMeta');
+const trackDifficultyStarsEl = document.getElementById('trackDifficultyStars');
+const resultAccuracyEl = document.getElementById('resultAccuracy');
+const resultBreakdownEl = document.getElementById('resultBreakdown');
+const resultHistogramEl = document.getElementById('resultHistogram');
+const resultOffsetHintEl = document.getElementById('resultOffsetHint');
 
 const W = canvas.width;
 const H = canvas.height;
@@ -278,6 +284,9 @@ const DEFAULT_JUDGE_WINDOWS_SEC = {
 };
 const SAFE_PASS_GRACE_SEC = 0.07;
 const SAFE_AUTOLANE_NUDGE_SEC = 0.09;
+const PREVIEW_DURATION_SEC = 5;
+const AD_RESULT_BONUS_RATIO = 0.15;
+const MAX_BEATS_WITHOUT_SPAWN = 3.2;
 
 const ENEMY_SPAWN_Y = -82;
 const HERO_Y = H - 134;
@@ -339,6 +348,9 @@ let bgmAudio = null;
 let selectedSkinIndex = 0;
 let activeSongDurationSec = 0;
 let missCount = 0;
+let lastSpawnBeat = -999;
+let hudRefreshCooldownSec = 0;
+let previewTimeoutId = 0;
 
 let userHash = null;
 let unsubscribeSafeArea = () => {};
@@ -367,6 +379,22 @@ const timingFeedback = {
   maxLife: 0,
   x: W * 0.5,
 };
+
+const verdictStats = {
+  perfect: 0,
+  great: 0,
+  good: 0,
+  safe: 0,
+  miss: 0,
+};
+
+const timingBuckets = [
+  { key: 'EARLY+', count: 0 },
+  { key: 'EARLY', count: 0 },
+  { key: 'CENTER', count: 0 },
+  { key: 'LATE', count: 0 },
+  { key: 'LATE+', count: 0 },
+];
 
 function safeLocalStorageGet(key) {
   try {
@@ -425,6 +453,90 @@ function setBgmAudioSource(audioSrc) {
   bgmAudio = createBgmAudio(audioSrc);
 }
 
+function getSongDifficultyStars(song, difficultyId) {
+  const bpm = Number(song?.bpm || 120);
+  const base = clamp(Math.round((bpm - 96) / 18) + 2, 2, 5);
+  if (difficultyId === 'easy') return clamp(base - 1, 1, 5);
+  if (difficultyId === 'hard') return clamp(base + 1, 1, 5);
+  return base;
+}
+
+function starsText(count) {
+  const full = '★'.repeat(clamp(Math.round(count), 0, 5));
+  const empty = '☆'.repeat(Math.max(0, 5 - full.length));
+  return `${full}${empty}`;
+}
+
+function updateTrackDifficultyStars() {
+  if (!trackDifficultyStarsEl) return;
+  const easy = getSongDifficultyStars(activeSong, 'easy');
+  const normal = getSongDifficultyStars(activeSong, 'normal');
+  const hard = getSongDifficultyStars(activeSong, 'hard');
+  trackDifficultyStarsEl.textContent = `EASY ${starsText(easy)} · NORMAL ${starsText(normal)} · HARD ${starsText(hard)}`;
+}
+
+function setPreviewButtonState(active, label = '미리듣기 5초') {
+  if (!btnPreview) return;
+  btnPreview.dataset.active = active ? 'true' : 'false';
+  btnPreview.textContent = label;
+}
+
+function clearPreviewTimer() {
+  if (!previewTimeoutId) return;
+  window.clearTimeout(previewTimeoutId);
+  previewTimeoutId = 0;
+}
+
+function stopTrackPreview({ rewind = false } = {}) {
+  clearPreviewTimer();
+  if (!btnPreview) return;
+  setPreviewButtonState(false, '미리듣기 5초');
+  if (state === 'running') return;
+  if (!bgmAudio) return;
+  bgmAudio.pause();
+  if (rewind) {
+    bgmAudio.currentTime = 0;
+  }
+}
+
+async function previewCurrentTrack() {
+  if (!btnPreview || state === 'running') {
+    return;
+  }
+
+  await unlockAudio();
+  if (!bgmAudio) {
+    setBgmAudioSource(activeSong.audioSrc);
+  }
+
+  const isActive = btnPreview.dataset.active === 'true';
+  if (isActive) {
+    stopTrackPreview({ rewind: true });
+    setStatus('미리듣기 정지', 0.5);
+    return;
+  }
+
+  clearPreviewTimer();
+  let startSec = 6;
+  if (Number.isFinite(bgmAudio.duration) && bgmAudio.duration > PREVIEW_DURATION_SEC + 6) {
+    startSec = clamp(bgmAudio.duration * 0.18, 4, 16);
+  }
+  bgmAudio.currentTime = startSec;
+
+  const playPromise = bgmAudio.play();
+  if (playPromise && typeof playPromise.catch === 'function') {
+    playPromise.catch(() => {});
+  }
+
+  setPreviewButtonState(true, '미리듣기 중...');
+  setStatus('트랙 미리듣기 5초', 0.7);
+
+  previewTimeoutId = window.setTimeout(() => {
+    previewTimeoutId = 0;
+    stopTrackPreview({ rewind: true });
+  }, PREVIEW_DURATION_SEC * 1000);
+}
+
 function updateTrackDisplay() {
   if (trackTitleEl) {
     trackTitleEl.textContent = activeSong.title || activeSong.shortLabel || 'Unknown Track';
@@ -432,6 +544,7 @@ function updateTrackDisplay() {
   if (trackMetaEl) {
     trackMetaEl.textContent = `${activeSong.artist || 'Unknown Artist'} · ${Math.round(60 / beatSec)} BPM · ${difficultyPreset.label}`;
   }
+  updateTrackDifficultyStars();
 }
 
 function updateSkinButtonLabel() {
@@ -843,12 +956,8 @@ function setElementHidden(element, hidden) {
 }
 
 function updateInteractionLock() {
-  const shouldLock = state === 'running'
-    && !pauseReason
-    && isHidden(infoModal)
-    && isHidden(exitModal)
-    && isHidden(gameOverModal);
-  document.body.classList.toggle('interaction-lock', shouldLock);
+  // Keep page scrolling available on mobile even during gameplay.
+  document.body.classList.remove('interaction-lock');
 }
 
 function updateBridgeBadge(text, className) {
@@ -865,6 +974,9 @@ function setButtonState(button, isActive, activeLabel, inactiveLabel) {
 function updateAudioButtons() {
   setButtonState(btnMusic, settings.musicEnabled, 'BGM 켜짐', 'BGM 꺼짐');
   setButtonState(btnSfx, settings.sfxEnabled, '효과음 켜짐', '효과음 꺼짐');
+  if (btnPreview) {
+    btnPreview.disabled = state === 'running';
+  }
   updateTrackDisplay();
   updateSkinButtonLabel();
   updateDifficultyButtons();
@@ -874,11 +986,17 @@ function updateStartButtonLabel() {
   if (state === 'running') {
     btnStart.textContent = pauseReason === 'manual' ? '재개' : '일시정지';
     updateInteractionLock();
+    if (btnPreview) {
+      btnPreview.disabled = true;
+    }
     return;
   }
 
   btnStart.textContent = state === 'gameover' ? '다시 시작' : '시작';
   updateInteractionLock();
+  if (btnPreview) {
+    btnPreview.disabled = false;
+  }
 }
 
 function updateHud() {
@@ -1069,6 +1187,89 @@ function pushTimingFeedback(verdict, lane, timeDeltaSec = 0, overrideLabel = '')
   timingFeedback.x = LANES[clamp(lane, 0, LANES.length - 1)] || W * 0.5;
 }
 
+function recordTimingBucket(timeDeltaSec) {
+  if (!Number.isFinite(timeDeltaSec)) return;
+  if (timeDeltaSec <= -0.1) {
+    timingBuckets[0].count += 1;
+  } else if (timeDeltaSec < -0.028) {
+    timingBuckets[1].count += 1;
+  } else if (timeDeltaSec <= 0.028) {
+    timingBuckets[2].count += 1;
+  } else if (timeDeltaSec < 0.1) {
+    timingBuckets[3].count += 1;
+  } else {
+    timingBuckets[4].count += 1;
+  }
+}
+
+function resetResultStats() {
+  verdictStats.perfect = 0;
+  verdictStats.great = 0;
+  verdictStats.good = 0;
+  verdictStats.safe = 0;
+  verdictStats.miss = 0;
+  for (const bucket of timingBuckets) {
+    bucket.count = 0;
+  }
+}
+
+function renderResultHistogram() {
+  if (!resultHistogramEl) return;
+  const maxCount = Math.max(1, ...timingBuckets.map((bucket) => bucket.count));
+  resultHistogramEl.innerHTML = '';
+
+  for (const bucket of timingBuckets) {
+    const row = document.createElement('div');
+    row.className = 'result-hist-row';
+    row.innerHTML = `
+      <span class="result-hist-label">${bucket.key}</span>
+      <span class="result-hist-track"><span class="result-hist-fill" style="width:${(bucket.count / maxCount) * 100}%"></span></span>
+      <span class="result-hist-count">${bucket.count}</span>
+    `;
+    resultHistogramEl.appendChild(row);
+  }
+}
+
+function renderResultReport() {
+  const totalJudged = verdictStats.perfect + verdictStats.great + verdictStats.good + verdictStats.safe + verdictStats.miss;
+  const weighted = verdictStats.perfect
+    + verdictStats.great * 0.86
+    + verdictStats.good * 0.72
+    + verdictStats.safe * 0.5;
+  const accuracy = totalJudged > 0 ? Math.round((weighted / totalJudged) * 100) : 0;
+
+  if (resultAccuracyEl) {
+    resultAccuracyEl.textContent = `정확도 ${accuracy}% · 판정 ${totalJudged}개`;
+  }
+  if (resultBreakdownEl) {
+    resultBreakdownEl.textContent = `PERFECT ${verdictStats.perfect} · GREAT ${verdictStats.great} · GOOD ${verdictStats.good} · SAFE ${verdictStats.safe} · MISS ${verdictStats.miss}`;
+  }
+  if (resultOffsetHintEl) {
+    resultOffsetHintEl.textContent = '입력 타이밍 분포를 보고 다음 곡에서 EARLY/LATE를 보정하세요.';
+  }
+  renderResultHistogram();
+}
+
+async function requestGameplayFullscreen() {
+  const el = document.documentElement;
+  if (!el?.requestFullscreen) return;
+  if (document.fullscreenElement) return;
+  try {
+    await el.requestFullscreen();
+  } catch (error) {
+    // Ignore; fullscreen availability depends on browser policy.
+  }
+}
+
+async function exitGameplayFullscreen() {
+  if (!document.fullscreenElement || !document.exitFullscreen) return;
+  try {
+    await document.exitFullscreen();
+  } catch (error) {
+    // Ignore.
+  }
+}
+
 function getSectionProfile(beatIndex) {
   const beatmapSection = getBeatmapSectionProfile(beatIndex);
   if (beatmapSection) {
@@ -1150,6 +1351,7 @@ function spawnEnemy(targetBeat, forcedLane = null, accentWeight = 1, hitSecOverr
   const lane = forcedLane == null ? pickSpawnLane() : forcedLane;
   const hitSec = Number.isFinite(hitSecOverride) ? hitSecOverride : beatToSongSec(targetBeat);
   const spawnSec = hitSec - approachSec;
+  lastSpawnBeat = Math.max(lastSpawnBeat, Number(targetBeat));
 
   enemies.push({
     id: enemyIdSeed,
@@ -1165,6 +1367,15 @@ function spawnEnemy(targetBeat, forcedLane = null, accentWeight = 1, hitSecOverr
   });
 
   enemyIdSeed += 1;
+}
+
+function primeOpeningSpawns() {
+  const currentBeat = Math.floor(getSongSeconds() / beatSec);
+  const firstBeat = Math.max(0, currentBeat + Math.floor(approachBeats));
+  for (let i = 0; i < 3; i += 1) {
+    const lane = (i + 1) % LANES.length;
+    spawnEnemy(firstBeat + i, lane, 0.94);
+  }
 }
 
 function updateWaveFromBeat(beatIndex) {
@@ -1188,8 +1399,10 @@ function handleBeat(beatIndex) {
   const spawnChance = marker?.forceSpawn
     ? 1
     : clamp(profile.density * accentWeight * spawnScale, 0.06, 0.99);
+  const beatsSinceSpawn = targetBeat - lastSpawnBeat;
+  const forceSpawnByGap = beatsSinceSpawn >= MAX_BEATS_WITHOUT_SPAWN;
 
-  if (random() > spawnChance) {
+  if (!forceSpawnByGap && random() > spawnChance) {
     return;
   }
 
@@ -1216,6 +1429,7 @@ function loseHp() {
   }
 
   missCount += 1;
+  verdictStats.miss += 1;
   combo = 0;
   heroGauge = Math.max(0, heroGauge - (1.6 * Number(difficultyPreset?.missGaugeDrain || 1)));
   shake = Math.max(shake, 12);
@@ -1262,6 +1476,7 @@ function resolveVerdict(timeDeltaSec) {
 }
 
 function registerInputMiss(lane, label = 'MISS') {
+  verdictStats.miss += 1;
   combo = 0;
   heroGauge = Math.max(0, heroGauge - 1);
   shake = Math.max(shake, 4);
@@ -1273,6 +1488,8 @@ function registerInputMiss(lane, label = 'MISS') {
 }
 
 function awardHit(verdict, enemy, lane, timeDeltaSec) {
+  verdictStats[verdict] += 1;
+  recordTimingBucket(timeDeltaSec);
   const scoreByVerdict = {
     perfect: 120,
     great: 96,
@@ -1394,10 +1611,14 @@ function startRun() {
   lastBeatIndex = -1;
   songClockFallbackSec = 0;
   shake = 0;
+  lastSpawnBeat = -999;
+  hudRefreshCooldownSec = 0;
   messageTimer = 0;
   timingFeedback.life = 0;
   timingFeedback.maxLife = 0;
   timingFeedback.label = '';
+  stopTrackPreview({ rewind: true });
+  resetResultStats();
 
   rewardedContinueUsed = false;
 
@@ -1416,10 +1637,12 @@ function startRun() {
 
   hideGameOverModal();
   closeOverlays();
+  primeOpeningSpawns();
   updateHud();
   updateStartButtonLabel();
   refreshStatusLine();
   setStatus(`TRACK ${activeSong.shortLabel} · ${difficultyPreset.label}`, 0.95);
+  void requestGameplayFullscreen();
   void syncAudio();
 
   if (rewardedAdSupported) {
@@ -1447,6 +1670,7 @@ function resumeGame(reason = null) {
 function showGameOverModal() {
   finalScoreEl.textContent = String(score);
   finalBestEl.textContent = String(best);
+  renderResultReport();
   showElement(gameOverModal);
   updateRewardedContinueUi();
 }
@@ -1461,6 +1685,7 @@ function endRun(reason = 'complete') {
   pauseReason = null;
   heroModeSec = 0;
   reviveShieldSec = 0;
+  void exitGameplayFullscreen();
   updateStartButtonLabel();
 
   if (score > best) {
@@ -1594,7 +1819,11 @@ function updateGame(dt) {
     best = score;
   }
 
-  updateHud();
+  hudRefreshCooldownSec -= dt;
+  if (hudRefreshCooldownSec <= 0) {
+    hudRefreshCooldownSec = 0.08;
+    updateHud();
+  }
 }
 
 function drawBackground(songSec) {
@@ -1922,22 +2151,22 @@ function scheduleRewardedAdReload() {
 }
 
 function updateRewardedContinueUi() {
-  const shouldShow = false;
+  const shouldShow = rewardedAdSupported && state === 'gameover';
   setElementHidden(btnRewardContinue, !shouldShow);
   setElementHidden(rewardContinueHintEl, !shouldShow);
 
   if (!shouldShow) return;
 
   let buttonLabel = '광고 준비 중...';
-  let hint = '광고를 불러오는 중입니다. 준비되면 이어하기를 사용할 수 있어요.';
+  let hint = '광고를 불러오는 중입니다. 준비되면 결과 보너스를 받을 수 있어요.';
   let disabled = true;
 
   if (rewardedContinueUsed) {
-    buttonLabel = '이번 런은 이어하기 사용 완료';
-    hint = '보상형 이어하기는 라운드당 1회만 제공됩니다.';
+    buttonLabel = '보상 수령 완료';
+    hint = '보상형 광고 보너스는 트랙당 1회만 받을 수 있어요.';
   } else if (rewardedAdStatus === 'ready') {
-    buttonLabel = '광고 보고 이어하기';
-    hint = '광고 시청 완료 시 HP 1 회복 + 잠깐 보호막으로 이어집니다.';
+    buttonLabel = '광고 보고 +15%';
+    hint = '광고 시청 완료 시 최종 점수에 +15% 보너스를 적용합니다.';
     disabled = false;
   } else if (rewardedAdStatus === 'showing') {
     buttonLabel = '광고 재생 중...';
@@ -1985,21 +2214,18 @@ function grantRewardedContinue() {
   rewardedContinueUsed = true;
   rewardedAdRewardGranted = false;
 
-  state = 'running';
-  pauseReason = null;
-  hp = Math.max(1, hp);
-  combo = 0;
-  heroModeSec = Math.max(heroModeSec, 2.2);
-  reviveShieldSec = REVIVE_SHIELD_SEC;
-  enemies.length = 0;
-
-  addBurst(heroX, HERO_Y - 20, '#7fffd4', 26, 5.1);
-  setStatus('광고 보상: 이어하기 성공!', 1.2);
-
-  hideGameOverModal();
-  updateStartButtonLabel();
+  const bonus = Math.round(score * AD_RESULT_BONUS_RATIO);
+  score += bonus;
+  if (score > best) {
+    best = score;
+    void persistBest();
+  }
+  finalScoreEl.textContent = String(score);
+  finalBestEl.textContent = String(best);
+  setStatus(`광고 보상: 점수 +${bonus}`, 1.2);
   updateHud();
-  void syncAudio();
+  renderResultReport();
+  updateRewardedContinueUi();
 
   preloadRewardedContinueAd();
 }
@@ -2120,6 +2346,7 @@ function handleBackRequest() {
 }
 
 async function leaveGame() {
+  void exitGameplayFullscreen();
   await toss.setIosSwipeGestureEnabled(true);
 
   const closed = await toss.closeView();
@@ -2299,6 +2526,7 @@ function loop(timestamp) {
 
 async function shiftTrack(direction) {
   await unlockAudio();
+  stopTrackPreview({ rewind: true });
   if (SONG_LIBRARY.length <= 1) {
     setStatus('트랙이 1개만 등록되어 있습니다.', 0.8);
     return;
@@ -2347,6 +2575,7 @@ function changeDifficulty(nextDifficultyId) {
 
 function handleStartButtonClick() {
   void unlockAudio();
+  stopTrackPreview({ rewind: true });
 
   if (state === 'idle' || state === 'gameover') {
     startRun();
@@ -2358,8 +2587,8 @@ function handleStartButtonClick() {
     return;
   }
 
-  if (state === 'running' && pauseReason === 'manual') {
-    resumeGame('manual');
+  if (state === 'running' && pauseReason) {
+    resumeGame(pauseReason);
   }
 }
 
@@ -2516,6 +2745,10 @@ function bindEvents() {
 
   btnTrackNext?.addEventListener('click', () => {
     void shiftTrack(1);
+  });
+
+  btnPreview?.addEventListener('click', () => {
+    void previewCurrentTrack();
   });
 
   btnSkin?.addEventListener('click', () => {

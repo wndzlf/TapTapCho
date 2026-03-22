@@ -648,10 +648,6 @@ body.interaction-lock * {
   -webkit-touch-callout: none !important;
 }
 
-body.interaction-lock {
-  touch-action: none;
-}
-
 body.gameplay-immersive {
   padding: 0;
   overflow: hidden;
