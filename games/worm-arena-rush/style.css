@@ -233,6 +233,12 @@ footer {
   background: linear-gradient(180deg, rgba(22, 78, 88, 0.98), rgba(9, 36, 44, 0.98));
 }
 
+body[data-site-guide-mode="floating"] .floating-guide-btn {
+  left: calc(12px + env(safe-area-inset-left));
+  right: auto;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+}
+
 .wrap:fullscreen,
 body.is-pseudo-fullscreen .wrap {
   width: 100vw;

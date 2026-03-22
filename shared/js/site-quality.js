@@ -398,6 +398,11 @@
       !!document.querySelector('canvas');
   }
 
+  function getGuideMode() {
+    if (!document.body || !document.body.dataset) return '';
+    return document.body.dataset.siteGuideMode || '';
+  }
+
   function buildFixedLinkNav() {
     var fixed = document.createElement('nav');
     fixed.className = 'site-nav-inline no-wrap-nav';
@@ -560,8 +565,9 @@
   function insertGuide(meta) {
     var html = renderGuide(meta);
     var wrap = document.querySelector('.wrap');
+    var prefersFloatingGuide = getGuideMode() === 'floating';
 
-    if (wrap) {
+    if (wrap && !prefersFloatingGuide) {
       if (wrap.querySelector('.game-guide')) return;
       var footer = wrap.querySelector('footer');
       var section = document.createElement('div');
