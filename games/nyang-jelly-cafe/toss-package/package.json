@@ -1,0 +1,14 @@
+{
+  "name": "nyang-jelly-cafe-toss-package",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "../../../node_modules/.bin/ait build",
+    "build:web": "node scripts/build-web.mjs",
+    "dev": "node scripts/dev-server.mjs"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@apps-in-toss/web-framework": "^2.0.9"
+  }
+}

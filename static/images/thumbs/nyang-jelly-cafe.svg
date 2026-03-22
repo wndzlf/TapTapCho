@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="냥젤리 카페 썸네일">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#59297f"/>
+      <stop offset="50%" stop-color="#8d47b7"/>
+      <stop offset="100%" stop-color="#3d1b62"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.16" cy="0.2" r="0.8">
+      <stop offset="0%" stop-color="#ffb3d7" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#ffb3d7" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#281340" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#130a21" stop-opacity="0.75"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="640" height="360" fill="url(#bg)"/>
+  <rect width="640" height="360" fill="url(#glow)"/>
+
+  <g fill="#ffffff" fill-opacity="0.2">
+    <circle cx="74" cy="58" r="14"/>
+    <circle cx="118" cy="40" r="6"/>
+    <circle cx="162" cy="62" r="10"/>
+    <circle cx="530" cy="72" r="8"/>
+    <circle cx="564" cy="56" r="5"/>
+  </g>
+
+  <g transform="translate(96 74)">
+    <rect x="0" y="98" width="220" height="120" rx="28" fill="#ffe6f4"/>
+    <circle cx="110" cy="82" r="58" fill="#fffdfd"/>
+    <path d="M70 62L88 30L102 60" fill="#fffdfd"/>
+    <path d="M150 62L132 30L118 60" fill="#fffdfd"/>
+    <circle cx="91" cy="82" r="7" fill="#4b355f"/>
+    <circle cx="129" cy="82" r="7" fill="#4b355f"/>
+    <path d="M94 104Q110 118 126 104" fill="none" stroke="#4b355f" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="46" cy="132" r="16" fill="#ff8fbe"/>
+    <circle cx="86" cy="132" r="16" fill="#9bf5da"/>
+    <circle cx="126" cy="132" r="16" fill="#ffe28f"/>
+    <circle cx="166" cy="132" r="16" fill="#ff8fbe" opacity="0.74"/>
+  </g>
+
+  <text x="40" y="122" fill="#ffffff" fill-opacity="0.14" font-size="96" font-family="Arial, sans-serif" font-weight="700">N</text>
+
+  <rect x="22" y="258" width="596" height="82" rx="12" fill="url(#panel)"/>
+  <text x="40" y="300" fill="#fff6ff" font-family="Arial, sans-serif" font-weight="700" font-size="34">냥젤리 카페</text>
+  <text x="40" y="328" fill="#f0dffd" font-family="Arial, sans-serif" font-size="20">아케이드 - 원탭 서빙</text>
+</svg>

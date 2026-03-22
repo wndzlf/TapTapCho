@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" role="img" aria-labelledby="title desc">
+  <title id="title">햄찌보바샵</title>
+  <desc id="desc">귀여운 햄스터와 보바 컵이 있는 게임 썸네일</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFD7A6"/>
+      <stop offset="1" stop-color="#FF7AA8"/>
+    </linearGradient>
+    <linearGradient id="cup" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#FFF1F7"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#7B4258" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+  <rect width="600" height="600" rx="120" fill="url(#bg)"/>
+  <circle cx="132" cy="126" r="22" fill="#FFF" opacity="0.46"/>
+  <circle cx="486" cy="150" r="18" fill="#FFF" opacity="0.38"/>
+  <circle cx="102" cy="456" r="16" fill="#FFF" opacity="0.34"/>
+  <circle cx="506" cy="420" r="24" fill="#FFF" opacity="0.28"/>
+  <g filter="url(#shadow)">
+    <rect x="122" y="90" width="356" height="416" rx="54" fill="rgba(255,255,255,0.82)"/>
+    <rect x="154" y="126" width="292" height="120" rx="36" fill="#FFF6FB"/>
+    <circle cx="300" cy="162" r="52" fill="#FFF7EF"/>
+    <circle cx="268" cy="152" r="12" fill="#5A3342"/>
+    <circle cx="332" cy="152" r="12" fill="#5A3342"/>
+    <path d="M278 182Q300 202 322 182" stroke="#5A3342" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <circle cx="252" cy="118" r="30" fill="#FFF7EF"/>
+    <circle cx="348" cy="118" r="30" fill="#FFF7EF"/>
+    <circle cx="252" cy="118" r="14" fill="#FFD7E4"/>
+    <circle cx="348" cy="118" r="14" fill="#FFD7E4"/>
+    <path d="M186 286H414L398 404Q302 438 202 404Z" fill="#FF8FB8"/>
+    <path d="M204 286H396L384 388Q302 414 216 388Z" fill="url(#cup)"/>
+    <rect x="214" y="246" width="172" height="40" rx="20" fill="#FFF4D9"/>
+    <path d="M242 250H358L350 272H250Z" fill="#FFD56B"/>
+    <circle cx="248" cy="348" r="14" fill="#8FD08C"/>
+    <circle cx="300" cy="368" r="14" fill="#FFCB63"/>
+    <circle cx="350" cy="346" r="14" fill="#7CCF9A"/>
+    <circle cx="222" cy="452" r="22" fill="#FFD7E4"/>
+    <circle cx="378" cy="452" r="22" fill="#FFD7E4"/>
+    <path d="M236 454C264 486 336 486 364 454" stroke="#5A3342" stroke-width="10" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>

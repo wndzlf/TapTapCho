@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="베리베어 베이커리 썸네일">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f06d8b"/>
+      <stop offset="52%" stop-color="#f7a6b8"/>
+      <stop offset="100%" stop-color="#f48f67"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.24" cy="0.2" r="0.78">
+      <stop offset="0%" stop-color="#fff5ea" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="#fff5ea" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fffaf7" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#f8d9cc" stop-opacity="0.92"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="640" height="360" fill="url(#bg)"/>
+  <rect width="640" height="360" fill="url(#glow)"/>
+
+  <g fill="#ffffff" fill-opacity="0.16">
+    <circle cx="78" cy="52" r="15"/>
+    <circle cx="118" cy="84" r="8"/>
+    <circle cx="548" cy="58" r="12"/>
+    <circle cx="504" cy="92" r="6"/>
+    <circle cx="580" cy="116" r="9"/>
+  </g>
+
+  <g transform="translate(94 120)">
+    <rect x="0" y="98" width="450" height="88" rx="28" fill="url(#panel)"/>
+    <rect x="22" y="76" width="406" height="34" rx="17" fill="#ffffff" fill-opacity="0.55"/>
+    <circle cx="126" cy="68" r="56" fill="#fff9f4"/>
+    <circle cx="126" cy="64" r="30" fill="#ffd7c4"/>
+    <circle cx="98" cy="53" r="10" fill="#b56d4a"/>
+    <circle cx="154" cy="53" r="10" fill="#b56d4a"/>
+    <circle cx="112" cy="62" r="4.5" fill="#4f3342"/>
+    <circle cx="140" cy="62" r="4.5" fill="#4f3342"/>
+    <path d="M118 77Q126 84 134 77" stroke="#4f3342" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M72 126L112 104L152 126L126 162Z" fill="#ffd6e5"/>
+    <circle cx="78" cy="132" r="18" fill="#ff6f8f"/>
+    <circle cx="112" cy="136" r="18" fill="#7f9dff"/>
+    <circle cx="146" cy="132" r="18" fill="#db6e9b"/>
+    <circle cx="180" cy="136" r="18" fill="#ff9eb7"/>
+
+    <g transform="translate(214 10)">
+      <rect x="0" y="12" width="168" height="108" rx="26" fill="#fff6ef"/>
+      <rect x="18" y="28" width="132" height="18" rx="9" fill="#7f9dff"/>
+      <rect x="18" y="56" width="132" height="18" rx="9" fill="#ff6f8f"/>
+      <rect x="18" y="84" width="132" height="18" rx="9" fill="#db6e9b"/>
+      <circle cx="38" cy="37" r="7" fill="#ffffff"/>
+      <circle cx="38" cy="65" r="7" fill="#ffffff"/>
+      <circle cx="38" cy="93" r="7" fill="#ffffff"/>
+    </g>
+  </g>
+</svg>

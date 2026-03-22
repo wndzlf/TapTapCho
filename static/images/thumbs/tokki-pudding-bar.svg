@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="토끼푸딩 바 썸네일">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffd9c1"/>
+      <stop offset="48%" stop-color="#fff3ea"/>
+      <stop offset="100%" stop-color="#f3c39d"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.2" cy="0.18" r="0.82">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.88"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#fff3e6" stop-opacity="0.96"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="640" height="360" fill="url(#bg)"/>
+  <rect width="640" height="360" fill="url(#glow)"/>
+
+  <g fill="#ffffff" fill-opacity="0.38">
+    <circle cx="70" cy="56" r="12"/>
+    <circle cx="116" cy="40" r="6"/>
+    <circle cx="168" cy="68" r="8"/>
+    <circle cx="548" cy="62" r="10"/>
+    <circle cx="586" cy="44" r="5"/>
+  </g>
+
+  <g transform="translate(108 68)">
+    <rect x="0" y="94" width="240" height="128" rx="30" fill="url(#panel)" stroke="#e6b88e" stroke-opacity="0.45"/>
+    <rect x="16" y="52" width="208" height="112" rx="28" fill="#fffaf7" stroke="#ebd2bf" stroke-opacity="0.8"/>
+    <ellipse cx="120" cy="38" rx="40" ry="28" fill="#ffffff"/>
+    <ellipse cx="100" cy="10" rx="10" ry="24" fill="#ffffff" transform="rotate(-14 100 10)"/>
+    <ellipse cx="140" cy="10" rx="10" ry="24" fill="#ffffff" transform="rotate(14 140 10)"/>
+    <circle cx="108" cy="38" r="4" fill="#4b2b1d"/>
+    <circle cx="132" cy="38" r="4" fill="#4b2b1d"/>
+    <path d="M110 48Q120 56 130 48" fill="none" stroke="#4b2b1d" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="48" cy="182" r="16" fill="#ff8fb3"/>
+    <circle cx="88" cy="182" r="16" fill="#92e8cf"/>
+    <circle cx="128" cy="182" r="16" fill="#ffe093"/>
+    <circle cx="168" cy="182" r="16" fill="#ffb881"/>
+    <circle cx="208" cy="182" r="16" fill="#d49df5"/>
+  </g>
+
+  <g transform="translate(364 76)">
+    <rect x="0" y="36" width="170" height="170" rx="26" fill="#fffaf4" fill-opacity="0.55" stroke="#ffffff" stroke-opacity="0.45"/>
+    <rect x="18" y="112" width="134" height="62" rx="22" fill="#fff4e8" stroke="#e6c09d" stroke-opacity="0.7"/>
+    <rect x="18" y="78" width="134" height="28" rx="14" fill="#ffb7d0"/>
+    <rect x="18" y="54" width="134" height="22" rx="11" fill="#92e8cf"/>
+    <rect x="18" y="32" width="134" height="20" rx="10" fill="#ffe093"/>
+    <circle cx="44" cy="158" r="9" fill="#ffffff"/>
+    <circle cx="76" cy="158" r="9" fill="#ffffff"/>
+    <circle cx="108" cy="158" r="9" fill="#ffffff"/>
+    <circle cx="140" cy="158" r="9" fill="#ffffff"/>
+  </g>
+
+  <rect x="28" y="274" width="584" height="60" rx="18" fill="#7b4424" fill-opacity="0.18"/>
+  <text x="44" y="306" fill="#4b2b1d" font-family="Arial, sans-serif" font-weight="700" font-size="32">토끼푸딩 바</text>
+  <text x="44" y="332" fill="#6e4633" font-family="Arial, sans-serif" font-size="18">모바일 원탭 타이밍 게임</text>
+</svg>
