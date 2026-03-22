@@ -744,11 +744,6 @@ body.rank-mode .top-row {
   background: linear-gradient(180deg, #1d2d4a, #162744);
 }
 
-.core-btn {
-  border-color: #6ecfca;
-  background: linear-gradient(180deg, #173942, #122c32);
-}
-
 .ad-reward-btn {
   border-color: #7dc4ff;
   background: linear-gradient(180deg, #1c3550, #14273b);
@@ -1046,12 +1041,6 @@ body.mobile-landscape.playing .title-block {
   width: min(980px, 97%);
   border-color: #5f79a5;
   background: linear-gradient(180deg, rgba(18, 28, 45, 0.96), rgba(11, 18, 33, 0.96));
-}
-
-.modal.core-modal {
-  width: min(980px, 97%);
-  border-color: #59a9a5;
-  background: linear-gradient(180deg, rgba(16, 30, 38, 0.96), rgba(10, 19, 26, 0.96));
 }
 
 .modal h2 {

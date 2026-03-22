@@ -8,7 +8,6 @@ const quickBuildEl = document.getElementById('quickBuild');
 const stageTextEl = document.getElementById('stageText');
 const baseTextEl = document.getElementById('baseText');
 const goldTextEl = document.getElementById('goldText');
-const coreTextEl = document.getElementById('coreText');
 const aliveTextEl = document.getElementById('aliveText');
 const queueTextEl = document.getElementById('queueText');
 const killsTextEl = document.getElementById('killsText');
@@ -35,7 +34,6 @@ const btnPause = document.getElementById('btnPause');
 const btnMerge = document.getElementById('btnMerge');
 const btnChoLotto = document.getElementById('btnChoLotto');
 const btnCull = document.getElementById('btnCull');
-const btnCoreWorkshop = document.getElementById('btnCoreWorkshop');
 const btnRewardGold = document.getElementById('btnRewardGold');
 const btnEmperorShield = document.getElementById('btnEmperorShield');
 const btnSunken = document.getElementById('btnSunken');
@@ -247,14 +245,6 @@ const singleRankState = {
   connectTried: false,
 };
 
-const SUNKEN_META_KEY = 'taptapcho_web40_meta_v2';
-const META_UPGRADES = {
-  startGold: { label: '시작 골드', max: 5, costBase: 12, costScale: 1.65, valuePerLv: 40 },
-  towerPower: { label: '타워 화력', max: 5, costBase: 14, costScale: 1.72, valuePerLv: 0.06 },
-  emperorFort: { label: '황제 내구', max: 5, costBase: 10, costScale: 1.6, valuePerLv: 2 },
-  bossBounty: { label: '보스 현상금', max: 5, costBase: 15, costScale: 1.78, valuePerLv: 0.12 },
-};
-
 const GRID = {
   cell: GRID_CELL,
   cols: Math.floor(W / GRID_CELL),
@@ -419,7 +409,6 @@ const state = {
   rushDamageBonus: 0,
   pendingStage: 0,
   pendingStageBonusGold: 0,
-  pendingStageCore: 0,
   rewardUiUnlockAt: 0,
   emperorShieldTimer: 0,
   onboarding: {
@@ -432,35 +421,19 @@ const state = {
   emperorShieldUses: 0,
   rewardGoldCooldown: 0,
   rewardGoldUses: 0,
-  workshopReturnMode: '',
-  workshopPrevPaused: false,
   mergeCheckVersion: 0,
   mergeCheckSnapshotVersion: -1,
   mergeCheckResult: false,
   mergeSaturationSnapshotVersion: -1,
   mergeSaturationResult: false,
-  cores: 0,
-  meta: {
-    upgrades: {
-      startGold: 0,
-      towerPower: 0,
-      emperorFort: 0,
-      bossBounty: 0,
-    },
-    bestStage: 1,
-    bestKills: 0,
-  },
   daily: {
     key: '',
     label: '',
     desc: '',
-    coreMul: 1,
     startGoldAdd: 0,
     towerPowerAdd: 0,
     enemyHpMul: 1,
     bossBountyAdd: 0,
-    oneTimeCoreBonus: 0,
-    claimed: false,
   },
   metaTowerDamageMul: 1,
   metaBossBountyMul: 1,
@@ -488,43 +461,35 @@ const STUN_IMMUNE_BOSS_STAGES = [5, 15, 25, 35, 45];
 const DAILY_MUTATORS = [
   {
     label: '돌격 보급',
-    desc: '시작 골드와 코어 보상이 늘지만 적이 더 단단해집니다.',
-    coreMul: 1.22,
+    desc: '시작 골드가 늘지만 적이 더 단단해집니다.',
     startGoldAdd: 140,
     towerPowerAdd: 0,
     enemyHpMul: 1.16,
     bossBountyAdd: 0.08,
-    oneTimeCoreBonus: 12,
   },
   {
     label: '아크 과부하',
     desc: '타워 화력과 보스 보상이 늘지만 적 체력이 강화됩니다.',
-    coreMul: 1.18,
     startGoldAdd: 0,
     towerPowerAdd: 0.1,
     enemyHpMul: 1.14,
     bossBountyAdd: 0.22,
-    oneTimeCoreBonus: 10,
   },
   {
     label: '요새 행군',
-    desc: '황제 내구가 늘고 코어 수급이 안정적입니다.',
-    coreMul: 1.1,
+    desc: '시작 자원이 늘고 적 체력이 완만하게 상승합니다.',
     startGoldAdd: 80,
     towerPowerAdd: 0.03,
     enemyHpMul: 1.08,
     bossBountyAdd: 0.1,
-    oneTimeCoreBonus: 9,
   },
   {
     label: '설원 완화',
-    desc: '웨이브가 쉬워지지만 코어 보상은 줄어듭니다.',
-    coreMul: 0.92,
+    desc: '웨이브가 쉬워지지만 보스 보상 증가가 없습니다.',
     startGoldAdd: 40,
     towerPowerAdd: 0,
     enemyHpMul: 0.92,
     bossBountyAdd: 0,
-    oneTimeCoreBonus: 6,
   },
 ];
 
@@ -757,251 +722,24 @@ function makeDailyMutator(key) {
     key,
     label: src.label,
     desc: src.desc,
-    coreMul: src.coreMul,
     startGoldAdd: src.startGoldAdd,
     towerPowerAdd: src.towerPowerAdd,
     enemyHpMul: src.enemyHpMul,
     bossBountyAdd: src.bossBountyAdd,
-    oneTimeCoreBonus: src.oneTimeCoreBonus,
-    claimed: false,
   };
-}
-
-function createDefaultPersistentMeta() {
-  return {
-    cores: 0,
-    upgrades: {
-      startGold: 0,
-      towerPower: 0,
-      emperorFort: 0,
-      bossBounty: 0,
-    },
-    bestStage: 1,
-    bestKills: 0,
-    dailyKey: '',
-    dailyClaimed: false,
-  };
-}
-
-function normalizePersistentMeta(raw) {
-  const base = createDefaultPersistentMeta();
-  if (!raw || typeof raw !== 'object') return base;
-  const upgrades = {};
-  for (const [key, def] of Object.entries(META_UPGRADES)) {
-    const lv = Math.floor(Number(raw.upgrades?.[key]) || 0);
-    upgrades[key] = clamp(lv, 0, def.max);
-  }
-  const bestStage = clamp(Math.floor(Number(raw.bestStage) || 1), 1, 999);
-  const bestKills = clamp(Math.floor(Number(raw.bestKills) || 0), 0, 9999999);
-  const dailyKey = String(raw.dailyKey || '').slice(0, 24);
-  const dailyClaimed = Boolean(raw.dailyClaimed);
-  const cores = clamp(Math.floor(Number(raw.cores) || 0), 0, 999999);
-  return {
-    cores,
-    upgrades,
-    bestStage,
-    bestKills,
-    dailyKey,
-    dailyClaimed,
-  };
-}
-
-function loadPersistentMeta() {
-  try {
-    const raw = JSON.parse(readStoredValue(SUNKEN_META_KEY) || '{}');
-    return normalizePersistentMeta(raw);
-  } catch (_) {
-    return createDefaultPersistentMeta();
-  }
-}
-
-function savePersistentMeta() {
-  const payload = {
-    cores: Math.floor(state.cores || 0),
-    upgrades: { ...state.meta.upgrades },
-    bestStage: Math.floor(state.meta.bestStage || 1),
-    bestKills: Math.floor(state.meta.bestKills || 0),
-    dailyKey: state.daily.key || '',
-    dailyClaimed: Boolean(state.daily.claimed),
-  };
-  try {
-    writeStoredValue(SUNKEN_META_KEY, JSON.stringify(payload));
-  } catch (_) {}
 }
 
 function applyRuntimeMetaBonuses() {
-  const u = state.meta.upgrades;
-  state.metaStartGoldBonus = Math.floor((u.startGold || 0) * META_UPGRADES.startGold.valuePerLv) + (state.daily.startGoldAdd || 0);
-  state.metaTowerDamageMul = 1 + (u.towerPower || 0) * META_UPGRADES.towerPower.valuePerLv + (state.daily.towerPowerAdd || 0);
-  state.metaBossBountyMul = 1 + (u.bossBounty || 0) * META_UPGRADES.bossBounty.valuePerLv + (state.daily.bossBountyAdd || 0);
-  state.metaBaseHpBonus = Math.floor((u.emperorFort || 0) * META_UPGRADES.emperorFort.valuePerLv);
+  state.metaStartGoldBonus = Math.floor(state.daily.startGoldAdd || 0);
+  state.metaTowerDamageMul = 1 + (state.daily.towerPowerAdd || 0);
+  state.metaBossBountyMul = 1 + (state.daily.bossBountyAdd || 0);
+  state.metaBaseHpBonus = 0;
 }
 
 function loadMetaProgression() {
-  const persisted = loadPersistentMeta();
-  state.cores = persisted.cores;
-  state.meta.upgrades = persisted.upgrades;
-  state.meta.bestStage = persisted.bestStage;
-  state.meta.bestKills = persisted.bestKills;
-
   const dayKey = todayKey();
-  const daily = makeDailyMutator(dayKey);
-  if (persisted.dailyKey === dayKey) {
-    daily.claimed = persisted.dailyClaimed;
-  }
-  state.daily = daily;
+  state.daily = makeDailyMutator(dayKey);
   applyRuntimeMetaBonuses();
-  savePersistentMeta();
-}
-
-function updateMetaRunRecords(stageReached = state.stage, kills = state.kills) {
-  const stage = clamp(Math.floor(stageReached || 1), 1, 999);
-  const killCount = clamp(Math.floor(kills || 0), 0, 9999999);
-  state.meta.bestStage = Math.max(state.meta.bestStage || 1, stage);
-  state.meta.bestKills = Math.max(state.meta.bestKills || 0, killCount);
-  savePersistentMeta();
-}
-
-function getMetaUpgradeCost(key) {
-  const def = META_UPGRADES[key];
-  if (!def) return Infinity;
-  const lv = clamp(Math.floor(state.meta.upgrades[key] || 0), 0, def.max);
-  if (lv >= def.max) return Infinity;
-  return Math.floor(def.costBase * Math.pow(def.costScale, lv));
-}
-
-function getMetaUpgradeDeltaLabel(key) {
-  const def = META_UPGRADES[key];
-  if (!def) return '';
-  if (key === 'startGold' || key === 'emperorFort') return `+${def.valuePerLv}`;
-  return `+${Math.round(def.valuePerLv * 100)}%`;
-}
-
-function grantCores(amount, reason = '', silent = false) {
-  const n = Math.floor(Number(amount) || 0);
-  if (n <= 0) return;
-  state.cores = clamp(state.cores + n, 0, 999999);
-  savePersistentMeta();
-  if (!silent) {
-    flashBanner(reason ? `${reason} +${n} 코어` : `+${n} 코어`, 0.8);
-  }
-}
-
-function stageCoreReward(stage) {
-  const s = Math.max(1, Math.floor(stage || 1));
-  const raw = 1 + s * 0.28 + Math.max(0, s - 10) * 0.12;
-  return Math.max(1, Math.floor(raw * (state.daily.coreMul || 1)));
-}
-
-function maybeClaimDailyCoreBonus() {
-  if (state.daily.claimed) return 0;
-  if (state.stage < 10) return 0;
-  const bonus = Math.max(0, Math.floor(state.daily.oneTimeCoreBonus || 0));
-  if (bonus <= 0) {
-    state.daily.claimed = true;
-    savePersistentMeta();
-    return 0;
-  }
-  state.daily.claimed = true;
-  grantCores(bonus, '일일 돌파 보너스', true);
-  savePersistentMeta();
-  return bonus;
-}
-
-function renderCoreWorkshop(returnMode = 'menu') {
-  const rows = Object.entries(META_UPGRADES).map(([key, def]) => {
-    const lv = clamp(Math.floor(state.meta.upgrades[key] || 0), 0, def.max);
-    const nextCost = getMetaUpgradeCost(key);
-    const maxed = lv >= def.max;
-    const deltaLabel = getMetaUpgradeDeltaLabel(key);
-    const costText = maxed ? '최대' : `${nextCost} 코어`;
-    const disabled = maxed || state.cores < nextCost;
-    return `
-      <button class="reward-btn" data-action="meta:buy:${key}" ${disabled ? 'disabled' : ''} type="button">
-        <strong>${def.label} Lv.${lv}/${def.max}</strong>
-        <span>레벨당 ${deltaLabel}</span>
-        <span>${costText}</span>
-      </button>
-    `;
-  }).join('');
-
-  const returnAction = returnMode === 'reward' ? 'meta:back-reward' : 'meta:close';
-  const returnLabel = returnMode === 'reward' ? '스테이지 결과로 돌아가기' : '닫기';
-
-  overlayEl.classList.remove('hidden');
-  overlayEl.classList.remove('banner-passive');
-  overlayEl.classList.add('reward-mode');
-  overlayEl.innerHTML = `
-    <div class="modal core-modal">
-      <h2>코어 공방</h2>
-      <p>코어 ${state.cores} · 오늘의 변이 ${state.daily.label}</p>
-      <p>${state.daily.desc}</p>
-      <div class="reward-grid">${rows}</div>
-      <div class="actions">
-        <button type="button" data-action="${returnAction}">${returnLabel}</button>
-      </div>
-    </div>
-  `;
-}
-
-function closeCoreWorkshop() {
-  const returnMode = state.workshopReturnMode || 'menu';
-  if (returnMode === 'reward') {
-    state.mode = 'reward';
-    showStageReward({ skipGrant: true });
-    return;
-  }
-  if (returnMode === 'playing') {
-    state.mode = 'playing';
-    overlayEl.classList.add('hidden');
-    overlayEl.classList.remove('reward-mode');
-    overlayEl.classList.remove('banner-passive');
-    overlayEl.innerHTML = '';
-    if (!state.workshopPrevPaused) {
-      state.paused = false;
-      syncPauseButton();
-    }
-    refreshHud();
-    return;
-  }
-  showMenu();
-}
-
-function openCoreWorkshop(returnMode = 'menu') {
-  state.workshopReturnMode = returnMode;
-  if (returnMode === 'playing') {
-    state.workshopPrevPaused = state.paused;
-    if (!state.paused) {
-      state.paused = true;
-      syncPauseButton();
-    }
-  }
-  state.mode = 'workshop';
-  renderCoreWorkshop(returnMode);
-}
-
-function buyMetaUpgrade(key) {
-  const def = META_UPGRADES[key];
-  if (!def) return;
-  const current = clamp(Math.floor(state.meta.upgrades[key] || 0), 0, def.max);
-  if (current >= def.max) {
-    flashBanner('이미 최대 레벨입니다', 0.55, true);
-    return;
-  }
-  const cost = getMetaUpgradeCost(key);
-  if (state.cores < cost) {
-    flashBanner('코어가 부족합니다', 0.55, true);
-    return;
-  }
-  state.cores -= cost;
-  state.meta.upgrades[key] = current + 1;
-  applyRuntimeMetaBonuses();
-  savePersistentMeta();
-  flashBanner(`${def.label} Lv.${state.meta.upgrades[key]}`, 0.65);
-  sfx(620, 0.06, 'triangle', 0.018);
-  renderCoreWorkshop(state.workshopReturnMode || 'menu');
-  refreshBuildHint();
-  refreshHud();
 }
 
 function isFxHeavyLoad() {
@@ -2546,7 +2284,6 @@ function startRun() {
   state.rushDamageBonus = 0;
   state.pendingStage = 0;
   state.pendingStageBonusGold = 0;
-  state.pendingStageCore = 0;
   state.rewardUiUnlockAt = 0;
   state.emperorShieldTimer = 0;
   state.emperorShieldFx = 0;
@@ -2554,8 +2291,6 @@ function startRun() {
   state.emperorShieldUses = 0;
   state.rewardGoldCooldown = 0;
   state.rewardGoldUses = 0;
-  state.workshopReturnMode = '';
-  state.workshopPrevPaused = false;
   state.onboarding = {
     firstBuild: false,
     firstUpgrade: false,
@@ -2580,7 +2315,6 @@ function startRun() {
 }
 
 function setDefeat() {
-  updateMetaRunRecords(state.stage, state.kills);
   submitSingleRank('defeat');
   state.mode = 'defeat';
   document.body.classList.remove('playing');
@@ -2601,9 +2335,6 @@ function setDefeat() {
 }
 
 function setVictory() {
-  const victoryCore = Math.max(12, Math.floor((18 + state.maxStage * 0.22) * (state.daily.coreMul || 1)));
-  grantCores(victoryCore, '최종 승리 보너스', true);
-  updateMetaRunRecords(state.maxStage, state.kills);
   submitSingleRank('victory');
   state.mode = 'victory';
   document.body.classList.remove('playing');
@@ -2614,7 +2345,6 @@ function setVictory() {
     <div class="modal">
       <h2>최종 승리</h2>
       <p>스테이지 ${state.maxStage} · 처치 ${state.kills} · 황제 체력 ${state.baseHp}</p>
-      <p>+${victoryCore} 코어</p>
       <div class="actions">
         <button type="button" data-action="restart">새 게임</button>
       </div>
@@ -2624,13 +2354,10 @@ function setVictory() {
   sfx(520, 0.16, 'triangle', 0.04);
 }
 
-function showStageReward(options = {}) {
-  const skipGrant = Boolean(options.skipGrant);
+function showStageReward() {
   const nightmareIndex = Math.max(0, state.stage - 20);
   let clearGold = 70 + state.stage * 14 + nightmareIndex * 28 + Math.floor(nightmareIndex * nightmareIndex * 3);
   let bonusTag = '';
-  let dailyCoreBonus = 0;
-  let clearCore = stageCoreReward(state.stage);
 
   if (state.stage === 1 && !state.onboarding.firstClear) {
     state.onboarding.firstClear = true;
@@ -2640,18 +2367,10 @@ function showStageReward(options = {}) {
   }
   const autoRushBonus = 0.25;
 
-  if (!skipGrant) {
-    dailyCoreBonus = maybeClaimDailyCoreBonus();
-    state.pendingStage = state.stage + 1;
-    state.pendingStageBonusGold = clearGold;
-    state.pendingStageCore = clearCore + dailyCoreBonus;
-    state.gold += clearGold;
-    state.rushDamageBonus += autoRushBonus;
-    grantCores(state.pendingStageCore, '스테이지 클리어', true);
-  } else {
-    clearGold = state.pendingStageBonusGold || clearGold;
-    clearCore = state.pendingStageCore || clearCore;
-  }
+  state.pendingStage = state.stage + 1;
+  state.pendingStageBonusGold = clearGold;
+  state.gold += clearGold;
+  state.rushDamageBonus += autoRushBonus;
 
   state.mode = 'reward';
   state.rewardUiUnlockAt = performance.now() + 220;
@@ -2666,10 +2385,8 @@ function showStageReward(options = {}) {
       <h2>스테이지 성공</h2>
       <p>스테이지 ${state.stage} · 시간 ${formatTime(stageTimeSec)} · 처치 ${state.kills}</p>
       <p>타워 ${towerCount}기 · +${clearGold} 골드${bonusTag}</p>
-      <p>+${clearCore} 코어${dailyCoreBonus > 0 ? ` · 일일 +${dailyCoreBonus}` : ''}</p>
       <div class="actions">
         <button type="button" data-action="reward:next" disabled>다음 스테이지</button>
-        <button type="button" data-action="reward:workshop" disabled>코어 공방</button>
       </div>
     </div>
   `;
@@ -2685,10 +2402,6 @@ function showStageReward(options = {}) {
 function applyStageReward(kind) {
   if (state.mode !== 'reward') return;
   if (performance.now() < state.rewardUiUnlockAt) return;
-  if (kind === 'workshop') {
-    openCoreWorkshop('reward');
-    return;
-  }
   if (kind !== 'next') return;
   flashBanner(`누적 러시 보너스 +${Math.round(state.rushDamageBonus * 100)}%`, 0.9);
   sfx(620, 0.07, 'triangle', 0.028);
@@ -2703,7 +2416,6 @@ function applyStageReward(kind) {
   const nextStage = state.pendingStage || state.stage + 1;
   state.pendingStage = 0;
   state.pendingStageBonusGold = 0;
-  state.pendingStageCore = 0;
   startStage(nextStage);
 }
 
@@ -2738,7 +2450,6 @@ function refreshHud() {
   stageTextEl.textContent = String(state.stage);
   baseTextEl.textContent = `${formatHudNumber(Math.max(0, state.baseHp))}/${formatHudNumber(Math.max(1, state.baseMaxHp || 20))}`;
   goldTextEl.textContent = formatHudNumber(state.gold);
-  if (coreTextEl) coreTextEl.textContent = formatHudNumber(state.cores);
   aliveTextEl.textContent = formatHudNumber(state.enemies.length);
   queueTextEl.textContent = formatHudNumber(state.spawnQueue.length);
   killsTextEl.textContent = formatHudNumber(state.kills);
@@ -2764,10 +2475,6 @@ function refreshHud() {
     if (costEl) costEl.textContent = isMobileView
       ? formatCompactNumber(CHO_LOTTO_COST)
       : `${CHO_LOTTO_COST} 골드`;
-  }
-  if (btnCoreWorkshop) {
-    const costEl = btnCoreWorkshop.querySelector('.cost');
-    if (costEl) costEl.textContent = isMobileView ? `코어 ${formatCompactNumber(state.cores)}` : `코어 ${state.cores}`;
   }
   if (btnRewardGold) {
     const nameEl = btnRewardGold.querySelector('.name');
@@ -3526,12 +3233,10 @@ function hurtEnemy(enemy, damage, sourceKind = '', secondary = false) {
     if (idx >= 0) state.enemies.splice(idx, 1);
 
     if (enemy.boss) {
-      const bossCore = Math.max(2, Math.floor((4 + state.stage * 0.18) * (state.daily.coreMul || 1)));
-      grantCores(bossCore, '보스 현상금', true);
       bgmAudio?.fx('win');
       impactSfx.play('enemyHitHeavy', { volume: 0.46, minGap: 0.12, rateMin: 0.88, rateMax: 0.95 });
       sfx(280, 0.2, 'sawtooth', 0.04);
-      flashBanner(`보스 격파 +${bossCore} 코어`, 0.9);
+      flashBanner('보스 격파', 0.9);
     } else {
       if (Math.random() < 0.35) {
         sfx(560, 0.04, 'triangle', 0.013);
@@ -5890,12 +5595,6 @@ function handleControlsClick(event) {
     return;
   }
 
-  if (event.target.closest('[data-action="open-workshop"]')) {
-    const returnMode = state.mode === 'playing' ? 'playing' : 'menu';
-    openCoreWorkshop(returnMode);
-    return;
-  }
-
   if (event.target.closest('[data-action="emperor-shield"]')) {
     castEmperorShield();
     return;
@@ -6170,11 +5869,6 @@ window.addEventListener('keydown', (event) => {
     castEmperorShield();
   }
 
-  if (event.code === 'KeyC') {
-    const returnMode = state.mode === 'playing' ? 'playing' : (state.mode === 'reward' ? 'reward' : 'menu');
-    openCoreWorkshop(returnMode);
-  }
-
   if (event.code === 'KeyZ') {
     castRewardGold();
   }
@@ -6184,22 +5878,6 @@ window.addEventListener('keydown', (event) => {
 overlayEl.addEventListener('click', (event) => {
   const action = event.target.closest('[data-action]')?.dataset.action;
   if (!action) return;
-  if (action.startsWith('meta:buy:')) {
-    buyMetaUpgrade(action.split(':')[2]);
-    return;
-  }
-  if (action === 'meta:close' || action === 'meta:back-reward') {
-    closeCoreWorkshop();
-    return;
-  }
-  if (action === 'open-workshop') {
-    if (state.mode === 'reward') {
-      openCoreWorkshop('reward');
-    } else {
-      openCoreWorkshop('menu');
-    }
-    return;
-  }
   if (action.startsWith('reward:')) {
     applyStageReward(action.split(':')[1]);
     return;
@@ -6319,7 +5997,7 @@ async function initializeTossShell() {
   if (resolvedUserHash) {
     userHash = resolvedUserHash;
     updateBridgeBadge('토스 게임 연동', 'badge-live');
-    updateUserKeyHint('토스 게임 계정 기준으로 코어 성장, 랭킹, 사운드 설정을 분리 저장합니다.');
+    updateUserKeyHint('토스 게임 계정 기준으로 랭킹 기록과 사운드 설정을 분리 저장합니다.');
   } else if (toss.isAvailable()) {
     updateBridgeBadge('토스 미리보기', 'badge-fallback');
     updateUserKeyHint('토스 브리지는 연결됐지만 게임 계정 키를 받지 못해 로컬 저장을 함께 사용합니다.');
@@ -6338,10 +6016,10 @@ function showMenu() {
   overlayEl.innerHTML = `
     <div class="modal">
       <h2>선큰 식스웨이 디펜스</h2>
-      <p>오늘의 변이: ${state.daily.label} · 코어 x${(state.daily.coreMul || 1).toFixed(2)}</p>
+      <p>오늘의 변이: ${state.daily.label}</p>
+      <p>${state.daily.desc}</p>
       <div class="actions">
         <button type="button" data-action="start">게임 시작</button>
-        <button type="button" data-action="open-workshop">코어 공방</button>
       </div>
     </div>
   `;

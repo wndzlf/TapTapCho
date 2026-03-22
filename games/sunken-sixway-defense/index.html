@@ -8,7 +8,7 @@
   />
   <meta name="theme-color" content="#07101c" />
   <title>선큰 식스웨이 디펜스</title>
-  <link rel="stylesheet" href="style.css?v=20260322b" />
+  <link rel="stylesheet" href="style.css?v=20260322c" />
 </head>
 <body>
   <div class="wrap">
@@ -31,7 +31,7 @@
           <p class="eyebrow">토스 미니앱 게임</p>
           <h1>선큰 식스웨이 디펜스</h1>
           <p class="header-copy">
-            육방향 방어선 위에 선큰을 배치하고, 코어 공방으로 성장하며, 50 스테이지까지 황제를 지켜내세요.
+            육방향 방어선 위에 선큰을 배치하고, 업그레이드와 융합을 활용해 50 스테이지까지 황제를 지켜내세요.
           </p>
         </div>
       </div>
@@ -131,7 +131,6 @@
       <div class="stat">처치 <b id="killsText">0</b></div>
       <div class="stat">시간 <b id="timeText">0:00</b></div>
       <div class="stat stat-gold">골드 <b id="goldText">0</b></div>
-      <div class="stat">코어 <b id="coreText">0</b></div>
       <div class="stat">배속 <b id="speedText">1.00x</b></div>
       <div class="stat">황제 <b id="baseText">20/20</b></div>
       <div class="stat">남은 적 <b id="aliveText">0</b></div>
@@ -209,11 +208,6 @@
         <span class="name">적 약화</span>
         <span class="cost">10000 골드</span>
       </button>
-      <button class="build-btn mode-btn core-btn" id="btnCoreWorkshop" data-action="open-workshop" type="button">
-        <span class="icon">C</span>
-        <span class="name">코어 공방</span>
-        <span class="cost">코어 0</span>
-      </button>
       <button class="build-btn mode-btn ad-reward-btn" id="btnRewardGold" data-action="reward-gold" type="button">
         <span class="icon">🎁</span>
         <span class="name">보급 투하</span>
@@ -248,7 +242,7 @@
     <div class="sheet-card">
       <p class="modal-kicker">종료 확인</p>
       <h2 id="exitTitle">선큰 식스웨이 디펜스를 종료할까요?</h2>
-      <p class="sheet-copy">진행 중인 스테이지는 저장되지 않지만 코어 성장, 랭킹 기록, 사운드 설정은 유지돼요.</p>
+      <p class="sheet-copy">진행 중인 스테이지는 저장되지 않지만 랭킹 기록과 사운드 설정은 유지돼요.</p>
       <div class="modal-actions">
         <button id="btnCancelExit" class="sheet-button" type="button">계속 플레이</button>
         <button id="btnConfirmExit" class="sheet-button sheet-button-danger" type="button">종료</button>
@@ -285,6 +279,6 @@
   <script src="../assets/js/neon-audio.js"></script>
   <script src="../assets/js/server-config.js"></script>
   <script src="toss-bridge.js"></script>
-  <script src="game.js?v=20260320a"></script>
+  <script src="game.js?v=20260322c"></script>
 </body>
 </html>
