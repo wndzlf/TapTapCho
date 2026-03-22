@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta
     name="description"
-    content="소상공인시장진흥공단 상가(상권)정보 API 데이터를 바탕으로 행정동과 업종을 검색하며 상권 샘플을 빠르게 훑는 정보형 앱입니다."
+    content="소상공인시장진흥공단 상가(상권)정보 API 데이터를 바탕으로 모바일에서 상권 밀집도와 비교 포인트를 빠르게 읽어내는 정보형 앱입니다."
   />
   <title>Commercial Area Radar</title>
   <link rel="stylesheet" href="./styles.css" />
@@ -13,18 +13,26 @@
 <body>
   <div class="shell">
     <header class="hero">
-      <div class="hero-copy">
-        <span class="eyebrow">Info App Prototype</span>
-        <h1>동네 상권 레이더</h1>
-        <p class="hero-text">
-          데이터에 들어온 행정동과 업종을 바로 골라보면서 상권 샘플을 훑어보는 토스용 정보 앱 시안입니다.
-        </p>
-        <div class="hero-links">
-          <a href="https://www.data.go.kr/data/15012005/openapi.do" target="_blank" rel="noreferrer">공공데이터포털 문서</a>
-          <a href="https://bigdata.sbiz.or.kr/" target="_blank" rel="noreferrer">소상공인 빅데이터 플랫폼</a>
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <span class="eyebrow">10초 브리핑</span>
+          <h1>동네 상권 레이더</h1>
+          <p class="hero-text">
+            동네와 업종을 고르면, 지금 어디가 붐비는지 짧고 빠르게 읽어주는 토스용 상권 브리핑입니다.
+          </p>
+          <div class="hero-links">
+            <a href="https://www.data.go.kr/data/15012005/openapi.do" target="_blank" rel="noreferrer">공공데이터포털 문서</a>
+            <a href="https://bigdata.sbiz.or.kr/" target="_blank" rel="noreferrer">소상공인 빅데이터 플랫폼</a>
+          </div>
+        </div>
+        <div class="hero-side">
+          <div class="hero-status" id="hero-status">스냅샷 불러오는 중</div>
+          <div class="hero-pills">
+            <span class="hero-pill" id="snapshot-chip">데모</span>
+            <span class="hero-pill hero-pill-muted">가볍게 보기</span>
+          </div>
         </div>
       </div>
-      <div class="hero-status" id="hero-status">스냅샷 불러오는 중</div>
     </header>
 
     <main class="content">
@@ -35,7 +43,6 @@
               <div class="toolbar-label">행정동 기준</div>
               <p class="toolbar-note" id="area-helper">행정동 또는 시군구로 검색할 수 있습니다.</p>
             </div>
-            <span class="chip" id="snapshot-chip">데모</span>
           </div>
           <input
             class="search-input"
@@ -65,30 +72,54 @@
         </div>
       </section>
 
-      <section class="stats-grid" id="stats-grid" aria-label="요약 지표"></section>
+      <section class="panel briefing-panel">
+        <div class="section-head">
+          <div>
+            <span class="section-kicker">한눈 브리핑</span>
+            <h2 id="briefing-title">상권 브리핑을 준비하고 있습니다.</h2>
+            <p class="section-note" id="briefing-copy">필터에 맞는 진단 문장을 계산 중입니다.</p>
+          </div>
+        </div>
+        <div class="briefing-stage">
+          <div class="radar-card" id="briefing-visual">
+            <article class="placeholder-card">레이더 맵을 준비하고 있습니다.</article>
+          </div>
+          <div class="briefing-points" id="briefing-points">
+            <article class="placeholder-card">바로 읽기 포인트를 준비하고 있습니다.</article>
+          </div>
+        </div>
+        <div class="briefing-meta" id="briefing-meta">
+          <span class="placeholder-chip">데이터 요약을 준비하고 있습니다.</span>
+        </div>
+        <div class="signal-grid" id="signal-grid">
+          <article class="placeholder-card">핵심 신호를 준비하고 있습니다.</article>
+        </div>
+      </section>
 
-      <section class="content-grid">
+      <section class="comparison-grid">
         <section class="panel list-panel">
           <div class="section-head">
             <div>
-              <h2>행정동 분포</h2>
-              <p class="section-note" id="area-note">행정동 분포를 계산 중입니다.</p>
+              <span class="section-kicker">어디가 뜨는지</span>
+              <h2 id="area-section-title">동네 레이더</h2>
+              <p class="section-note" id="area-note">동네 비교를 계산 중입니다.</p>
             </div>
           </div>
-          <div class="summary-list" id="area-list">
-            <article class="placeholder-card">행정동 요약을 준비하고 있습니다.</article>
+          <div class="summary-list rank-list" id="area-list">
+            <article class="placeholder-card">동네 레이더를 준비하고 있습니다.</article>
           </div>
         </section>
 
         <section class="panel list-panel">
           <div class="section-head">
             <div>
-              <h2>업종 분포</h2>
-              <p class="section-note" id="category-note">업종 분포를 계산 중입니다.</p>
+              <span class="section-kicker">무슨 업종인지</span>
+              <h2 id="category-section-title">업종 레이더</h2>
+              <p class="section-note" id="category-note">업종 비교를 계산 중입니다.</p>
             </div>
           </div>
-          <div class="summary-list" id="category-list">
-            <article class="placeholder-card">업종 요약을 준비하고 있습니다.</article>
+          <div class="summary-list rank-list" id="category-list">
+            <article class="placeholder-card">업종 레이더를 준비하고 있습니다.</article>
           </div>
         </section>
       </section>
@@ -96,6 +127,7 @@
       <section class="panel stores-panel">
         <div class="section-head">
           <div>
+            <span class="section-kicker">실제 샘플</span>
             <h2>점포 샘플</h2>
             <p class="section-note" id="store-note">점포 카드를 준비하고 있습니다.</p>
           </div>
