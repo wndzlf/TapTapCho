@@ -12,6 +12,7 @@ const state = {
   areaBasis: "context",
   industryBasis: "context",
   areaGranularity: "adong",
+  areaDrillSigngu: null,
   areaRankView: "focus",
   industryRankView: "focus",
   areaQuery: "",
@@ -123,6 +124,18 @@ function formatPercent(value) {
     minimumFractionDigits,
     maximumFractionDigits,
   })}%`;
+}
+
+function formatPointDelta(value) {
+  const safeValue = Number.isFinite(value) ? value : 0;
+  const absoluteValue = Math.abs(safeValue);
+  const minimumFractionDigits = absoluteValue > 0 && absoluteValue < 10 ? 1 : 0;
+  const maximumFractionDigits = absoluteValue >= 10 ? 0 : 1;
+  const sign = safeValue > 0 ? "+" : "";
+  return `${sign}${safeValue.toLocaleString("ko-KR", {
+    minimumFractionDigits,
+    maximumFractionDigits,
+  })}%p`;
 }
 
 function formatMultiple(value) {
@@ -431,6 +444,25 @@ function getSelectionDelta(currentCounts, previousCounts, id) {
   return (currentCounts[id] || 0) - (previousCounts[id] || 0);
 }
 
+function getSelectionShare(counts, totalCount, id) {
+  if (!counts || !totalCount || !id) {
+    return null;
+  }
+
+  return toPercent(counts[id] || 0, totalCount);
+}
+
+function getSelectionShareDelta(currentCounts, currentTotalCount, previousCounts, previousTotalCount, id) {
+  const currentShare = getSelectionShare(currentCounts, currentTotalCount, id);
+  const previousShare = getSelectionShare(previousCounts, previousTotalCount, id);
+
+  if (currentShare === null || previousShare === null) {
+    return null;
+  }
+
+  return currentShare - previousShare;
+}
+
 function formatDeltaLabel(delta) {
   if (delta === null) {
     return "직전 스냅샷 없음";
@@ -441,6 +473,18 @@ function formatDeltaLabel(delta) {
   }
 
   return `직전 ${delta > 0 ? "+" : ""}${formatNumber(delta)}건`;
+}
+
+function formatShareDeltaLabel(delta) {
+  if (delta === null) {
+    return null;
+  }
+
+  if (Math.abs(delta) < 0.05) {
+    return "비중 동일";
+  }
+
+  return `비중 ${formatPointDelta(delta)}`;
 }
 
 function getDeltaTone(delta) {
@@ -929,6 +973,10 @@ function selectFilter(type, id, shouldClosePicker = false) {
   state[type] = id;
   state[`${type}Query`] = "";
 
+  if (type === "area") {
+    state.areaDrillSigngu = id === "all" ? null : getSelectedAreaItem()?.signguCd || null;
+  }
+
   if (shouldClosePicker) {
     state.pickerType = null;
     state.pickerQuery = "";
@@ -1231,6 +1279,8 @@ function renderComparisonActions({
   share,
   deltaLabel,
   deltaTone,
+  shareDeltaLabel,
+  shareDeltaTone,
   rankView,
   canToggleRankView,
 }) {
@@ -1314,6 +1364,14 @@ function renderComparisonActions({
     `);
   }
 
+  if (shareDeltaLabel) {
+    parts.push(`
+      <span class="comparison-pill comparison-pill-delta comparison-pill-delta-${escapeHtml(shareDeltaTone || "none")}">
+        ${escapeHtml(shareDeltaLabel)}
+      </span>
+    `);
+  }
+
   if (shareLabel) {
     parts.push(`<span class="comparison-pill comparison-pill-muted">${escapeHtml(shareLabel)}</span>`);
   }
@@ -1333,6 +1391,9 @@ function renderComparisonActions({
   target.querySelectorAll("[data-area-granularity]").forEach((button) => {
     button.addEventListener("click", () => {
       state.areaGranularity = button.getAttribute("data-area-granularity");
+      if (state.areaGranularity === "signgu" && !state.areaDrillSigngu) {
+        state.areaDrillSigngu = getSelectedAreaItem()?.signguCd || null;
+      }
       render();
     });
   });
@@ -1637,6 +1698,13 @@ function renderSelectionSummary() {
     chips.push(`<span class="selection-pill selection-pill-muted">소속 구 ${escapeHtml(selectedAreaItem.signguNm)}</span>`);
   }
 
+  if (state.areaGranularity === "signgu" && state.areaDrillSigngu) {
+    const drillItem = allItems.find((item) => getSignguId(item) === state.areaDrillSigngu);
+    if (drillItem) {
+      chips.push(`<span class="selection-pill selection-pill-muted">펼친 구 ${escapeHtml(getSignguLabel(drillItem))}</span>`);
+    }
+  }
+
   if (selectedIndustry) {
     chips.push(`<span class="selection-pill">${escapeHtml(selectedIndustry.label)}</span>`);
   }
@@ -1817,14 +1885,63 @@ function renderRankList(target, entries, selectedId, totalCount, type, rankView,
   });
 }
 
+function renderAreaDrilldown(target, sourceItems, signguId, selectedArea, rankView, selectedIndustry) {
+  if (!signguId) {
+    return;
+  }
+
+  const drilldownItems = sourceItems.filter((item) => getSignguId(item) === signguId);
+  if (!drilldownItems.length) {
+    return;
+  }
+
+  const drilldownItem = drilldownItems[0];
+  const signguLabel = getSignguLabel(drilldownItem);
+  const selectedAreaInSigngu = selectedArea && getSignguId(getSelectedAreaItem(drilldownItems) || {}) === signguId
+    ? selectedArea
+    : null;
+  const drilldownEntries = withMissingSelection(
+    buildAreaEntries(drilldownItems, "adong"),
+    selectedAreaInSigngu,
+    `${signguLabel} 안에서는 아직 포착되지 않았습니다.`,
+  );
+  const drilldownPanel = document.createElement("section");
+  drilldownPanel.className = "drilldown-panel";
+  drilldownPanel.innerHTML = `
+    <div class="drilldown-head">
+      <div class="drilldown-kicker">행정동 펼쳐보기</div>
+      <h3 class="drilldown-title">${escapeHtml(signguLabel)} 안 행정동</h3>
+      <p class="drilldown-note">
+        ${escapeHtml(
+          selectedIndustry
+            ? `${selectedIndustry.label} 기준으로 ${signguLabel} 안 행정동을 바로 비교합니다.`
+            : `${signguLabel} 안 ${formatNumber(drilldownEntries.length)}개 행정동을 바로 비교합니다.`,
+        )}
+      </p>
+    </div>
+  `;
+
+  const chartTarget = document.createElement("div");
+  renderRankList(
+    chartTarget,
+    drilldownEntries,
+    selectedAreaInSigngu?.id || "all",
+    drilldownItems.length,
+    "area",
+    rankView,
+    true,
+    (areaId) => {
+      selectFilter("area", areaId);
+    },
+  );
+  drilldownPanel.appendChild(chartTarget);
+  target.appendChild(drilldownPanel);
+}
+
 function renderAreaRadar() {
   const allItems = getAllItems();
   const selectedAreaItem = getSelectedAreaItem(allItems);
   const selectedArea = selectedAreaItem ? buildAreaSelectionEntry(selectedAreaItem, "adong") : null;
-  const selectedAreaComparisonEntry = selectedAreaItem
-    ? buildAreaSelectionEntry(selectedAreaItem, state.areaGranularity)
-    : null;
-  const selectedAreaComparisonId = selectedAreaComparisonEntry?.id || "all";
   const industryEntries = buildIndustryEntries(allItems);
   const selectedIndustry = getSelectedIndustryEntry(industryEntries);
   const useContextBasis = state.areaBasis === "context" && Boolean(selectedIndustry);
@@ -1832,6 +1949,19 @@ function renderAreaRadar() {
     ? allItems.filter((item) => getIndustryId(item) === selectedIndustry.id)
     : allItems;
   const comparisonEntries = buildAreaEntries(sourceItems, state.areaGranularity);
+  const defaultSignguId = selectedAreaItem?.signguCd || null;
+  const activeSignguId = state.areaGranularity === "signgu"
+    ? [
+      state.areaDrillSigngu,
+      defaultSignguId,
+    ].find((id) => id && comparisonEntries.some((entry) => entry.id === id)) || null
+    : null;
+  const selectedAreaComparisonEntry = state.areaGranularity === "signgu"
+    ? comparisonEntries.find((entry) => entry.id === activeSignguId) || null
+    : selectedAreaItem
+      ? buildAreaSelectionEntry(selectedAreaItem, "adong")
+      : null;
+  const selectedAreaComparisonId = selectedAreaComparisonEntry?.id || "all";
   const entries = withMissingSelection(
     comparisonEntries,
     selectedAreaComparisonEntry,
@@ -1847,6 +1977,15 @@ function renderAreaRadar() {
   const selectedAreaDelta = selectedAreaComparisonEntry
     ? getSelectionDelta(areaSummaryCounts.current, areaSummaryCounts.previous, selectedAreaComparisonId)
     : null;
+  const selectedAreaShareDelta = selectedAreaComparisonEntry
+    ? getSelectionShareDelta(
+      areaSummaryCounts.current,
+      state.currentSnapshotSummary?.totalCount || null,
+      areaSummaryCounts.previous,
+      state.previousSnapshotSummary?.totalCount || null,
+      selectedAreaComparisonId,
+    )
+    : null;
 
   renderComparisonActions(
     {
@@ -1860,14 +1999,16 @@ function renderAreaRadar() {
       share: selectedAreaShare,
       deltaLabel: selectedAreaComparisonEntry ? formatDeltaLabel(selectedAreaDelta) : null,
       deltaTone: getDeltaTone(selectedAreaDelta),
+      shareDeltaLabel: formatShareDeltaLabel(selectedAreaShareDelta),
+      shareDeltaTone: getDeltaTone(selectedAreaShareDelta),
       rankView: state.areaRankView,
       canToggleRankView: Boolean(selectedAreaComparisonEntry),
     },
   );
 
   const areaUnitLabel = state.areaGranularity === "signgu" ? "구" : "동네";
-  const interactive = state.areaGranularity === "adong";
-  const readOnlyNote = interactive ? "" : " 구 단위 비교는 읽기 전용입니다.";
+  const interactive = true;
+  const drilldownNote = state.areaGranularity === "signgu" ? " 구를 누르면 아래에 행정동이 펼쳐집니다." : "";
 
   if (useContextBasis) {
     refs.areaSectionTitle.textContent = `${selectedIndustry.label}가 많이 보이는 ${areaUnitLabel}`;
@@ -1878,7 +2019,7 @@ function renderAreaRadar() {
         state.areaGranularity === "signgu" && selectedArea
           ? ` 현재 선택 동네는 ${selectedArea.label}입니다.`
           : ""
-      }${readOnlyNote}`
+      }${drilldownNote}`
       : `${selectedIndustry.label} 표본 ${formatNumber(sourceItems.length)}건을 기준으로 비교합니다.`;
   } else if (selectedAreaComparisonEntry) {
     refs.areaSectionTitle.textContent = `${selectedAreaComparisonEntry.label}의 전체 ${areaUnitLabel} 순위`;
@@ -1889,16 +2030,16 @@ function renderAreaRadar() {
         state.areaGranularity === "signgu" && selectedArea
           ? ` 현재 선택 동네 ${selectedArea.label}의 소속 구를 기준으로 잡았습니다.`
           : ""
-      }${readOnlyNote}`
+      }${drilldownNote}`
       : `${selectedAreaComparisonEntry.label}가 전체 ${formatNumber(comparisonEntries.length)}개 ${areaUnitLabel} 중 어디쯤 있는지 ${
         state.areaRankView === "top" ? "상위 랭킹으로" : "주변 순위와 같이"
-      } 봅니다.${readOnlyNote}`;
+      } 봅니다.${drilldownNote}`;
   } else if (selectedIndustry) {
     refs.areaSectionTitle.textContent = `점포가 많이 잡히는 ${areaUnitLabel}`;
-    refs.areaNote.textContent = `전국 기준으로 다시 비교 중입니다. 선택 업종을 제외한 전체 ${formatNumber(sourceItems.length)}건 스냅샷 순서입니다.${readOnlyNote}`;
+    refs.areaNote.textContent = `전국 기준으로 다시 비교 중입니다. 선택 업종을 제외한 전체 ${formatNumber(sourceItems.length)}건 스냅샷 순서입니다.${drilldownNote}`;
   } else {
     refs.areaSectionTitle.textContent = `점포가 많이 잡히는 ${areaUnitLabel}`;
-    refs.areaNote.textContent = `전체 ${formatNumber(sourceItems.length)}건 스냅샷에서 많이 포착된 ${areaUnitLabel} 순서입니다.${readOnlyNote}`;
+    refs.areaNote.textContent = `전체 ${formatNumber(sourceItems.length)}건 스냅샷에서 많이 포착된 ${areaUnitLabel} 순서입니다.${drilldownNote}`;
   }
 
   renderRankList(
@@ -1910,9 +2051,27 @@ function renderAreaRadar() {
     state.areaRankView,
     interactive,
     (areaId) => {
-    selectFilter("area", areaId);
+      if (state.areaGranularity === "signgu") {
+        const isSelectedAreaSigngu = selectedAreaItem?.signguCd === areaId;
+        state.areaDrillSigngu = state.areaDrillSigngu === areaId && !isSelectedAreaSigngu ? null : areaId;
+        render();
+        return;
+      }
+
+      selectFilter("area", areaId);
     },
   );
+
+  if (state.areaGranularity === "signgu" && activeSignguId) {
+    renderAreaDrilldown(
+      refs.areaList,
+      sourceItems,
+      activeSignguId,
+      selectedArea,
+      state.areaRankView,
+      selectedIndustry,
+    );
+  }
 }
 
 function renderIndustryRadar() {
@@ -1942,6 +2101,15 @@ function renderIndustryRadar() {
       selectedIndustry.id,
     )
     : null;
+  const selectedIndustryShareDelta = selectedIndustry
+    ? getSelectionShareDelta(
+      state.currentSnapshotSummary?.industryCounts || null,
+      state.currentSnapshotSummary?.totalCount || null,
+      state.previousSnapshotSummary?.industryCounts || null,
+      state.previousSnapshotSummary?.totalCount || null,
+      selectedIndustry.id,
+    )
+    : null;
 
   renderComparisonActions(
     {
@@ -1955,6 +2123,8 @@ function renderIndustryRadar() {
       share: selectedIndustryShare,
       deltaLabel: selectedIndustry ? formatDeltaLabel(selectedIndustryDelta) : null,
       deltaTone: getDeltaTone(selectedIndustryDelta),
+      shareDeltaLabel: formatShareDeltaLabel(selectedIndustryShareDelta),
+      shareDeltaTone: getDeltaTone(selectedIndustryShareDelta),
       rankView: state.industryRankView,
       canToggleRankView: Boolean(selectedIndustry),
     },
