@@ -1,7 +1,7 @@
 {
   "snapshotMode": "live",
   "snapshotFormat": "compact",
-  "updatedAt": "2026-03-20T22:16:51.908Z",
+  "updatedAt": "2026-03-22T02:20:22.469Z",
   "scope": "서울·경기 아파트 매매 자동 수집 스냅샷",
   "source": "국토교통부 실거래가 공개시스템 / 공공데이터포털 OpenAPI",
   "monthsQueried": [
@@ -10,12 +10,12 @@
     "202601"
   ],
   "regionCount": 67,
-  "itemCount": 39715,
+  "itemCount": 39760,
   "views": {
     "all": {
       "label": "서울·경기 전체",
-      "itemCount": 39715,
-      "averagePriceManwon": 73544,
+      "itemCount": 39760,
+      "averagePriceManwon": 73578,
       "highestPriceItem": {
         "id": "55ad93b275347e38",
         "region": "seoul",
@@ -32,7 +32,7 @@
         "lawdCode": "11170",
         "dealYearMonth": "202601",
         "firstSeenAt": "2026-03-20T14:47:16.708Z",
-        "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+        "officialCheckedAt": "2026-03-22T02:20:22.469Z"
       },
       "latestContractItem": {
         "id": "d0c1950067038509",
@@ -50,7 +50,7 @@
         "lawdCode": "11200",
         "dealYearMonth": "202603",
         "firstSeenAt": "2026-03-20T22:16:51.908Z",
-        "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+        "officialCheckedAt": "2026-03-22T02:20:22.469Z"
       },
       "priceTop10": [
         {
@@ -69,7 +69,7 @@
           "lawdCode": "11170",
           "dealYearMonth": "202601",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "7215e32d74d15cb1",
@@ -87,7 +87,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202601",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "21c34849351d0341",
@@ -105,7 +105,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202601",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "c60c2500f34c87b9",
@@ -123,7 +123,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "77d5c297bea44892",
@@ -141,7 +141,7 @@
           "lawdCode": "11650",
           "dealYearMonth": "202601",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "4f3c6b305f75996e",
@@ -159,7 +159,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202601",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "071c7a9f888b8a49",
@@ -177,7 +177,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202601",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "10c7f7dc16c4f355",
@@ -195,7 +195,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202601",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "d9b480d0f4f61a11",
@@ -213,7 +213,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202601",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "c59e76ad13318e45",
@@ -231,7 +231,7 @@
           "lawdCode": "11650",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         }
       ],
       "contractTop10": [
@@ -251,7 +251,7 @@
           "lawdCode": "11200",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "819e275a7259e005",
@@ -269,7 +269,7 @@
           "lawdCode": "11470",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "7f5b0c31a7536d7b",
@@ -287,7 +287,7 @@
           "lawdCode": "41310",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "1964021adf7bb3b7",
@@ -305,7 +305,7 @@
           "lawdCode": "11545",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "46eff12424acd34b",
@@ -323,7 +323,7 @@
           "lawdCode": "41117",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "5871b577382a8e99",
@@ -341,7 +341,7 @@
           "lawdCode": "41465",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "19f5238b90dd8d22",
@@ -359,7 +359,25 @@
           "lawdCode": "41480",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
+        },
+        {
+          "id": "e79a171b3d3e2fa4",
+          "region": "seoul",
+          "regionLabel": "서울",
+          "district": "은평구",
+          "neighborhood": "녹번동",
+          "addressHint": "지번 276",
+          "apartmentName": "대림아파트(276)",
+          "exclusiveAreaM2": 84.94,
+          "floor": 14,
+          "contractDate": "2026-03-20",
+          "priceManwon": 78000,
+          "sourceUrl": "https://rt.molit.go.kr/",
+          "lawdCode": "11380",
+          "dealYearMonth": "202603",
+          "firstSeenAt": "2026-03-22T02:20:22.469Z",
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "451c945581f1e13a",
@@ -377,7 +395,7 @@
           "lawdCode": "41450",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "75d03c145b74a516",
@@ -395,32 +413,14 @@
           "lawdCode": "41480",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
-        },
-        {
-          "id": "400637e0315726e6",
-          "region": "gyeonggi",
-          "regionLabel": "경기",
-          "district": "김포시",
-          "neighborhood": "걸포동",
-          "addressHint": "지번 1555",
-          "apartmentName": "오스타파라곤3단지",
-          "exclusiveAreaM2": 157.54,
-          "floor": 14,
-          "contractDate": "2026-03-20",
-          "priceManwon": 74000,
-          "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "41570",
-          "dealYearMonth": "202603",
-          "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         }
       ]
     },
     "seoul": {
       "label": "서울",
-      "itemCount": 12194,
-      "averagePriceManwon": 111506,
+      "itemCount": 12205,
+      "averagePriceManwon": 111480,
       "highestPriceItem": {
         "id": "55ad93b275347e38",
         "region": "seoul",
@@ -437,7 +437,7 @@
         "lawdCode": "11170",
         "dealYearMonth": "202601",
         "firstSeenAt": "2026-03-20T14:47:16.708Z",
-        "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+        "officialCheckedAt": "2026-03-22T02:20:22.469Z"
       },
       "latestContractItem": {
         "id": "d0c1950067038509",
@@ -455,7 +455,7 @@
         "lawdCode": "11200",
         "dealYearMonth": "202603",
         "firstSeenAt": "2026-03-20T22:16:51.908Z",
-        "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+        "officialCheckedAt": "2026-03-22T02:20:22.469Z"
       },
       "priceTop10": [
         {
@@ -474,7 +474,7 @@
           "lawdCode": "11170",
           "dealYearMonth": "202601",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "7215e32d74d15cb1",
@@ -492,7 +492,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202601",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "21c34849351d0341",
@@ -510,7 +510,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202601",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "c60c2500f34c87b9",
@@ -528,7 +528,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "77d5c297bea44892",
@@ -546,7 +546,7 @@
           "lawdCode": "11650",
           "dealYearMonth": "202601",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "4f3c6b305f75996e",
@@ -564,7 +564,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202601",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "071c7a9f888b8a49",
@@ -582,7 +582,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202601",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "10c7f7dc16c4f355",
@@ -600,7 +600,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202601",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "d9b480d0f4f61a11",
@@ -618,7 +618,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202601",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "c59e76ad13318e45",
@@ -636,7 +636,7 @@
           "lawdCode": "11650",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         }
       ],
       "contractTop10": [
@@ -656,7 +656,7 @@
           "lawdCode": "11200",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "819e275a7259e005",
@@ -674,7 +674,7 @@
           "lawdCode": "11470",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "1964021adf7bb3b7",
@@ -692,7 +692,25 @@
           "lawdCode": "11545",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
+        },
+        {
+          "id": "e79a171b3d3e2fa4",
+          "region": "seoul",
+          "regionLabel": "서울",
+          "district": "은평구",
+          "neighborhood": "녹번동",
+          "addressHint": "지번 276",
+          "apartmentName": "대림아파트(276)",
+          "exclusiveAreaM2": 84.94,
+          "floor": 14,
+          "contractDate": "2026-03-20",
+          "priceManwon": 78000,
+          "sourceUrl": "https://rt.molit.go.kr/",
+          "lawdCode": "11380",
+          "dealYearMonth": "202603",
+          "firstSeenAt": "2026-03-22T02:20:22.469Z",
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "69839119db7a7826",
@@ -710,7 +728,7 @@
           "lawdCode": "11260",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "ab95d64cde948152",
@@ -728,7 +746,7 @@
           "lawdCode": "11290",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "3b92d4fe97012a44",
@@ -746,7 +764,7 @@
           "lawdCode": "11560",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "4a65b8d0006a26aa",
@@ -764,7 +782,7 @@
           "lawdCode": "11560",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "ec763ffb64ab4097",
@@ -782,7 +800,7 @@
           "lawdCode": "11710",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "be7954df8fdc90c2",
@@ -800,32 +818,14 @@
           "lawdCode": "11380",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
-        },
-        {
-          "id": "e47c7274626bc924",
-          "region": "seoul",
-          "regionLabel": "서울",
-          "district": "금천구",
-          "neighborhood": "독산동",
-          "addressHint": "지번 1147",
-          "apartmentName": "금천롯데캐슬골드파크1차",
-          "exclusiveAreaM2": 84.4623,
-          "floor": 35,
-          "contractDate": "2026-03-19",
-          "priceManwon": 117000,
-          "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "11545",
-          "dealYearMonth": "202603",
-          "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         }
       ]
     },
     "gyeonggi": {
       "label": "경기",
-      "itemCount": 27521,
-      "averagePriceManwon": 56724,
+      "itemCount": 27555,
+      "averagePriceManwon": 56790,
       "highestPriceItem": {
         "id": "f6aefa162521f412",
         "region": "gyeonggi",
@@ -842,7 +842,7 @@
         "lawdCode": "41135",
         "dealYearMonth": "202601",
         "firstSeenAt": "2026-03-20T14:47:16.708Z",
-        "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+        "officialCheckedAt": "2026-03-22T02:20:22.469Z"
       },
       "latestContractItem": {
         "id": "7f5b0c31a7536d7b",
@@ -860,7 +860,7 @@
         "lawdCode": "41310",
         "dealYearMonth": "202603",
         "firstSeenAt": "2026-03-20T22:16:51.908Z",
-        "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+        "officialCheckedAt": "2026-03-22T02:20:22.469Z"
       },
       "priceTop10": [
         {
@@ -879,7 +879,7 @@
           "lawdCode": "41135",
           "dealYearMonth": "202601",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "bb40eae47897fafe",
@@ -897,7 +897,7 @@
           "lawdCode": "41290",
           "dealYearMonth": "202601",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "0f307efb3c127782",
@@ -915,7 +915,7 @@
           "lawdCode": "41135",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "7fb9afb79d992b97",
@@ -933,7 +933,7 @@
           "lawdCode": "41135",
           "dealYearMonth": "202601",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "f3a679b08222519b",
@@ -951,7 +951,7 @@
           "lawdCode": "41135",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "a5fd8d2296d390bf",
@@ -969,7 +969,7 @@
           "lawdCode": "41135",
           "dealYearMonth": "202601",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "4e35b14e2d7f0a5e",
@@ -987,7 +987,7 @@
           "lawdCode": "41135",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "b93a22c8c5d8907d",
@@ -1005,7 +1005,7 @@
           "lawdCode": "41135",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "cb7ae44d5cf49b18",
@@ -1023,7 +1023,7 @@
           "lawdCode": "41135",
           "dealYearMonth": "202601",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "df79e60d5a422152",
@@ -1041,7 +1041,7 @@
           "lawdCode": "41135",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         }
       ],
       "contractTop10": [
@@ -1061,7 +1061,7 @@
           "lawdCode": "41310",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "46eff12424acd34b",
@@ -1079,7 +1079,7 @@
           "lawdCode": "41117",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "5871b577382a8e99",
@@ -1097,7 +1097,7 @@
           "lawdCode": "41465",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "19f5238b90dd8d22",
@@ -1115,7 +1115,7 @@
           "lawdCode": "41480",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "451c945581f1e13a",
@@ -1133,7 +1133,7 @@
           "lawdCode": "41450",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "75d03c145b74a516",
@@ -1151,7 +1151,7 @@
           "lawdCode": "41480",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "400637e0315726e6",
@@ -1169,7 +1169,7 @@
           "lawdCode": "41570",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "c9d7db46f5eeacdd",
@@ -1187,7 +1187,7 @@
           "lawdCode": "41610",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "140bb8e583c7b522",
@@ -1205,7 +1205,7 @@
           "lawdCode": "41117",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         },
         {
           "id": "49deb478df6b0670",
@@ -1223,7 +1223,7 @@
           "lawdCode": "41281",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-20T22:16:51.908Z",
-          "officialCheckedAt": "2026-03-20T22:16:51.908Z"
+          "officialCheckedAt": "2026-03-22T02:20:22.469Z"
         }
       ]
     }
