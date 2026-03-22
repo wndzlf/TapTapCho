@@ -1,19 +1,30 @@
-const RANK_LIMIT = 6;
+const TOP_RANK_LIMIT = 5;
+const FOCUS_RANK_LIMIT = 6;
 const FILTER_PREVIEW_LIMIT = 8;
 const SEARCH_RESULT_LIMIT = 8;
 const RECENT_SELECTION_LIMIT = 3;
+const FREQUENT_SELECTION_LIMIT = 3;
+const SNAPSHOT_ARCHIVE_LIMIT = 6;
 
 const state = {
   area: "all",
   industry: "all",
   areaBasis: "context",
   industryBasis: "context",
+  areaGranularity: "adong",
+  areaRankView: "focus",
+  industryRankView: "focus",
   areaQuery: "",
   industryQuery: "",
   pickerType: null,
   pickerQuery: "",
   recentAreas: [],
   recentIndustries: [],
+  areaSelectionCounts: {},
+  industrySelectionCounts: {},
+  snapshotArchive: [],
+  currentSnapshotSummary: null,
+  previousSnapshotSummary: null,
   data: null,
 };
 
@@ -35,6 +46,7 @@ const refs = {
   briefingVisual: document.getElementById("briefing-visual"),
   briefingPoints: document.getElementById("briefing-points"),
   briefingMeta: document.getElementById("briefing-meta"),
+  selectionSummary: document.getElementById("selection-summary"),
   signalGrid: document.getElementById("signal-grid"),
   areaSectionTitle: document.getElementById("area-section-title"),
   areaNote: document.getElementById("area-note"),
@@ -56,6 +68,7 @@ const refs = {
 };
 
 const getAreaId = (item) => item.adongCd || item.signguCd || "";
+const getSignguId = (item) => item.signguCd || "";
 const getIndustryId = (item) => item.indsMclsCd || item.indsLclsCd || "";
 
 function getAreaLabel(item) {
@@ -64,6 +77,10 @@ function getAreaLabel(item) {
 
 function getIndustryLabel(item) {
   return item.indsMclsNm || item.indsLclsNm || "미상 업종";
+}
+
+function getSignguLabel(item) {
+  return item.signguNm || "미상 구";
 }
 
 function escapeHtml(value) {
@@ -163,6 +180,14 @@ function getRecentStorageKey(type) {
   return `commercial-area-radar-recent-${type}`;
 }
 
+function getCountStorageKey(type) {
+  return `commercial-area-radar-count-${type}`;
+}
+
+function getSnapshotArchiveKey() {
+  return "commercial-area-radar-snapshot-archive";
+}
+
 function loadRecentSelections(type) {
   try {
     const rawValue = window.localStorage.getItem(getRecentStorageKey(type));
@@ -187,6 +212,93 @@ function saveRecentSelections(type, values) {
   }
 }
 
+function loadSelectionCounts(type) {
+  try {
+    const rawValue = window.localStorage.getItem(getCountStorageKey(type));
+    const parsed = rawValue ? JSON.parse(rawValue) : {};
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {};
+    }
+
+    return Object.fromEntries(
+      Object.entries(parsed).filter(([, value]) => Number.isFinite(value) && value > 0),
+    );
+  } catch {
+    return {};
+  }
+}
+
+function saveSelectionCounts(type, values) {
+  try {
+    window.localStorage.setItem(getCountStorageKey(type), JSON.stringify(values));
+  } catch {
+    // Ignore storage failures and keep the in-memory fallback.
+  }
+}
+
+function loadSnapshotArchive() {
+  try {
+    const rawValue = window.localStorage.getItem(getSnapshotArchiveKey());
+    const parsed = rawValue ? JSON.parse(rawValue) : [];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.filter((entry) => {
+      return entry
+        && typeof entry.updatedAt === "string"
+        && typeof entry.totalCount === "number"
+        && typeof entry.areaCounts === "object"
+        && typeof entry.signguCounts === "object"
+        && typeof entry.industryCounts === "object";
+    });
+  } catch {
+    return [];
+  }
+}
+
+function saveSnapshotArchive(archive) {
+  try {
+    window.localStorage.setItem(getSnapshotArchiveKey(), JSON.stringify(archive));
+  } catch {
+    // Ignore storage failures and keep the in-memory fallback.
+  }
+}
+
+function summarizeCounts(items, selector) {
+  return items.reduce((accumulator, item) => {
+    const key = selector(item);
+    if (!key) {
+      return accumulator;
+    }
+
+    accumulator[key] = (accumulator[key] || 0) + 1;
+    return accumulator;
+  }, {});
+}
+
+function buildSnapshotSummary(data) {
+  const items = data?.items || [];
+  return {
+    updatedAt: data?.updatedAt || new Date().toISOString(),
+    totalCount: items.length,
+    areaCounts: summarizeCounts(items, getAreaId),
+    signguCounts: summarizeCounts(items, getSignguId),
+    industryCounts: summarizeCounts(items, getIndustryId),
+  };
+}
+
+function syncSnapshotArchive(data) {
+  const currentSummary = buildSnapshotSummary(data);
+  const existingArchive = loadSnapshotArchive().filter((entry) => entry.updatedAt !== currentSummary.updatedAt);
+  const nextArchive = [currentSummary, ...existingArchive].slice(0, SNAPSHOT_ARCHIVE_LIMIT);
+
+  state.snapshotArchive = nextArchive;
+  state.currentSnapshotSummary = currentSummary;
+  state.previousSnapshotSummary = nextArchive.find((entry) => entry.updatedAt !== currentSummary.updatedAt) || null;
+  saveSnapshotArchive(nextArchive);
+}
+
 function rememberSelection(type, id) {
   if (id === "all") {
     return;
@@ -196,10 +308,26 @@ function rememberSelection(type, id) {
   const nextValues = [id, ...state[stateKey].filter((value) => value !== id)].slice(0, RECENT_SELECTION_LIMIT);
   state[stateKey] = nextValues;
   saveRecentSelections(type, nextValues);
+
+  const countStateKey = type === "area" ? "areaSelectionCounts" : "industrySelectionCounts";
+  const nextCounts = {
+    ...state[countStateKey],
+    [id]: (state[countStateKey][id] || 0) + 1,
+  };
+  state[countStateKey] = nextCounts;
+  saveSelectionCounts(type, nextCounts);
 }
 
 function getAllItems() {
   return state.data?.items || [];
+}
+
+function getSelectedAreaItem(items = getAllItems()) {
+  if (state.area === "all") {
+    return null;
+  }
+
+  return items.find((item) => getAreaId(item) === state.area) || null;
 }
 
 function toPercent(numerator, denominator) {
@@ -223,34 +351,112 @@ function getEntryRank(entries, id) {
   return index === -1 ? null : index + 1;
 }
 
-function getVisibleRankEntries(entries, selectedId) {
-  if (entries.length <= RANK_LIMIT) {
+function getVisibleRankEntries(entries, selectedId, mode = "focus") {
+  const limit = mode === "top" ? TOP_RANK_LIMIT : FOCUS_RANK_LIMIT;
+
+  if (entries.length <= limit) {
     return entries;
   }
 
-  if (selectedId === "all") {
-    return entries.slice(0, RANK_LIMIT);
+  if (mode === "top" || selectedId === "all") {
+    return entries.slice(0, TOP_RANK_LIMIT);
   }
 
   const selectedIndex = entries.findIndex((entry) => entry.id === selectedId);
   if (selectedIndex === -1) {
-    return entries.slice(0, RANK_LIMIT);
+    return entries.slice(0, TOP_RANK_LIMIT);
   }
 
-  if (selectedIndex < RANK_LIMIT) {
-    return entries.slice(0, RANK_LIMIT);
+  if (selectedIndex < limit) {
+    return entries.slice(0, limit);
   }
 
-  const halfWindow = Math.floor(RANK_LIMIT / 2);
+  const halfWindow = Math.floor(limit / 2);
   let startIndex = Math.max(0, selectedIndex - halfWindow);
-  let endIndex = startIndex + RANK_LIMIT;
+  let endIndex = startIndex + limit;
 
   if (endIndex > entries.length) {
     endIndex = entries.length;
-    startIndex = Math.max(0, endIndex - RANK_LIMIT);
+    startIndex = Math.max(0, endIndex - limit);
   }
 
   return entries.slice(startIndex, endIndex);
+}
+
+function getAreaEntryId(item, granularity = "adong") {
+  return granularity === "signgu" ? getSignguId(item) : getAreaId(item);
+}
+
+function getAreaEntryLabel(item, granularity = "adong") {
+  return granularity === "signgu" ? getSignguLabel(item) : getAreaLabel(item);
+}
+
+function getAreaEntryHint(item, granularity = "adong") {
+  return granularity === "signgu"
+    ? item.ctprvnNm || "광역시도"
+    : item.ctprvnNm || item.signguNm;
+}
+
+function buildAreaSelectionEntry(item, granularity = "adong") {
+  if (!item) {
+    return null;
+  }
+
+  return {
+    id: getAreaEntryId(item, granularity),
+    label: getAreaEntryLabel(item, granularity),
+    hint: getAreaEntryHint(item, granularity),
+  };
+}
+
+function getAreaSummaryCounts(granularity = "adong") {
+  if (granularity === "signgu") {
+    return {
+      current: state.currentSnapshotSummary?.signguCounts || null,
+      previous: state.previousSnapshotSummary?.signguCounts || null,
+    };
+  }
+
+  return {
+    current: state.currentSnapshotSummary?.areaCounts || null,
+    previous: state.previousSnapshotSummary?.areaCounts || null,
+  };
+}
+
+function getSelectionDelta(currentCounts, previousCounts, id) {
+  if (!currentCounts || !previousCounts || !id) {
+    return null;
+  }
+
+  return (currentCounts[id] || 0) - (previousCounts[id] || 0);
+}
+
+function formatDeltaLabel(delta) {
+  if (delta === null) {
+    return "직전 스냅샷 없음";
+  }
+
+  if (delta === 0) {
+    return "직전 동일";
+  }
+
+  return `직전 ${delta > 0 ? "+" : ""}${formatNumber(delta)}건`;
+}
+
+function getDeltaTone(delta) {
+  if (delta === null) {
+    return "none";
+  }
+
+  if (delta > 0) {
+    return "up";
+  }
+
+  if (delta < 0) {
+    return "down";
+  }
+
+  return "flat";
 }
 
 function withMissingSelection(entries, selectedEntry, foot) {
@@ -598,15 +804,15 @@ function buildIndustryOptions() {
   ];
 }
 
-function buildAreaEntries(items) {
+function buildAreaEntries(items, granularity = "adong") {
   const totalCount = items.length || 1;
-  return Array.from(groupBy(items, getAreaId).values())
+  return Array.from(groupBy(items, (item) => getAreaEntryId(item, granularity)).values())
     .map((groupedItems) => {
       const item = groupedItems[0];
       return {
-        id: getAreaId(item),
-        label: getAreaLabel(item),
-        hint: item.ctprvnNm || item.signguNm,
+        id: getAreaEntryId(item, granularity),
+        label: getAreaEntryLabel(item, granularity),
+        hint: getAreaEntryHint(item, granularity),
         count: groupedItems.length,
         share: (groupedItems.length / totalCount) * 100,
       };
@@ -708,6 +914,14 @@ function formatTopPercentLabel(rank, total) {
   }
 
   return `상위 ${formatPercent((rank / total) * 100)}`;
+}
+
+function formatShareLabel(share) {
+  if (!Number.isFinite(share)) {
+    return null;
+  }
+
+  return `비중 ${formatPercent(share)}`;
 }
 
 function selectFilter(type, id, shouldClosePicker = false) {
@@ -850,7 +1064,9 @@ function buildPickerGroups(options) {
 }
 
 function renderPickerOption(option, selectedId) {
-  const meta = option.id === "all" ? "필터 해제" : `${escapeHtml(option.hint || "")} · ${formatNumber(option.count)}건`;
+  const meta = option.id === "all"
+    ? "필터 해제"
+    : option.metaOverride || `${option.hint || ""} · ${formatNumber(option.count)}건`;
   return `
     <button
       type="button"
@@ -858,7 +1074,7 @@ function renderPickerOption(option, selectedId) {
       data-picker-option-id="${escapeHtml(option.id)}"
     >
       <span class="picker-option-label">${escapeHtml(option.label)}</span>
-      <span class="picker-option-meta">${meta}</span>
+      <span class="picker-option-meta">${escapeHtml(meta)}</span>
     </button>
   `;
 }
@@ -876,6 +1092,33 @@ function renderPickerQuickSection(title, options, selectedId) {
       </div>
     </section>
   `;
+}
+
+function getFrequentOptions(type, options, excludedIds) {
+  const countStateKey = type === "area" ? "areaSelectionCounts" : "industrySelectionCounts";
+
+  return Object.entries(state[countStateKey])
+    .map(([id, count]) => {
+      const option = getOptionById(options, id);
+      if (!option || excludedIds.has(id)) {
+        return null;
+      }
+
+      return {
+        ...option,
+        metaOverride: `${formatNumber(count)}번 선택${option.hint ? ` · ${option.hint}` : ""}`,
+        selectionCount: count,
+      };
+    })
+    .filter(Boolean)
+    .sort((left, right) => {
+      if (right.selectionCount !== left.selectionCount) {
+        return right.selectionCount - left.selectionCount;
+      }
+
+      return left.label.localeCompare(right.label, "ko");
+    })
+    .slice(0, FREQUENT_SELECTION_LIMIT);
 }
 
 function openPicker(type) {
@@ -922,6 +1165,11 @@ function renderPicker() {
         && array.findIndex((candidate) => candidate.id === option.id) === index
         && !quickOptions.some((quickOption) => quickOption.id === option.id);
     });
+  const quickIds = new Set([
+    ...quickOptions.map((option) => option?.id).filter(Boolean),
+    ...recentOptions.map((option) => option?.id).filter(Boolean),
+  ]);
+  const frequentOptions = getFrequentOptions(type, options, quickIds);
   const visibleOptions = query
     ? getMatchedOptions(options, query, Number.MAX_SAFE_INTEGER).filter((option) => option.id !== "all")
     : options.slice(1);
@@ -942,6 +1190,7 @@ function renderPicker() {
   refs.pickerQuick.innerHTML = [
     renderPickerQuickSection("빠른 선택", quickOptions, selectedId),
     renderPickerQuickSection("최근 선택", recentOptions, selectedId),
+    renderPickerQuickSection("자주 선택", frequentOptions, selectedId),
   ]
     .filter(Boolean)
     .join("");
@@ -971,8 +1220,22 @@ function renderPicker() {
   });
 }
 
-function renderComparisonActions(target, type, basis, canToggleContext, rank, total) {
+function renderComparisonActions({
+  target,
+  type,
+  basis,
+  canToggleContext,
+  areaGranularity,
+  rank,
+  total,
+  share,
+  deltaLabel,
+  deltaTone,
+  rankView,
+  canToggleRankView,
+}) {
   const percentileLabel = formatTopPercentLabel(rank, total);
+  const shareLabel = formatShareLabel(share);
   const rankLabel = rank && total ? `${rank} / ${formatNumber(total)}위` : null;
   const parts = [];
 
@@ -997,8 +1260,62 @@ function renderComparisonActions(target, type, basis, canToggleContext, rank, to
     `);
   }
 
+  if (type === "area") {
+    parts.push(`
+      <div class="comparison-toggle" role="group" aria-label="동네 비교 레벨">
+        <button
+          type="button"
+          class="comparison-toggle-button${areaGranularity === "adong" ? " is-active" : ""}"
+          data-area-granularity="adong"
+        >
+          행정동
+        </button>
+        <button
+          type="button"
+          class="comparison-toggle-button${areaGranularity === "signgu" ? " is-active" : ""}"
+          data-area-granularity="signgu"
+        >
+          구 단위
+        </button>
+      </div>
+    `);
+  }
+
+  if (canToggleRankView) {
+    parts.push(`
+      <div class="comparison-toggle" role="group" aria-label="${type === "area" ? "동네" : "업종"} 순위 보기 방식">
+        <button
+          type="button"
+          class="comparison-toggle-button${rankView === "top" ? " is-active" : ""}"
+          data-rank-view="top"
+        >
+          Top 5
+        </button>
+        <button
+          type="button"
+          class="comparison-toggle-button${rankView === "focus" ? " is-active" : ""}"
+          data-rank-view="focus"
+        >
+          주변 순위
+        </button>
+      </div>
+    `);
+  }
+
   if (percentileLabel) {
     parts.push(`<span class="comparison-pill">${escapeHtml(percentileLabel)}</span>`);
+  }
+
+  if (deltaLabel) {
+    parts.push(`
+      <span class="comparison-pill comparison-pill-delta comparison-pill-delta-${escapeHtml(deltaTone || "none")}">
+        ${escapeHtml(deltaLabel)}
+      </span>
+    `);
+  }
+
+  if (shareLabel) {
+    parts.push(`<span class="comparison-pill comparison-pill-muted">${escapeHtml(shareLabel)}</span>`);
   }
 
   if (rankLabel) {
@@ -1010,6 +1327,18 @@ function renderComparisonActions(target, type, basis, canToggleContext, rank, to
   target.querySelectorAll("[data-comparison-basis]").forEach((button) => {
     button.addEventListener("click", () => {
       state[`${type}Basis`] = button.getAttribute("data-comparison-basis");
+      render();
+    });
+  });
+  target.querySelectorAll("[data-area-granularity]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.areaGranularity = button.getAttribute("data-area-granularity");
+      render();
+    });
+  });
+  target.querySelectorAll("[data-rank-view]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state[`${type}RankView`] = button.getAttribute("data-rank-view");
       render();
     });
   });
@@ -1285,6 +1614,68 @@ function renderBriefing(items) {
     : `<article class="placeholder-card">핵심 신호를 계산할 수 없습니다.</article>`;
 }
 
+function renderSelectionSummary() {
+  const allItems = getAllItems();
+  const areaEntries = buildAreaEntries(allItems);
+  const selectedArea = getSelectedAreaEntry(areaEntries);
+  const selectedAreaItem = getSelectedAreaItem(allItems);
+  const industryEntries = buildIndustryEntries(allItems);
+  const selectedIndustry = getSelectedIndustryEntry(industryEntries);
+  const chips = [];
+
+  if (selectedArea || selectedIndustry) {
+    chips.push(`<span class="selection-pill selection-pill-strong">현재 선택</span>`);
+  } else {
+    chips.push(`<span class="selection-pill selection-pill-muted">동네나 업종을 고르면 현재 조합이 여기에 고정됩니다.</span>`);
+  }
+
+  if (selectedArea) {
+    chips.push(`<span class="selection-pill">${escapeHtml(selectedArea.label)}</span>`);
+  }
+
+  if (selectedAreaItem?.signguNm) {
+    chips.push(`<span class="selection-pill selection-pill-muted">소속 구 ${escapeHtml(selectedAreaItem.signguNm)}</span>`);
+  }
+
+  if (selectedIndustry) {
+    chips.push(`<span class="selection-pill">${escapeHtml(selectedIndustry.label)}</span>`);
+  }
+
+  chips.push(`
+    <span class="selection-pill selection-pill-muted">
+      동네 차트 ${escapeHtml(state.areaGranularity === "signgu" ? "구 단위" : "행정동")}
+    </span>
+  `);
+
+  if (selectedIndustry) {
+    chips.push(`
+      <span class="selection-pill selection-pill-muted">
+        동네 비교 ${escapeHtml(state.areaBasis === "context" ? "현재 필터" : "전국 기준")}
+      </span>
+    `);
+  }
+
+  if (selectedArea) {
+    chips.push(`
+      <span class="selection-pill selection-pill-muted">
+        업종 비교 ${escapeHtml(state.industryBasis === "context" ? "현재 필터" : "전국 기준")}
+      </span>
+    `);
+  }
+
+  chips.push(`
+    <span class="selection-pill ${state.previousSnapshotSummary ? "selection-pill-history" : "selection-pill-muted"}">
+      ${escapeHtml(
+        state.previousSnapshotSummary
+          ? `직전 비교 ${formatDateTime(state.previousSnapshotSummary.updatedAt)}`
+          : "직전 스냅샷 없음",
+      )}
+    </span>
+  `);
+
+  refs.selectionSummary.innerHTML = chips.join("");
+}
+
 function renderBriefingVisual(items) {
   const visual = buildBriefingVisual(items);
   refs.briefingVisual.className = `radar-card tone-${visual.tone}`;
@@ -1337,7 +1728,7 @@ function renderBriefingVisual(items) {
     .join("");
 }
 
-function renderRankList(target, entries, selectedId, totalCount, type, onChange) {
+function renderRankList(target, entries, selectedId, totalCount, type, rankView, interactive, onChange) {
   target.innerHTML = "";
 
   if (!entries.length) {
@@ -1345,11 +1736,14 @@ function renderRankList(target, entries, selectedId, totalCount, type, onChange)
     return;
   }
 
-  const visibleEntries = getVisibleRankEntries(entries, selectedId);
+  const visibleEntries = getVisibleRankEntries(entries, selectedId, rankView);
   const maxCount = visibleEntries[0]?.count || 1;
   const ticks = buildComparisonTicks(maxCount);
   const attributeName = type === "area" ? "data-area-id" : "data-industry-id";
-  const axisSummary = `현재 비교군 최고치 ${formatNumber(maxCount)}건`;
+  const axisModeLabel = rankView === "top" || selectedId === "all"
+    ? `Top ${formatNumber(visibleEntries.length)}`
+    : `주변 순위 ${formatNumber(visibleEntries.length)}개`;
+  const axisSummary = `${axisModeLabel} · 현재 비교군 최고치 ${formatNumber(maxCount)}건`;
 
   target.innerHTML = `
     <div class="comparison-chart">
@@ -1377,9 +1771,10 @@ function renderRankList(target, entries, selectedId, totalCount, type, onChange)
             return `
               <button
                 type="button"
-                class="comparison-row tone-${tone}${selectedId === entry.id ? " is-active" : ""}${entry.synthetic ? " is-synthetic" : ""}"
+                class="comparison-row tone-${tone}${selectedId === entry.id ? " is-active" : ""}${entry.synthetic ? " is-synthetic" : ""}${!interactive ? " is-static" : ""}"
                 ${attributeName}="${escapeHtml(entry.id)}"
                 aria-pressed="${selectedId === entry.id ? "true" : "false"}"
+                ${interactive ? "" : "disabled"}
                 style="--bar-width:${meterWidth}%"
               >
                 <div class="comparison-row-main">
@@ -1411,6 +1806,10 @@ function renderRankList(target, entries, selectedId, totalCount, type, onChange)
     </div>
   `;
 
+  if (!interactive) {
+    return;
+  }
+
   target.querySelectorAll(`[${attributeName}]`).forEach((button) => {
     button.addEventListener("click", () => {
       onChange(button.getAttribute(attributeName));
@@ -1420,56 +1819,100 @@ function renderRankList(target, entries, selectedId, totalCount, type, onChange)
 
 function renderAreaRadar() {
   const allItems = getAllItems();
-  const allAreaEntries = buildAreaEntries(allItems);
-  const selectedArea = getSelectedAreaEntry(allAreaEntries);
+  const selectedAreaItem = getSelectedAreaItem(allItems);
+  const selectedArea = selectedAreaItem ? buildAreaSelectionEntry(selectedAreaItem, "adong") : null;
+  const selectedAreaComparisonEntry = selectedAreaItem
+    ? buildAreaSelectionEntry(selectedAreaItem, state.areaGranularity)
+    : null;
+  const selectedAreaComparisonId = selectedAreaComparisonEntry?.id || "all";
   const industryEntries = buildIndustryEntries(allItems);
   const selectedIndustry = getSelectedIndustryEntry(industryEntries);
   const useContextBasis = state.areaBasis === "context" && Boolean(selectedIndustry);
   const sourceItems = useContextBasis
     ? allItems.filter((item) => getIndustryId(item) === selectedIndustry.id)
     : allItems;
-  const comparisonEntries = buildAreaEntries(sourceItems);
+  const comparisonEntries = buildAreaEntries(sourceItems, state.areaGranularity);
   const entries = withMissingSelection(
     comparisonEntries,
-    selectedArea,
-    `${selectedIndustry?.label || "선택 업종"} 기준 표본이 아직 없습니다.`,
+    selectedAreaComparisonEntry,
+    `${selectedIndustry?.label || "선택 업종"} 기준 ${selectedAreaComparisonEntry?.label || "선택 지역"} 표본이 아직 없습니다.`,
   );
-  const selectedAreaRank = selectedArea ? getEntryRank(comparisonEntries, selectedArea.id) : null;
+  const selectedAreaRank = selectedAreaComparisonEntry
+    ? getEntryRank(comparisonEntries, selectedAreaComparisonId)
+    : null;
+  const selectedAreaShare = selectedAreaComparisonEntry
+    ? comparisonEntries.find((entry) => entry.id === selectedAreaComparisonId)?.share || 0
+    : null;
+  const areaSummaryCounts = getAreaSummaryCounts(state.areaGranularity);
+  const selectedAreaDelta = selectedAreaComparisonEntry
+    ? getSelectionDelta(areaSummaryCounts.current, areaSummaryCounts.previous, selectedAreaComparisonId)
+    : null;
 
   renderComparisonActions(
-    refs.areaActions,
-    "area",
-    useContextBasis ? "context" : "nationwide",
-    Boolean(selectedIndustry),
-    selectedAreaRank,
-    comparisonEntries.length,
+    {
+      target: refs.areaActions,
+      type: "area",
+      basis: useContextBasis ? "context" : "nationwide",
+      canToggleContext: Boolean(selectedIndustry),
+      areaGranularity: state.areaGranularity,
+      rank: selectedAreaRank,
+      total: comparisonEntries.length,
+      share: selectedAreaShare,
+      deltaLabel: selectedAreaComparisonEntry ? formatDeltaLabel(selectedAreaDelta) : null,
+      deltaTone: getDeltaTone(selectedAreaDelta),
+      rankView: state.areaRankView,
+      canToggleRankView: Boolean(selectedAreaComparisonEntry),
+    },
   );
 
+  const areaUnitLabel = state.areaGranularity === "signgu" ? "구" : "동네";
+  const interactive = state.areaGranularity === "adong";
+  const readOnlyNote = interactive ? "" : " 구 단위 비교는 읽기 전용입니다.";
+
   if (useContextBasis) {
-    refs.areaSectionTitle.textContent = `${selectedIndustry.label}가 많이 보이는 동네`;
-    refs.areaNote.textContent = selectedArea
-      ? `${selectedIndustry.label} 기준 ${selectedArea.label}은 ${
+    refs.areaSectionTitle.textContent = `${selectedIndustry.label}가 많이 보이는 ${areaUnitLabel}`;
+    refs.areaNote.textContent = selectedAreaComparisonEntry
+      ? `${selectedIndustry.label} 기준 ${selectedAreaComparisonEntry.label}은 ${
         selectedAreaRank ? `${selectedAreaRank}위` : "비포착"
-      }입니다. 총 ${formatNumber(sourceItems.length)}건을 기준으로 비교합니다.`
+      }입니다. 총 ${formatNumber(sourceItems.length)}건을 기준으로 비교합니다.${
+        state.areaGranularity === "signgu" && selectedArea
+          ? ` 현재 선택 동네는 ${selectedArea.label}입니다.`
+          : ""
+      }${readOnlyNote}`
       : `${selectedIndustry.label} 표본 ${formatNumber(sourceItems.length)}건을 기준으로 비교합니다.`;
-  } else if (selectedArea) {
-    refs.areaSectionTitle.textContent = `${selectedArea.label}의 전체 동네 순위`;
+  } else if (selectedAreaComparisonEntry) {
+    refs.areaSectionTitle.textContent = `${selectedAreaComparisonEntry.label}의 전체 ${areaUnitLabel} 순위`;
     refs.areaNote.textContent = selectedIndustry
-      ? `전국 기준으로 다시 보면 ${selectedArea.label}은 전체 ${formatNumber(comparisonEntries.length)}개 동네 중 ${
+      ? `전국 기준으로 다시 보면 ${selectedAreaComparisonEntry.label}은 전체 ${formatNumber(comparisonEntries.length)}개 ${areaUnitLabel} 중 ${
         selectedAreaRank ? `${selectedAreaRank}위` : "순위 밖"
-      }입니다. 선택 업종은 비교축에서 제외했습니다.`
-      : `${selectedArea.label}가 전체 ${formatNumber(comparisonEntries.length)}개 동네 중 어디쯤 있는지 주변 순위와 같이 봅니다.`;
+      }입니다. 선택 업종은 비교축에서 제외했습니다.${
+        state.areaGranularity === "signgu" && selectedArea
+          ? ` 현재 선택 동네 ${selectedArea.label}의 소속 구를 기준으로 잡았습니다.`
+          : ""
+      }${readOnlyNote}`
+      : `${selectedAreaComparisonEntry.label}가 전체 ${formatNumber(comparisonEntries.length)}개 ${areaUnitLabel} 중 어디쯤 있는지 ${
+        state.areaRankView === "top" ? "상위 랭킹으로" : "주변 순위와 같이"
+      } 봅니다.${readOnlyNote}`;
   } else if (selectedIndustry) {
-    refs.areaSectionTitle.textContent = "점포가 많이 잡히는 동네";
-    refs.areaNote.textContent = `전국 기준으로 다시 비교 중입니다. 선택 업종을 제외한 전체 ${formatNumber(sourceItems.length)}건 스냅샷 순서입니다.`;
+    refs.areaSectionTitle.textContent = `점포가 많이 잡히는 ${areaUnitLabel}`;
+    refs.areaNote.textContent = `전국 기준으로 다시 비교 중입니다. 선택 업종을 제외한 전체 ${formatNumber(sourceItems.length)}건 스냅샷 순서입니다.${readOnlyNote}`;
   } else {
-    refs.areaSectionTitle.textContent = "점포가 많이 잡히는 동네";
-    refs.areaNote.textContent = `전체 ${formatNumber(sourceItems.length)}건 스냅샷에서 많이 포착된 동네 순서입니다.`;
+    refs.areaSectionTitle.textContent = `점포가 많이 잡히는 ${areaUnitLabel}`;
+    refs.areaNote.textContent = `전체 ${formatNumber(sourceItems.length)}건 스냅샷에서 많이 포착된 ${areaUnitLabel} 순서입니다.${readOnlyNote}`;
   }
 
-  renderRankList(refs.areaList, entries, state.area, sourceItems.length, "area", (areaId) => {
+  renderRankList(
+    refs.areaList,
+    entries,
+    selectedAreaComparisonId,
+    sourceItems.length,
+    "area",
+    state.areaRankView,
+    interactive,
+    (areaId) => {
     selectFilter("area", areaId);
-  });
+    },
+  );
 }
 
 function renderIndustryRadar() {
@@ -1489,14 +1932,32 @@ function renderIndustryRadar() {
     `${selectedArea?.label || "선택 동네"} 안에서는 아직 포착되지 않았습니다.`,
   );
   const selectedIndustryRank = selectedIndustry ? getEntryRank(comparisonEntries, selectedIndustry.id) : null;
+  const selectedIndustryShare = selectedIndustry
+    ? comparisonEntries.find((entry) => entry.id === selectedIndustry.id)?.share || 0
+    : null;
+  const selectedIndustryDelta = selectedIndustry
+    ? getSelectionDelta(
+      state.currentSnapshotSummary?.industryCounts || null,
+      state.previousSnapshotSummary?.industryCounts || null,
+      selectedIndustry.id,
+    )
+    : null;
 
   renderComparisonActions(
-    refs.categoryActions,
-    "industry",
-    useContextBasis ? "context" : "nationwide",
-    Boolean(selectedArea),
-    selectedIndustryRank,
-    comparisonEntries.length,
+    {
+      target: refs.categoryActions,
+      type: "industry",
+      basis: useContextBasis ? "context" : "nationwide",
+      canToggleContext: Boolean(selectedArea),
+      areaGranularity: state.areaGranularity,
+      rank: selectedIndustryRank,
+      total: comparisonEntries.length,
+      share: selectedIndustryShare,
+      deltaLabel: selectedIndustry ? formatDeltaLabel(selectedIndustryDelta) : null,
+      deltaTone: getDeltaTone(selectedIndustryDelta),
+      rankView: state.industryRankView,
+      canToggleRankView: Boolean(selectedIndustry),
+    },
   );
 
   if (useContextBasis) {
@@ -1527,6 +1988,8 @@ function renderIndustryRadar() {
     state.industry,
     sourceItems.length,
     "industry",
+    state.industryRankView,
+    true,
     (industryId) => {
       selectFilter("industry", industryId);
     },
@@ -1560,6 +2023,7 @@ function render() {
   const items = getFilteredItems();
   renderFilterSections();
   renderBriefing(items);
+  renderSelectionSummary();
   renderBriefingVisual(items);
   renderAreaRadar();
   renderIndustryRadar();
@@ -1569,6 +2033,8 @@ function render() {
 async function init() {
   state.recentAreas = loadRecentSelections("area");
   state.recentIndustries = loadRecentSelections("industry");
+  state.areaSelectionCounts = loadSelectionCounts("area");
+  state.industrySelectionCounts = loadSelectionCounts("industry");
 
   refs.areaSearch.addEventListener("input", (event) => {
     state.areaQuery = event.target.value;
@@ -1619,7 +2085,9 @@ async function init() {
     }
 
     state.data = await response.json();
-    refs.snapshotChip.textContent = state.data.snapshotMode === "live" ? "실 API 스냅샷" : "문서 기반 데모";
+    syncSnapshotArchive(state.data);
+    const snapshotLabel = state.data.snapshotMode === "live" ? "실 API 스냅샷" : "문서 기반 데모";
+    refs.snapshotChip.textContent = `${snapshotLabel}${state.previousSnapshotSummary ? " · 직전 비교 가능" : " · 첫 스냅샷"}`;
     refs.heroStatus.textContent = `${formatDateTime(state.data.updatedAt)} · ${
       countUnique(getAllItems(), getAreaId)
     }개 동네 · ${

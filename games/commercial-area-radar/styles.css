@@ -173,6 +173,44 @@ body {
   background: rgba(240, 137, 79, 0.18);
 }
 
+.selection-summary,
+.briefing-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.selection-summary {
+  margin-top: 16px;
+}
+
+.selection-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.68);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.selection-pill-strong {
+  background: linear-gradient(135deg, rgba(11, 122, 111, 0.18), rgba(73, 165, 142, 0.16));
+  color: var(--accent-deep);
+}
+
+.selection-pill-muted {
+  background: rgba(17, 53, 55, 0.06);
+  color: var(--muted);
+}
+
+.selection-pill-history {
+  background: rgba(240, 137, 79, 0.16);
+  color: #9a4f27;
+}
+
 .content {
   display: grid;
   gap: 16px;
@@ -237,6 +275,7 @@ body {
   flex-wrap: wrap;
   gap: 8px;
   width: 100%;
+  align-items: center;
 }
 
 .section-head h2 {
@@ -258,6 +297,7 @@ body {
   padding: 4px;
   border: 1px solid rgba(17, 53, 55, 0.08);
   background: rgba(255, 255, 255, 0.84);
+  flex-shrink: 0;
 }
 
 .comparison-toggle-button {
@@ -292,6 +332,22 @@ body {
 .comparison-pill-muted {
   background: rgba(17, 53, 55, 0.06);
   color: var(--muted);
+}
+
+.comparison-pill-delta-up {
+  background: rgba(11, 122, 111, 0.14);
+  color: var(--accent-deep);
+}
+
+.comparison-pill-delta-down {
+  background: rgba(207, 92, 46, 0.14);
+  color: var(--high);
+}
+
+.comparison-pill-delta-flat,
+.comparison-pill-delta-none {
+  background: rgba(95, 113, 130, 0.12);
+  color: var(--low);
 }
 
 .search-input {
@@ -546,6 +602,10 @@ body {
   border: 1px solid rgba(17, 53, 55, 0.08);
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.62);
+}
+
+.picker-quick-section .picker-option-grid {
+  margin-top: 0;
 }
 
 .picker-quick-title {
@@ -964,6 +1024,10 @@ body.picker-open {
   transition: transform 0.14s ease, border-color 0.14s ease, background-color 0.14s ease, box-shadow 0.14s ease;
 }
 
+.comparison-row[disabled] {
+  opacity: 1;
+}
+
 .comparison-row.is-active {
   border-color: rgba(11, 122, 111, 0.24);
   background: rgba(255, 255, 255, 0.88);
@@ -972,6 +1036,10 @@ body.picker-open {
 
 .comparison-row.is-synthetic {
   background: rgba(243, 246, 249, 0.7);
+}
+
+.comparison-row.is-static {
+  cursor: default;
 }
 
 .comparison-row.tone-high {
@@ -1185,7 +1253,7 @@ body.picker-open {
   }
 
   .picker-quick {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .picker-option-grid {
