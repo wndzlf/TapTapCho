@@ -79,6 +79,9 @@ const infoModal = document.getElementById('infoModal');
 const finalScoreEl = document.getElementById('finalScore');
 const finalBestEl = document.getElementById('finalBest');
 const hitFlashEl = document.getElementById('hitFlash');
+const milestoneFxEl = document.getElementById('milestoneFx');
+const turnButtonEl = document.getElementById('turnButton');
+const turnButtonIconEl = turnButtonEl?.querySelector('.turn-button-icon');
 const rewardContinueHintEl = document.getElementById('rewardContinueHint');
 
 const W = canvas.width;
@@ -112,6 +115,14 @@ const DRIFT_MAX_Y = THUMB_SAFE_ORBIT_ZONE ? H * 0.53 : H - ORBIT_R - 38;
 const center = { x: BASE_CENTER_X, y: BASE_CENTER_Y };
 const ORBIT_DRIFT_START_SCORE = 20;
 const MAX_LIVES = 3;
+const SCORE_MILESTONE_STEP = 15;
+const SCORE_MILESTONE_MESSAGES = [
+  '좋아! Nice Run!',
+  '리듬 탔다!',
+  '온 파이어!',
+  '도파민 폭발!',
+];
+const SCORE_MILESTONE_COLORS = ['#7de3ff', '#8dffdb', '#ffd86d'];
 const DRIFT_PATTERNS = [
   { id: 'horizontal', vx: 1, vy: 0 },
   { id: 'vertical', vx: 0, vy: 1 },
@@ -161,6 +172,9 @@ let rewardedAdUnitId = null;
 let rewardedAdLoadCleanup = () => {};
 let rewardedAdShowCleanup = () => {};
 let rewardedAdRetryTimeout = 0;
+let nextMilestoneScore = SCORE_MILESTONE_STEP;
+let milestoneFxCleanupTimeout = 0;
+let turnButtonPressFxTimeout = 0;
 
 const projectiles = [];
 const particles = [];
@@ -256,6 +270,98 @@ function updateBestHud() {
 
 function updateScoreHud() {
   scoreEl.textContent = String(score);
+}
+
+function updateTurnButtonDirectionHint() {
+  if (!turnButtonEl || !turnButtonIconEl) return;
+
+  if (orbitDir > 0) {
+    turnButtonIconEl.textContent = '↻';
+    turnButtonEl.setAttribute('aria-label', '방향 전환 버튼, 현재 시계 방향');
+  } else {
+    turnButtonIconEl.textContent = '↺';
+    turnButtonEl.setAttribute('aria-label', '방향 전환 버튼, 현재 반시계 방향');
+  }
+}
+
+function animateTurnButtonPress() {
+  if (!turnButtonEl) return;
+
+  turnButtonEl.classList.remove('pressed');
+  void turnButtonEl.offsetWidth;
+  turnButtonEl.classList.add('pressed');
+
+  window.clearTimeout(turnButtonPressFxTimeout);
+  turnButtonPressFxTimeout = window.setTimeout(() => {
+    turnButtonEl.classList.remove('pressed');
+  }, 140);
+}
+
+function clearMilestoneFx() {
+  if (!milestoneFxEl) return;
+
+  window.clearTimeout(milestoneFxCleanupTimeout);
+  milestoneFxCleanupTimeout = 0;
+  milestoneFxEl.classList.remove('show', 'tier-2', 'tier-3');
+  milestoneFxEl.textContent = '';
+}
+
+function getMilestoneTier(milestoneScore) {
+  if (milestoneScore >= 90) return 3;
+  if (milestoneScore >= 45) return 2;
+  return 1;
+}
+
+function triggerMilestoneCelebration(milestoneScore) {
+  const milestoneIndex = Math.max(1, Math.floor(milestoneScore / SCORE_MILESTONE_STEP));
+  const tier = getMilestoneTier(milestoneScore);
+  const message = SCORE_MILESTONE_MESSAGES[(milestoneIndex - 1) % SCORE_MILESTONE_MESSAGES.length];
+  const color = SCORE_MILESTONE_COLORS[Math.min(SCORE_MILESTONE_COLORS.length - 1, tier - 1)];
+
+  if (milestoneFxEl) {
+    milestoneFxEl.textContent = `${milestoneScore}점 돌파! ${message}`;
+    milestoneFxEl.classList.remove('show', 'tier-2', 'tier-3');
+    if (tier > 1) {
+      milestoneFxEl.classList.add(`tier-${tier}`);
+    }
+    void milestoneFxEl.offsetWidth;
+    milestoneFxEl.classList.add('show');
+
+    window.clearTimeout(milestoneFxCleanupTimeout);
+    milestoneFxCleanupTimeout = window.setTimeout(() => {
+      milestoneFxEl.classList.remove('show', 'tier-2', 'tier-3');
+    }, 920);
+  }
+
+  const playerX = center.x + Math.cos(orbitAngle) * ORBIT_R;
+  const playerY = center.y + Math.sin(orbitAngle) * ORBIT_R;
+  addBurst(center.x, center.y, color, 18 + tier * 10);
+  addBurst(playerX, playerY, '#ffffff', 10 + tier * 4);
+
+  for (let index = 0; index < 4 + tier * 2; index += 1) {
+    const angle = Math.random() * Math.PI * 2;
+    const distance = ORBIT_R * (0.55 + Math.random() * 0.38);
+    const fxX = center.x + Math.cos(angle) * distance;
+    const fxY = center.y + Math.sin(angle) * distance;
+    addBurst(fxX, fxY, color, 6);
+  }
+
+  shake = Math.max(shake, 6 + tier * 2);
+  beep(900 + tier * 90, 0.045, 0.018 + tier * 0.003);
+  beep(1160 + tier * 90, 0.03, 0.015 + tier * 0.003);
+
+  if (stageCard) {
+    stageCard.classList.remove('dopamine-hit');
+    void stageCard.offsetWidth;
+    stageCard.classList.add('dopamine-hit');
+  }
+}
+
+function checkScoreMilestones() {
+  while (score >= nextMilestoneScore) {
+    triggerMilestoneCelebration(nextMilestoneScore);
+    nextMilestoneScore += SCORE_MILESTONE_STEP;
+  }
 }
 
 function flashHit() {
@@ -728,9 +834,13 @@ function resetGame() {
   nextDriftPatternTick = 0;
   center.x = BASE_CENTER_X;
   center.y = BASE_CENTER_Y;
+  nextMilestoneScore = SCORE_MILESTONE_STEP;
 
   projectiles.length = 0;
   particles.length = 0;
+  clearMilestoneFx();
+  stageCard?.classList.remove('dopamine-hit');
+  updateTurnButtonDirectionHint();
   updateScoreHud();
   updateLivesHud();
   updateStreakHud();
@@ -816,6 +926,7 @@ function action() {
   if (!isRunning()) return;
 
   orbitDir *= -1;
+  updateTurnButtonDirectionHint();
   playTurnSfx();
 }
 
@@ -962,6 +1073,7 @@ function update() {
       streak += 1;
       score += 1 + Math.floor(streak / 4);
       updateScoreHud();
+      checkScoreMilestones();
       updateStreakHud();
       addBurst(shard.x, shard.y, '#7de3ff', 10);
       beep(780 + Math.min(200, score * 6), 0.03, 0.015);
@@ -1309,15 +1421,26 @@ async function leaveGame() {
   window.location.href = new URL('../', window.location.href).toString();
 }
 
-function handleCanvasPress() {
-  void unlockAudio();
-
+function runPrimaryAction() {
   if (state === 'running') {
     action();
     return;
   }
 
   void startGame();
+}
+
+function handleCanvasPress() {
+  void unlockAudio();
+  runPrimaryAction();
+}
+
+function handleTurnButtonPress(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  void unlockAudio();
+  animateTurnButtonPress();
+  runPrimaryAction();
 }
 
 function installTouchZoomGuard() {
@@ -1386,6 +1509,7 @@ function attachEventListeners() {
   });
 
   canvas.addEventListener('pointerdown', handleCanvasPress);
+  turnButtonEl?.addEventListener('click', handleTurnButtonPress);
   btnStart.addEventListener('click', () => {
     void startGame();
   });
@@ -1432,6 +1556,8 @@ function attachEventListeners() {
   });
 
   window.addEventListener('beforeunload', () => {
+    window.clearTimeout(turnButtonPressFxTimeout);
+    window.clearTimeout(milestoneFxCleanupTimeout);
     clearRewardedAdRetry();
     clearRewardedAdLoadSubscription();
     clearRewardedAdShowSubscription();

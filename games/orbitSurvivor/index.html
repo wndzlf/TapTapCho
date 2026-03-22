@@ -61,6 +61,11 @@
       <div id="stageCard" class="stage-card">
         <canvas id="game" width="420" height="700" aria-label="Orbit Survivor game board"></canvas>
         <div id="hitFlash" class="hit-flash" aria-hidden="true"></div>
+        <div id="milestoneFx" class="milestone-fx" aria-live="polite" aria-atomic="true"></div>
+        <button id="turnButton" class="turn-button" type="button" aria-label="방향 전환 버튼">
+          <span class="turn-button-icon">↺</span>
+          <span class="turn-button-text">방향 전환</span>
+        </button>
 
         <div
           id="gameOverModal"
@@ -91,7 +96,7 @@
         </div>
       </div>
 
-      <p class="tap-hint">탭 또는 스페이스로 공전 방향을 바꾸고 중심 코어를 지키세요.</p>
+      <p class="tap-hint">화면 탭, 스페이스, 우측 하단 버튼으로 공전 방향을 바꿔 중심 코어를 지키세요.</p>
     </section>
   </main>
 

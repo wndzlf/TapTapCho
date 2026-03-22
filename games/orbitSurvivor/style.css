@@ -297,6 +297,7 @@ h1 {
 
 .stage-card {
   position: relative;
+  isolation: isolate;
   flex: 1;
   min-height: 320px;
   display: flex;
@@ -317,11 +318,42 @@ h1 {
   content: "";
   position: absolute;
   inset: 0;
+  z-index: 0;
   background:
     radial-gradient(circle at 18% 24%, rgba(123, 227, 255, 0.14), transparent 18%),
     radial-gradient(circle at 82% 18%, rgba(255, 151, 109, 0.12), transparent 16%),
     linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.02));
   pointer-events: none;
+}
+
+.stage-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background:
+    radial-gradient(circle at 50% 32%, rgba(145, 255, 219, 0.58), transparent 48%),
+    radial-gradient(circle at 50% 48%, rgba(130, 210, 255, 0.5), transparent 58%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stage-card.dopamine-hit::after {
+  animation: dopamine-flash 0.52s ease-out;
+}
+
+@keyframes dopamine-flash {
+  0% {
+    opacity: 0;
+  }
+
+  24% {
+    opacity: 0.95;
+  }
+
+  100% {
+    opacity: 0;
+  }
 }
 
 canvas {
@@ -353,6 +385,117 @@ canvas {
 
 .hit-flash.show {
   opacity: 1;
+}
+
+.milestone-fx {
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  z-index: 4;
+  width: min(84%, 320px);
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(170, 241, 255, 0.55);
+  background:
+    linear-gradient(135deg, rgba(33, 83, 142, 0.9), rgba(19, 164, 171, 0.88)),
+    rgba(6, 18, 36, 0.9);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.24);
+  color: #f4fdff;
+  font-size: clamp(13px, 2.8vw, 16px);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-align: center;
+  transform: translate(-50%, -14px) scale(0.92);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.milestone-fx.show {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.milestone-fx.tier-2 {
+  border-color: rgba(156, 255, 213, 0.64);
+  background:
+    linear-gradient(135deg, rgba(20, 108, 90, 0.94), rgba(44, 196, 160, 0.9)),
+    rgba(6, 28, 22, 0.9);
+}
+
+.milestone-fx.tier-3 {
+  border-color: rgba(255, 219, 147, 0.72);
+  background:
+    linear-gradient(135deg, rgba(153, 80, 20, 0.94), rgba(246, 165, 56, 0.9)),
+    rgba(44, 24, 7, 0.9);
+  box-shadow: 0 18px 34px rgba(111, 63, 16, 0.32);
+}
+
+.turn-button {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  z-index: 4;
+  width: 84px;
+  height: 84px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 999px;
+  border: 1px solid rgba(147, 227, 255, 0.64);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(202, 255, 243, 0.34), transparent 46%),
+    linear-gradient(145deg, rgba(35, 89, 154, 0.96), rgba(20, 162, 173, 0.9));
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.36),
+    0 0 22px rgba(123, 227, 255, 0.42);
+  color: #eefdff;
+  touch-action: manipulation;
+  animation: turn-button-pulse 1.9s ease-in-out infinite;
+}
+
+.turn-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(198, 244, 255, 0.82);
+}
+
+.turn-button:active,
+.turn-button.pressed {
+  transform: translateY(1px) scale(0.95);
+  box-shadow:
+    0 8px 16px rgba(0, 0, 0, 0.32),
+    0 0 10px rgba(123, 227, 255, 0.34);
+}
+
+.turn-button-icon {
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.turn-button-text {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+}
+
+@keyframes turn-button-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 12px 28px rgba(0, 0, 0, 0.36),
+      0 0 14px rgba(123, 227, 255, 0.3);
+  }
+
+  50% {
+    box-shadow:
+      0 12px 28px rgba(0, 0, 0, 0.38),
+      0 0 28px rgba(123, 227, 255, 0.56);
+  }
 }
 
 .stage-modal,
@@ -530,5 +673,27 @@ canvas {
   canvas,
   .hit-flash {
     border-radius: 22px;
+  }
+
+  .milestone-fx {
+    top: 12%;
+    width: min(88%, 300px);
+    padding: 9px 12px;
+  }
+
+  .turn-button {
+    right: 16px;
+    bottom: 16px;
+    width: 74px;
+    height: 74px;
+    padding: 7px;
+  }
+
+  .turn-button-icon {
+    font-size: 24px;
+  }
+
+  .turn-button-text {
+    font-size: 9px;
   }
 }
