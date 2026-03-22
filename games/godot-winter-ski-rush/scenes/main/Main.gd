@@ -14,6 +14,7 @@ const LEFT_RIGHT_SFX_PATH := "res://assets/audio/winter-ski-rush-left-right-sfx.
 const UI_FONT_PATH := "res://assets/fonts/appintoss-kr-ui.ttf"
 const BASE_GRAVITY := 290.0
 const START_SPEED := 88.0
+const MAX_LIVES := 3
 
 const DIFFICULTY_EASY := 0
 const DIFFICULTY_NORMAL := 1
@@ -81,10 +82,11 @@ var best_time := INF
 var style_score := 0
 var best_style := 0
 var crash_count := 0
+var lives_remaining := MAX_LIVES
 var no_crash_run := true
 var challenge_target := 150.0
 
-var current_difficulty := DIFFICULTY_EASY
+var current_difficulty := DIFFICULTY_NORMAL
 var active_gravity := BASE_GRAVITY
 var active_speed_visual_ref := 240.0
 var active_start_speed := START_SPEED
@@ -129,9 +131,8 @@ var hud_label: Label
 var hint_label: Label
 var warning_panel: ColorRect
 var warning_label: Label
-var start_button: Button
-var easy_button: Button
-var normal_button: Button
+var game_over_overlay: ColorRect
+var game_over_label: Label
 var bgm_player: AudioStreamPlayer
 var brake_sfx_player: AudioStreamPlayer
 var ski_loop_player: AudioStreamPlayer
@@ -185,8 +186,7 @@ func _ready() -> void:
 	_setup_audio()
 	_apply_audio_settings()
 	_build_ui()
-	_refresh_difficulty_ui()
-	_reset_run(false)
+	_start_run()
 	set_physics_process(true)
 	set_process(true)
 	queue_redraw()
@@ -401,13 +401,25 @@ func _land_from_jump() -> void:
 
 
 func _trigger_crash(hit_pos: Vector2, reason: String) -> void:
+	if run_finished:
+		return
+
+	lives_remaining = maxi(0, lives_remaining - 1)
 	crashed = true
 	crash_timer = 1.15
 	crash_count += 1
 	no_crash_run = false
 	forward_speed = maxf(0.0, forward_speed * active_crash_keep_speed_ratio)
 	run_time += active_crash_penalty
-	_set_status("충돌 (%s) +%.1fs" % [_localized_crash_reason(reason), active_crash_penalty], 1.2)
+	_set_status(
+		"충돌 (%s) +%.1fs · 목숨 %d/%d" % [
+			_localized_crash_reason(reason),
+			active_crash_penalty,
+			lives_remaining,
+			MAX_LIVES,
+		],
+		1.2
+	)
 
 	for i in range(20):
 		var ang := rng.randf_range(0.0, TAU)
@@ -420,6 +432,14 @@ func _trigger_crash(hit_pos: Vector2, reason: String) -> void:
 			"vel": Vector2(cos(ang), sin(ang)) * rng.randf_range(35.0, 95.0),
 		}
 		obstacles.append(p)
+
+	if lives_remaining <= 0:
+		crashed = false
+		crash_timer = 0.0
+		run_started = false
+		run_finished = true
+		_touch_reset()
+		_show_game_over_popup()
 
 
 func _sanitize_storage_suffix(raw_value: String) -> String:
@@ -504,6 +524,22 @@ func _respawn() -> void:
 	air_velocity = 0.0
 	trick_spin = 0.0
 	_set_status("복귀", 0.7)
+
+
+func _show_game_over_popup() -> void:
+	if game_over_overlay == null:
+		return
+
+	if game_over_label != null:
+		game_over_label.text = "목숨을 모두 잃었습니다.\n다시 시작할까요?"
+
+	game_over_overlay.visible = true
+
+
+func _hide_game_over_popup() -> void:
+	if game_over_overlay == null:
+		return
+	game_over_overlay.visible = false
 
 
 func _read_steer_input() -> float:
@@ -769,27 +805,21 @@ func _build_ui() -> void:
 
 	var hud_bg := ColorRect.new()
 	hud_bg.position = Vector2(8, 8)
-	hud_bg.size = Vector2(330, 84)
-	hud_bg.color = Color(0.04, 0.09, 0.16, 0.46)
+	hud_bg.size = Vector2(236, 56)
+	hud_bg.color = Color(0.04, 0.09, 0.16, 0.58)
 	root.add_child(hud_bg)
 
 	hud_label = Label.new()
 	hud_label.position = Vector2(14, 12)
-	hud_label.size = Vector2(316, 52)
+	hud_label.size = Vector2(222, 42)
 	hud_label.add_theme_color_override("font_color", Color(0.95, 0.98, 1.0))
-	_apply_ui_font(hud_label, 14)
+	_apply_ui_font(hud_label, 13)
 	hud_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	hud_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	hud_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	root.add_child(hud_label)
 
-	hint_label = Label.new()
-	hint_label.position = Vector2(14, 62)
-	hint_label.size = Vector2(316, 24)
-	hint_label.add_theme_color_override("font_color", Color(0.99, 0.89, 0.62))
-	_apply_ui_font(hint_label, 12)
-	hint_label.text = ""
-	root.add_child(hint_label)
+	hint_label = null
 
 	warning_panel = ColorRect.new()
 	warning_panel.anchor_left = 0.5
@@ -811,68 +841,101 @@ func _build_ui() -> void:
 	warning_label.text = "코스로 돌아오세요"
 	warning_panel.add_child(warning_label)
 
-	start_button = Button.new()
-	start_button.text = "시작"
-	start_button.size = Vector2(104, 38)
-	start_button.position = Vector2(244, 12)
-	_apply_ui_font(start_button, 14)
-	start_button.pressed.connect(_on_start_pressed)
-	root.add_child(start_button)
+	var left_controls := VBoxContainer.new()
+	left_controls.anchor_left = 0.0
+	left_controls.anchor_right = 0.0
+	left_controls.anchor_top = 1.0
+	left_controls.anchor_bottom = 1.0
+	left_controls.offset_left = 10
+	left_controls.offset_right = 124
+	left_controls.offset_top = -120
+	left_controls.offset_bottom = -10
+	left_controls.add_theme_constant_override("separation", 8)
+	left_controls.mouse_filter = Control.MOUSE_FILTER_STOP
+	root.add_child(left_controls)
 
-	var difficulty_box := HBoxContainer.new()
-	difficulty_box.position = Vector2(212, 56)
-	difficulty_box.size = Vector2(136, 30)
-	difficulty_box.add_theme_constant_override("separation", 6)
-	root.add_child(difficulty_box)
+	var brake_btn := _make_hold_button("브레이크", func() -> void: touch_brake = true, func() -> void: touch_brake = false)
+	var crouch_btn := _make_hold_button("부스트", func() -> void: touch_crouch = true, func() -> void: touch_crouch = false)
+	left_controls.add_child(brake_btn)
+	left_controls.add_child(crouch_btn)
 
-	easy_button = Button.new()
-	easy_button.text = "쉬움"
-	easy_button.custom_minimum_size = Vector2(64, 30)
-	_apply_ui_font(easy_button, 13)
-	easy_button.pressed.connect(_on_easy_pressed)
-	difficulty_box.add_child(easy_button)
+	var right_controls := VBoxContainer.new()
+	right_controls.anchor_left = 1.0
+	right_controls.anchor_right = 1.0
+	right_controls.anchor_top = 1.0
+	right_controls.anchor_bottom = 1.0
+	right_controls.offset_left = -124
+	right_controls.offset_right = -10
+	right_controls.offset_top = -120
+	right_controls.offset_bottom = -10
+	right_controls.add_theme_constant_override("separation", 8)
+	right_controls.mouse_filter = Control.MOUSE_FILTER_STOP
+	root.add_child(right_controls)
 
-	normal_button = Button.new()
-	normal_button.text = "보통"
-	normal_button.custom_minimum_size = Vector2(66, 30)
-	_apply_ui_font(normal_button, 13)
-	normal_button.pressed.connect(_on_normal_pressed)
-	difficulty_box.add_child(normal_button)
+	var left_btn := _make_hold_button("왼쪽", func() -> void: touch_left = true, func() -> void: touch_left = false)
+	var right_btn := _make_hold_button("오른쪽", func() -> void: touch_right = true, func() -> void: touch_right = false)
+	right_controls.add_child(left_btn)
+	right_controls.add_child(right_btn)
 
-	var controls := VBoxContainer.new()
-	controls.anchor_left = 0.0
-	controls.anchor_right = 1.0
-	controls.anchor_top = 1.0
-	controls.anchor_bottom = 1.0
-	controls.offset_left = 10
-	controls.offset_right = -10
-	controls.offset_top = -136
-	controls.offset_bottom = -12
-	controls.alignment = BoxContainer.ALIGNMENT_CENTER
-	controls.add_theme_constant_override("separation", 6)
-	controls.mouse_filter = Control.MOUSE_FILTER_STOP
-	root.add_child(controls)
+	game_over_overlay = ColorRect.new()
+	game_over_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	game_over_overlay.color = Color(0.02, 0.04, 0.08, 0.58)
+	game_over_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	game_over_overlay.visible = false
+	root.add_child(game_over_overlay)
 
-	var row_steer := HBoxContainer.new()
-	row_steer.alignment = BoxContainer.ALIGNMENT_CENTER
-	row_steer.add_theme_constant_override("separation", 8)
-	controls.add_child(row_steer)
+	var popup_card := PanelContainer.new()
+	popup_card.anchor_left = 0.5
+	popup_card.anchor_right = 0.5
+	popup_card.anchor_top = 0.5
+	popup_card.anchor_bottom = 0.5
+	popup_card.offset_left = -130
+	popup_card.offset_right = 130
+	popup_card.offset_top = -86
+	popup_card.offset_bottom = 86
+	game_over_overlay.add_child(popup_card)
 
-	var left_btn := _make_hold_button("왼쪽 A", func() -> void: touch_left = true, func() -> void: touch_left = false)
-	var right_btn := _make_hold_button("오른쪽 D", func() -> void: touch_right = true, func() -> void: touch_right = false)
+	var popup_style := StyleBoxFlat.new()
+	popup_style.bg_color = Color(0.06, 0.11, 0.19, 0.97)
+	popup_style.border_color = Color(0.62, 0.77, 0.94, 0.42)
+	popup_style.set_border_width_all(1)
+	popup_style.corner_radius_top_left = 16
+	popup_style.corner_radius_top_right = 16
+	popup_style.corner_radius_bottom_left = 16
+	popup_style.corner_radius_bottom_right = 16
+	popup_card.add_theme_stylebox_override("panel", popup_style)
 
-	row_steer.add_child(left_btn)
-	row_steer.add_child(right_btn)
+	var popup_box := VBoxContainer.new()
+	popup_box.add_theme_constant_override("separation", 12)
+	popup_box.custom_minimum_size = Vector2(220, 0)
+	popup_card.add_child(popup_box)
 
-	var row_actions := HBoxContainer.new()
-	row_actions.alignment = BoxContainer.ALIGNMENT_CENTER
-	row_actions.add_theme_constant_override("separation", 8)
-	controls.add_child(row_actions)
+	game_over_label = Label.new()
+	game_over_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	game_over_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	game_over_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	game_over_label.text = "목숨을 모두 잃었습니다.\n다시 시작할까요?"
+	_apply_ui_font(game_over_label, 14)
+	popup_box.add_child(game_over_label)
 
-	var brake_btn := _make_hold_button("브레이크 S", func() -> void: touch_brake = true, func() -> void: touch_brake = false)
-	var crouch_btn := _make_hold_button("부스트 Shift", func() -> void: touch_crouch = true, func() -> void: touch_crouch = false)
-	row_actions.add_child(brake_btn)
-	row_actions.add_child(crouch_btn)
+	var actions := HBoxContainer.new()
+	actions.add_theme_constant_override("separation", 10)
+	actions.alignment = BoxContainer.ALIGNMENT_CENTER
+	popup_box.add_child(actions)
+
+	var cancel_btn := Button.new()
+	cancel_btn.text = "아니오"
+	cancel_btn.custom_minimum_size = Vector2(94, 40)
+	_apply_ui_font(cancel_btn, 13)
+	cancel_btn.pressed.connect(_on_game_over_cancel_pressed)
+	actions.add_child(cancel_btn)
+
+	var restart_btn := Button.new()
+	restart_btn.text = "다시 시작"
+	restart_btn.custom_minimum_size = Vector2(108, 40)
+	_apply_ui_font(restart_btn, 13)
+	restart_btn.pressed.connect(_on_game_over_restart_pressed)
+	actions.add_child(restart_btn)
 
 
 func _setup_audio() -> void:
@@ -1065,8 +1128,8 @@ func _play_left_right_sfx() -> void:
 func _make_hold_button(label: String, on_press: Callable, on_release: Callable) -> Button:
 	var b := Button.new()
 	b.text = label
-	b.custom_minimum_size = Vector2(92, 48)
-	_apply_ui_font(b, 12)
+	b.custom_minimum_size = Vector2(114, 48)
+	_apply_ui_font(b, 13)
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	b.button_down.connect(on_press)
 	b.button_up.connect(on_release)
@@ -1078,79 +1141,55 @@ func _on_start_pressed() -> void:
 	_start_run()
 
 
-func _on_easy_pressed() -> void:
-	_set_difficulty(DIFFICULTY_EASY)
+func _on_game_over_restart_pressed() -> void:
+	_hide_game_over_popup()
+	_start_run()
 
 
-func _on_normal_pressed() -> void:
-	_set_difficulty(DIFFICULTY_NORMAL)
+func _on_game_over_cancel_pressed() -> void:
+	_hide_game_over_popup()
+	_set_status("게임 중단", 1.0)
 
 
-func _set_difficulty(next_difficulty: int) -> void:
-	if current_difficulty == next_difficulty:
-		return
-	current_difficulty = next_difficulty
+func _set_difficulty(_next_difficulty: int) -> void:
+	current_difficulty = DIFFICULTY_NORMAL
 	_apply_difficulty_profile(true)
-	_refresh_difficulty_ui()
 	_reset_run(false)
 	_set_status("난이도: %s" % _difficulty_name(), 1.0)
 
 
 func _difficulty_name() -> String:
-	return "쉬움" if current_difficulty == DIFFICULTY_EASY else "보통"
+	return "보통"
 
 
 func _apply_difficulty_profile(notify: bool) -> void:
-	if current_difficulty == DIFFICULTY_EASY:
-		active_gravity = 255.0
-		active_speed_visual_ref = 230.0
-		active_start_speed = 76.0
-		challenge_target = 620.0
-		active_jump_min_speed = 110.0
-		active_jump_base_velocity = 215.0
-		active_jump_speed_velocity_scale = 0.20
-		active_crash_penalty = 1.0
-		active_crash_keep_speed_ratio = 0.78
-		active_offtrack_crash_dist = 124.0
-		active_offtrack_crash_speed = 380.0
-		active_main_track_width_scale = 1.25
-		active_shortcut_width_scale = 1.25
-		active_shortcut_speed_scale = 0.68
-		active_obstacle_start_y = 380.0
-		active_obstacle_gap_min = 165.0
-		active_obstacle_gap_max = 255.0
-		active_obstacle_cluster_chance = 0.03
-		active_obstacle_radius_scale = 0.88
-	else:
-		active_gravity = BASE_GRAVITY
-		active_speed_visual_ref = 280.0
-		active_start_speed = START_SPEED
-		challenge_target = 560.0
-		active_jump_min_speed = 125.0
-		active_jump_base_velocity = 225.0
-		active_jump_speed_velocity_scale = 0.22
-		active_crash_penalty = 1.3
-		active_crash_keep_speed_ratio = 0.7
-		active_offtrack_crash_dist = 106.0
-		active_offtrack_crash_speed = 340.0
-		active_main_track_width_scale = 1.1
-		active_shortcut_width_scale = 1.1
-		active_shortcut_speed_scale = 0.8
-		active_obstacle_start_y = 340.0
-		active_obstacle_gap_min = 140.0
-		active_obstacle_gap_max = 220.0
-		active_obstacle_cluster_chance = 0.06
-		active_obstacle_radius_scale = 0.95
+	current_difficulty = DIFFICULTY_NORMAL
+	active_gravity = BASE_GRAVITY
+	active_speed_visual_ref = 280.0
+	active_start_speed = START_SPEED
+	challenge_target = 560.0
+	active_jump_min_speed = 125.0
+	active_jump_base_velocity = 225.0
+	active_jump_speed_velocity_scale = 0.22
+	active_crash_penalty = 1.3
+	active_crash_keep_speed_ratio = 0.7
+	active_offtrack_crash_dist = 106.0
+	active_offtrack_crash_speed = 340.0
+	active_main_track_width_scale = 1.1
+	active_shortcut_width_scale = 1.1
+	active_shortcut_speed_scale = 0.8
+	active_obstacle_start_y = 340.0
+	active_obstacle_gap_min = 140.0
+	active_obstacle_gap_max = 220.0
+	active_obstacle_cluster_chance = 0.06
+	active_obstacle_radius_scale = 0.95
 
 	if notify:
 		_update_ui_text()
 
 
 func _refresh_difficulty_ui() -> void:
-	if easy_button != null:
-		easy_button.disabled = current_difficulty == DIFFICULTY_EASY
-	if normal_button != null:
-		normal_button.disabled = current_difficulty == DIFFICULTY_NORMAL
+	pass
 
 
 func _start_run() -> void:
@@ -1167,6 +1206,7 @@ func _reset_run(start_immediately: bool) -> void:
 	run_time = 0.0
 	style_score = 0
 	crash_count = 0
+	lives_remaining = MAX_LIVES
 	no_crash_run = true
 	last_checkpoint = -1
 
@@ -1183,9 +1223,7 @@ func _reset_run(start_immediately: bool) -> void:
 	shortcut_seen.clear()
 	_setup_map_data()
 	_touch_reset()
-
-	if start_button != null:
-		start_button.text = "다시 시작" if start_immediately else "시작"
+	_hide_game_over_popup()
 
 
 func _touch_reset() -> void:
@@ -1212,29 +1250,20 @@ func _update_ui_text() -> void:
 		return
 
 	var cp_now: int = maxi(0, last_checkpoint + 1)
-	var shortcut_count := 0
-	for spec in SHORTCUT_SPECS:
-		var sid := String(spec["id"])
-		if shortcut_seen.get(sid, false):
-			shortcut_count += 1
-
 	var best_label := "--:--.--" if best_time == INF else _fmt_time(best_time)
 	var speed_kmh := int(round(forward_speed * 0.42))
-	var main_line := "시간 %s   최고 %s" % [_fmt_time(run_time), best_label]
-	var sub_line := "속도 %dkm/h   체크 %d/%d   모드 %s" % [speed_kmh, cp_now, checkpoints.size(), _difficulty_name()]
+	var main_line := "시간 %s  최고 %s" % [_fmt_time(run_time), best_label]
+	var sub_line := "체크 %d/%d  속도 %dkm/h  목숨 %d/%d" % [
+		cp_now,
+		checkpoints.size(),
+		speed_kmh,
+		lives_remaining,
+		MAX_LIVES,
+	]
 	hud_label.text = "%s\n%s" % [main_line, sub_line]
 
 	if hint_label != null:
-		if host_paused:
-			hint_label.text = "토스 화면 전환으로 일시정지 중..."
-		elif run_finished:
-			hint_label.text = "완주! 다시 시작을 눌러 주세요."
-		elif crashed:
-			hint_label.text = "복귀 중..."
-		elif status_text != "":
-			hint_label.text = status_text
-		else:
-			hint_label.text = ""
+		hint_label.text = ""
 
 
 func _fmt_time(sec: float) -> String:
@@ -1261,6 +1290,8 @@ func _save_records() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if host_paused:
 		return
+	if game_over_overlay != null and game_over_overlay.visible:
+		return
 
 	var user_interaction_started := false
 	if event is InputEventScreenTouch:
@@ -1280,6 +1311,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		_try_play_bgm()
 		if run_started and not run_finished and not crashed:
 			_try_play_ski_loop()
+		elif not run_started and run_finished:
+			_start_run()
+			return
 
 	if event is InputEventScreenTouch:
 		var touch_event := event as InputEventScreenTouch
