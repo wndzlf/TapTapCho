@@ -59,6 +59,8 @@ const isMobileView = isCompactViewport || isCoarsePointer;
 const MAX_BULLETS = 620;
 const MAX_TOWER_LEVEL = 8;
 const MIN_TOWER_RELOAD = isMobileView ? 0.2 : 0.15;
+const START_GOLD_BASE = 240;
+const BASE_BUILD_DURATION = 8;
 
 const GRID_CELL = 64;
 const GRID = {
@@ -434,7 +436,7 @@ const state = {
   stage: 1,
   maxHp: 24,
   hp: 24,
-  gold: 180,
+  gold: START_GOLD_BASE,
   kills: 0,
   runTime: 0,
   selectedTower: 'sunken',
@@ -788,9 +790,11 @@ function placeTower(c, r) {
 function makeEnemy(type) {
   const base = ENEMY_TYPES[type];
   const stageFactor = 1 + (state.stage - 1) * 0.14;
+  const earlyHpMul = state.stage === 1 ? 0.82 : state.stage === 2 ? 0.88 : state.stage === 3 ? 0.94 : 1;
+  const earlySpeedMul = state.stage === 1 ? 0.9 : state.stage === 2 ? 0.94 : state.stage === 3 ? 0.97 : 1;
   const bossBoost = base.boss ? 1 + Math.floor(state.stage / 5) * 0.18 : 1;
-  const hp = Math.floor(base.hp * stageFactor * bossBoost);
-  const speed = base.speed * (1 + (state.stage - 1) * (base.boss ? 0.004 : 0.007));
+  const hp = Math.floor(base.hp * stageFactor * bossBoost * earlyHpMul);
+  const speed = base.speed * (1 + (state.stage - 1) * (base.boss ? 0.004 : 0.007)) * earlySpeedMul;
   const spawn = cellCenter(SPAWN.c, SPAWN.r);
 
   return {
@@ -831,12 +835,13 @@ function makeEnemy(type) {
 
 function makeStageQueue(stage) {
   const queue = [];
-  const count = 14 + stage * 4;
+  const count = stage === 1 ? 12 : stage === 2 ? 15 : stage === 3 ? 20 : 14 + stage * 4;
+  const runnerThreshold = stage === 1 ? 0.86 : stage === 2 ? 0.82 : 0.78;
 
   for (let i = 0; i < count; i += 1) {
     const roll = Math.random();
     let type = 'scout';
-    if (roll > 0.78) type = 'runner';
+    if (roll > runnerThreshold) type = 'runner';
     if (stage >= 3 && roll > 0.9) type = 'brute';
     if (stage >= 6 && roll > 0.965) type = 'crusher';
     queue.push(type);
@@ -1324,7 +1329,7 @@ function resetRunState() {
   state.stage = 1;
   state.maxHp = 24 + state.perks.baseMaxHpAdd;
   state.hp = state.maxHp;
-  state.gold = 180 + state.perks.startGoldAdd;
+  state.gold = START_GOLD_BASE + state.perks.startGoldAdd;
   state.kills = 0;
   state.runTime = 0;
   state.sellMode = false;
@@ -1351,7 +1356,8 @@ function startStage(stage) {
   state.stage = stage;
   state.mode = 'running';
   state.phase = 'build';
-  state.buildTimer = clamp(8 + state.perks.buildDurationAdd, 4.5, 16);
+  const earlyBuildBonus = stage === 1 ? 2 : stage === 2 ? 0.8 : 0;
+  state.buildTimer = clamp(BASE_BUILD_DURATION + state.perks.buildDurationAdd + earlyBuildBonus, 4.5, 16);
   state.spawnQueue = makeStageQueue(stage);
   state.spawnTimer = 0.56;
   state.enemies = [];
