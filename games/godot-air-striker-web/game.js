@@ -62,7 +62,8 @@ const btnCloseInfo = document.getElementById('btnCloseInfo');
 const btnCancelExit = document.getElementById('btnCancelExit');
 const btnConfirmExit = document.getElementById('btnConfirmExit');
 const touchSpecialBtn = document.getElementById('touchSpecial');
-const touchButtons = document.querySelectorAll('[data-touch]');
+const turnPad = document.getElementById('turnPad');
+const turnKnob = document.getElementById('turnKnob');
 
 const exitModal = document.getElementById('exitModal');
 const infoModal = document.getElementById('infoModal');
@@ -235,6 +236,11 @@ const SPECIAL_KEYS = ['KeyX', 'ShiftLeft', 'ShiftRight'];
 const IS_COARSE_POINTER = typeof window !== 'undefined'
   && typeof window.matchMedia === 'function'
   && window.matchMedia('(pointer: coarse)').matches;
+const TURN_PAD_MAX = 40;
+const TURN_PAD_DEADZONE = 0.14;
+const MOBILE_CONTROL_ZONE_TOP = IS_COARSE_POINTER ? H - 118 : H + 1000;
+const PLAYER_BOTTOM_BOUND = IS_COARSE_POINTER ? H - 132 : H - 24;
+const PLAYER_START_Y = IS_COARSE_POINTER ? H - 134 : H - 94;
 
 const POWERUP_UI = {
   rapid: { short: '연사', full: '연사 강화', fill: '#9be8ff' },
@@ -246,7 +252,7 @@ const POWERUP_UI = {
 
 const player = {
   x: W * 0.5,
-  y: H - 94,
+  y: PLAYER_START_Y,
   r: 15,
   speed: 345,
   baseFireCd: 0.14,
@@ -258,8 +264,15 @@ const player = {
 };
 
 const keys = Object.create(null);
-const pointer = { x: player.x, y: player.y, active: false };
-const touchInput = { up: false, down: false, left: false, right: false };
+const pointer = { x: player.x, y: player.y, active: false, pointerId: null };
+const turnStick = {
+  active: false,
+  pointerId: null,
+  dx: 0,
+  dy: 0,
+  strength: 0,
+  angle: 0,
+};
 
 let state = 'idle'; // idle | running | gameover | clear
 let score = 0;
@@ -629,7 +642,8 @@ function setPauseReason(nextReason) {
   pauseReason = nextReason;
   if (pauseReason) {
     pointer.active = false;
-    releaseTouchInput();
+    pointer.pointerId = null;
+    resetTurnStick();
     for (const code of Object.keys(keys)) {
       keys[code] = false;
     }
@@ -1187,7 +1201,7 @@ function resetGame() {
   upgradeMenu.selected = 0;
 
   player.x = W * 0.5;
-  player.y = H - 94;
+  player.y = PLAYER_START_Y;
   player.speed = 345 * plane.speedMul;
   player.baseFireCd = 0.14 * plane.fireCadenceMul;
   player.fireCd = 0;
@@ -1221,6 +1235,9 @@ function resetGame() {
 function startGame() {
   sfx.ensure();
   bgmAudio.ensure();
+  pointer.active = false;
+  pointer.pointerId = null;
+  resetTurnStick();
   hideElement(exitModal);
   hideElement(infoModal);
   setPauseReason(null);
@@ -1233,6 +1250,9 @@ function startGame() {
 }
 
 function endGame() {
+  pointer.active = false;
+  pointer.pointerId = null;
+  resetTurnStick();
   state = 'gameover';
   best = Math.max(best, score);
   bestEl.textContent = String(best);
@@ -1243,6 +1263,9 @@ function endGame() {
 }
 
 function clearGame() {
+  pointer.active = false;
+  pointer.pointerId = null;
+  resetTurnStick();
   state = 'clear';
   best = Math.max(best, score);
   bestEl.textContent = String(best);
@@ -1587,15 +1610,25 @@ function activateSpecial() {
 function updatePlayer(dt) {
   let mx = 0;
   let my = 0;
+  let movementScale = 1;
 
-  if (keys.ArrowLeft || keys.KeyA || touchInput.left) mx -= 1;
-  if (keys.ArrowRight || keys.KeyD || touchInput.right) mx += 1;
-  if (keys.ArrowUp || keys.KeyW || touchInput.up) my -= 1;
-  if (keys.ArrowDown || keys.KeyS || touchInput.down) my += 1;
+  if (keys.ArrowLeft || keys.KeyA) mx -= 1;
+  if (keys.ArrowRight || keys.KeyD) mx += 1;
+  if (keys.ArrowUp || keys.KeyW) my -= 1;
+  if (keys.ArrowDown || keys.KeyS) my += 1;
+
+  if (mx === 0 && my === 0 && (turnStick.active || turnStick.strength > 0)) {
+    const strength = clamp((turnStick.strength - TURN_PAD_DEADZONE) / (1 - TURN_PAD_DEADZONE), 0, 1);
+    if (strength > 0) {
+      mx = Math.cos(turnStick.angle);
+      my = Math.sin(turnStick.angle);
+      movementScale = 0.5 + strength * 0.5;
+    }
+  }
 
   if (mx !== 0 || my !== 0) {
     const len = Math.hypot(mx, my) || 1;
-    const moveSpeed = player.speed * (player.invuln > 1.8 ? 1.16 : 1);
+    const moveSpeed = player.speed * (player.invuln > 1.8 ? 1.16 : 1) * movementScale;
     player.x += (mx / len) * moveSpeed * dt;
     player.y += (my / len) * moveSpeed * dt;
   } else if (pointer.active) {
@@ -1610,7 +1643,7 @@ function updatePlayer(dt) {
   }
 
   player.x = clamp(player.x, 24, W - 24);
-  player.y = clamp(player.y, 88, H - 24);
+  player.y = clamp(player.y, 88, PLAYER_BOTTOM_BOUND);
 
   player.fireCd -= dt;
   if (player.fireCd <= 0) {
@@ -1679,7 +1712,8 @@ function updateEnemies(dt, difficulty) {
       }
     }
 
-    if (e.y > H + 38) {
+    const enemyBottomLimit = IS_COARSE_POINTER ? MOBILE_CONTROL_ZONE_TOP : H + 38;
+    if (e.y > enemyBottomLimit) {
       enemies.splice(i, 1);
       damagePlayer(1);
     }
@@ -1823,6 +1857,11 @@ function updateEnemyBullets(dt) {
       continue;
     }
 
+    if (IS_COARSE_POINTER && b.y > MOBILE_CONTROL_ZONE_TOP) {
+      enemyBullets.splice(i, 1);
+      continue;
+    }
+
     if (dist2(b.x, b.y, player.x, player.y) <= (b.r + player.r - 3) ** 2) {
       enemyBullets.splice(i, 1);
       addBurst(b.x, b.y, '#ffb2b8', 10, 2.8);
@@ -1849,7 +1888,8 @@ function updatePowerUps(dt) {
     p.rot += dt * 2.5;
     p.life -= dt;
 
-    if (p.life <= 0 || p.y > H + 40) {
+    const powerupBottomLimit = IS_COARSE_POINTER ? MOBILE_CONTROL_ZONE_TOP : H + 40;
+    if (p.life <= 0 || p.y > powerupBottomLimit) {
       powerUps.splice(i, 1);
       continue;
     }
@@ -1914,7 +1954,7 @@ function hitCheck() {
   if (boss && dist2(player.x, player.y, boss.x, boss.y) <= (player.r + boss.r - 8) ** 2) {
     damagePlayer(1);
     player.x = clamp(player.x + (player.x < boss.x ? -42 : 42), player.r, W - player.r);
-    player.y = clamp(player.y + 30, 88, H - 24);
+    player.y = clamp(player.y + 30, 88, PLAYER_BOTTOM_BOUND);
   }
 }
 
@@ -2430,6 +2470,44 @@ function drawKeyBadge(x, y, label, alpha = 1) {
 }
 
 function drawControlHints(alpha = 0.92) {
+  if (IS_COARSE_POINTER) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    const padX = W - 72;
+    const padY = H - 72;
+    ctx.fillStyle = 'rgba(10, 20, 44, 0.62)';
+    ctx.beginPath();
+    ctx.arc(padX, padY, 36, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(166, 205, 255, 0.72)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#eaf3ff';
+    ctx.font = 'bold 11px system-ui';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('조향', padX, padY);
+
+    const spX = 56;
+    const spY = H - 58;
+    ctx.fillStyle = 'rgba(12, 30, 66, 0.72)';
+    ctx.beginPath();
+    ctx.arc(spX, spY, 24, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(166, 205, 255, 0.72)';
+    ctx.stroke();
+    ctx.fillStyle = '#eaf3ff';
+    ctx.font = 'bold 10px system-ui';
+    ctx.fillText('필살', spX, spY);
+
+    ctx.restore();
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left';
+    return;
+  }
+
   const baseX = W - 146;
   const baseY = H - 104;
   drawKeyBadge(baseX + 30, baseY, '▲', alpha);
@@ -2543,28 +2621,29 @@ function drawMobileSpecialHint() {
   if (!IS_COARSE_POINTER || state !== 'running') return;
 
   ctx.save();
-  const baseY = H - 152;
+  const hintTop = Math.max(154, MOBILE_CONTROL_ZONE_TOP - 54);
   if (hintTimer > 0) {
     ctx.fillStyle = 'rgba(11, 22, 45, 0.62)';
-    ctx.fillRect(W - 194, baseY, 184, 28);
+    ctx.fillRect(W * 0.18, hintTop, W * 0.64, 28);
     ctx.strokeStyle = 'rgba(166, 207, 255, 0.36)';
-    ctx.strokeRect(W - 194, baseY, 184, 28);
+    ctx.strokeRect(W * 0.18, hintTop, W * 0.64, 28);
     ctx.fillStyle = '#dcedff';
     ctx.font = 'bold 11px system-ui';
     ctx.textAlign = 'center';
-    ctx.fillText('오른쪽 아래 필살기 버튼 탭', W - 102, baseY + 18);
+    ctx.fillText('우하단 조향 · 좌하단 필살기', W * 0.5, hintTop + 18);
   }
 
   if (specialReadyHintTimer > 0) {
     const alpha = 0.42 + Math.sin(tick * 0.42) * 0.2;
+    const readyTop = Math.max(146, MOBILE_CONTROL_ZONE_TOP - 96);
     ctx.fillStyle = `rgba(96, 165, 255, ${alpha})`;
-    ctx.fillRect(W * 0.24, H - 198, W * 0.52, 34);
+    ctx.fillRect(W * 0.2, readyTop, W * 0.6, 34);
     ctx.strokeStyle = 'rgba(206, 232, 255, 0.64)';
-    ctx.strokeRect(W * 0.24, H - 198, W * 0.52, 34);
+    ctx.strokeRect(W * 0.2, readyTop, W * 0.6, 34);
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 14px system-ui';
     ctx.textAlign = 'center';
-    ctx.fillText('필살기 준비! 버튼을 눌러 발동', W / 2, H - 176);
+    ctx.fillText('필살기 준비! 좌하단 버튼 탭', W / 2, readyTop + 22);
   }
   ctx.restore();
 }
@@ -2831,11 +2910,48 @@ function pickUpgradeIndexAt(x, y) {
   return -1;
 }
 
-function releaseTouchInput() {
-  touchInput.up = false;
-  touchInput.down = false;
-  touchInput.left = false;
-  touchInput.right = false;
+function preventBrowserGesture(event) {
+  if (event?.cancelable) {
+    event.preventDefault();
+  }
+}
+
+function renderTurnStick() {
+  if (!turnPad || !turnKnob) return;
+  turnKnob.style.transform = `translate(${turnStick.dx}px, ${turnStick.dy}px)`;
+  turnPad.classList.toggle('is-active', turnStick.active || turnStick.strength > TURN_PAD_DEADZONE);
+}
+
+function resetTurnStick() {
+  turnStick.active = false;
+  turnStick.pointerId = null;
+  turnStick.dx = 0;
+  turnStick.dy = 0;
+  turnStick.strength = 0;
+  renderTurnStick();
+}
+
+function updateTurnStickFromEvent(event) {
+  if (!turnPad) return;
+
+  const rect = turnPad.getBoundingClientRect();
+  const centerX = rect.left + rect.width * 0.5;
+  const centerY = rect.top + rect.height * 0.5;
+  const rawDx = event.clientX - centerX;
+  const rawDy = event.clientY - centerY;
+  const rawDistance = Math.hypot(rawDx, rawDy);
+  const clampedDistance = Math.min(TURN_PAD_MAX, rawDistance);
+  const scale = rawDistance > 0 ? clampedDistance / rawDistance : 0;
+
+  turnStick.dx = rawDx * scale;
+  turnStick.dy = rawDy * scale;
+  turnStick.strength = TURN_PAD_MAX > 0 ? clampedDistance / TURN_PAD_MAX : 0;
+
+  if (clampedDistance > 0.0001) {
+    turnStick.angle = Math.atan2(turnStick.dy, turnStick.dx);
+  }
+
+  renderTurnStick();
 }
 
 function installTouchZoomGuard() {
@@ -2854,7 +2970,7 @@ function installTouchZoomGuard() {
   const preventDoubleTapZoom = (event) => {
     const now = performance.now();
     if (now - lastStageTouchAt < 280) {
-      event.preventDefault();
+      preventBrowserGesture(event);
     }
     lastStageTouchAt = now;
   };
@@ -2862,6 +2978,14 @@ function installTouchZoomGuard() {
   stageCard.addEventListener('touchstart', preventMultiTouchZoom, { passive: false });
   stageCard.addEventListener('touchmove', preventMultiTouchZoom, { passive: false });
   stageCard.addEventListener('touchend', preventDoubleTapZoom, { passive: false });
+  stageCard.addEventListener('dblclick', preventBrowserGesture, { passive: false });
+  stageCard.addEventListener('contextmenu', preventBrowserGesture, { passive: false });
+  stageCard.addEventListener('dragstart', preventBrowserGesture, { passive: false });
+  stageCard.addEventListener('selectstart', preventBrowserGesture, { passive: false });
+  document.addEventListener('dblclick', preventBrowserGesture, { passive: false });
+  document.addEventListener('contextmenu', preventBrowserGesture, { passive: false });
+  document.addEventListener('dragstart', preventBrowserGesture, { passive: false });
+  document.addEventListener('selectstart', preventBrowserGesture, { passive: false });
   document.addEventListener('gesturestart', preventZoomGesture, { passive: false });
   document.addEventListener('gesturechange', preventZoomGesture, { passive: false });
   document.addEventListener('gestureend', preventZoomGesture, { passive: false });
@@ -2970,7 +3094,58 @@ function attachEventListeners() {
     }
   });
 
+  turnPad?.addEventListener('pointerdown', (event) => {
+    preventBrowserGesture(event);
+    event.stopPropagation();
+    if (pauseReason || upgradeMenu.active) {
+      return;
+    }
+    sfx.ensure();
+    bgmAudio.ensure();
+    turnStick.active = true;
+    turnStick.pointerId = event.pointerId;
+    turnPad.setPointerCapture?.(event.pointerId);
+    updateTurnStickFromEvent(event);
+    if (state !== 'running') {
+      startGame();
+    }
+  });
+
+  turnPad?.addEventListener('pointermove', (event) => {
+    if (!turnStick.active || event.pointerId !== turnStick.pointerId) return;
+    preventBrowserGesture(event);
+    event.stopPropagation();
+    updateTurnStickFromEvent(event);
+  });
+
+  turnPad?.addEventListener('pointerup', (event) => {
+    if (event.pointerId !== turnStick.pointerId) return;
+    preventBrowserGesture(event);
+    event.stopPropagation();
+    if (turnPad.hasPointerCapture?.(event.pointerId)) {
+      turnPad.releasePointerCapture(event.pointerId);
+    }
+    resetTurnStick();
+  });
+
+  turnPad?.addEventListener('pointercancel', (event) => {
+    if (event.pointerId !== turnStick.pointerId) return;
+    preventBrowserGesture(event);
+    event.stopPropagation();
+    if (turnPad.hasPointerCapture?.(event.pointerId)) {
+      turnPad.releasePointerCapture(event.pointerId);
+    }
+    resetTurnStick();
+  });
+
+  turnPad?.addEventListener('lostpointercapture', () => {
+    resetTurnStick();
+  });
+
   canvas.addEventListener('pointerdown', (event) => {
+    if (event.pointerType === 'touch' || event.pointerType === 'pen') {
+      preventBrowserGesture(event);
+    }
     sfx.ensure();
     bgmAudio.ensure();
     updatePointer(event);
@@ -2989,43 +3164,73 @@ function attachEventListeners() {
     }
 
     pointer.active = true;
+    pointer.pointerId = event.pointerId;
+    canvas.setPointerCapture?.(event.pointerId);
     if (state !== 'running') startGame();
   });
 
   canvas.addEventListener('pointermove', (event) => {
+    if (pointer.active && pointer.pointerId != null && event.pointerId !== pointer.pointerId) return;
+    if (event.pointerType === 'touch' || event.pointerType === 'pen') {
+      preventBrowserGesture(event);
+    }
     updatePointer(event);
+  });
+
+  canvas.addEventListener('pointerup', (event) => {
+    if (event.pointerId !== pointer.pointerId) return;
+    preventBrowserGesture(event);
+    if (canvas.hasPointerCapture?.(event.pointerId)) {
+      canvas.releasePointerCapture(event.pointerId);
+    }
+    pointer.active = false;
+    pointer.pointerId = null;
+  });
+
+  canvas.addEventListener('pointercancel', (event) => {
+    if (event.pointerId !== pointer.pointerId) return;
+    preventBrowserGesture(event);
+    if (canvas.hasPointerCapture?.(event.pointerId)) {
+      canvas.releasePointerCapture(event.pointerId);
+    }
+    pointer.active = false;
+    pointer.pointerId = null;
+  });
+
+  canvas.addEventListener('lostpointercapture', () => {
+    pointer.active = false;
+    pointer.pointerId = null;
   });
 
   window.addEventListener('pointermove', (event) => {
-    if (!pointer.active) return;
+    if (!pointer.active || pointer.pointerId == null || event.pointerId !== pointer.pointerId) return;
     updatePointer(event);
   });
 
-  window.addEventListener('pointerup', () => {
-    pointer.active = false;
-    releaseTouchInput();
+  window.addEventListener('pointerup', (event) => {
+    if (event.pointerId === pointer.pointerId) {
+      pointer.active = false;
+      pointer.pointerId = null;
+    }
+    if (event.pointerId === turnStick.pointerId) {
+      resetTurnStick();
+    }
   });
 
-  touchButtons.forEach((btn) => {
-    const dir = btn.getAttribute('data-touch');
-    if (!dir) return;
-    const down = (event) => {
-      event.preventDefault();
-      touchInput[dir] = true;
-    };
-    const up = (event) => {
-      event.preventDefault();
-      touchInput[dir] = false;
-    };
-    btn.addEventListener('pointerdown', down);
-    btn.addEventListener('pointerup', up);
-    btn.addEventListener('pointercancel', up);
-    btn.addEventListener('pointerleave', up);
+  window.addEventListener('pointercancel', (event) => {
+    if (event.pointerId === pointer.pointerId) {
+      pointer.active = false;
+      pointer.pointerId = null;
+    }
+    if (event.pointerId === turnStick.pointerId) {
+      resetTurnStick();
+    }
   });
 
   if (touchSpecialBtn) {
     touchSpecialBtn.addEventListener('pointerdown', (event) => {
-      event.preventDefault();
+      preventBrowserGesture(event);
+      event.stopPropagation();
       sfx.ensure();
       bgmAudio.ensure();
       activateSpecial();
@@ -3111,6 +3316,15 @@ function attachEventListeners() {
 
   window.addEventListener('keyup', (event) => {
     keys[event.code] = false;
+  });
+
+  window.addEventListener('blur', () => {
+    pointer.active = false;
+    pointer.pointerId = null;
+    resetTurnStick();
+    for (const code of Object.keys(keys)) {
+      keys[code] = false;
+    }
   });
 
   window.addEventListener('beforeunload', () => {

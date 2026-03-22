@@ -85,16 +85,15 @@
       <div id="stageCard" class="stage-card">
         <canvas id="game" width="420" height="700" aria-label="에어 스트라이커 라이트 게임 캔버스"></canvas>
         <div class="touch-controls">
-          <div class="dpad">
-            <button class="touch-btn up" data-touch="up">▲</button>
-            <button class="touch-btn left" data-touch="left">◀</button>
-            <button class="touch-btn right" data-touch="right">▶</button>
-            <button class="touch-btn down" data-touch="down">▼</button>
-          </div>
           <button class="touch-btn special" id="touchSpecial" type="button">필살기</button>
+          <div class="turn-pad-wrap">
+            <div class="turn-pad" id="turnPad" aria-label="조향 패드" role="application">
+              <div class="turn-pad-knob" id="turnKnob" aria-hidden="true"></div>
+            </div>
+          </div>
         </div>
       </div>
-      <p class="tap-hint">드래그 또는 방향 버튼으로 이동하고 자동 사격으로 적을 밀어내세요.</p>
+      <p class="tap-hint">드래그 또는 우하단 조향 패드로 이동하고 자동 사격으로 적을 밀어내세요.</p>
     </section>
   </main>
 
@@ -134,7 +133,7 @@
         필살기 게이지를 100% 채우면 강력한 필살기를 즉시 발동할 수 있습니다.
       </p>
       <p class="sheet-copy">
-        모바일에서는 오른쪽 아래 원형 <strong>필살기 버튼</strong>을 탭해서 발동합니다.
+        모바일에서는 오른쪽 아래 <strong>조향 패드</strong>로 이동하고, 왼쪽 아래의 작은 <strong>필살기 버튼</strong>을 탭해서 발동합니다.
       </p>
       <p class="sheet-copy">
         파워업 표시는 한글로 안내됩니다: 회복, 실드, 연사, 강화, 폭발.
