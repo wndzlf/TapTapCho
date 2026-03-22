@@ -2,6 +2,7 @@ const hudEl = document.getElementById('hud');
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const panelEl = document.getElementById('panel');
+const arenaEl = document.getElementById('arena');
 
 const hpFillEl = document.getElementById('hpFill');
 const hpTextEl = document.getElementById('hpText');
@@ -21,6 +22,7 @@ const btnExitEl = document.getElementById('btnExit');
 const exitModalEl = document.getElementById('exitModal');
 const btnCancelExitEl = document.getElementById('btnCancelExit');
 const btnConfirmExitEl = document.getElementById('btnConfirmExit');
+const btnScreenEl = document.getElementById('btnScreen');
 
 const toss = window.CrimsonHunterTrialsToss || window.ZigzagMemoryRunToss || {
   isAvailable: () => false,
@@ -44,15 +46,25 @@ function vibrate(pattern) {
   if (navigator.vibrate) navigator.vibrate(pattern);
 }
 
+const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches
+  || (navigator.maxTouchPoints || 0) > 0;
+const prefersPortraitStage = isCoarsePointer && window.innerHeight > window.innerWidth;
+if (prefersPortraitStage) {
+  canvas.width = 720;
+  canvas.height = 1280;
+} else {
+  canvas.width = 960;
+  canvas.height = 540;
+}
+
 const W = canvas.width;
 const H = canvas.height;
 const TAU = Math.PI * 2;
-const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches
-  || (navigator.maxTouchPoints || 0) > 0;
 const STICK_MAX = 40;
 const STICK_CENTER = 44;
 
 let pauseReason = '';
+let immersiveMode = false;
 let unsubscribeSafeArea = () => {};
 let unsubscribeBack = () => {};
 let unsubscribeHome = () => {};
@@ -270,6 +282,86 @@ function closeExitModal() {
   exitModalEl.classList.add('hidden');
   syncBodyModalLock();
   if (pauseReason === 'exit') setPauseReason('');
+}
+
+function hasNativeFullscreen() {
+  return Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+}
+
+function updateScreenButton() {
+  if (!btnScreenEl) return;
+  const expanded = immersiveMode || hasNativeFullscreen();
+  btnScreenEl.classList.toggle('is-on', expanded);
+  const label = expanded ? '축소 화면' : '전체 화면';
+  btnScreenEl.setAttribute('aria-label', label);
+  btnScreenEl.title = label;
+}
+
+function setImmersiveMode(next) {
+  immersiveMode = Boolean(next);
+  document.body.classList.toggle('immersive', immersiveMode);
+}
+
+async function requestNativeFullscreen() {
+  const target = arenaEl || canvas;
+  if (!target) return false;
+
+  try {
+    if (typeof target.requestFullscreen === 'function') {
+      await target.requestFullscreen();
+      return true;
+    }
+    if (typeof target.webkitRequestFullscreen === 'function') {
+      target.webkitRequestFullscreen();
+      return true;
+    }
+  } catch (error) {
+    return false;
+  }
+
+  return false;
+}
+
+async function exitNativeFullscreen() {
+  try {
+    if (typeof document.exitFullscreen === 'function') {
+      await document.exitFullscreen();
+      return;
+    }
+    if (typeof document.webkitExitFullscreen === 'function') {
+      document.webkitExitFullscreen();
+    }
+  } catch (error) {}
+}
+
+function isExpandedView() {
+  return immersiveMode || hasNativeFullscreen();
+}
+
+async function enterExpandedView() {
+  const enteredNative = await requestNativeFullscreen();
+  if (!enteredNative) {
+    setImmersiveMode(true);
+  } else {
+    setImmersiveMode(false);
+  }
+  updateScreenButton();
+}
+
+async function exitExpandedView() {
+  if (hasNativeFullscreen()) {
+    await exitNativeFullscreen();
+  }
+  setImmersiveMode(false);
+  updateScreenButton();
+}
+
+async function toggleExpandedView() {
+  if (isExpandedView()) {
+    await exitExpandedView();
+    return;
+  }
+  await enterExpandedView();
 }
 
 function canUsePointerAim(event) {
@@ -1509,6 +1601,10 @@ function handleBackRequest() {
     closeExitModal();
     return;
   }
+  if (isExpandedView()) {
+    void exitExpandedView();
+    return;
+  }
   openExitModal();
 }
 
@@ -1746,6 +1842,12 @@ btnSigEl.addEventListener('pointerdown', (event) => {
   bgmAudio?.unlock();
 });
 
+btnScreenEl?.addEventListener('pointerdown', (event) => {
+  event.preventDefault();
+  void toggleExpandedView();
+  bgmAudio?.unlock();
+});
+
 btnExitEl?.addEventListener('click', () => {
   openExitModal();
 });
@@ -1764,6 +1866,8 @@ exitModalEl?.addEventListener('click', (event) => {
   }
 });
 
+document.addEventListener('fullscreenchange', updateScreenButton);
+document.addEventListener('webkitfullscreenchange', updateScreenButton);
 document.addEventListener('visibilitychange', handleVisibilityChange);
 window.addEventListener('pagehide', () => {
   if (state.mode === 'playing' && !isRuntimePaused()) {
@@ -1777,6 +1881,7 @@ window.addEventListener('pageshow', () => {
 });
 
 window.addEventListener('beforeunload', () => {
+  setImmersiveMode(false);
   unsubscribeSafeArea();
   unsubscribeBack();
   unsubscribeHome();
@@ -1784,6 +1889,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 installTouchZoomGuard();
+updateScreenButton();
 showClassPanel();
 refreshHUD();
 requestAnimationFrame(frame);
