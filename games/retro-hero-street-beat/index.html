@@ -62,6 +62,10 @@
           <span class="selector-tag">TRACK SELECT</span>
           <strong id="trackTitle">A Hero Of The 80s</strong>
           <span id="trackMeta" class="selector-meta">Grand Project · 118 BPM</span>
+          <span id="trackDifficultyStars" class="selector-stars">EASY ★★☆☆☆ · NORMAL ★★★☆☆ · HARD ★★★★☆</span>
+          <div class="selector-actions">
+            <button id="btnPreview" class="selector-preview" type="button">미리듣기 5초</button>
+          </div>
         </div>
         <button id="btnTrackNext" class="selector-arrow" type="button" aria-label="다음 곡">▶</button>
       </div>
@@ -99,11 +103,17 @@
           aria-modal="true"
           aria-labelledby="gameOverTitle"
         >
-        <div class="stage-modal-card">
+          <div class="stage-modal-card">
             <p class="modal-kicker">TRACK END</p>
             <h2 id="gameOverTitle">Stage Clear</h2>
             <p>최종 점수 <strong id="finalScore">0</strong></p>
             <p>최고 점수 <strong id="finalBest">0</strong></p>
+            <div id="resultReport" class="result-report" aria-live="polite">
+              <p id="resultAccuracy" class="result-accuracy">정확도 0%</p>
+              <p id="resultBreakdown" class="result-breakdown">PERFECT 0 · GREAT 0 · GOOD 0 · SAFE 0 · MISS 0</p>
+              <div id="resultHistogram" class="result-histogram" aria-label="타이밍 히스토그램"></div>
+              <p id="resultOffsetHint" class="result-offset">입력 보정 0ms</p>
+            </div>
             <p id="rewardContinueHint" class="reward-copy hidden" aria-live="polite"></p>
             <div class="modal-actions">
               <button id="btnRewardContinue" class="button button-reward hidden" type="button" disabled>

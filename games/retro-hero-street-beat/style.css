@@ -260,6 +260,46 @@ body.modal-open {
   color: #b6c6ff;
 }
 
+.selector-stars {
+  font-size: 10px;
+  color: #ffdca8;
+  letter-spacing: 0.06em;
+}
+
+.selector-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.selector-preview {
+  min-height: 26px;
+  border-radius: 999px;
+  border: 1px solid rgba(126, 151, 236, 0.5);
+  background: rgba(17, 31, 61, 0.92);
+  color: #d5e3ff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0 10px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.selector-preview[data-active='true'] {
+  color: #2c1700;
+  border-color: rgba(255, 216, 112, 0.76);
+  background: linear-gradient(135deg, #ffd975, #ffb86a);
+}
+
+.selector-preview:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
 .selector-arrow {
   min-height: 44px;
   border: 1px solid rgba(107, 131, 214, 0.45);
@@ -473,6 +513,75 @@ body.modal-open {
   margin: 6px 0;
 }
 
+.result-report {
+  margin-top: 10px;
+  border: 1px solid rgba(105, 129, 207, 0.38);
+  border-radius: 12px;
+  padding: 9px 10px;
+  background: rgba(8, 14, 31, 0.88);
+  text-align: left;
+}
+
+.result-accuracy {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: #ffe4ad;
+  font-weight: 700;
+}
+
+.result-breakdown {
+  margin: 4px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #c6d5ff;
+}
+
+.result-histogram {
+  margin-top: 7px;
+  display: grid;
+  gap: 4px;
+}
+
+.result-hist-row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 26px;
+  gap: 6px;
+  align-items: center;
+}
+
+.result-hist-label {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: #98afe9;
+}
+
+.result-hist-track {
+  height: 7px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(25, 39, 74, 0.92);
+  border: 1px solid rgba(90, 117, 198, 0.4);
+}
+
+.result-hist-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(255, 116, 184, 0.9), rgba(108, 236, 255, 0.92));
+}
+
+.result-hist-count {
+  text-align: right;
+  font-size: 10px;
+  color: #d7e4ff;
+}
+
+.result-offset {
+  margin: 7px 0 0;
+  font-size: 11px;
+  color: #a8beff;
+}
+
 .reward-copy {
   color: #ffe3a7;
   font-size: 12px;
@@ -543,6 +652,50 @@ body.interaction-lock {
   touch-action: none;
 }
 
+body.gameplay-immersive {
+  padding: 0;
+  overflow: hidden;
+}
+
+body.gameplay-immersive .app-shell {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  gap: 0;
+}
+
+body.gameplay-immersive .top-panel {
+  display: none;
+}
+
+body.gameplay-immersive .stage-shell {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  gap: 0;
+  width: 100vw;
+  height: 100dvh;
+}
+
+body.gameplay-immersive .stage-card {
+  border: 0;
+  border-radius: 0;
+  background: #060b15;
+  aspect-ratio: auto;
+  height: calc(100dvh - (88px + var(--safe-bottom)));
+}
+
+body.gameplay-immersive .lane-controls {
+  padding: 8px;
+  padding-bottom: calc(8px + var(--safe-bottom));
+  background: linear-gradient(180deg, rgba(8, 12, 26, 0.96), rgba(6, 10, 22, 0.98));
+}
+
+body.gameplay-immersive .tap-hint {
+  display: none;
+}
+
 .info-links {
   margin-top: 12px;
   display: flex;
@@ -590,6 +743,10 @@ body.interaction-lock {
 
   .selector-meta {
     font-size: 10px;
+  }
+
+  .selector-stars {
+    font-size: 9px;
   }
 
   .control-row {
