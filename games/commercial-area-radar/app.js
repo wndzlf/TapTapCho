@@ -289,6 +289,17 @@ function saveSnapshotArchive(archive) {
   }
 }
 
+function normalizeLoadedSnapshot(data) {
+  return {
+    updatedAt: typeof data?.updatedAt === "string" ? data.updatedAt : new Date().toISOString(),
+    source: typeof data?.source === "string" ? data.source : "",
+    basis: typeof data?.basis === "string" ? data.basis : "",
+    items: Array.isArray(data?.items)
+      ? data.items.filter((item) => item && typeof item === "object" && !Array.isArray(item))
+      : [],
+  };
+}
+
 function summarizeCounts(items, selector) {
   return items.reduce((accumulator, item) => {
     const key = selector(item);
@@ -488,14 +499,14 @@ function getSelectionShareDelta(currentCounts, currentTotalCount, previousCounts
 
 function formatDeltaLabel(delta) {
   if (delta === null) {
-    return "직전 스냅샷 없음";
+    return "이전 수집본 없음";
   }
 
   if (delta === 0) {
-    return "직전 동일";
+    return "이전과 동일";
   }
 
-  return `직전 ${delta > 0 ? "+" : ""}${formatNumber(delta)}건`;
+  return `이전 대비 ${delta > 0 ? "+" : ""}${formatNumber(delta)}건`;
 }
 
 function formatShareDeltaLabel(delta) {
@@ -595,7 +606,7 @@ function renderTrendCard(title, subtitle, series, tone = "medium") {
         ${renderTrendMetric("비중", formatPercent(latest.share), series, "share", tone, formatPercent)}
       </div>
       <div class="trend-card-foot">
-        ${escapeHtml(series.length > 1 ? `최근 ${formatNumber(series.length)}회 스냅샷 · 점에 마우스를 올리면 시점값` : "첫 스냅샷")}
+        ${escapeHtml(series.length > 1 ? `최근 ${formatNumber(series.length)}회 수집본 · 점에 마우스를 올리면 시점값` : "첫 수집본")}
       </div>
     </article>
   `;
@@ -1000,7 +1011,7 @@ function buildBriefingVisual(items) {
     ],
     "medium",
     "먼저 동네나 업종을 고르면 조합 강도가 더 또렷하게 보입니다.",
-    "스냅샷",
+    "기준 데이터",
   );
 }
 
@@ -1648,7 +1659,7 @@ function buildBriefing(items) {
 
   if (!allItems.length) {
     return {
-      title: "스냅샷 데이터가 없습니다.",
+      title: "기준 데이터가 없습니다.",
       copy: "상권 브리핑을 만들기 위한 점포 표본이 아직 없습니다.",
       meta: [],
       signals: [],
@@ -1666,7 +1677,7 @@ function buildBriefing(items) {
 
     return {
       title: `${selectedArea.label}에서 ${selectedIndustry.label} 표본이 아직 포착되지 않습니다.`,
-      copy: `${selectedIndustry.label} 조합은 현재 스냅샷에 없지만, ${selectedArea.label} 안에서는 ${bestIndustry?.label || "다른 업종"} 쪽이 더 두드러지고 있습니다. ${selectedIndustry.label} 자체는 ${hottestArea?.label || "다른 동네"}에서 더 자주 포착됩니다.`,
+      copy: `${selectedIndustry.label} 조합은 현재 수집본에는 없지만, ${selectedArea.label} 안에서는 ${bestIndustry?.label || "다른 업종"} 쪽이 더 두드러지고 있습니다. ${selectedIndustry.label} 자체는 ${hottestArea?.label || "다른 동네"}에서 더 자주 포착됩니다.`,
       meta: [selectedArea.label, selectedIndustry.label, "0건 조합"],
       signals: [
         {
@@ -1781,7 +1792,7 @@ function buildBriefing(items) {
         {
           label: "점유",
           value: formatPercent(snapshotShare),
-          foot: "전체 스냅샷 대비",
+          foot: "전체 표본 대비",
           tone: snapshotShare >= 5 ? "high" : snapshotShare >= 2 ? "medium" : "low",
         },
       ],
@@ -1823,7 +1834,7 @@ function buildBriefing(items) {
         {
           label: "점유",
           value: formatPercent(snapshotShare),
-          foot: "전체 스냅샷 대비",
+          foot: "전체 표본 대비",
           tone: snapshotShare >= 5 ? "high" : snapshotShare >= 2 ? "medium" : "low",
         },
       ],
@@ -1834,14 +1845,14 @@ function buildBriefing(items) {
   const topIndustry = industryEntries[0];
 
   return {
-    title: `${topArea?.label || "핵심 동네"}과 ${topIndustry?.label || "핵심 업종"}이 스냅샷에서 가장 두드러집니다.`,
+    title: `${topArea?.label || "핵심 동네"}과 ${topIndustry?.label || "핵심 업종"}이 최근 수집본에서 가장 두드러집니다.`,
     copy: `총 ${formatNumber(allItems.length)}건 표본 중 ${topArea?.label || "미상 동네"}이 ${topArea ? formatNumber(topArea.count) : 0}건으로 가장 크고, 업종은 ${topIndustry?.label || "미상 업종"}이 ${topIndustry ? formatNumber(topIndustry.count) : 0}건으로 가장 많습니다. 동네나 업종을 고르면 경쟁 밀집도를 바로 읽을 수 있습니다.`,
-    meta: [`${formatNumber(allItems.length)}건 스냅샷`, `${formatNumber(areaEntries.length)}개 동네`, `${formatNumber(industryEntries.length)}개 업종`],
+    meta: [`${formatNumber(allItems.length)}건 표본`, `${formatNumber(areaEntries.length)}개 동네`, `${formatNumber(industryEntries.length)}개 업종`],
     signals: [
       {
         label: "표본",
         value: `${formatNumber(allItems.length)}건`,
-        foot: "수집 스냅샷 기준",
+        foot: "최근 수집 기준",
         tone: "medium",
       },
       {
@@ -1950,8 +1961,8 @@ function renderSelectionSummary() {
     <span class="selection-pill ${state.previousSnapshotSummary ? "selection-pill-history" : "selection-pill-muted"}">
       ${escapeHtml(
         state.previousSnapshotSummary
-          ? `직전 비교 ${formatDateTime(state.previousSnapshotSummary.updatedAt)}`
-          : "직전 스냅샷 없음",
+          ? `이전 수집본 ${formatDateTime(state.previousSnapshotSummary.updatedAt)}`
+          : "이전 수집본 없음",
       )}
     </span>
   `);
@@ -2365,10 +2376,10 @@ function renderAreaRadar() {
       } 봅니다.${drilldownNote}`;
   } else if (selectedIndustry) {
     refs.areaSectionTitle.textContent = `점포가 많이 잡히는 ${areaUnitLabel}`;
-    refs.areaNote.textContent = `전국 기준으로 다시 비교 중입니다. 선택 업종을 제외한 전체 ${formatNumber(sourceItems.length)}건 스냅샷 순서입니다.${drilldownNote}`;
+    refs.areaNote.textContent = `전국 기준으로 다시 비교 중입니다. 선택 업종을 제외한 전체 ${formatNumber(sourceItems.length)}건 표본 순서입니다.${drilldownNote}`;
   } else {
     refs.areaSectionTitle.textContent = `점포가 많이 잡히는 ${areaUnitLabel}`;
-    refs.areaNote.textContent = `전체 ${formatNumber(sourceItems.length)}건 스냅샷에서 많이 포착된 ${areaUnitLabel} 순서입니다.${drilldownNote}`;
+    refs.areaNote.textContent = `전체 ${formatNumber(sourceItems.length)}건 표본에서 많이 포착된 ${areaUnitLabel} 순서입니다.${drilldownNote}`;
   }
 
   renderRankList(
@@ -2481,10 +2492,10 @@ function renderIndustryRadar() {
       : `${selectedIndustry.label}가 전체 ${formatNumber(comparisonEntries.length)}개 업종 중 어디쯤 있는지 주변 순위와 같이 봅니다.`;
   } else if (selectedArea) {
     refs.categorySectionTitle.textContent = "자주 보이는 업종";
-    refs.categoryNote.textContent = `전국 기준으로 다시 비교 중입니다. 선택 동네를 제외한 전체 ${formatNumber(sourceItems.length)}건 스냅샷 순서입니다.`;
+    refs.categoryNote.textContent = `전국 기준으로 다시 비교 중입니다. 선택 동네를 제외한 전체 ${formatNumber(sourceItems.length)}건 표본 순서입니다.`;
   } else {
     refs.categorySectionTitle.textContent = "자주 보이는 업종";
-    refs.categoryNote.textContent = `전체 ${formatNumber(sourceItems.length)}건 스냅샷에서 자주 보이는 업종 순서입니다.`;
+    refs.categoryNote.textContent = `전체 ${formatNumber(sourceItems.length)}건 표본에서 자주 보이는 업종 순서입니다.`;
   }
 
   renderRankList(
@@ -2590,11 +2601,10 @@ async function init() {
       throw new Error(`Failed to load JSON: ${response.status}`);
     }
 
-    state.data = await response.json();
+    state.data = normalizeLoadedSnapshot(await response.json());
     syncSnapshotArchive(state.data);
-    const snapshotLabel = state.data.snapshotMode === "live" ? "실 API 스냅샷" : "문서 기반 데모";
-    refs.snapshotChip.textContent = `${snapshotLabel}${state.previousSnapshotSummary ? " · 직전 비교 가능" : " · 첫 스냅샷"}`;
-    refs.heroStatus.textContent = `${formatDateTime(state.data.updatedAt)} · ${
+    refs.snapshotChip.textContent = "최근 수집본";
+    refs.heroStatus.textContent = `${formatDateTime(state.data.updatedAt)} 기준 · ${
       countUnique(getAllItems(), getAreaId)
     }개 동네 · ${
       countUnique(getAllItems(), getIndustryId)
@@ -2602,18 +2612,18 @@ async function init() {
     render();
   } catch (error) {
     console.error(error);
-    refs.heroStatus.textContent = "스냅샷을 불러오지 못했습니다.";
+    refs.heroStatus.textContent = "기준 데이터를 불러오지 못했습니다.";
     refs.areaFilter.innerHTML = `<article class="placeholder-card">commercial-area-radar/latest-commercial-area-snapshot.json 파일을 확인해 주세요.</article>`;
     refs.industryFilter.innerHTML = "";
     refs.briefingTitle.textContent = "브리핑을 렌더링하지 못했습니다.";
-    refs.briefingCopy.textContent = "스냅샷이 없어 핵심 진단을 계산할 수 없습니다.";
+    refs.briefingCopy.textContent = "기준 데이터가 없어 핵심 진단을 계산할 수 없습니다.";
     refs.briefingVisual.className = "radar-card tone-low";
-    refs.briefingVisual.innerHTML = `<article class="placeholder-card">스냅샷이 없어 레이더 맵을 렌더링하지 못했습니다.</article>`;
-    refs.briefingPoints.innerHTML = `<article class="placeholder-card">스냅샷이 없어 바로 읽기 포인트를 렌더링하지 못했습니다.</article>`;
-    refs.briefingMeta.innerHTML = `<span class="placeholder-chip">스냅샷 필요</span>`;
-    refs.signalGrid.innerHTML = `<article class="placeholder-card">스냅샷이 없어 핵심 신호를 렌더링하지 못했습니다.</article>`;
-    refs.areaList.innerHTML = `<article class="placeholder-card">스냅샷이 없어 동네 레이더를 렌더링하지 못했습니다.</article>`;
-    refs.categoryList.innerHTML = `<article class="placeholder-card">스냅샷이 없어 업종 레이더를 렌더링하지 못했습니다.</article>`;
+    refs.briefingVisual.innerHTML = `<article class="placeholder-card">기준 데이터가 없어 레이더 맵을 렌더링하지 못했습니다.</article>`;
+    refs.briefingPoints.innerHTML = `<article class="placeholder-card">기준 데이터가 없어 바로 읽기 포인트를 렌더링하지 못했습니다.</article>`;
+    refs.briefingMeta.innerHTML = `<span class="placeholder-chip">기준 데이터 필요</span>`;
+    refs.signalGrid.innerHTML = `<article class="placeholder-card">기준 데이터가 없어 핵심 신호를 렌더링하지 못했습니다.</article>`;
+    refs.areaList.innerHTML = `<article class="placeholder-card">기준 데이터가 없어 동네 레이더를 렌더링하지 못했습니다.</article>`;
+    refs.categoryList.innerHTML = `<article class="placeholder-card">기준 데이터가 없어 업종 레이더를 렌더링하지 못했습니다.</article>`;
   }
 }
 

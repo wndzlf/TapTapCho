@@ -90,18 +90,6 @@ function extractItems(payload, expectedKeys) {
   return [];
 }
 
-function groupBy(items, selector) {
-  return items.reduce((accumulator, item) => {
-    const key = selector(item);
-    if (!key) {
-      return accumulator;
-    }
-
-    accumulator.set(key, [...(accumulator.get(key) || []), item]);
-    return accumulator;
-  }, new Map());
-}
-
 async function fetchJson(endpoint, params, serviceKey) {
   const url = new URL(`${apiBaseUrl}/${endpoint}`);
   const searchParams = new URLSearchParams();
@@ -178,63 +166,6 @@ function getScopeList(defaultDivId) {
       key,
       label: `${defaultDivId}:${key}`,
     }));
-}
-
-function buildLocations(items) {
-  return Array.from(groupBy(items, (item) => item.adongCd || item.signguCd).values())
-    .map((groupedItems) => {
-      const item = groupedItems[0];
-      return {
-        ctprvnCd: item.ctprvnCd,
-        ctprvnNm: item.ctprvnNm,
-        signguCd: item.signguCd,
-        signguNm: item.signguNm,
-        adongCd: item.adongCd,
-        adongNm: item.adongNm,
-      };
-    })
-    .sort((left, right) => {
-      return `${left.signguNm} ${left.adongNm}`.localeCompare(`${right.signguNm} ${right.adongNm}`, "ko");
-    });
-}
-
-function buildUniqueCategories(items, codeKey, nameKey, parentKey, parentNameKey) {
-  const uniqueMap = new Map();
-
-  items.forEach((item) => {
-    const code = item[codeKey];
-    const name = item[nameKey];
-    if (!code || !name || uniqueMap.has(code)) {
-      return;
-    }
-
-    uniqueMap.set(code, {
-      [codeKey]: code,
-      [nameKey]: name,
-      ...(parentKey ? { [parentKey]: item[parentKey] || "" } : {}),
-      ...(parentNameKey ? { [parentNameKey]: item[parentNameKey] || "" } : {}),
-    });
-  });
-
-  return Array.from(uniqueMap.values()).sort((left, right) => {
-    return String(left[nameKey]).localeCompare(String(right[nameKey]), "ko");
-  });
-}
-
-function buildQueryExample(scope) {
-  return {
-    storeListInDong: {
-      ServiceKey: "{REAL_ESTATE_API_SERVICE_KEY}",
-      pageNo: 1,
-      numOfRows: scope.numOfRows,
-      divId: scope.divId,
-      key: scope.key,
-      ...(scope.indsLclsCd ? { indsLclsCd: scope.indsLclsCd } : {}),
-      ...(scope.indsMclsCd ? { indsMclsCd: scope.indsMclsCd } : {}),
-      ...(scope.indsSclsCd ? { indsSclsCd: scope.indsSclsCd } : {}),
-      type: "json",
-    },
-  };
 }
 
 async function fetchStoresByScope(serviceKey, scope, options) {
@@ -325,29 +256,10 @@ async function main() {
   }
 
   const payload = {
-    snapshotMode: "live",
     updatedAt: new Date().toISOString(),
-    scope: `${scopes.length}개 권역 자동 수집 스냅샷`,
+    scope: `${scopes.length}개 권역 수집본`,
     source: "소상공인시장진흥공단_상가(상권)정보_API / 공공데이터포털",
-    serviceUrl: apiBaseUrl,
-    appIds: {
-      primary: "commercial-area-radar",
-      alternatives: ["dong-store-radar", "storezone-radar", "sanggwon-radar"],
-    },
-    queryExamples: buildQueryExample({
-      divId: scopes[0].divId,
-      key: scopes[0].key,
-      numOfRows: options.numOfRows,
-      indsLclsCd: options.indsLclsCd,
-      indsMclsCd: options.indsMclsCd,
-      indsSclsCd: options.indsSclsCd,
-    }),
-    hierarchy: {
-      locations: buildLocations(storeItems),
-      largeCategories: buildUniqueCategories(storeItems, "indsLclsCd", "indsLclsNm"),
-      middleCategories: buildUniqueCategories(storeItems, "indsMclsCd", "indsMclsNm", "indsLclsCd", "indsLclsNm"),
-      smallCategories: buildUniqueCategories(storeItems, "indsSclsCd", "indsSclsNm", "indsMclsCd", "indsMclsNm"),
-    },
+    basis: "실시간 호출이 아닌 최근 수집 기준 데이터",
     items: storeItems,
   };
 
