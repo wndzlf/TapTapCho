@@ -67,7 +67,13 @@ const bridgeBadgeEl = document.getElementById('bridgeBadge');
 const btnStart = document.getElementById('btnStart');
 const btnMusic = document.getElementById('btnMusic');
 const btnSfx = document.getElementById('btnSfx');
+const btnTrackPrev = document.getElementById('btnTrackPrev');
+const btnTrackNext = document.getElementById('btnTrackNext');
+const btnSkin = document.getElementById('btnSkin');
 const btnExit = document.getElementById('btnExit');
+const btnDiffEasy = document.getElementById('btnDiffEasy');
+const btnDiffNormal = document.getElementById('btnDiffNormal');
+const btnDiffHard = document.getElementById('btnDiffHard');
 const btnInfo = document.getElementById('btnInfo');
 const btnCloseInfo = document.getElementById('btnCloseInfo');
 const btnCancelExit = document.getElementById('btnCancelExit');
@@ -83,9 +89,12 @@ const btnLane2 = document.getElementById('btnLane2');
 const exitModal = document.getElementById('exitModal');
 const infoModal = document.getElementById('infoModal');
 const gameOverModal = document.getElementById('gameOverModal');
+const gameOverTitleEl = document.getElementById('gameOverTitle');
 const finalScoreEl = document.getElementById('finalScore');
 const finalBestEl = document.getElementById('finalBest');
 const rewardContinueHintEl = document.getElementById('rewardContinueHint');
+const trackTitleEl = document.getElementById('trackTitle');
+const trackMetaEl = document.getElementById('trackMeta');
 
 const W = canvas.width;
 const H = canvas.height;
@@ -102,17 +111,166 @@ const TOSS_REWARDED_AD_GROUP_ID = typeof window !== 'undefined'
   ? window.__RETRO_HERO_STREET_BEAT_TOSS_REWARDED_AD_GROUP_ID.trim()
   : DEFAULT_TOSS_REWARDED_AD_GROUP_ID;
 
-const BPM = 118;
-const BEAT_SEC = 60 / BPM;
-const SONG_BEAT_OFFSET_SEC = 0.08;
+const SONG_LIBRARY = [
+  {
+    id: 'hero-80s',
+    shortLabel: 'HERO 80S',
+    title: 'A Hero Of The 80s',
+    artist: 'Grand Project',
+    audioSrc: './assets/audio/a-hero-of-the-80s-126684.mp3',
+    bpm: 118,
+    beatOffsetSec: 0.08,
+    approachBeats: 4,
+    judgeWindows: {
+      perfect: 0.06,
+      great: 0.11,
+      good: 0.17,
+      safe: 0.23,
+    },
+    beatmapSrc: './assets/beatmaps/a-hero-of-the-80s-126684.json',
+  },
+  {
+    id: 'road-80s',
+    shortLabel: 'ROAD 80S',
+    title: 'On The Road To The Eighties',
+    artist: 'Grand Project',
+    audioSrc: './assets/audio/on-the-road-to-the-eighties-59sec-177566.mp3',
+    bpm: 124,
+    beatOffsetSec: 0.04,
+    approachBeats: 4,
+    judgeWindows: {
+      perfect: 0.058,
+      great: 0.108,
+      good: 0.168,
+      safe: 0.228,
+    },
+    beatmapSrc: './assets/beatmaps/on-the-road-to-the-eighties-59sec-177566.json',
+  },
+  {
+    id: 'battle-chiptune',
+    shortLabel: 'BATTLE',
+    title: '80s Video Game Battle Chiptune',
+    artist: 'NickPanekAIAssets',
+    audioSrc: './assets/audio/80s-video-game-battle-chiptune-216255.mp3',
+    bpm: 132,
+    beatOffsetSec: 0.03,
+    approachBeats: 4,
+    judgeWindows: {
+      perfect: 0.058,
+      great: 0.108,
+      good: 0.168,
+      safe: 0.228,
+    },
+    beatmapSrc: './assets/beatmaps/80s-video-game-battle-chiptune-216255.json',
+    durationSec: 205.752,
+  },
+  {
+    id: 'happy-8bit',
+    shortLabel: 'HAPPY 8BIT',
+    title: 'Retro 8Bit Happy Videogame Music',
+    artist: 'Niknet_Art',
+    audioSrc: './assets/audio/retro-8bit-happy-videogame-music-418486.mp3',
+    bpm: 128,
+    beatOffsetSec: 0.04,
+    approachBeats: 4,
+    judgeWindows: {
+      perfect: 0.06,
+      great: 0.11,
+      good: 0.17,
+      safe: 0.23,
+    },
+    beatmapSrc: './assets/beatmaps/retro-8bit-happy-videogame-music-418486.json',
+    durationSec: 145.632,
+  },
+];
+
+const HERO_SKINS = [
+  {
+    id: 'neon-rider',
+    label: 'NEON RIDER',
+    trail: 'rgba(107, 229, 255, ALPHA)',
+    trailHero: 'rgba(255, 220, 118, ALPHA)',
+    boardLeft: 'rgba(72, 196, 255, 0.98)',
+    boardRight: 'rgba(98, 255, 230, 0.98)',
+    boardHeroLeft: 'rgba(255, 171, 72, 0.98)',
+    boardHeroRight: 'rgba(255, 231, 128, 0.98)',
+    suit: 'rgba(114, 236, 255, 0.96)',
+    suitHero: 'rgba(255, 216, 110, 0.96)',
+    helmet: 'rgba(18, 28, 55, 0.96)',
+    visor: 'rgba(126, 242, 255, 0.95)',
+    visorHero: 'rgba(255, 235, 148, 0.95)',
+    accent: 'rgba(255, 76, 165, 0.82)',
+  },
+  {
+    id: 'sunset-pilot',
+    label: 'SUNSET PILOT',
+    trail: 'rgba(255, 164, 122, ALPHA)',
+    trailHero: 'rgba(255, 235, 150, ALPHA)',
+    boardLeft: 'rgba(255, 133, 102, 0.98)',
+    boardRight: 'rgba(255, 224, 136, 0.98)',
+    boardHeroLeft: 'rgba(255, 196, 92, 0.98)',
+    boardHeroRight: 'rgba(255, 244, 174, 0.98)',
+    suit: 'rgba(255, 166, 123, 0.96)',
+    suitHero: 'rgba(255, 224, 150, 0.96)',
+    helmet: 'rgba(52, 24, 49, 0.96)',
+    visor: 'rgba(255, 213, 164, 0.95)',
+    visorHero: 'rgba(255, 242, 190, 0.95)',
+    accent: 'rgba(255, 101, 168, 0.82)',
+  },
+  {
+    id: 'midnight-cyan',
+    label: 'MIDNIGHT CYAN',
+    trail: 'rgba(121, 172, 255, ALPHA)',
+    trailHero: 'rgba(146, 252, 240, ALPHA)',
+    boardLeft: 'rgba(92, 136, 255, 0.98)',
+    boardRight: 'rgba(109, 240, 255, 0.98)',
+    boardHeroLeft: 'rgba(115, 237, 255, 0.98)',
+    boardHeroRight: 'rgba(155, 255, 226, 0.98)',
+    suit: 'rgba(146, 177, 255, 0.96)',
+    suitHero: 'rgba(140, 247, 255, 0.96)',
+    helmet: 'rgba(18, 26, 62, 0.96)',
+    visor: 'rgba(152, 239, 255, 0.95)',
+    visorHero: 'rgba(176, 255, 226, 0.95)',
+    accent: 'rgba(255, 119, 212, 0.82)',
+  },
+];
+
+const DIFFICULTY_PRESETS = [
+  {
+    id: 'easy',
+    label: 'EASY',
+    judgeScale: 1.18,
+    spawnScale: 0.78,
+    scoreScale: 0.92,
+    approachScale: 1.1,
+    missGaugeDrain: 0.65,
+  },
+  {
+    id: 'normal',
+    label: 'NORMAL',
+    judgeScale: 1,
+    spawnScale: 1,
+    scoreScale: 1,
+    approachScale: 1,
+    missGaugeDrain: 1,
+  },
+  {
+    id: 'hard',
+    label: 'HARD',
+    judgeScale: 0.86,
+    spawnScale: 1.24,
+    scoreScale: 1.18,
+    approachScale: 0.9,
+    missGaugeDrain: 1.35,
+  },
+];
+
 const MAX_HP = 3;
 const HERO_GAUGE_TARGET = 12;
 const HERO_MODE_DURATION = 8;
 const REVIVE_SHIELD_SEC = 2.2;
-const APPROACH_BEATS = 4;
-const APPROACH_SEC = APPROACH_BEATS * BEAT_SEC;
-const IMPACT_LOOKAHEAD_BEATS = APPROACH_BEATS;
-const JUDGE_WINDOWS_SEC = {
+const DEFAULT_APPROACH_BEATS = 4;
+const DEFAULT_JUDGE_WINDOWS_SEC = {
   perfect: 0.06,
   great: 0.11,
   good: 0.17,
@@ -127,15 +285,15 @@ const HIT_LINE_Y = H - 228;
 const LANES = [W * 0.21, W * 0.5, W * 0.79];
 
 const audioCtx = window.AudioContext ? new AudioContext() : null;
-const bgmAudio = new Audio('./assets/audio/a-hero-of-the-80s-126684.mp3');
-bgmAudio.loop = true;
-bgmAudio.preload = 'auto';
-bgmAudio.volume = 0.58;
-bgmAudio.setAttribute('playsinline', '');
+const beatmapCache = new Map();
+const impactAnalysisCache = new Map();
 
 const settings = {
   musicEnabled: true,
   sfxEnabled: true,
+  songId: SONG_LIBRARY[0].id,
+  skinId: HERO_SKINS[0].id,
+  difficultyId: 'normal',
 };
 
 let state = 'idle'; // idle | running | gameover
@@ -159,6 +317,28 @@ let lastBeatIndex = -1;
 let lastFrameTs = 0;
 let songClockFallbackSec = 0;
 let shake = 0;
+let selectedSongIndex = 0;
+let activeSong = SONG_LIBRARY[0];
+let selectedDifficultyId = 'normal';
+let difficultyPreset = DIFFICULTY_PRESETS.find((item) => item.id === selectedDifficultyId) || DIFFICULTY_PRESETS[1];
+let beatSec = 60 / activeSong.bpm;
+let songBeatOffsetSec = Number(activeSong.beatOffsetSec || 0);
+let approachBeats = Number(activeSong.approachBeats || DEFAULT_APPROACH_BEATS) * difficultyPreset.approachScale;
+let approachSec = approachBeats * beatSec;
+let impactLookaheadBeats = approachBeats;
+let judgeWindowsSec = {
+  perfect: DEFAULT_JUDGE_WINDOWS_SEC.perfect,
+  great: DEFAULT_JUDGE_WINDOWS_SEC.great,
+  good: DEFAULT_JUDGE_WINDOWS_SEC.good,
+  safe: DEFAULT_JUDGE_WINDOWS_SEC.safe,
+};
+let activeBeatmap = null;
+let activeBeatMarkers = new Map();
+let activeBeatmapSections = [];
+let bgmAudio = null;
+let selectedSkinIndex = 0;
+let activeSongDurationSec = 0;
+let missCount = 0;
 
 let userHash = null;
 let unsubscribeSafeArea = () => {};
@@ -217,13 +397,421 @@ function colorAlpha(color, alpha) {
 }
 
 function beatToSongSec(beatIndex) {
-  return beatIndex * BEAT_SEC;
+  return beatIndex * beatSec;
 }
 
 function random() {
   const x = Math.sin(spawnSeed * 12.9898) * 43758.5453;
   spawnSeed += 1;
   return x - Math.floor(x);
+}
+
+function createBgmAudio(audioSrc) {
+  const audio = new Audio(audioSrc);
+  audio.loop = false;
+  audio.preload = 'auto';
+  audio.volume = 0.58;
+  audio.setAttribute('playsinline', '');
+  return audio;
+}
+
+function setBgmAudioSource(audioSrc) {
+  if (bgmAudio) {
+    bgmAudio.pause();
+    bgmAudio.src = '';
+    bgmAudio.load();
+  }
+
+  bgmAudio = createBgmAudio(audioSrc);
+}
+
+function updateTrackDisplay() {
+  if (trackTitleEl) {
+    trackTitleEl.textContent = activeSong.title || activeSong.shortLabel || 'Unknown Track';
+  }
+  if (trackMetaEl) {
+    trackMetaEl.textContent = `${activeSong.artist || 'Unknown Artist'} · ${Math.round(60 / beatSec)} BPM · ${difficultyPreset.label}`;
+  }
+}
+
+function updateSkinButtonLabel() {
+  if (!btnSkin) return;
+  const skin = HERO_SKINS[selectedSkinIndex] || HERO_SKINS[0];
+  btnSkin.textContent = `스킨: ${skin.label}`;
+}
+
+function updateDifficultyButtons() {
+  const nextId = selectedDifficultyId;
+  btnDiffEasy?.classList.toggle('is-active', nextId === 'easy');
+  btnDiffNormal?.classList.toggle('is-active', nextId === 'normal');
+  btnDiffHard?.classList.toggle('is-active', nextId === 'hard');
+}
+
+function getCurrentSkin() {
+  return HERO_SKINS[selectedSkinIndex] || HERO_SKINS[0];
+}
+
+function normalizeBeatmap(rawBeatmap) {
+  const markers = new Map();
+  const sections = [];
+
+  const markerWeightByStrength = {
+    light: 0.7,
+    accent: 1.0,
+    strong: 1.2,
+    drop: 1.35,
+  };
+
+  if (Array.isArray(rawBeatmap?.markers)) {
+    for (const marker of rawBeatmap.markers) {
+      const beat = Number(marker?.beat);
+      if (!Number.isFinite(beat)) continue;
+
+      let weight = Number(marker?.weight);
+      if (!Number.isFinite(weight)) {
+        weight = markerWeightByStrength[String(marker?.strength || '').toLowerCase()] || 1;
+      }
+
+      markers.set(Math.round(beat), {
+        weight: clamp(weight, 0.35, 1.55),
+        forceSpawn: marker?.forceSpawn === true,
+        timeSec: Number.isFinite(Number(marker?.timeSec))
+          ? Number(marker.timeSec)
+          : undefined,
+      });
+    }
+  }
+
+  if (Array.isArray(rawBeatmap?.sections)) {
+    for (const section of rawBeatmap.sections) {
+      const fromBeat = Number(section?.fromBeat);
+      const toBeat = Number(section?.toBeat);
+      if (!Number.isFinite(fromBeat) || !Number.isFinite(toBeat)) continue;
+      if (toBeat < fromBeat) continue;
+
+      sections.push({
+        fromBeat: Math.floor(fromBeat),
+        toBeat: Math.floor(toBeat),
+        density: Number(section?.density),
+        doubleChance: Number(section?.doubleChance),
+        burstChance: Number(section?.burstChance),
+      });
+    }
+  }
+
+  return {
+    markerMap: markers,
+    sections,
+  };
+}
+
+function getBeatmapMarker(beatIndex) {
+  return activeBeatMarkers.get(beatIndex) || null;
+}
+
+function getBeatmapSectionProfile(beatIndex) {
+  for (const section of activeBeatmapSections) {
+    if (beatIndex >= section.fromBeat && beatIndex <= section.toBeat) {
+      return section;
+    }
+  }
+  return null;
+}
+
+function mergeBeatmaps(manualBeatmap, analyzedBeatmap) {
+  const mergedMarkers = new Map();
+  const mergedSections = [];
+
+  for (const [beat, marker] of (manualBeatmap?.markerMap || new Map()).entries()) {
+    mergedMarkers.set(beat, { ...marker });
+  }
+
+  for (const [beat, marker] of (analyzedBeatmap?.markerMap || new Map()).entries()) {
+    const existing = mergedMarkers.get(beat);
+    if (!existing || (existing.weight || 0) < (marker.weight || 0)) {
+      mergedMarkers.set(beat, { ...marker });
+    } else if (marker.forceSpawn) {
+      existing.forceSpawn = true;
+      if (!Number.isFinite(existing.timeSec) && Number.isFinite(marker.timeSec)) {
+        existing.timeSec = marker.timeSec;
+      }
+    }
+  }
+
+  if (Array.isArray(manualBeatmap?.sections) && manualBeatmap.sections.length > 0) {
+    mergedSections.push(...manualBeatmap.sections);
+  } else if (Array.isArray(analyzedBeatmap?.sections) && analyzedBeatmap.sections.length > 0) {
+    mergedSections.push(...analyzedBeatmap.sections);
+  }
+
+  return {
+    markerMap: mergedMarkers,
+    sections: mergedSections,
+    durationSec: Number(analyzedBeatmap?.durationSec || manualBeatmap?.durationSec || 0),
+  };
+}
+
+async function loadManualBeatmap(song) {
+  if (!song?.beatmapSrc) {
+    return { markerMap: new Map(), sections: [] };
+  }
+
+  try {
+    const response = await fetch(song.beatmapSrc, { cache: 'no-store' });
+    if (!response.ok) {
+      return { markerMap: new Map(), sections: [] };
+    }
+    const json = await response.json();
+    return normalizeBeatmap(json);
+  } catch (error) {
+    return { markerMap: new Map(), sections: [] };
+  }
+}
+
+async function analyzeSongImpacts(song) {
+  if (impactAnalysisCache.has(song.id)) {
+    return impactAnalysisCache.get(song.id);
+  }
+
+  const fallback = { markerMap: new Map(), sections: [], durationSec: Number(song.durationSec || 0) };
+  try {
+    const response = await fetch(song.audioSrc, { cache: 'force-cache' });
+    if (!response.ok) {
+      impactAnalysisCache.set(song.id, fallback);
+      return fallback;
+    }
+
+    const audioArrayBuffer = await response.arrayBuffer();
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) {
+      impactAnalysisCache.set(song.id, fallback);
+      return fallback;
+    }
+
+    let decodeContext = audioCtx;
+    let temporaryContext = null;
+    if (!decodeContext) {
+      temporaryContext = new Ctx();
+      decodeContext = temporaryContext;
+    }
+
+    const decoded = await decodeContext.decodeAudioData(audioArrayBuffer.slice(0));
+    if (temporaryContext) {
+      void temporaryContext.close();
+    }
+
+    const source = decoded.getChannelData(0);
+    const sampleRate = decoded.sampleRate;
+    const hopSize = Math.max(256, Math.floor(sampleRate / 110));
+    const frames = Math.max(1, Math.floor(source.length / hopSize));
+    const energies = new Float32Array(frames);
+
+    for (let frame = 0; frame < frames; frame += 1) {
+      const frameStart = frame * hopSize;
+      let sum = 0;
+      let count = 0;
+      for (let offset = 0; offset < hopSize; offset += 4) {
+        const idx = frameStart + offset;
+        if (idx >= source.length) break;
+        const sample = source[idx];
+        sum += sample * sample;
+        count += 1;
+      }
+      energies[frame] = count > 0 ? Math.sqrt(sum / count) : 0;
+    }
+
+    const markerMap = new Map();
+    const refractoryFrames = Math.max(1, Math.round((0.11 * sampleRate) / hopSize));
+    const movingWindow = 18;
+    let cooldown = 0;
+
+    for (let frame = 3; frame < frames - 3; frame += 1) {
+      const energy = energies[frame];
+      const from = Math.max(0, frame - movingWindow);
+      const to = Math.min(frames - 1, frame + movingWindow);
+      let mean = 0;
+      for (let i = from; i <= to; i += 1) {
+        mean += energies[i];
+      }
+      mean /= (to - from + 1);
+
+      const threshold = mean * 1.35 + 0.009;
+      const localPeak = energy >= energies[frame - 1]
+        && energy >= energies[frame + 1]
+        && energy >= energies[frame - 2]
+        && energy >= energies[frame + 2];
+
+      if (cooldown > 0) {
+        cooldown -= 1;
+        continue;
+      }
+
+      if (!localPeak || energy < threshold) {
+        continue;
+      }
+
+      const timeSec = (frame * hopSize) / sampleRate - Number(song.beatOffsetSec || 0);
+      const beat = Math.round(timeSec / (60 / Number(song.bpm || 120)));
+      if (beat < 0) {
+        cooldown = Math.max(1, Math.floor(refractoryFrames * 0.5));
+        continue;
+      }
+
+      const ratio = (energy - mean) / Math.max(0.001, mean);
+      const weight = clamp(0.72 + ratio * 0.46, 0.72, 1.5);
+      const prev = markerMap.get(beat);
+      if (!prev || prev.weight < weight) {
+        markerMap.set(beat, {
+          weight,
+          forceSpawn: weight > 1.28,
+          timeSec,
+        });
+      }
+
+      cooldown = refractoryFrames;
+    }
+
+    const totalBeats = Math.max(1, Math.ceil((decoded.duration - Number(song.beatOffsetSec || 0)) / (60 / Number(song.bpm || 120))));
+    const sections = [];
+    for (let fromBeat = 0; fromBeat < totalBeats; fromBeat += 16) {
+      const toBeat = Math.min(totalBeats - 1, fromBeat + 15);
+      let hitCount = 0;
+      let strongCount = 0;
+
+      for (let beat = fromBeat; beat <= toBeat; beat += 1) {
+        const marker = markerMap.get(beat);
+        if (!marker) continue;
+        hitCount += 1;
+        if (marker.weight > 1.12) {
+          strongCount += 1;
+        }
+      }
+
+      const density = clamp(0.34 + hitCount * 0.043, 0.3, 0.96);
+      const doubleChance = clamp(0.03 + strongCount * 0.04, 0.02, 0.58);
+      const burstChance = clamp((strongCount - 1) * 0.022, 0, 0.24);
+
+      sections.push({
+        fromBeat,
+        toBeat,
+        density,
+        doubleChance,
+        burstChance,
+      });
+    }
+
+    const analyzed = {
+      markerMap,
+      sections,
+      durationSec: decoded.duration,
+    };
+    impactAnalysisCache.set(song.id, analyzed);
+    return analyzed;
+  } catch (error) {
+    impactAnalysisCache.set(song.id, fallback);
+    return fallback;
+  }
+}
+
+async function loadBeatmapForSong(song) {
+  if (beatmapCache.has(song.id)) {
+    const cached = beatmapCache.get(song.id);
+    activeBeatmap = cached;
+    activeBeatMarkers = cached.markerMap;
+    activeBeatmapSections = cached.sections;
+    return;
+  }
+
+  const [manual, analyzed] = await Promise.all([
+    loadManualBeatmap(song),
+    analyzeSongImpacts(song),
+  ]);
+
+  const merged = mergeBeatmaps(manual, analyzed);
+  beatmapCache.set(song.id, merged);
+
+  if (activeSong.id === song.id) {
+    activeBeatmap = merged;
+    activeBeatMarkers = merged.markerMap;
+    activeBeatmapSections = merged.sections;
+    if (Number.isFinite(merged.durationSec) && merged.durationSec > 0) {
+      activeSongDurationSec = merged.durationSec;
+    }
+  }
+}
+
+async function applySongByIndex(nextIndex) {
+  if (SONG_LIBRARY.length === 0) return;
+  const normalized = ((nextIndex % SONG_LIBRARY.length) + SONG_LIBRARY.length) % SONG_LIBRARY.length;
+  selectedSongIndex = normalized;
+  activeSong = SONG_LIBRARY[normalized];
+  settings.songId = activeSong.id;
+  refreshSongTimingRuntime();
+  activeSongDurationSec = Number(activeSong.durationSec || 0);
+  setBgmAudioSource(activeSong.audioSrc);
+  bgmAudio.addEventListener('loadedmetadata', () => {
+    if (activeSong.id === SONG_LIBRARY[selectedSongIndex].id && Number.isFinite(bgmAudio.duration) && bgmAudio.duration > 0) {
+      activeSongDurationSec = bgmAudio.duration;
+    }
+  }, { once: true });
+  updateTrackDisplay();
+  await loadBeatmapForSong(activeSong);
+}
+
+function findSongIndexById(songId) {
+  if (!songId) return -1;
+  return SONG_LIBRARY.findIndex((song) => song.id === songId);
+}
+
+function applySkinByIndex(nextIndex) {
+  if (HERO_SKINS.length === 0) return;
+  const normalized = ((nextIndex % HERO_SKINS.length) + HERO_SKINS.length) % HERO_SKINS.length;
+  selectedSkinIndex = normalized;
+  settings.skinId = HERO_SKINS[selectedSkinIndex].id;
+  updateSkinButtonLabel();
+}
+
+function refreshSongTimingRuntime() {
+  const baseWindows = {
+    ...DEFAULT_JUDGE_WINDOWS_SEC,
+    ...(activeSong.judgeWindows || {}),
+  };
+  const judgeScale = Number(difficultyPreset?.judgeScale || 1);
+  beatSec = 60 / Number(activeSong.bpm || 120);
+  songBeatOffsetSec = Number(activeSong.beatOffsetSec || 0);
+  approachBeats = clamp(
+    Number(activeSong.approachBeats || DEFAULT_APPROACH_BEATS) * Number(difficultyPreset?.approachScale || 1),
+    2.6,
+    5.4,
+  );
+  approachSec = approachBeats * beatSec;
+  impactLookaheadBeats = approachBeats;
+  judgeWindowsSec = {
+    perfect: baseWindows.perfect * judgeScale,
+    great: baseWindows.great * judgeScale,
+    good: baseWindows.good * judgeScale,
+    safe: baseWindows.safe * judgeScale,
+  };
+}
+
+function applyDifficultyById(nextDifficultyId) {
+  const found = DIFFICULTY_PRESETS.find((item) => item.id === nextDifficultyId) || DIFFICULTY_PRESETS[1];
+  selectedDifficultyId = found.id;
+  difficultyPreset = found;
+  settings.difficultyId = found.id;
+  refreshSongTimingRuntime();
+  updateDifficultyButtons();
+  updateTrackDisplay();
+}
+
+function getActiveSongDurationSec() {
+  if (Number.isFinite(activeSongDurationSec) && activeSongDurationSec > 0) {
+    return Math.max(0, activeSongDurationSec - songBeatOffsetSec);
+  }
+  if (bgmAudio && Number.isFinite(bgmAudio.duration) && bgmAudio.duration > 0) {
+    return Math.max(0, bgmAudio.duration - songBeatOffsetSec);
+  }
+  return Math.max(0, Number(activeSong?.durationSec || 0) - songBeatOffsetSec);
 }
 
 function getScopedStorageKey(name) {
@@ -277,6 +865,9 @@ function setButtonState(button, isActive, activeLabel, inactiveLabel) {
 function updateAudioButtons() {
   setButtonState(btnMusic, settings.musicEnabled, 'BGM 켜짐', 'BGM 꺼짐');
   setButtonState(btnSfx, settings.sfxEnabled, '효과음 켜짐', '효과음 꺼짐');
+  updateTrackDisplay();
+  updateSkinButtonLabel();
+  updateDifficultyButtons();
 }
 
 function updateStartButtonLabel() {
@@ -294,7 +885,7 @@ function updateHud() {
   scoreEl.textContent = String(score);
   bestEl.textContent = String(best);
   comboEl.textContent = String(combo);
-  hpEl.textContent = String(hp);
+  hpEl.textContent = String(missCount);
   waveEl.textContent = String(wave);
 
   const comboCard = comboEl.closest('.hud-card');
@@ -313,18 +904,18 @@ function updateHud() {
 
 function defaultStatusByState() {
   if (state === 'idle') {
-    return '레인을 탭해 공격. Perfect/Great/Good/Safe 판정으로 박자를 따라가세요.';
+    return '트랙과 난이도를 고른 뒤 시작. 곡 끝까지 점수를 누적합니다.';
   }
 
   if (state === 'gameover') {
-    return '다시 시작하거나 광고를 보고 1회 이어하기를 사용할 수 있습니다.';
+    return '트랙이 종료되었습니다. 점수와 기록을 확인하고 다시 시작하세요.';
   }
 
   if (pauseReason) {
     return '일시정지 상태입니다. 복귀하면 바로 이어서 플레이할 수 있어요.';
   }
 
-  return 'NEON HIT 라인에서 입력하면 고득점. SAFE도 통과하지만 점수/콤보는 낮습니다.';
+  return '미사일은 트랙 임팩트 포인트에 맞춰 등장합니다. 끝까지 리듬을 유지하세요.';
 }
 
 function setStatus(message, durationSec = 1.1) {
@@ -432,6 +1023,7 @@ const sfx = {
 };
 
 async function syncAudio() {
+  if (!bgmAudio) return;
   const shouldPlay = settings.musicEnabled && isGameplayActive();
 
   if (shouldPlay) {
@@ -447,11 +1039,11 @@ async function syncAudio() {
 }
 
 function getSongSeconds() {
-  if (!Number.isNaN(bgmAudio.currentTime) && bgmAudio.currentTime > 0) {
-    return Math.max(0, bgmAudio.currentTime - SONG_BEAT_OFFSET_SEC);
+  if (bgmAudio && !Number.isNaN(bgmAudio.currentTime) && bgmAudio.currentTime > 0) {
+    return Math.max(0, bgmAudio.currentTime - songBeatOffsetSec);
   }
 
-  return Math.max(0, songClockFallbackSec - SONG_BEAT_OFFSET_SEC);
+  return Math.max(0, songClockFallbackSec - songBeatOffsetSec);
 }
 
 function getBeatBiasLabel(timeDeltaSec) {
@@ -478,6 +1070,15 @@ function pushTimingFeedback(verdict, lane, timeDeltaSec = 0, overrideLabel = '')
 }
 
 function getSectionProfile(beatIndex) {
+  const beatmapSection = getBeatmapSectionProfile(beatIndex);
+  if (beatmapSection) {
+    return {
+      density: clamp(Number.isFinite(beatmapSection.density) ? beatmapSection.density : 0.68, 0.1, 0.98),
+      doubleChance: clamp(Number.isFinite(beatmapSection.doubleChance) ? beatmapSection.doubleChance : 0.16, 0, 0.65),
+      burstChance: clamp(Number.isFinite(beatmapSection.burstChance) ? beatmapSection.burstChance : 0.03, 0, 0.3),
+    };
+  }
+
   const songSec = beatToSongSec(beatIndex);
 
   if (songSec < 18) {
@@ -545,10 +1146,10 @@ function addSlash(lane, verdict = 'good') {
   });
 }
 
-function spawnEnemy(targetBeat, forcedLane = null, accentWeight = 1) {
+function spawnEnemy(targetBeat, forcedLane = null, accentWeight = 1, hitSecOverride = null) {
   const lane = forcedLane == null ? pickSpawnLane() : forcedLane;
-  const hitSec = beatToSongSec(targetBeat);
-  const spawnSec = hitSec - APPROACH_SEC;
+  const hitSec = Number.isFinite(hitSecOverride) ? hitSecOverride : beatToSongSec(targetBeat);
+  const spawnSec = hitSec - approachSec;
 
   enemies.push({
     id: enemyIdSeed,
@@ -571,30 +1172,40 @@ function updateWaveFromBeat(beatIndex) {
 }
 
 function handleBeat(beatIndex) {
-  const targetBeat = beatIndex + IMPACT_LOOKAHEAD_BEATS;
+  const targetBeat = beatIndex + impactLookaheadBeats;
+  const targetSec = beatToSongSec(targetBeat);
+  const songDurationSec = getActiveSongDurationSec();
+  if (songDurationSec > 0 && targetSec > songDurationSec - 0.06) {
+    return;
+  }
   updateWaveFromBeat(targetBeat);
 
   const profile = getSectionProfile(targetBeat);
-  const accentWeight = getBeatAccentWeight(targetBeat);
-  const spawnChance = clamp(profile.density * accentWeight, 0.08, 0.98);
+  const marker = getBeatmapMarker(targetBeat);
+  const accentWeight = marker?.weight || getBeatAccentWeight(targetBeat);
+  const markerHitSec = Number.isFinite(Number(marker?.timeSec)) ? Number(marker.timeSec) : null;
+  const spawnScale = Number(difficultyPreset?.spawnScale || 1);
+  const spawnChance = marker?.forceSpawn
+    ? 1
+    : clamp(profile.density * accentWeight * spawnScale, 0.06, 0.99);
 
   if (random() > spawnChance) {
     return;
   }
 
   const mainLane = pickSpawnLane();
-  spawnEnemy(targetBeat, mainLane, accentWeight);
+  spawnEnemy(targetBeat, mainLane, accentWeight, markerHitSec);
 
   let sideLane = -1;
-  if (accentWeight >= 0.88 && random() < profile.doubleChance) {
+  if (accentWeight >= 0.86 && random() < profile.doubleChance) {
     sideLane = (mainLane + (random() < 0.5 ? 1 : 2)) % LANES.length;
-    spawnEnemy(targetBeat, sideLane, accentWeight * 0.92);
+    spawnEnemy(targetBeat, sideLane, accentWeight * 0.92, markerHitSec);
   }
 
-  if (accentWeight > 1.08 && random() < profile.burstChance) {
+  if (accentWeight > 1.04 && random() < profile.burstChance) {
     for (let lane = 0; lane < LANES.length; lane += 1) {
       if (lane === mainLane || lane === sideLane) continue;
-      spawnEnemy(targetBeat, lane, accentWeight * 0.86);
+      spawnEnemy(targetBeat, lane, accentWeight * 0.86, markerHitSec);
     }
   }
 }
@@ -604,18 +1215,13 @@ function loseHp() {
     return;
   }
 
-  hp = Math.max(0, hp - 1);
+  missCount += 1;
   combo = 0;
-  heroGauge = Math.max(0, heroGauge - 2);
+  heroGauge = Math.max(0, heroGauge - (1.6 * Number(difficultyPreset?.missGaugeDrain || 1)));
   shake = Math.max(shake, 12);
   sfx.hurt();
   addBurst(heroX, HERO_Y - 24, '#ff8a9d', 18, 4.5);
-
-  if (hp <= 0) {
-    endRun();
-  } else {
-    setStatus(`피격! HP ${hp}`, 0.8);
-  }
+  setStatus(`MISS x${missCount}`, 0.68);
 
   updateHud();
 }
@@ -648,10 +1254,10 @@ function findClosestEnemyInLane(lane, songSec) {
 
 function resolveVerdict(timeDeltaSec) {
   const abs = Math.abs(timeDeltaSec);
-  if (abs <= JUDGE_WINDOWS_SEC.perfect) return 'perfect';
-  if (abs <= JUDGE_WINDOWS_SEC.great) return 'great';
-  if (abs <= JUDGE_WINDOWS_SEC.good) return 'good';
-  if (abs <= JUDGE_WINDOWS_SEC.safe) return 'safe';
+  if (abs <= judgeWindowsSec.perfect) return 'perfect';
+  if (abs <= judgeWindowsSec.great) return 'great';
+  if (abs <= judgeWindowsSec.good) return 'good';
+  if (abs <= judgeWindowsSec.safe) return 'safe';
   return 'miss';
 }
 
@@ -688,7 +1294,8 @@ function awardHit(verdict, enemy, lane, timeDeltaSec) {
 
   const comboBefore = combo;
   const comboBonus = Math.round(Math.min(120, comboBefore * 6) * comboScaleByVerdict[verdict]);
-  let earned = scoreByVerdict[verdict] + comboBonus;
+  const scoreScale = Number(difficultyPreset?.scoreScale || 1);
+  let earned = Math.round((scoreByVerdict[verdict] + comboBonus) * scoreScale);
 
   if (heroModeSec > 0) {
     earned = Math.round(earned * 2);
@@ -776,6 +1383,7 @@ function startRun() {
   score = 0;
   combo = 0;
   hp = MAX_HP;
+  missCount = 0;
   wave = 1;
   heroGauge = 0;
   heroModeSec = 0;
@@ -801,13 +1409,17 @@ function startRun() {
     laneFlash[i] = 0;
   }
 
-  bgmAudio.currentTime = 0;
+  if (bgmAudio) {
+    bgmAudio.currentTime = 0;
+  }
+  gameOverTitleEl.textContent = 'Stage Clear';
 
   hideGameOverModal();
   closeOverlays();
   updateHud();
   updateStartButtonLabel();
   refreshStatusLine();
+  setStatus(`TRACK ${activeSong.shortLabel} · ${difficultyPreset.label}`, 0.95);
   void syncAudio();
 
   if (rewardedAdSupported) {
@@ -844,7 +1456,7 @@ function hideGameOverModal() {
   updateRewardedContinueUi();
 }
 
-function endRun() {
+function endRun(reason = 'complete') {
   state = 'gameover';
   pauseReason = null;
   heroModeSec = 0;
@@ -861,8 +1473,15 @@ function endRun() {
     void persistBestCombo();
   }
 
-  setStatus('RUN END', 1.1);
-  sfx.over();
+  if (reason === 'complete') {
+    gameOverTitleEl.textContent = 'Stage Clear';
+    setStatus('TRACK COMPLETE!', 1.2);
+    sfx.hero();
+  } else {
+    gameOverTitleEl.textContent = 'Stage End';
+    setStatus('RUN END', 1.1);
+    sfx.over();
+  }
   void syncAudio();
   updateHud();
   showGameOverModal();
@@ -929,7 +1548,7 @@ function updateGame(dt) {
   }
 
   songClockFallbackSec += dt;
-  if (!Number.isNaN(bgmAudio.currentTime) && bgmAudio.currentTime > 0) {
+  if (bgmAudio && !Number.isNaN(bgmAudio.currentTime) && bgmAudio.currentTime > 0) {
     songClockFallbackSec = bgmAudio.currentTime;
   }
 
@@ -942,7 +1561,12 @@ function updateGame(dt) {
   }
 
   const songSec = getSongSeconds();
-  const beatFloat = songSec / BEAT_SEC;
+  const durationSec = getActiveSongDurationSec();
+  if (durationSec > 0 && songSec >= durationSec) {
+    endRun('complete');
+    return;
+  }
+  const beatFloat = songSec / beatSec;
   const beatIndex = Math.floor(beatFloat);
 
   if (beatIndex > lastBeatIndex) {
@@ -960,7 +1584,7 @@ function updateGame(dt) {
     enemy.y = lerp(ENEMY_SPAWN_Y, HIT_LINE_Y, clamp(progress, 0, 1.28));
     enemy.phase += dt * (4.8 + enemy.accent * 1.6);
 
-    if (songSec - enemy.hitSec > JUDGE_WINDOWS_SEC.safe + SAFE_PASS_GRACE_SEC) {
+    if (songSec - enemy.hitSec > judgeWindowsSec.safe + SAFE_PASS_GRACE_SEC) {
       enemies.splice(i, 1);
       loseHp();
     }
@@ -1046,7 +1670,7 @@ function drawEnemies(songSec) {
     ctx.rotate(Math.sin(enemy.phase + enemy.id * 0.17) * 0.08);
 
     const impactPulse = 0.48 + Math.sin(enemy.phase * 2.2) * 0.22;
-    const hitFocus = 1 - clamp(Math.abs(songSec - enemy.hitSec) / (JUDGE_WINDOWS_SEC.safe * 2.5), 0, 1);
+    const hitFocus = 1 - clamp(Math.abs(songSec - enemy.hitSec) / (judgeWindowsSec.safe * 2.5), 0, 1);
     const glowAlpha = 0.34 + impactPulse * 0.2 + hitFocus * 0.36;
     const bodyW = 38 + enemy.accent * 4;
     const bodyH = 24 + enemy.accent * 2;
@@ -1097,18 +1721,10 @@ function drawEnemies(songSec) {
   }
 }
 
-function drawHero(songSec) {
-  const bob = Math.sin(songSec * 7.2) * 2.2;
-  const laneOffset = (LANES[targetLane] - heroX) / 40;
-  const tilt = clamp(laneOffset * 0.08, -0.18, 0.18);
-  const enginePulse = 0.46 + Math.sin(songSec * 18) * 0.24;
-
-  ctx.save();
-  ctx.translate(heroX, HERO_Y + bob);
-  ctx.rotate(tilt);
-
-  const trailColor = heroModeSec > 0 ? 'rgba(255, 220, 118, 0.42)' : 'rgba(107, 229, 255, 0.34)';
-  ctx.fillStyle = trailColor;
+function drawHeroBoardLayer(skin, enginePulse) {
+  const heroBoosted = heroModeSec > 0;
+  const trailColor = heroBoosted ? skin.trailHero : skin.trail;
+  ctx.fillStyle = colorAlpha(trailColor, 0.42);
   ctx.beginPath();
   ctx.moveTo(-15, 18);
   ctx.quadraticCurveTo(0, 28 + enginePulse * 18, 15, 18);
@@ -1118,30 +1734,52 @@ function drawHero(songSec) {
   ctx.fill();
 
   const boardGrad = ctx.createLinearGradient(-20, 0, 20, 0);
-  boardGrad.addColorStop(0, heroModeSec > 0 ? 'rgba(255, 171, 72, 0.98)' : 'rgba(72, 196, 255, 0.98)');
-  boardGrad.addColorStop(1, heroModeSec > 0 ? 'rgba(255, 231, 128, 0.98)' : 'rgba(98, 255, 230, 0.98)');
+  boardGrad.addColorStop(0, heroBoosted ? skin.boardHeroLeft : skin.boardLeft);
+  boardGrad.addColorStop(1, heroBoosted ? skin.boardHeroRight : skin.boardRight);
   ctx.fillStyle = boardGrad;
   ctx.beginPath();
   ctx.ellipse(0, 20, 20, 7, 0, 0, Math.PI * 2);
   ctx.fill();
+}
 
+function drawHeroBodyLayer(skin) {
+  const heroBoosted = heroModeSec > 0;
   ctx.fillStyle = 'rgba(12, 20, 42, 0.92)';
   ctx.fillRect(-6, -4, 12, 18);
 
-  ctx.fillStyle = heroModeSec > 0 ? 'rgba(255, 216, 110, 0.96)' : 'rgba(114, 236, 255, 0.96)';
+  ctx.fillStyle = heroBoosted ? skin.suitHero : skin.suit;
   ctx.fillRect(-12, -25, 24, 24);
   ctx.fillRect(-18, -19, 6, 16);
   ctx.fillRect(12, -19, 6, 16);
+}
 
-  ctx.fillStyle = 'rgba(18, 28, 55, 0.96)';
+function drawHeroHeadLayer(skin) {
+  const heroBoosted = heroModeSec > 0;
+  ctx.fillStyle = skin.helmet;
   ctx.beginPath();
   ctx.arc(0, -30, 11, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = heroModeSec > 0 ? 'rgba(255, 235, 148, 0.95)' : 'rgba(126, 242, 255, 0.95)';
+  ctx.fillStyle = heroBoosted ? skin.visorHero : skin.visor;
   ctx.fillRect(-7, -32, 14, 5);
-  ctx.fillStyle = 'rgba(255, 76, 165, 0.82)';
+  ctx.fillStyle = skin.accent;
   ctx.fillRect(-5, -12, 10, 3);
+}
+
+function drawHero(songSec) {
+  const skin = getCurrentSkin();
+  const bob = Math.sin(songSec * 7.2) * 2.2;
+  const laneOffset = (LANES[targetLane] - heroX) / 40;
+  const tilt = clamp(laneOffset * 0.08, -0.18, 0.18);
+  const enginePulse = 0.46 + Math.sin(songSec * 18) * 0.24;
+
+  ctx.save();
+  ctx.translate(heroX, HERO_Y + bob);
+  ctx.rotate(tilt);
+
+  drawHeroBoardLayer(skin, enginePulse);
+  drawHeroBodyLayer(skin);
+  drawHeroHeadLayer(skin);
 
   if (reviveShieldSec > 0) {
     const shieldPulse = 0.4 + Math.sin(songSec * 12) * 0.2;
@@ -1214,7 +1852,7 @@ function drawOverlayText(title, subtitle) {
 }
 
 function render() {
-  const beatFloat = getSongSeconds() / BEAT_SEC;
+  const beatFloat = getSongSeconds() / beatSec;
   const beatFrac = beatFloat - Math.floor(beatFloat);
   const beatPulse = Math.pow(1 - clamp(Math.abs(beatFrac) * 2, 0, 1), 2);
 
@@ -1249,7 +1887,7 @@ function render() {
   }
 
   if (state === 'idle') {
-    drawOverlayText('TAP START', '레인을 눌러 비트 전투 시작');
+    drawOverlayText('TAP START', '좌우로 트랙 선택 · 난이도 선택 후 시작');
   } else if (state === 'running' && pauseReason) {
     drawOverlayText('PAUSED', '돌아오면 즉시 이어집니다');
   }
@@ -1284,7 +1922,7 @@ function scheduleRewardedAdReload() {
 }
 
 function updateRewardedContinueUi() {
-  const shouldShow = rewardedAdSupported && state === 'gameover';
+  const shouldShow = false;
   setElementHidden(btnRewardContinue, !shouldShow);
   setElementHidden(rewardContinueHintEl, !shouldShow);
 
@@ -1527,17 +2165,44 @@ async function loadPersistedState() {
   const scopedSettings = await toss.storage.getItem(getScopedStorageKey('settings'));
   const legacySettings = safeLocalStorageGet(LEGACY_SETTINGS_KEY);
   const settingsRaw = scopedSettings || legacySettings;
+  let requestedSongId = settings.songId;
+  let requestedSkinId = settings.skinId;
+  let requestedDifficultyId = settings.difficultyId;
 
   if (settingsRaw) {
     try {
       const parsed = JSON.parse(settingsRaw);
       settings.musicEnabled = parsed.musicEnabled !== false;
       settings.sfxEnabled = parsed.sfxEnabled !== false;
+      if (typeof parsed.songId === 'string' && parsed.songId.trim()) {
+        requestedSongId = parsed.songId.trim();
+      }
+      if (typeof parsed.skinId === 'string' && parsed.skinId.trim()) {
+        requestedSkinId = parsed.skinId.trim();
+      }
+      if (typeof parsed.difficultyId === 'string' && parsed.difficultyId.trim()) {
+        requestedDifficultyId = parsed.difficultyId.trim().toLowerCase();
+      }
     } catch (error) {
       settings.musicEnabled = true;
       settings.sfxEnabled = true;
+      requestedSongId = SONG_LIBRARY[0].id;
+      requestedSkinId = HERO_SKINS[0].id;
+      requestedDifficultyId = 'normal';
     }
   }
+
+  applyDifficultyById(requestedDifficultyId);
+
+  const preferredSongIndex = findSongIndexById(requestedSongId);
+  if (preferredSongIndex >= 0 && preferredSongIndex !== selectedSongIndex) {
+    await applySongByIndex(preferredSongIndex);
+  } else {
+    settings.songId = activeSong.id;
+  }
+
+  const preferredSkinIndex = HERO_SKINS.findIndex((skin) => skin.id === requestedSkinId);
+  applySkinByIndex(preferredSkinIndex >= 0 ? preferredSkinIndex : 0);
 
   updateAudioButtons();
   updateHud();
@@ -1632,6 +2297,54 @@ function loop(timestamp) {
   window.requestAnimationFrame(loop);
 }
 
+async function shiftTrack(direction) {
+  await unlockAudio();
+  if (SONG_LIBRARY.length <= 1) {
+    setStatus('트랙이 1개만 등록되어 있습니다.', 0.8);
+    return;
+  }
+
+  const wasRunning = state === 'running';
+  if (wasRunning) {
+    pauseGame('track');
+  }
+
+  const nextSongIndex = (selectedSongIndex + direction + SONG_LIBRARY.length) % SONG_LIBRARY.length;
+  setStatus('트랙/파형 분석 로딩 중...', 0.55);
+  await applySongByIndex(nextSongIndex);
+  updateAudioButtons();
+  void persistSettings();
+
+  if (wasRunning) {
+    startRun();
+    setStatus(`TRACK CHANGE: ${activeSong.shortLabel}`, 1);
+  } else {
+    setStatus(`트랙 선택: ${activeSong.title}`, 0.9);
+    void syncAudio();
+  }
+
+  sfx.ui();
+}
+
+function cycleSkin() {
+  applySkinByIndex(selectedSkinIndex + 1);
+  void persistSettings();
+  setStatus(`스킨 변경: ${getCurrentSkin().label}`, 0.75);
+  sfx.ui();
+}
+
+function changeDifficulty(nextDifficultyId) {
+  if (nextDifficultyId === selectedDifficultyId) return;
+  applyDifficultyById(nextDifficultyId);
+  updateAudioButtons();
+  void persistSettings();
+  setStatus(`난이도: ${difficultyPreset.label}`, 0.8);
+
+  if (state === 'running') {
+    startRun();
+  }
+}
+
 function handleStartButtonClick() {
   void unlockAudio();
 
@@ -1712,6 +2425,40 @@ function bindEvents() {
       return;
     }
 
+    if (event.code === 'BracketLeft') {
+      event.preventDefault();
+      if (state !== 'running') {
+        void shiftTrack(-1);
+      }
+      return;
+    }
+
+    if (event.code === 'BracketRight') {
+      event.preventDefault();
+      if (state !== 'running') {
+        void shiftTrack(1);
+      }
+      return;
+    }
+
+    if (event.code === 'KeyZ' && state !== 'running') {
+      event.preventDefault();
+      changeDifficulty('easy');
+      return;
+    }
+
+    if (event.code === 'KeyX' && state !== 'running') {
+      event.preventDefault();
+      changeDifficulty('normal');
+      return;
+    }
+
+    if (event.code === 'KeyC' && state !== 'running') {
+      event.preventDefault();
+      changeDifficulty('hard');
+      return;
+    }
+
     if (event.code === 'Space') {
       event.preventDefault();
       if (state === 'idle') {
@@ -1761,6 +2508,30 @@ function bindEvents() {
     updateAudioButtons();
     void persistSettings();
     sfx.ui();
+  });
+
+  btnTrackPrev?.addEventListener('click', () => {
+    void shiftTrack(-1);
+  });
+
+  btnTrackNext?.addEventListener('click', () => {
+    void shiftTrack(1);
+  });
+
+  btnSkin?.addEventListener('click', () => {
+    cycleSkin();
+  });
+
+  btnDiffEasy?.addEventListener('click', () => {
+    changeDifficulty('easy');
+  });
+
+  btnDiffNormal?.addEventListener('click', () => {
+    changeDifficulty('normal');
+  });
+
+  btnDiffHard?.addEventListener('click', () => {
+    changeDifficulty('hard');
   });
 
   btnExit.addEventListener('click', () => {
@@ -1845,6 +2616,9 @@ function bindEvents() {
 }
 
 async function init() {
+  applyDifficultyById('normal');
+  await applySongByIndex(0);
+  applySkinByIndex(0);
   updateAudioButtons();
   updateHud();
   updateStartButtonLabel();
@@ -1852,6 +2626,11 @@ async function init() {
   bindEvents();
   window.requestAnimationFrame(loop);
   await initializeTossBridge();
+
+  for (const song of SONG_LIBRARY) {
+    if (song.id === activeSong.id) continue;
+    void loadBeatmapForSong(song);
+  }
 }
 
 void init();

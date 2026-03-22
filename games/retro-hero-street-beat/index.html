@@ -38,9 +38,9 @@
           <span class="hud-label">콤보</span>
           <strong id="combo">0</strong>
         </div>
-        <div class="hud-card" aria-label="체력">
-          <span class="hud-label">HP</span>
-          <strong id="hp">3</strong>
+        <div class="hud-card" aria-label="미스 횟수">
+          <span class="hud-label">MISS</span>
+          <strong id="hp">0</strong>
         </div>
         <div class="hud-card" aria-label="웨이브">
           <span class="hud-label">웨이브</span>
@@ -56,15 +56,32 @@
         <div id="heroGaugeFill" class="hero-meter-fill"></div>
       </div>
 
+      <div class="track-selector" aria-label="곡 선택">
+        <button id="btnTrackPrev" class="selector-arrow" type="button" aria-label="이전 곡">◀</button>
+        <div class="track-selector-body">
+          <span class="selector-tag">TRACK SELECT</span>
+          <strong id="trackTitle">A Hero Of The 80s</strong>
+          <span id="trackMeta" class="selector-meta">Grand Project · 118 BPM</span>
+        </div>
+        <button id="btnTrackNext" class="selector-arrow" type="button" aria-label="다음 곡">▶</button>
+      </div>
+
+      <div class="difficulty-row" role="group" aria-label="난이도 선택">
+        <button id="btnDiffEasy" class="difficulty-btn" type="button">EASY</button>
+        <button id="btnDiffNormal" class="difficulty-btn is-active" type="button">NORMAL</button>
+        <button id="btnDiffHard" class="difficulty-btn" type="button">HARD</button>
+      </div>
+
       <div class="control-row">
         <button id="btnStart" class="button button-primary" type="button">시작</button>
         <button id="btnMusic" class="button button-secondary" type="button" aria-pressed="true">BGM 켜짐</button>
         <button id="btnSfx" class="button button-secondary" type="button" aria-pressed="true">효과음 켜짐</button>
+        <button id="btnSkin" class="button button-secondary" type="button">스킨: NEON RIDER</button>
         <button id="btnExit" class="button button-danger" type="button">종료</button>
       </div>
 
       <p id="statusLine" class="microcopy" aria-live="polite">
-        3개 레인 중 원하는 위치를 탭하고, 타이밍에 따라 Perfect/Great/Good/Safe 판정이 적용됩니다.
+        좌우로 트랙을 고르고 난이도(Easy/Normal/Hard)를 선택한 뒤 곡 끝까지 점수를 누적하세요.
       </p>
       <p id="userKeyHint" class="microcopy secondary" aria-live="polite">
         토스 게임 계정과 저장소를 확인하고 있어요.
@@ -82,9 +99,9 @@
           aria-modal="true"
           aria-labelledby="gameOverTitle"
         >
-          <div class="stage-modal-card">
-            <p class="modal-kicker">RUN END</p>
-            <h2 id="gameOverTitle">Stage Failed</h2>
+        <div class="stage-modal-card">
+            <p class="modal-kicker">TRACK END</p>
+            <h2 id="gameOverTitle">Stage Clear</h2>
             <p>최종 점수 <strong id="finalScore">0</strong></p>
             <p>최고 점수 <strong id="finalBest">0</strong></p>
             <p id="rewardContinueHint" class="reward-copy hidden" aria-live="polite"></p>
@@ -132,8 +149,11 @@
       </p>
       <p class="sheet-copy">
         Safe 판정도 통과는 되지만 점수와 콤보 보너스가 낮습니다.
+        HP로 종료되지 않고, 곡이 끝날 때까지 점수를 계속 누적합니다.
         판정으로 HERO 게이지를 채우면 HERO MODE가 열리고 점수가 2배가 됩니다.
-        토스 앱에서 광고를 보면 라운드당 1회 이어하기도 사용할 수 있습니다.
+      </p>
+      <p class="sheet-copy">
+        트랙 셀렉트 좌우 화살표로 곡을 바꾸고, 스킨 버튼으로 히어로 룩을 바로 변경할 수 있습니다.
       </p>
       <div class="info-links">
         <a href="../privacy.html">개인정보처리방침</a>
@@ -141,7 +161,7 @@
         <a href="../contact.html">문의하기</a>
       </div>
       <p class="credit">
-        BGM: "A Hero Of The 80s" by Grand Project (Pixabay)
+        BGM: Grand Project, NickPanekAIAssets, Niknet_Art tracks from Pixabay
       </p>
     </div>
   </div>

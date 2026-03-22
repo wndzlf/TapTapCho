@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "markers": [
+    { "beat": 0, "strength": "drop", "forceSpawn": true },
+    { "beat": 4, "strength": "accent" },
+    { "beat": 8, "strength": "strong" },
+    { "beat": 12, "strength": "accent" },
+    { "beat": 16, "strength": "strong" },
+    { "beat": 24, "strength": "accent" },
+    { "beat": 32, "strength": "drop", "forceSpawn": true },
+    { "beat": 40, "strength": "accent" },
+    { "beat": 48, "strength": "strong" },
+    { "beat": 56, "strength": "accent" },
+    { "beat": 64, "strength": "drop", "forceSpawn": true },
+    { "beat": 72, "strength": "strong" },
+    { "beat": 80, "strength": "accent" },
+    { "beat": 88, "strength": "strong" },
+    { "beat": 96, "strength": "drop", "forceSpawn": true },
+    { "beat": 112, "strength": "accent" },
+    { "beat": 128, "strength": "drop", "forceSpawn": true },
+    { "beat": 144, "strength": "strong" },
+    { "beat": 160, "strength": "drop", "forceSpawn": true },
+    { "beat": 176, "strength": "strong" },
+    { "beat": 192, "strength": "drop", "forceSpawn": true },
+    { "beat": 208, "strength": "strong" },
+    { "beat": 224, "strength": "drop", "forceSpawn": true },
+    { "beat": 240, "strength": "strong" },
+    { "beat": 256, "strength": "drop", "forceSpawn": true },
+    { "beat": 272, "strength": "strong" },
+    { "beat": 288, "strength": "drop", "forceSpawn": true }
+  ],
+  "sections": [
+    { "fromBeat": 0, "toBeat": 31, "density": 0.42, "doubleChance": 0.04, "burstChance": 0.0 },
+    { "fromBeat": 32, "toBeat": 79, "density": 0.63, "doubleChance": 0.12, "burstChance": 0.03 },
+    { "fromBeat": 80, "toBeat": 143, "density": 0.74, "doubleChance": 0.2, "burstChance": 0.06 },
+    { "fromBeat": 144, "toBeat": 223, "density": 0.82, "doubleChance": 0.28, "burstChance": 0.1 },
+    { "fromBeat": 224, "toBeat": 319, "density": 0.9, "doubleChance": 0.34, "burstChance": 0.14 }
+  ]
+}

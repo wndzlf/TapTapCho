@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "markers": [
+    { "beat": 0, "strength": "drop", "forceSpawn": true },
+    { "beat": 16, "strength": "accent" },
+    { "beat": 32, "strength": "strong" },
+    { "beat": 64, "strength": "drop", "forceSpawn": true },
+    { "beat": 96, "strength": "strong" },
+    { "beat": 128, "strength": "drop", "forceSpawn": true },
+    { "beat": 176, "strength": "strong" },
+    { "beat": 224, "strength": "drop", "forceSpawn": true },
+    { "beat": 272, "strength": "strong" }
+  ],
+  "sections": [
+    { "fromBeat": 0, "toBeat": 47, "density": 0.48, "doubleChance": 0.06, "burstChance": 0.01 },
+    { "fromBeat": 48, "toBeat": 111, "density": 0.62, "doubleChance": 0.12, "burstChance": 0.03 },
+    { "fromBeat": 112, "toBeat": 191, "density": 0.74, "doubleChance": 0.2, "burstChance": 0.07 },
+    { "fromBeat": 192, "toBeat": 255, "density": 0.82, "doubleChance": 0.27, "burstChance": 0.1 },
+    { "fromBeat": 256, "toBeat": 320, "density": 0.88, "doubleChance": 0.31, "burstChance": 0.13 }
+  ]
+}

@@ -80,6 +80,34 @@ async function buildWebBundle() {
     path.join(OUTDIR, 'assets', 'audio', 'a-hero-of-the-80s-126684.mp3'),
   );
   await copyRawFile(
+    path.join(GAME_ROOT, 'assets', 'audio', 'on-the-road-to-the-eighties-59sec-177566.mp3'),
+    path.join(OUTDIR, 'assets', 'audio', 'on-the-road-to-the-eighties-59sec-177566.mp3'),
+  );
+  await copyRawFile(
+    path.join(GAME_ROOT, 'assets', 'audio', '80s-video-game-battle-chiptune-216255.mp3'),
+    path.join(OUTDIR, 'assets', 'audio', '80s-video-game-battle-chiptune-216255.mp3'),
+  );
+  await copyRawFile(
+    path.join(GAME_ROOT, 'assets', 'audio', 'retro-8bit-happy-videogame-music-418486.mp3'),
+    path.join(OUTDIR, 'assets', 'audio', 'retro-8bit-happy-videogame-music-418486.mp3'),
+  );
+  await copyRawFile(
+    path.join(GAME_ROOT, 'assets', 'beatmaps', 'a-hero-of-the-80s-126684.json'),
+    path.join(OUTDIR, 'assets', 'beatmaps', 'a-hero-of-the-80s-126684.json'),
+  );
+  await copyRawFile(
+    path.join(GAME_ROOT, 'assets', 'beatmaps', 'on-the-road-to-the-eighties-59sec-177566.json'),
+    path.join(OUTDIR, 'assets', 'beatmaps', 'on-the-road-to-the-eighties-59sec-177566.json'),
+  );
+  await copyRawFile(
+    path.join(GAME_ROOT, 'assets', 'beatmaps', '80s-video-game-battle-chiptune-216255.json'),
+    path.join(OUTDIR, 'assets', 'beatmaps', '80s-video-game-battle-chiptune-216255.json'),
+  );
+  await copyRawFile(
+    path.join(GAME_ROOT, 'assets', 'beatmaps', 'retro-8bit-happy-videogame-music-418486.json'),
+    path.join(OUTDIR, 'assets', 'beatmaps', 'retro-8bit-happy-videogame-music-418486.json'),
+  );
+  await copyRawFile(
     path.join(REPO_ROOT, 'assets', 'css', 'site-quality.css'),
     path.join(OUTDIR, 'assets', 'css', 'site-quality.css'),
   );
