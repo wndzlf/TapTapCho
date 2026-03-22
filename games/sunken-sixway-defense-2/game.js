@@ -52,6 +52,11 @@ const W = 720;
 const H = 1280;
 canvas.width = W;
 canvas.height = H;
+const TAU = Math.PI * 2;
+const isCompactViewport = window.matchMedia('(max-width: 860px)').matches;
+const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+const isMobileView = isCompactViewport || isCoarsePointer;
+const MAX_BULLETS = 620;
 
 const GRID_CELL = 64;
 const GRID = {
@@ -499,6 +504,7 @@ function makeTower(kind, c, r) {
     kind,
     c,
     r,
+    footprint: 1,
     x: center.x,
     y: center.y,
     level: 1,
@@ -1458,42 +1464,330 @@ function drawGrid() {
 }
 
 function drawTower(tower, now) {
-  const pulse = 0.5 + 0.5 * Math.sin(now * 0.008 + tower.id * 0.41);
-  const ringR = 14 + tower.level * 1.8;
+  drawTowerSunken(tower, now);
+}
+
+function drawTowerSunken(tower, now) {
+  const isSplash = tower.kind === 'sunkenSplash';
+  const isLong = false;
+  const isNova = tower.kind === 'sunkenNova';
+  const isStun = tower.kind === 'sunkenStun';
+  const isHammer = tower.kind === 'sunkenHammer';
+  const isTanker = tower.kind === 'tankerSunken';
+  const scale = 1 + ((tower.footprint || 1) - 1) * 0.86;
+  const pulse = 0.5 + 0.5 * Math.sin(now * 4 + tower.c * 0.31 + tower.r * 0.17);
+  const ringR = (8.4 + tower.level * 1.3) * scale;
+  const levelPower = clamp((tower.level - 1) / 2, 0, 1);
 
   ctx.save();
   ctx.translate(tower.x, tower.y);
 
-  ctx.fillStyle = 'rgba(12, 19, 30, 0.82)';
+  ctx.fillStyle = '#131f2d';
   ctx.beginPath();
-  ctx.arc(0, 0, ringR + 6, 0, Math.PI * 2);
+  ctx.arc(0, 0, ringR + 2.8, 0, TAU);
   ctx.fill();
 
-  ctx.fillStyle = tower.color;
-  ctx.globalAlpha = 0.18 + pulse * 0.2;
+  ctx.strokeStyle = isSplash
+    ? `rgba(255, 201, 143, ${0.34 + pulse * 0.24})`
+    : isLong
+      ? `rgba(152, 194, 255, ${0.34 + pulse * 0.24})`
+    : isNova
+      ? `rgba(204, 163, 255, ${0.34 + pulse * 0.24})`
+    : isStun
+      ? `rgba(255, 215, 112, ${0.34 + pulse * 0.24})`
+    : isTanker
+      ? `rgba(170, 255, 201, ${0.34 + pulse * 0.24})`
+    : `rgba(147, 225, 255, ${0.34 + pulse * 0.24})`;
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(0, 0, ringR + 11 + pulse * 2.2, 0, Math.PI * 2);
+  ctx.arc(0, 0, ringR + 1.3, 0, TAU);
+  ctx.stroke();
+
+  const liteTowerDraw = isMobileView
+    && (
+      state.towers.length >= 52
+      || state.bullets.length >= MAX_BULLETS * 0.78
+    );
+  if (liteTowerDraw) {
+    ctx.fillStyle = isSplash
+      ? '#ffb67f'
+      : isNova
+        ? '#cda4ff'
+      : isStun
+        ? '#ffd173'
+      : isTanker
+        ? '#9effc4'
+        : '#8adfff';
+    ctx.beginPath();
+    ctx.arc(0, 0, ringR * 0.58, 0, TAU);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(234, 245, 255, 0.82)';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(0, 0, ringR * 0.88, 0, TAU);
+    ctx.stroke();
+
+    if (isHammer) {
+      ctx.fillStyle = '#ff6a6a';
+      ctx.fillRect(-4.2, -2.4, 8.4, 4.8);
+    } else if (isStun) {
+      ctx.strokeStyle = '#fff0b2';
+      ctx.lineWidth = 1.7;
+      ctx.beginPath();
+      ctx.moveTo(-3.2, -4.2);
+      ctx.lineTo(1.6, -1.1);
+      ctx.lineTo(-1.2, 1.4);
+      ctx.lineTo(3.8, 4.5);
+      ctx.stroke();
+    } else if (isTanker) {
+      ctx.strokeStyle = 'rgba(226, 255, 238, 0.92)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-4.4, 0);
+      ctx.lineTo(4.4, 0);
+      ctx.moveTo(0, -4.4);
+      ctx.lineTo(0, 4.4);
+      ctx.stroke();
+    } else if (tower.kind === 'fusion') {
+      ctx.strokeStyle = 'rgba(220, 255, 255, 0.92)';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(-4.4, -4.4);
+      ctx.lineTo(4.4, 4.4);
+      ctx.moveTo(4.4, -4.4);
+      ctx.lineTo(-4.4, 4.4);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+    return;
+  }
+
+  const aura = ctx.createRadialGradient(0, 0, ringR * 0.45, 0, 0, ringR + 12 + tower.level * 2.2);
+  if (isSplash) {
+    aura.addColorStop(0, 'rgba(255, 224, 156, 0.42)');
+    aura.addColorStop(0.58, 'rgba(255, 171, 93, 0.24)');
+    aura.addColorStop(1, 'rgba(255, 117, 42, 0)');
+  } else if (isLong) {
+    aura.addColorStop(0, 'rgba(206, 226, 255, 0.48)');
+    aura.addColorStop(0.58, 'rgba(123, 171, 255, 0.27)');
+    aura.addColorStop(1, 'rgba(56, 88, 156, 0)');
+  } else if (isNova) {
+    aura.addColorStop(0, 'rgba(229, 204, 255, 0.46)');
+    aura.addColorStop(0.58, 'rgba(182, 129, 255, 0.26)');
+    aura.addColorStop(1, 'rgba(85, 45, 138, 0)');
+  } else if (isStun) {
+    aura.addColorStop(0, 'rgba(255, 232, 157, 0.46)');
+    aura.addColorStop(0.58, 'rgba(255, 196, 84, 0.26)');
+    aura.addColorStop(1, 'rgba(146, 91, 24, 0)');
+  } else if (isTanker) {
+    aura.addColorStop(0, 'rgba(188, 255, 210, 0.46)');
+    aura.addColorStop(0.58, 'rgba(100, 205, 156, 0.27)');
+    aura.addColorStop(1, 'rgba(29, 86, 66, 0)');
+  } else {
+    aura.addColorStop(0, 'rgba(188, 245, 255, 0.4)');
+    aura.addColorStop(0.58, 'rgba(122, 214, 255, 0.24)');
+    aura.addColorStop(1, 'rgba(58, 135, 186, 0)');
+  }
+  ctx.globalAlpha = 0.24 + levelPower * 0.2 + pulse * 0.08;
+  ctx.fillStyle = aura;
+  ctx.beginPath();
+  ctx.arc(0, 0, ringR + 10 + tower.level * 1.2 + pulse * 1.5, 0, TAU);
   ctx.fill();
   ctx.globalAlpha = 1;
 
-  const core = ctx.createRadialGradient(0, 0, 2, 0, 0, ringR);
-  core.addColorStop(0, '#ffffff');
-  core.addColorStop(0.45, tower.color);
-  core.addColorStop(1, '#1c2430');
-  ctx.fillStyle = core;
+  const vortex = ctx.createRadialGradient(0, 0, 1, 0, 0, ringR);
+  if (isSplash) {
+    vortex.addColorStop(0, '#ffd27e');
+    vortex.addColorStop(0.65, '#b0763f');
+    vortex.addColorStop(1, '#2e1e12');
+  } else if (isLong) {
+    vortex.addColorStop(0, '#d5e4ff');
+    vortex.addColorStop(0.65, '#5e89d5');
+    vortex.addColorStop(1, '#15203a');
+  } else if (isNova) {
+    vortex.addColorStop(0, '#e0c6ff');
+    vortex.addColorStop(0.65, '#8962c5');
+    vortex.addColorStop(1, '#28163d');
+  } else if (isStun) {
+    vortex.addColorStop(0, '#ffe9b0');
+    vortex.addColorStop(0.65, '#c08933');
+    vortex.addColorStop(1, '#35230d');
+  } else if (isTanker) {
+    vortex.addColorStop(0, '#c6ffd7');
+    vortex.addColorStop(0.65, '#4f9f78');
+    vortex.addColorStop(1, '#112d24');
+  } else {
+    vortex.addColorStop(0, '#7ee8ff');
+    vortex.addColorStop(0.65, '#3e8ab5');
+    vortex.addColorStop(1, '#11273a');
+  }
+  ctx.fillStyle = vortex;
   ctx.beginPath();
-  ctx.arc(0, 0, ringR, 0, Math.PI * 2);
+  ctx.arc(0, 0, ringR, 0, TAU);
   ctx.fill();
 
-  ctx.strokeStyle = 'rgba(237, 247, 255, 0.78)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.arc(0, 0, ringR + 2.5 + pulse * 1.6, 0, Math.PI * 2);
-  ctx.stroke();
+  ctx.strokeStyle = isSplash
+    ? 'rgba(255, 232, 171, 0.62)'
+    : isLong
+      ? 'rgba(216, 232, 255, 0.68)'
+    : isNova
+      ? 'rgba(225, 208, 255, 0.68)'
+    : isStun
+      ? 'rgba(255, 230, 163, 0.68)'
+    : isTanker
+      ? 'rgba(205, 255, 219, 0.72)'
+      : 'rgba(196, 242, 255, 0.62)';
+  ctx.lineWidth = 1.6;
+  for (let i = 0; i < 2 + tower.level; i += 1) {
+    const rot = now * (0.8 + i * 0.22) + i * 1.2;
+    ctx.beginPath();
+    ctx.arc(0, 0, 3.1 + i * 1.6, rot, rot + Math.PI * 0.95);
+    ctx.stroke();
+  }
 
-  if (tower.kind === 'tankerSunken') {
-    ctx.strokeStyle = 'rgba(220, 255, 234, 0.95)';
+  if (tower.level >= 2) {
+    const orbitCount = 3 + tower.level;
+    ctx.fillStyle = isSplash
+      ? 'rgba(255, 216, 143, 0.84)'
+      : isLong
+        ? 'rgba(196, 221, 255, 0.86)'
+      : isNova
+        ? 'rgba(222, 204, 255, 0.86)'
+      : isStun
+        ? 'rgba(255, 226, 152, 0.86)'
+      : isTanker
+        ? 'rgba(205, 255, 224, 0.88)'
+        : 'rgba(197, 242, 255, 0.84)';
+    for (let i = 0; i < orbitCount; i += 1) {
+      const orbitA = now * (1.2 + i * 0.07) + i * (TAU / orbitCount);
+      const orbitR = ringR + 5.5 + tower.level * 1.7 + Math.sin(now * 2.5 + i) * 1.2;
+      const size = 1.2 + levelPower * 0.9;
+      ctx.beginPath();
+      ctx.arc(Math.cos(orbitA) * orbitR, Math.sin(orbitA) * orbitR, size, 0, TAU);
+      ctx.fill();
+    }
+  }
+
+  const teeth = 5 + tower.level * 2;
+  ctx.fillStyle = isSplash
+    ? 'rgba(255, 215, 142, 0.78)'
+    : isLong
+      ? 'rgba(172, 206, 255, 0.82)'
+    : isNova
+      ? 'rgba(205, 179, 255, 0.82)'
+    : isStun
+      ? 'rgba(255, 219, 140, 0.82)'
+    : isTanker
+      ? 'rgba(179, 245, 203, 0.84)'
+      : 'rgba(198, 246, 255, 0.78)';
+  for (let i = 0; i < teeth; i += 1) {
+    const a = (i / teeth) * TAU + now * 0.3;
+    const inner = ringR + 0.4;
+    const outer = ringR + 4.2 + tower.level * 0.7;
+    const spread = 0.09;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a - spread) * inner, Math.sin(a - spread) * inner);
+    ctx.lineTo(Math.cos(a) * outer, Math.sin(a) * outer);
+    ctx.lineTo(Math.cos(a + spread) * inner, Math.sin(a + spread) * inner);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  if (isHammer) {
+    ctx.fillStyle = 'rgba(255, 96, 96, 0.92)';
+    ctx.fillRect(-5, -3, 10, 6);
+    ctx.fillStyle = 'rgba(255, 210, 120, 0.9)';
+    ctx.fillRect(-1, 3, 2, 8);
+  }
+
+  if (isNova) {
+    ctx.strokeStyle = 'rgba(210, 170, 255, 0.9)';
     ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < 6; i += 1) {
+      const a = (i / 6) * TAU + now * 0.6;
+      const r1 = ringR * 0.35;
+      const r2 = ringR * 0.7;
+      ctx.moveTo(Math.cos(a) * r1, Math.sin(a) * r1);
+      ctx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2);
+    }
+    ctx.stroke();
+  }
+
+  if (isStun) {
+    ctx.strokeStyle = 'rgba(140, 255, 170, 0.95)';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(-4, -6);
+    ctx.lineTo(2, -2);
+    ctx.lineTo(-1, 2);
+    ctx.lineTo(5, 6);
+    ctx.stroke();
+  }
+
+  if (isTanker) {
+    const phaseSeed = Number.isFinite(tower.id) ? tower.id : (tower.c || 0) * 97 + (tower.r || 0) * 13;
+    const shieldPulse = 0.5 + 0.5 * Math.sin(now * 3.6 + phaseSeed * 0.17);
+    const baseShieldR = ringR + 7.5 + tower.level * 0.8 + shieldPulse * 1.2;
+    const hitFx = clamp(tower.guardHitFx || 0, 0, 1);
+    const hitPulse = clamp(tower.guardHitPulse || 0, 0, 1);
+
+    ctx.strokeStyle = `rgba(167, 255, 207, ${0.28 + shieldPulse * 0.18})`;
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.arc(0, 0, baseShieldR, 0, TAU);
+    ctx.stroke();
+
+    for (let i = 0; i < 6; i += 1) {
+      const a = (i / 6) * TAU + now * 0.45;
+      const r1 = baseShieldR - 2.4;
+      const r2 = baseShieldR + 2.2;
+      ctx.strokeStyle = `rgba(145, 241, 188, ${0.2 + shieldPulse * 0.18})`;
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * r1, Math.sin(a) * r1);
+      ctx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2);
+      ctx.stroke();
+    }
+
+    if (hitFx > 0.001) {
+      const burstR = baseShieldR + (1 - hitFx) * 13 + hitPulse * 3.5;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+
+      const shell = ctx.createRadialGradient(0, 0, ringR * 0.8, 0, 0, burstR + 10);
+      shell.addColorStop(0, `rgba(225, 255, 236, ${0.16 + hitFx * 0.22})`);
+      shell.addColorStop(0.56, `rgba(126, 236, 181, ${0.12 + hitFx * 0.2})`);
+      shell.addColorStop(1, 'rgba(54, 134, 95, 0)');
+      ctx.fillStyle = shell;
+      ctx.beginPath();
+      ctx.arc(0, 0, burstR + 10, 0, TAU);
+      ctx.fill();
+
+      ctx.strokeStyle = `rgba(217, 255, 229, ${0.42 + hitFx * 0.4})`;
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.arc(0, 0, burstR, 0, TAU);
+      ctx.stroke();
+
+      ctx.strokeStyle = `rgba(178, 255, 211, ${0.26 + hitFx * 0.34})`;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      for (let i = 0; i < 8; i += 1) {
+        const a = (i / 8) * TAU + now * 0.9;
+        const r1 = baseShieldR * 0.6;
+        const r2 = burstR + 4 + hitPulse * 4;
+        ctx.moveTo(Math.cos(a) * r1, Math.sin(a) * r1);
+        ctx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    ctx.strokeStyle = 'rgba(198, 255, 214, 0.92)';
+    ctx.lineWidth = 2.2;
     ctx.beginPath();
     ctx.moveTo(-5, 0);
     ctx.lineTo(5, 0);
@@ -1502,25 +1796,114 @@ function drawTower(tower, now) {
     ctx.stroke();
   }
 
-  if (tower.kind === 'sunkenHammer') {
-    ctx.fillStyle = '#ffdf9f';
-    ctx.fillRect(-1.4, 2, 2.8, 8);
-    ctx.fillStyle = '#ff6f6f';
-    ctx.fillRect(-5.5, -3, 11, 6);
+  if (isSplash) {
+    ctx.strokeStyle = 'rgba(20, 20, 20, 0.9)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, ringR * 0.55, 0, TAU);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 0, ringR * 0.28, 0, TAU);
+    ctx.stroke();
+  }
+
+  if (tower.kind === 'fusion') {
+    if (isMobileView && state.towers.length >= 70) {
+      ctx.strokeStyle = 'rgba(200, 255, 255, 0.9)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, ringR * 0.9, 0, TAU);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(150, 255, 230, 0.6)';
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(-ringR * 0.7, 0);
+      ctx.lineTo(ringR * 0.7, 0);
+      ctx.moveTo(0, -ringR * 0.7);
+      ctx.lineTo(0, ringR * 0.7);
+      ctx.stroke();
+      return;
+    }
+
+    const starR1 = ringR * 0.45;
+    const starR2 = ringR * 0.75;
+    ctx.strokeStyle = 'rgba(200, 255, 255, 0.95)';
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    for (let i = 0; i < 10; i += 1) {
+      const a = (i / 10) * TAU + now * 0.9;
+      const r = i % 2 === 0 ? starR2 : starR1;
+      ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(120, 255, 230, 0.65)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(0, 0, ringR * 0.9, 0, TAU);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(0, 0, ringR * 1.15, 0, TAU);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    for (let i = 0; i < 6; i += 1) {
+      const a = (i / 6) * TAU + now * 1.3;
+      const r1 = ringR * 0.2;
+      const r2 = ringR * 1.0;
+      ctx.moveTo(Math.cos(a) * r1, Math.sin(a) * r1);
+      ctx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2);
+    }
+    ctx.stroke();
   }
 
   if (tower.level >= 3) {
-    ctx.fillStyle = '#ffe4b2';
+    ctx.strokeStyle = isSplash
+      ? `rgba(255, 190, 115, ${0.66 + pulse * 0.2})`
+      : isLong
+        ? `rgba(133, 182, 255, ${0.66 + pulse * 0.2})`
+      : isNova
+        ? `rgba(188, 146, 255, ${0.66 + pulse * 0.2})`
+      : isStun
+        ? `rgba(255, 204, 99, ${0.66 + pulse * 0.2})`
+      : isTanker
+        ? `rgba(172, 255, 199, ${0.66 + pulse * 0.2})`
+        : `rgba(162, 236, 255, ${0.66 + pulse * 0.2})`;
+    ctx.lineWidth = 1.8;
     for (let i = 0; i < 4; i += 1) {
-      const a = (i / 4) * Math.PI * 2 + now * 0.002;
+      const beamA = now * 1.7 + i * (TAU / 4);
       ctx.beginPath();
-      ctx.arc(Math.cos(a) * (ringR + 5), Math.sin(a) * (ringR + 5), 1.7, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.moveTo(Math.cos(beamA) * (ringR - 2.4), Math.sin(beamA) * (ringR - 2.4));
+      ctx.lineTo(Math.cos(beamA) * (ringR + 10 + pulse * 2.4), Math.sin(beamA) * (ringR + 10 + pulse * 2.4));
+      ctx.stroke();
     }
+  }
+
+  if (isSplash || isLong || isNova || isStun || isTanker) {
+    ctx.strokeStyle = isSplash
+      ? `rgba(255, 169, 86, ${0.52 + pulse * 0.24})`
+      : isLong
+        ? `rgba(118, 170, 255, ${0.52 + pulse * 0.24})`
+      : isNova
+        ? `rgba(169, 117, 255, ${0.52 + pulse * 0.24})`
+      : isTanker
+        ? `rgba(113, 214, 154, ${0.52 + pulse * 0.24})`
+      : `rgba(255, 195, 74, ${0.52 + pulse * 0.24})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, ringR + 6 + pulse * 1.5, 0, TAU);
+    ctx.stroke();
   }
 
   ctx.restore();
 }
+
 
 function drawEnemy(enemy) {
   const img = ENEMY_TANK_IMAGES[enemy.tank];
