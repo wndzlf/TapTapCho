@@ -1,11 +1,15 @@
 const RANK_LIMIT = 6;
 const STORE_LIMIT = 8;
+const FILTER_PREVIEW_LIMIT = 8;
+const SEARCH_RESULT_LIMIT = 8;
 
 const state = {
   area: "all",
   industry: "all",
   areaQuery: "",
   industryQuery: "",
+  pickerType: null,
+  pickerQuery: "",
   data: null,
 };
 
@@ -14,6 +18,10 @@ const refs = {
   snapshotChip: document.getElementById("snapshot-chip"),
   areaSearch: document.getElementById("area-search"),
   industrySearch: document.getElementById("industry-search"),
+  areaSuggestions: document.getElementById("area-suggestions"),
+  industrySuggestions: document.getElementById("industry-suggestions"),
+  areaPickerOpen: document.getElementById("area-picker-open"),
+  industryPickerOpen: document.getElementById("industry-picker-open"),
   areaHelper: document.getElementById("area-helper"),
   industryHelper: document.getElementById("industry-helper"),
   areaFilter: document.getElementById("area-filter"),
@@ -32,6 +40,15 @@ const refs = {
   categoryList: document.getElementById("category-list"),
   storeNote: document.getElementById("store-note"),
   storeList: document.getElementById("store-list"),
+  filterPicker: document.getElementById("filter-picker"),
+  pickerBackdrop: document.getElementById("picker-backdrop"),
+  pickerKicker: document.getElementById("picker-kicker"),
+  pickerTitle: document.getElementById("picker-title"),
+  pickerNote: document.getElementById("picker-note"),
+  pickerSearch: document.getElementById("picker-search"),
+  pickerQuick: document.getElementById("picker-quick"),
+  pickerGroups: document.getElementById("picker-groups"),
+  pickerClose: document.getElementById("picker-close"),
 };
 
 const getAreaId = (item) => item.adongCd || item.signguCd || "";
@@ -478,6 +495,7 @@ function buildAreaOptions() {
         id: getAreaId(item),
         label: getAreaLabel(item),
         hint: item.ctprvnNm || item.signguNm,
+        groupLabel: item.signguNm || item.ctprvnNm || "기타 동네",
         count: groupedItems.length,
         searchText: `${item.ctprvnNm} ${item.signguNm} ${item.adongNm}`.toLowerCase(),
       };
@@ -489,6 +507,7 @@ function buildAreaOptions() {
       id: "all",
       label: "전체 동네",
       hint: "전체",
+      groupLabel: "빠른 선택",
       count: getAllItems().length,
       searchText: "전체 동네",
     },
@@ -504,6 +523,7 @@ function buildIndustryOptions() {
         id: getIndustryId(item),
         label: getIndustryLabel(item),
         hint: item.indsLclsNm || "업종",
+        groupLabel: item.indsLclsNm || "기타 업종",
         count: groupedItems.length,
         searchText: `${item.indsLclsNm} ${item.indsMclsNm} ${item.indsSclsNm}`.toLowerCase(),
       };
@@ -515,6 +535,7 @@ function buildIndustryOptions() {
       id: "all",
       label: "전체 업종",
       hint: "전체",
+      groupLabel: "빠른 선택",
       count: getAllItems().length,
       searchText: "전체 업종",
     },
@@ -566,31 +587,83 @@ function buildIndustryEntries(items) {
     });
 }
 
-function getVisibleOptions(options, query, selectedId) {
-  const normalizedQuery = query.trim().toLowerCase();
-  if (!normalizedQuery) {
-    return options;
-  }
-
-  const [allOption, ...rest] = options;
-  const matched = rest.filter((option) => option.searchText.includes(normalizedQuery));
-  const selectedOption = rest.find((option) => option.id === selectedId);
-
-  if (selectedOption && !matched.some((option) => option.id === selectedOption.id)) {
-    matched.unshift(selectedOption);
-  }
-
-  return [allOption, ...matched];
+function getOptionById(options, id) {
+  return options.find((option) => option.id === id) || null;
 }
 
-function renderFilters(target, options, selectedId, onChange) {
+function getMatchedOptions(options, query, limit = SEARCH_RESULT_LIMIT) {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) {
+    return [];
+  }
+
+  return options
+    .filter((option) => option.searchText.includes(normalizedQuery))
+    .slice(0, limit);
+}
+
+function getContextualFilterEntries(type) {
+  const allItems = getAllItems();
+  if (type === "area") {
+    const sourceItems = state.industry === "all" ? allItems : allItems.filter(matchesSelectedIndustry);
+    return buildAreaEntries(sourceItems);
+  }
+
+  const sourceItems = state.area === "all" ? allItems : allItems.filter(matchesSelectedArea);
+  return buildIndustryEntries(sourceItems);
+}
+
+function getFilterPreviewOptions(type, options, selectedId) {
+  const previewOptions = [];
+  const allOption = options[0];
+  const selectedOption = getOptionById(options, selectedId);
+
+  if (allOption) {
+    previewOptions.push(allOption);
+  }
+
+  if (selectedOption && selectedOption.id !== allOption?.id) {
+    previewOptions.push(selectedOption);
+  }
+
+  getContextualFilterEntries(type).forEach((entry) => {
+    const option = getOptionById(options, entry.id);
+    if (option && !previewOptions.some((previewOption) => previewOption.id === option.id)) {
+      previewOptions.push(option);
+    }
+  });
+
+  return previewOptions.slice(0, FILTER_PREVIEW_LIMIT);
+}
+
+function getFilterHelperText(type, totalCount, previewCount, matchCount) {
+  const label = type === "area" ? "행정동" : "업종";
+  if (matchCount !== null) {
+    return matchCount
+      ? `${totalCount}개 ${label} 중 검색 결과 ${matchCount}개`
+      : `${totalCount}개 ${label} 중 검색 결과가 없습니다.`;
+  }
+
+  return `${totalCount}개 ${label} 중 지금 볼 ${previewCount}개만 먼저 보여줍니다. 나머지는 전체 보기에서 찾습니다.`;
+}
+
+function selectFilter(type, id, shouldClosePicker = false) {
+  state[type] = id;
+  state[`${type}Query`] = "";
+
+  if (shouldClosePicker) {
+    state.pickerType = null;
+    state.pickerQuery = "";
+  }
+
+  render();
+}
+
+function renderFilterPreview(target, options, selectedId, type) {
   target.innerHTML = "";
 
-  if (options.length <= 1) {
-    const emptyHint = document.createElement("div");
-    emptyHint.className = "empty-search";
-    emptyHint.textContent = "검색 결과가 없습니다.";
-    target.appendChild(emptyHint);
+  if (!options.length) {
+    target.innerHTML = `<div class="empty-search">추천 항목을 준비하고 있습니다.</div>`;
     return;
   }
 
@@ -598,36 +671,212 @@ function renderFilters(target, options, selectedId, onChange) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `filter-button${selectedId === option.id ? " is-active" : ""}`;
+    button.textContent = option.label;
     button.title = option.hint ? `${option.hint} · ${option.count}건` : option.label;
-    button.append(option.label);
-
-    if (option.id !== "all") {
-      const count = document.createElement("span");
-      count.className = "filter-count";
-      count.textContent = String(option.count);
-      button.appendChild(count);
-    }
-
-    button.addEventListener("click", () => onChange(option.id));
+    button.addEventListener("click", () => selectFilter(type, option.id));
     target.appendChild(button);
   });
 }
 
-function renderFilterSections() {
-  const areaOptions = buildAreaOptions();
-  const visibleAreaOptions = getVisibleOptions(areaOptions, state.areaQuery, state.area);
-  refs.areaHelper.textContent = `${areaOptions.length - 1}개 행정동 중 ${Math.max(visibleAreaOptions.length - 1, 0)}개 표시`;
-  renderFilters(refs.areaFilter, visibleAreaOptions, state.area, (areaId) => {
-    state.area = areaId;
-    render();
+function renderSuggestionList(target, options, query, selectedId, type) {
+  const normalizedQuery = query.trim();
+  if (!normalizedQuery) {
+    target.hidden = true;
+    target.innerHTML = "";
+    return 0;
+  }
+
+  const matchedOptions = getMatchedOptions(options, normalizedQuery);
+  target.hidden = false;
+
+  if (!matchedOptions.length) {
+    target.innerHTML = `<article class="suggestion-empty">검색 결과가 없습니다.</article>`;
+    return 0;
+  }
+
+  target.innerHTML = matchedOptions
+    .map((option) => {
+      const meta = option.id === "all"
+        ? "필터 해제"
+        : `${escapeHtml(option.hint || "")} · ${formatNumber(option.count)}건`;
+      return `
+        <button
+          type="button"
+          class="suggestion-card${selectedId === option.id ? " is-active" : ""}"
+          data-suggestion-id="${escapeHtml(option.id)}"
+        >
+          <span class="suggestion-copy">
+            <span class="suggestion-title">${escapeHtml(option.label)}</span>
+            <span class="suggestion-meta">${meta}</span>
+          </span>
+        </button>
+      `;
+    })
+    .join("");
+
+  target.querySelectorAll("[data-suggestion-id]").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectFilter(type, button.getAttribute("data-suggestion-id"));
+    });
   });
 
+  return matchedOptions.length;
+}
+
+function renderFilterSections() {
+  const areaOptions = buildAreaOptions();
+  const areaPreview = getFilterPreviewOptions("area", areaOptions, state.area);
+  refs.areaSearch.value = state.areaQuery;
+  const areaMatchCount = renderSuggestionList(
+    refs.areaSuggestions,
+    areaOptions,
+    state.areaQuery,
+    state.area,
+    "area",
+  );
+  refs.areaHelper.textContent = getFilterHelperText(
+    "area",
+    areaOptions.length - 1,
+    areaPreview.length,
+    state.areaQuery.trim() ? areaMatchCount : null,
+  );
+  renderFilterPreview(refs.areaFilter, areaPreview, state.area, "area");
+
   const industryOptions = buildIndustryOptions();
-  const visibleIndustryOptions = getVisibleOptions(industryOptions, state.industryQuery, state.industry);
-  refs.industryHelper.textContent = `${industryOptions.length - 1}개 업종 중 ${Math.max(visibleIndustryOptions.length - 1, 0)}개 표시`;
-  renderFilters(refs.industryFilter, visibleIndustryOptions, state.industry, (industryId) => {
-    state.industry = industryId;
-    render();
+  const industryPreview = getFilterPreviewOptions("industry", industryOptions, state.industry);
+  refs.industrySearch.value = state.industryQuery;
+  const industryMatchCount = renderSuggestionList(
+    refs.industrySuggestions,
+    industryOptions,
+    state.industryQuery,
+    state.industry,
+    "industry",
+  );
+  refs.industryHelper.textContent = getFilterHelperText(
+    "industry",
+    industryOptions.length - 1,
+    industryPreview.length,
+    state.industryQuery.trim() ? industryMatchCount : null,
+  );
+  renderFilterPreview(refs.industryFilter, industryPreview, state.industry, "industry");
+}
+
+function buildPickerGroups(options) {
+  return Array.from(groupBy(options, (option) => option.groupLabel || "기타").entries())
+    .map(([label, groupedOptions]) => {
+      return {
+        label,
+        totalCount: groupedOptions.reduce((sum, option) => sum + option.count, 0),
+        options: [...groupedOptions].sort((left, right) => {
+          if (right.count !== left.count) {
+            return right.count - left.count;
+          }
+
+          return left.label.localeCompare(right.label, "ko");
+        }),
+      };
+    })
+    .sort((left, right) => {
+      if (right.totalCount !== left.totalCount) {
+        return right.totalCount - left.totalCount;
+      }
+
+      return left.label.localeCompare(right.label, "ko");
+    });
+}
+
+function renderPickerOption(option, selectedId) {
+  const meta = option.id === "all" ? "필터 해제" : `${escapeHtml(option.hint || "")} · ${formatNumber(option.count)}건`;
+  return `
+    <button
+      type="button"
+      class="picker-option${selectedId === option.id ? " is-active" : ""}"
+      data-picker-option-id="${escapeHtml(option.id)}"
+    >
+      <span class="picker-option-label">${escapeHtml(option.label)}</span>
+      <span class="picker-option-meta">${meta}</span>
+    </button>
+  `;
+}
+
+function openPicker(type) {
+  state.pickerType = type;
+  state.pickerQuery = "";
+  render();
+  requestAnimationFrame(() => {
+    refs.pickerSearch.focus();
+  });
+}
+
+function closePicker() {
+  state.pickerType = null;
+  state.pickerQuery = "";
+  render();
+}
+
+function renderPicker() {
+  const isOpen = Boolean(state.pickerType);
+  document.body.classList.toggle("picker-open", isOpen);
+  refs.filterPicker.hidden = !isOpen;
+
+  if (!isOpen) {
+    refs.pickerQuick.innerHTML = "";
+    refs.pickerGroups.innerHTML = "";
+    refs.pickerSearch.value = "";
+    return;
+  }
+
+  const type = state.pickerType;
+  const options = type === "area" ? buildAreaOptions() : buildIndustryOptions();
+  const selectedId = state[type];
+  const totalCount = Math.max(options.length - 1, 0);
+  const query = state.pickerQuery.trim();
+  const quickOptions = [options[0], getOptionById(options, selectedId)].filter((option, index, array) => {
+    return option && array.findIndex((candidate) => candidate.id === option.id) === index;
+  });
+  const visibleOptions = query
+    ? getMatchedOptions(options, query, Number.MAX_SAFE_INTEGER).filter((option) => option.id !== "all")
+    : options.slice(1);
+  const groups = buildPickerGroups(visibleOptions);
+
+  refs.pickerKicker.textContent = type === "area" ? "행정동 전체 보기" : "업종 전체 보기";
+  refs.pickerTitle.textContent = type === "area" ? "동네를 넓게 훑어보기" : "업종을 넓게 훑어보기";
+  refs.pickerNote.textContent = query
+    ? `검색 결과 ${visibleOptions.length}개`
+    : type === "area"
+      ? `${totalCount}개 행정동을 구 기준으로 정리했습니다.`
+      : `${totalCount}개 업종을 분류 기준으로 정리했습니다.`;
+  refs.pickerSearch.placeholder = type === "area"
+    ? "예: 서교동, 성수, 정자동"
+    : "예: 카페, 편의점, 병의원";
+  refs.pickerSearch.value = state.pickerQuery;
+
+  refs.pickerQuick.innerHTML = quickOptions.length
+    ? quickOptions.map((option) => renderPickerOption(option, selectedId)).join("")
+    : "";
+
+  refs.pickerGroups.innerHTML = groups.length
+    ? groups
+      .map((group) => {
+        return `
+          <section class="picker-group">
+            <div class="picker-group-head">
+              <h3 class="picker-group-title">${escapeHtml(group.label)}</h3>
+              <span class="picker-group-count">${formatNumber(group.options.length)}개</span>
+            </div>
+            <div class="picker-option-grid">
+              ${group.options.map((option) => renderPickerOption(option, selectedId)).join("")}
+            </div>
+          </section>
+        `;
+      })
+      .join("")
+    : `<article class="placeholder-card">검색 결과가 없습니다.</article>`;
+
+  refs.filterPicker.querySelectorAll("[data-picker-option-id]").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectFilter(type, button.getAttribute("data-picker-option-id"), true);
+    });
   });
 }
 
@@ -1147,6 +1396,29 @@ function renderStoreList(items) {
   refs.storeList.innerHTML = buildStoreCards(visibleItems);
 }
 
+function handleSearchKeydown(type, event) {
+  if (event.key === "Escape") {
+    if (state[`${type}Query`]) {
+      state[`${type}Query`] = "";
+      render();
+    }
+    return;
+  }
+
+  if (event.key !== "Enter") {
+    return;
+  }
+
+  const options = type === "area" ? buildAreaOptions() : buildIndustryOptions();
+  const matchedOptions = getMatchedOptions(options, state[`${type}Query`], 1);
+  if (!matchedOptions.length) {
+    return;
+  }
+
+  event.preventDefault();
+  selectFilter(type, matchedOptions[0].id);
+}
+
 function render() {
   const items = getFilteredItems();
   renderFilterSections();
@@ -1155,6 +1427,7 @@ function render() {
   renderAreaRadar();
   renderIndustryRadar();
   renderStoreList(items);
+  renderPicker();
 }
 
 async function init() {
@@ -1162,10 +1435,42 @@ async function init() {
     state.areaQuery = event.target.value;
     render();
   });
+  refs.areaSearch.addEventListener("keydown", (event) => {
+    handleSearchKeydown("area", event);
+  });
 
   refs.industrySearch.addEventListener("input", (event) => {
     state.industryQuery = event.target.value;
     render();
+  });
+  refs.industrySearch.addEventListener("keydown", (event) => {
+    handleSearchKeydown("industry", event);
+  });
+  refs.areaPickerOpen.addEventListener("click", () => {
+    openPicker("area");
+  });
+  refs.industryPickerOpen.addEventListener("click", () => {
+    openPicker("industry");
+  });
+  refs.pickerClose.addEventListener("click", () => {
+    closePicker();
+  });
+  refs.pickerBackdrop.addEventListener("click", () => {
+    closePicker();
+  });
+  refs.pickerSearch.addEventListener("input", (event) => {
+    state.pickerQuery = event.target.value;
+    renderPicker();
+  });
+  refs.pickerSearch.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closePicker();
+    }
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && state.pickerType) {
+      closePicker();
+    }
   });
 
   try {

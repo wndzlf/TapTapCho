@@ -43,14 +43,18 @@
               <div class="toolbar-label">행정동 기준</div>
               <p class="toolbar-note" id="area-helper">행정동 또는 시군구로 검색할 수 있습니다.</p>
             </div>
+            <button class="toolbar-action" id="area-picker-open" type="button">전체 보기</button>
           </div>
-          <input
-            class="search-input"
-            id="area-search"
-            type="search"
-            placeholder="예: 서교동, 성수, 정자동"
-            autocomplete="off"
-          />
+          <div class="search-stack">
+            <input
+              class="search-input"
+              id="area-search"
+              type="search"
+              placeholder="예: 서교동, 성수, 정자동"
+              autocomplete="off"
+            />
+            <div class="suggestion-list" id="area-suggestions" aria-live="polite"></div>
+          </div>
           <div class="filter-row" id="area-filter" aria-label="행정동 필터"></div>
         </div>
 
@@ -60,14 +64,18 @@
               <div class="toolbar-label">업종 기준</div>
               <p class="toolbar-note" id="industry-helper">중분류 업종 기준으로 넓게 탐색합니다.</p>
             </div>
+            <button class="toolbar-action" id="industry-picker-open" type="button">전체 보기</button>
           </div>
-          <input
-            class="search-input"
-            id="industry-search"
-            type="search"
-            placeholder="예: 카페, 편의점, 병의원"
-            autocomplete="off"
-          />
+          <div class="search-stack">
+            <input
+              class="search-input"
+              id="industry-search"
+              type="search"
+              placeholder="예: 카페, 편의점, 병의원"
+              autocomplete="off"
+            />
+            <div class="suggestion-list" id="industry-suggestions" aria-live="polite"></div>
+          </div>
           <div class="filter-row" id="industry-filter" aria-label="업종 필터"></div>
         </div>
       </section>
@@ -137,6 +145,29 @@
         </div>
       </section>
     </main>
+  </div>
+
+  <div class="picker-modal" id="filter-picker" hidden>
+    <button class="picker-backdrop" id="picker-backdrop" type="button" aria-label="전체 보기 닫기"></button>
+    <section class="picker-sheet" role="dialog" aria-modal="true" aria-labelledby="picker-title">
+      <div class="picker-head">
+        <div>
+          <div class="picker-kicker" id="picker-kicker">전체 보기</div>
+          <h2 class="picker-title" id="picker-title">필터 목록</h2>
+          <p class="picker-note" id="picker-note">원하는 항목을 골라 빠르게 좁힐 수 있습니다.</p>
+        </div>
+        <button class="picker-close" id="picker-close" type="button">닫기</button>
+      </div>
+      <input
+        class="search-input picker-search"
+        id="picker-search"
+        type="search"
+        placeholder="검색"
+        autocomplete="off"
+      />
+      <div class="picker-quick" id="picker-quick"></div>
+      <div class="picker-groups" id="picker-groups"></div>
+    </section>
   </div>
 
   <script src="./app.js"></script>
