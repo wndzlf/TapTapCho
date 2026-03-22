@@ -13,6 +13,7 @@ const state = {
   industryBasis: "context",
   areaGranularity: "adong",
   areaDrillSigngu: null,
+  areaDrillCollapsed: false,
   areaRankView: "focus",
   industryRankView: "focus",
   areaQuery: "",
@@ -48,6 +49,7 @@ const refs = {
   briefingPoints: document.getElementById("briefing-points"),
   briefingMeta: document.getElementById("briefing-meta"),
   selectionSummary: document.getElementById("selection-summary"),
+  selectionTrends: document.getElementById("selection-trends"),
   signalGrid: document.getElementById("signal-grid"),
   areaSectionTitle: document.getElementById("area-section-title"),
   areaNote: document.getElementById("area-note"),
@@ -343,6 +345,18 @@ function getSelectedAreaItem(items = getAllItems()) {
   return items.find((item) => getAreaId(item) === state.area) || null;
 }
 
+function getActiveAreaSignguId(items = getAllItems()) {
+  if (state.areaGranularity !== "signgu" || state.areaDrillCollapsed) {
+    return null;
+  }
+
+  const selectedAreaItem = getSelectedAreaItem(items);
+  const defaultSignguId = selectedAreaItem?.signguCd || null;
+  return [state.areaDrillSigngu, defaultSignguId]
+    .filter(Boolean)
+    .find((id) => items.some((item) => getSignguId(item) === id)) || null;
+}
+
 function toPercent(numerator, denominator) {
   if (!denominator) {
     return 0;
@@ -485,6 +499,81 @@ function formatShareDeltaLabel(delta) {
   }
 
   return `비중 ${formatPointDelta(delta)}`;
+}
+
+function buildSparklinePoints(values) {
+  const safeValues = values.length <= 1 ? [values[0] || 0, values[0] || 0] : values;
+  const minValue = Math.min(...safeValues);
+  const maxValue = Math.max(...safeValues);
+  const valueRange = maxValue - minValue || 1;
+
+  return safeValues
+    .map((value, index) => {
+      const x = (index / Math.max(safeValues.length - 1, 1)) * 100;
+      const y = 28 - (((value - minValue) / valueRange) * 20);
+      return `${x},${y}`;
+    })
+    .join(" ");
+}
+
+function buildTrendSeries(archive, countsKey, id) {
+  if (!id || !archive.length) {
+    return [];
+  }
+
+  return [...archive]
+    .reverse()
+    .map((entry) => {
+      const counts = entry[countsKey] || {};
+      const count = counts[id] || 0;
+      return {
+        updatedAt: entry.updatedAt,
+        count,
+        share: toPercent(count, entry.totalCount || 1),
+      };
+    });
+}
+
+function renderTrendMetric(label, value, values, tone) {
+  const points = buildSparklinePoints(values);
+  const pointTokens = points.split(" ");
+  const latestPoint = (pointTokens[pointTokens.length - 1] || "100,28").split(",");
+
+  return `
+    <div class="trend-metric">
+      <div class="trend-metric-head">
+        <span class="trend-metric-label">${escapeHtml(label)}</span>
+        <span class="trend-metric-value">${escapeHtml(value)}</span>
+      </div>
+      <svg class="trend-sparkline tone-${escapeHtml(tone)}" viewBox="0 0 100 32" aria-hidden="true">
+        <polyline class="trend-sparkline-track" points="${escapeHtml(points)}"></polyline>
+        <circle class="trend-sparkline-dot" cx="${escapeHtml(latestPoint[0])}" cy="${escapeHtml(latestPoint[1])}" r="3"></circle>
+      </svg>
+    </div>
+  `;
+}
+
+function renderTrendCard(title, subtitle, series, tone = "medium") {
+  if (!series.length) {
+    return "";
+  }
+
+  const latest = series[series.length - 1];
+  return `
+    <article class="trend-card tone-${escapeHtml(tone)}">
+      <div class="trend-card-head">
+        <div class="trend-card-title">${escapeHtml(title)}</div>
+        <div class="trend-card-note">${escapeHtml(subtitle)}</div>
+      </div>
+      <div class="trend-metrics">
+        ${renderTrendMetric("건수", `${formatNumber(latest.count)}건`, series.map((point) => point.count), tone)}
+        ${renderTrendMetric("비중", formatPercent(latest.share), series.map((point) => point.share), tone)}
+      </div>
+      <div class="trend-card-foot">
+        ${escapeHtml(series.length > 1 ? `최근 ${formatNumber(series.length)}회 스냅샷` : "첫 스냅샷")}
+      </div>
+    </article>
+  `;
 }
 
 function getDeltaTone(delta) {
@@ -975,6 +1064,7 @@ function selectFilter(type, id, shouldClosePicker = false) {
 
   if (type === "area") {
     state.areaDrillSigngu = id === "all" ? null : getSelectedAreaItem()?.signguCd || null;
+    state.areaDrillCollapsed = false;
   }
 
   if (shouldClosePicker) {
@@ -1394,6 +1484,7 @@ function renderComparisonActions({
       if (state.areaGranularity === "signgu" && !state.areaDrillSigngu) {
         state.areaDrillSigngu = getSelectedAreaItem()?.signguCd || null;
       }
+      state.areaDrillCollapsed = false;
       render();
     });
   });
@@ -1698,8 +1789,9 @@ function renderSelectionSummary() {
     chips.push(`<span class="selection-pill selection-pill-muted">소속 구 ${escapeHtml(selectedAreaItem.signguNm)}</span>`);
   }
 
-  if (state.areaGranularity === "signgu" && state.areaDrillSigngu) {
-    const drillItem = allItems.find((item) => getSignguId(item) === state.areaDrillSigngu);
+  const activeSignguId = getActiveAreaSignguId(allItems);
+  if (state.areaGranularity === "signgu" && activeSignguId) {
+    const drillItem = allItems.find((item) => getSignguId(item) === activeSignguId);
     if (drillItem) {
       chips.push(`<span class="selection-pill selection-pill-muted">펼친 구 ${escapeHtml(getSignguLabel(drillItem))}</span>`);
     }
@@ -1742,6 +1834,58 @@ function renderSelectionSummary() {
   `);
 
   refs.selectionSummary.innerHTML = chips.join("");
+}
+
+function renderSelectionTrends() {
+  const allItems = getAllItems();
+  const cards = [];
+  const selectedAreaItem = getSelectedAreaItem(allItems);
+  const selectedIndustry = getSelectedIndustryEntry(buildIndustryEntries(allItems));
+  const activeSignguId = getActiveAreaSignguId(allItems);
+
+  if (state.areaGranularity === "signgu" && activeSignguId) {
+    const signguItem = allItems.find((item) => getSignguId(item) === activeSignguId);
+    const series = buildTrendSeries(state.snapshotArchive, "signguCounts", activeSignguId);
+    if (series.length) {
+      cards.push(
+        renderTrendCard(
+          `${signguItem ? getSignguLabel(signguItem) : "선택 구"} 추이`,
+          "구 단위 건수 · 비중",
+          series,
+          "medium",
+        ),
+      );
+    }
+  } else if (selectedAreaItem) {
+    const series = buildTrendSeries(state.snapshotArchive, "areaCounts", selectedAreaItem.adongCd);
+    if (series.length) {
+      cards.push(
+        renderTrendCard(
+          `${getAreaLabel(selectedAreaItem)} 추이`,
+          "행정동 건수 · 비중",
+          series,
+          "medium",
+        ),
+      );
+    }
+  }
+
+  if (selectedIndustry) {
+    const series = buildTrendSeries(state.snapshotArchive, "industryCounts", selectedIndustry.id);
+    if (series.length) {
+      cards.push(
+        renderTrendCard(
+          `${selectedIndustry.label} 추이`,
+          "업종 건수 · 비중",
+          series,
+          "high",
+        ),
+      );
+    }
+  }
+
+  refs.selectionTrends.hidden = cards.length === 0;
+  refs.selectionTrends.innerHTML = cards.join("");
 }
 
 function renderBriefingVisual(items) {
@@ -1796,7 +1940,7 @@ function renderBriefingVisual(items) {
     .join("");
 }
 
-function renderRankList(target, entries, selectedId, totalCount, type, rankView, interactive, onChange) {
+function renderRankList(target, entries, selectedId, totalCount, type, rankView, interactive, onChange, options = {}) {
   target.innerHTML = "";
 
   if (!entries.length) {
@@ -1835,6 +1979,13 @@ function renderRankList(target, entries, selectedId, totalCount, type, rankView,
             const syntheticChip = entry.synthetic
               ? `<span class="comparison-chip comparison-chip-muted">비포착</span>`
               : "";
+            const disclosure = options.rowContext === "signgu"
+              ? `
+                <span class="comparison-disclosure${options.expandedId === entry.id ? " is-open" : ""}" aria-hidden="true">
+                  ${options.expandedId === entry.id ? "-" : "+"}
+                </span>
+              `
+              : "";
             const meterWidth = entry.count === 0 ? 0 : Math.max(12, (entry.count / maxCount) * 100);
             return `
               <button
@@ -1848,7 +1999,10 @@ function renderRankList(target, entries, selectedId, totalCount, type, rankView,
                 <div class="comparison-row-main">
                   <div class="comparison-rank">${rank}</div>
                   <div class="comparison-copy">
-                    <div class="comparison-label">${escapeHtml(entry.label)}</div>
+                    <div class="comparison-title-line">
+                      <div class="comparison-label">${escapeHtml(entry.label)}</div>
+                      ${disclosure}
+                    </div>
                     <div class="comparison-subtitle">${escapeHtml(entry.hint)}</div>
                   </div>
                   <div class="comparison-stat">
@@ -1885,7 +2039,7 @@ function renderRankList(target, entries, selectedId, totalCount, type, rankView,
   });
 }
 
-function renderAreaDrilldown(target, sourceItems, signguId, selectedArea, rankView, selectedIndustry) {
+function renderAreaDrilldown(target, allItems, sourceItems, signguId, selectedArea, selectedAreaItem, rankView, selectedIndustry) {
   if (!signguId) {
     return;
   }
@@ -1897,7 +2051,7 @@ function renderAreaDrilldown(target, sourceItems, signguId, selectedArea, rankVi
 
   const drilldownItem = drilldownItems[0];
   const signguLabel = getSignguLabel(drilldownItem);
-  const selectedAreaInSigngu = selectedArea && getSignguId(getSelectedAreaItem(drilldownItems) || {}) === signguId
+  const selectedAreaInSigngu = selectedArea && getSignguId(selectedAreaItem || {}) === signguId
     ? selectedArea
     : null;
   const drilldownEntries = withMissingSelection(
@@ -1905,6 +2059,10 @@ function renderAreaDrilldown(target, sourceItems, signguId, selectedArea, rankVi
     selectedAreaInSigngu,
     `${signguLabel} 안에서는 아직 포착되지 않았습니다.`,
   );
+  const signguAllItems = allItems.filter((item) => getSignguId(item) === signguId);
+  const signguIndustryEntries = buildIndustryEntries(signguAllItems);
+  const topIndustryEntries = signguIndustryEntries.slice(0, 3);
+  const selectedIndustryRank = selectedIndustry ? getEntryRank(signguIndustryEntries, selectedIndustry.id) : null;
   const drilldownPanel = document.createElement("section");
   drilldownPanel.className = "drilldown-panel";
   drilldownPanel.innerHTML = `
@@ -1935,6 +2093,45 @@ function renderAreaDrilldown(target, sourceItems, signguId, selectedArea, rankVi
     },
   );
   drilldownPanel.appendChild(chartTarget);
+
+  if (topIndustryEntries.length) {
+    const industryPanel = document.createElement("section");
+    industryPanel.className = "drilldown-industry";
+    industryPanel.innerHTML = `
+      <div class="drilldown-head">
+        <div class="drilldown-kicker">같이 많이 보이는 업종</div>
+        <h3 class="drilldown-title">${escapeHtml(signguLabel)} 안 상위 업종</h3>
+        <p class="drilldown-note">
+          ${escapeHtml(
+            selectedIndustry && selectedIndustryRank
+              ? `${selectedIndustry.label}는 ${signguLabel} 안에서 ${selectedIndustryRank}위입니다.`
+              : `${signguLabel} 안에서 같이 자주 잡히는 업종을 바로 봅니다.`,
+          )}
+        </p>
+      </div>
+      <div class="drilldown-industry-list">
+        ${topIndustryEntries
+          .map((entry) => {
+            return `
+              <article class="drilldown-industry-card${selectedIndustry?.id === entry.id ? " is-active" : ""}">
+                <div class="drilldown-industry-rank">#${getEntryRank(signguIndustryEntries, entry.id)}</div>
+                <div class="drilldown-industry-copy">
+                  <div class="drilldown-industry-label">${escapeHtml(entry.label)}</div>
+                  <div class="drilldown-industry-meta">${escapeHtml(entry.hint)}</div>
+                </div>
+                <div class="drilldown-industry-stat">
+                  <div class="drilldown-industry-value">${formatNumber(entry.count)}건</div>
+                  <div class="drilldown-industry-share">${formatPercent(entry.share)}</div>
+                </div>
+              </article>
+            `;
+          })
+          .join("")}
+      </div>
+    `;
+    drilldownPanel.appendChild(industryPanel);
+  }
+
   target.appendChild(drilldownPanel);
 }
 
@@ -1949,13 +2146,7 @@ function renderAreaRadar() {
     ? allItems.filter((item) => getIndustryId(item) === selectedIndustry.id)
     : allItems;
   const comparisonEntries = buildAreaEntries(sourceItems, state.areaGranularity);
-  const defaultSignguId = selectedAreaItem?.signguCd || null;
-  const activeSignguId = state.areaGranularity === "signgu"
-    ? [
-      state.areaDrillSigngu,
-      defaultSignguId,
-    ].find((id) => id && comparisonEntries.some((entry) => entry.id === id)) || null
-    : null;
+  const activeSignguId = getActiveAreaSignguId(sourceItems);
   const selectedAreaComparisonEntry = state.areaGranularity === "signgu"
     ? comparisonEntries.find((entry) => entry.id === activeSignguId) || null
     : selectedAreaItem
@@ -2052,22 +2243,28 @@ function renderAreaRadar() {
     interactive,
     (areaId) => {
       if (state.areaGranularity === "signgu") {
-        const isSelectedAreaSigngu = selectedAreaItem?.signguCd === areaId;
-        state.areaDrillSigngu = state.areaDrillSigngu === areaId && !isSelectedAreaSigngu ? null : areaId;
+        const isOpen = activeSignguId === areaId;
+        state.areaDrillSigngu = areaId;
+        state.areaDrillCollapsed = isOpen;
         render();
         return;
       }
 
       selectFilter("area", areaId);
     },
+    state.areaGranularity === "signgu"
+      ? { rowContext: "signgu", expandedId: activeSignguId }
+      : {},
   );
 
   if (state.areaGranularity === "signgu" && activeSignguId) {
     renderAreaDrilldown(
       refs.areaList,
+      allItems,
       sourceItems,
       activeSignguId,
       selectedArea,
+      selectedAreaItem,
       state.areaRankView,
       selectedIndustry,
     );
@@ -2194,6 +2391,7 @@ function render() {
   renderFilterSections();
   renderBriefing(items);
   renderSelectionSummary();
+  renderSelectionTrends();
   renderBriefingVisual(items);
   renderAreaRadar();
   renderIndustryRadar();
