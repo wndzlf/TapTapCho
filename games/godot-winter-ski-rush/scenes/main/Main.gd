@@ -11,7 +11,6 @@ const BGM_PATH := "res://assets/audio/winter-ski-rush-pixabay-286213.mp3"
 const BRAKE_SFX_PATH := "res://assets/audio/winter-ski-rush-brake-pixabay-46042.mp3"
 const NORMAL_SKI_LOOP_SFX_PATH := "res://assets/audio/winter-ski-rush-normal-ski-loop.mp3"
 const LEFT_RIGHT_SFX_PATH := "res://assets/audio/winter-ski-rush-left-right-sfx.mp3"
-const UI_FONT_PATH := "res://assets/fonts/appintoss-kr-ui.ttf"
 const BASE_GRAVITY := 290.0
 const START_SPEED := 88.0
 const MAX_LIVES := 3
@@ -189,10 +188,6 @@ func _load_ui_font() -> void:
 	])
 
 	ui_font = ui_fallback_font
-	var brand_font := load(UI_FONT_PATH) as FontFile
-	if brand_font != null:
-		ui_fallback_font.fallbacks = [brand_font]
-
 	ThemeDB.fallback_font = ui_fallback_font
 
 
@@ -1012,6 +1007,18 @@ func _update_steer_pad_from_local(local_pos: Vector2) -> void:
 	_sync_steer_pad_visual()
 
 
+func _update_steer_pad_from_global(global_pos: Vector2) -> void:
+	if steer_pad_base == null or not is_instance_valid(steer_pad_base):
+		return
+
+	var rect := steer_pad_base.get_global_rect()
+	var clamped := Vector2(
+		clampf(global_pos.x, rect.position.x, rect.end.x),
+		clampf(global_pos.y, rect.position.y, rect.end.y),
+	)
+	_update_steer_pad_from_local(clamped - rect.position)
+
+
 func _release_steer_pad() -> void:
 	steer_pad_active = false
 	steer_pad_touch_index = -1
@@ -1025,50 +1032,26 @@ func _wake_run_from_ui_input() -> void:
 		_start_run()
 
 
+func _begin_steer_pad(pointer_index: int, point: Vector2) -> void:
+	_wake_run_from_ui_input()
+	steer_pad_active = true
+	steer_pad_touch_index = pointer_index
+	_update_steer_pad_from_global(point)
+
+
 func _is_point_in_steer_pad(point: Vector2) -> bool:
 	if steer_pad_base == null or not is_instance_valid(steer_pad_base):
 		return false
 	return steer_pad_base.get_global_rect().has_point(point)
 
 
-func _on_steer_pad_gui_input(event: InputEvent) -> void:
-	if game_over_overlay != null and game_over_overlay.visible:
-		_release_steer_pad()
-		return
-
-	if event is InputEventScreenTouch:
-		var e_touch := event as InputEventScreenTouch
-		if e_touch.pressed:
-			_wake_run_from_ui_input()
-			steer_pad_active = true
-			steer_pad_touch_index = e_touch.index
-			_update_steer_pad_from_local(steer_pad_base.to_local(e_touch.position))
-		elif steer_pad_active and e_touch.index == steer_pad_touch_index:
-			_release_steer_pad()
-		return
-
-	if event is InputEventScreenDrag:
-		var e_drag := event as InputEventScreenDrag
-		if steer_pad_active and e_drag.index == steer_pad_touch_index:
-			_update_steer_pad_from_local(steer_pad_base.to_local(e_drag.position))
-		return
-
-	if event is InputEventMouseButton:
-		var mb := event as InputEventMouseButton
-		if mb.button_index != MOUSE_BUTTON_LEFT:
-			return
-		if mb.pressed:
-			_wake_run_from_ui_input()
-			steer_pad_active = true
-			steer_pad_touch_index = -2
-			_update_steer_pad_from_local(steer_pad_base.to_local(mb.position))
-		elif steer_pad_active and steer_pad_touch_index == -2:
-			_release_steer_pad()
-		return
-
-	if event is InputEventMouseMotion and steer_pad_active and steer_pad_touch_index == -2:
-		var mm := event as InputEventMouseMotion
-		_update_steer_pad_from_local(steer_pad_base.to_local(mm.position))
+func _is_point_in_steer_zone(point: Vector2) -> bool:
+	var vp_size := get_viewport_rect().size
+	if vp_size.x <= 1.0 or vp_size.y <= 1.0:
+		return false
+	var nx := point.x / vp_size.x
+	var ny := point.y / vp_size.y
+	return nx >= 0.52 and ny >= 0.42
 
 
 func _build_ui() -> void:
@@ -1134,8 +1117,8 @@ func _build_ui() -> void:
 	left_controls.anchor_bottom = 1.0
 	left_controls.offset_left = 10
 	left_controls.offset_right = 128
-	left_controls.offset_top = -124
-	left_controls.offset_bottom = -10
+	left_controls.offset_top = -136
+	left_controls.offset_bottom = -22
 	left_controls.add_theme_constant_override("separation", 8)
 	left_controls.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(left_controls)
@@ -1166,9 +1149,9 @@ func _build_ui() -> void:
 	steer_wrap.anchor_right = 1.0
 	steer_wrap.anchor_top = 1.0
 	steer_wrap.anchor_bottom = 1.0
-	steer_wrap.offset_left = -126
+	steer_wrap.offset_left = -140
 	steer_wrap.offset_right = -12
-	steer_wrap.offset_top = -126
+	steer_wrap.offset_top = -140
 	steer_wrap.offset_bottom = -12
 	steer_wrap.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(steer_wrap)
@@ -1179,7 +1162,6 @@ func _build_ui() -> void:
 		"panel",
 		_make_stylebox(Color(0.1, 0.2, 0.35, 0.88), Color(0.95, 0.86, 0.64, 0.52), 999)
 	)
-	steer_pad_base.gui_input.connect(_on_steer_pad_gui_input)
 	steer_wrap.add_child(steer_pad_base)
 
 	var steer_inner := Panel.new()
@@ -1672,11 +1654,8 @@ func _input(event: InputEvent) -> void:
 
 	if event is InputEventScreenTouch:
 		var touch := event as InputEventScreenTouch
-		if touch.pressed and _is_point_in_steer_pad(touch.position):
-			_wake_run_from_ui_input()
-			steer_pad_active = true
-			steer_pad_touch_index = touch.index
-			_update_steer_pad_from_local(steer_pad_base.to_local(touch.position))
+		if touch.pressed and (_is_point_in_steer_pad(touch.position) or _is_point_in_steer_zone(touch.position)):
+			_begin_steer_pad(touch.index, touch.position)
 			get_viewport().set_input_as_handled()
 			return
 		if steer_pad_active and touch.index == steer_pad_touch_index and not touch.pressed:
@@ -1687,7 +1666,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventScreenDrag:
 		var drag := event as InputEventScreenDrag
 		if steer_pad_active and drag.index == steer_pad_touch_index:
-			_update_steer_pad_from_local(steer_pad_base.to_local(drag.position))
+			_update_steer_pad_from_global(drag.position)
 			get_viewport().set_input_as_handled()
 			return
 
@@ -1695,11 +1674,8 @@ func _input(event: InputEvent) -> void:
 		var mb := event as InputEventMouseButton
 		if mb.button_index != MOUSE_BUTTON_LEFT:
 			return
-		if mb.pressed and _is_point_in_steer_pad(mb.position):
-			_wake_run_from_ui_input()
-			steer_pad_active = true
-			steer_pad_touch_index = -2
-			_update_steer_pad_from_local(steer_pad_base.to_local(mb.position))
+		if mb.pressed and (_is_point_in_steer_pad(mb.position) or _is_point_in_steer_zone(mb.position)):
+			_begin_steer_pad(-2, mb.position)
 			get_viewport().set_input_as_handled()
 			return
 		if steer_pad_active and steer_pad_touch_index == -2 and not mb.pressed:
@@ -1709,7 +1685,7 @@ func _input(event: InputEvent) -> void:
 
 	if event is InputEventMouseMotion and steer_pad_active and steer_pad_touch_index == -2:
 		var mm := event as InputEventMouseMotion
-		_update_steer_pad_from_local(steer_pad_base.to_local(mm.position))
+		_update_steer_pad_from_global(mm.position)
 		get_viewport().set_input_as_handled()
 
 
