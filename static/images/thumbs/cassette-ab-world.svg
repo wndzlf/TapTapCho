@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#152033" />
+      <stop offset="1" stop-color="#090f18" />
+    </linearGradient>
+    <linearGradient id="mix" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffc47f" />
+      <stop offset="1" stop-color="#70e8ff" />
+    </linearGradient>
+  </defs>
+  <rect width="640" height="360" rx="24" fill="url(#bg)"/>
+  <rect x="140" y="118" width="360" height="124" rx="32" fill="url(#mix)"/>
+  <rect x="178" y="148" width="284" height="64" rx="20" fill="#101c2e"/>
+  <circle cx="248" cy="180" r="20" fill="#ffc47f"/>
+  <circle cx="392" cy="180" r="20" fill="#70e8ff"/>
+  <circle cx="248" cy="180" r="8" fill="#101c2e"/>
+  <circle cx="392" cy="180" r="8" fill="#101c2e"/>
+  <text x="320" y="298" text-anchor="middle" font-size="38" fill="#e7f2ff" font-family="Avenir Next, SF Pro Display, sans-serif" font-weight="700" letter-spacing="2">Cassette A/B World</text>
+</svg>

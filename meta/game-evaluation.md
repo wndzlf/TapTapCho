@@ -61,6 +61,7 @@
 | AirStrikerLite | 70 | Soft Launch | 진행/성장 루프와 콘텐츠 깊이 보강 필요 |
 | Sunken Sixway Defense | 80.0 | Soft Launch | Stage 30+ 난이도/최적화 추가 튜닝 필요 |
 | Crimson Hunter Trials | 43.36 | Hold | 루프/성장/폴리시 미달 |
+| Cassette A/B World (임시) | 62.0 | Rework | 첫 인상은 좋지만 장기 리텐션용 메타 루프 보강 필요 |
 | ThrillPark Manager | 43.0 | Hold | 매니지먼트 깊이/튜닝/튜토리얼 부족 |
 | 다수 Neon/미니게임 | 30~40대 | Hold | 클론성, 성장/리텐션/독창성 부족 |
 
