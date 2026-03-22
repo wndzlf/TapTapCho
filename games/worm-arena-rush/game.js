@@ -37,6 +37,13 @@ const SAFE_RADIUS_END = 260;
 const SPAWN_GRACE_DURATION = 3;
 const TURN_PAD_MAX = 42;
 const TURN_PAD_DEADZONE = 0.18;
+const SCORE_MILESTONE_STEP = 20;
+const LENGTH_MILESTONE_STEP = 6;
+const KILL_SCORE_MIN = 10;
+const KILL_SCORE_SCALE = 0.75;
+const MAX_CELEBRATION_PARTICLES = 220;
+const MAX_CELEBRATION_FLYOUTS = 8;
+const MAX_CELEBRATION_BANNERS = 2;
 const STORAGE_KEY = 'worm-arena-rush-best';
 const BEST_LENGTH_KEY = 'worm-arena-rush-best-length';
 const PSEUDO_FULLSCREEN_CLASS = 'is-pseudo-fullscreen';
@@ -62,6 +69,14 @@ let bots = [];
 let foods = [];
 let rocks = [];
 let camera = { x: 0, y: 0 };
+let celebrationParticles = [];
+let celebrationFlyouts = [];
+let celebrationBanners = [];
+let screenPulse = 0;
+let screenPulseTint = '255, 211, 114';
+let nextScoreMilestone = SCORE_MILESTONE_STEP;
+let nextLengthMilestone = LENGTH_MILESTONE_STEP;
+let previousPlayerLength = 0;
 
 const pointer = { x: W * 0.5, y: H * 0.5, hasMoved: false, active: false, pointerId: null };
 const keys = Object.create(null);
@@ -78,19 +93,20 @@ bestEl.textContent = String(best);
 
 const audioCtx = window.AudioContext ? new AudioContext() : null;
 
-function beep(freq, duration, gain = 0.02) {
+function beep(freq, duration, gain = 0.02, delay = 0) {
   if (!audioCtx) return;
   const now = audioCtx.currentTime;
+  const startAt = now + Math.max(0, delay);
   const osc = audioCtx.createOscillator();
   const amp = audioCtx.createGain();
   osc.type = 'square';
   osc.frequency.value = freq;
-  amp.gain.setValueAtTime(gain, now);
-  amp.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  amp.gain.setValueAtTime(Math.max(0.0001, gain), startAt);
+  amp.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
   osc.connect(amp);
   amp.connect(audioCtx.destination);
-  osc.start(now);
-  osc.stop(now + duration);
+  osc.start(startAt);
+  osc.stop(startAt + duration);
 }
 
 function rand(min, max) {
@@ -103,6 +119,14 @@ function clamp(v, min, max) {
 
 function lerp(a, b, t) {
   return a + (b - a) * t;
+}
+
+function easeOutCubic(t) {
+  return 1 - Math.pow(1 - clamp(t, 0, 1), 3);
+}
+
+function getNextMilestone(value, step) {
+  return Math.max(step, (Math.floor(value / step) + 1) * step);
 }
 
 function stabilizeViewport() {
@@ -231,6 +255,226 @@ function updateHud() {
   speedEl.textContent = `${Math.round(speedMultiplier * 100)}%`;
 }
 
+function syncBestLength() {
+  const currentLength = player?.segments.length ?? 0;
+  if (currentLength > bestLength) {
+    bestLength = currentLength;
+    localStorage.setItem(BEST_LENGTH_KEY, String(bestLength));
+  }
+}
+
+function setScreenPulse(strength = 0.18, tint = '255, 211, 114') {
+  screenPulse = Math.max(screenPulse, strength);
+  screenPulseTint = tint;
+}
+
+function playCelebrationChord(rootFreq, gain = 0.024) {
+  beep(rootFreq, 0.05, gain, 0);
+  beep(rootFreq * 1.25, 0.08, gain * 0.85, 0.045);
+  beep(rootFreq * 1.5, 0.12, gain * 0.72, 0.09);
+}
+
+function emitCelebrationBurst(x, y, options = {}) {
+  const count = Math.max(1, Math.round(options.count ?? 14));
+  const colors = options.colors || ['#ffd372', '#fff2a6', '#9df2ff', '#ffb36b'];
+  const minSpeed = options.minSpeed ?? 68;
+  const maxSpeed = options.maxSpeed ?? 220;
+  const lifeMin = options.lifeMin ?? 0.32;
+  const lifeMax = options.lifeMax ?? 0.74;
+  const sizeMin = options.sizeMin ?? 3.2;
+  const sizeMax = options.sizeMax ?? 7.6;
+  const gravity = options.gravity ?? 22;
+  const driftX = options.driftX ?? 0;
+  const driftY = options.driftY ?? 0;
+
+  for (let i = 0; i < count; i += 1) {
+    const angle = rand(0, Math.PI * 2);
+    const speed = rand(minSpeed, maxSpeed);
+    const life = rand(lifeMin, lifeMax);
+    celebrationParticles.push({
+      x,
+      y,
+      vx: Math.cos(angle) * speed + driftX,
+      vy: Math.sin(angle) * speed + driftY,
+      life,
+      maxLife: life,
+      size: rand(sizeMin, sizeMax),
+      color: colors[Math.floor(Math.random() * colors.length)],
+      gravity,
+      drag: rand(0.88, 0.94),
+      shape: Math.random() < 0.34 ? 'diamond' : 'orb',
+      rotation: rand(0, Math.PI * 2),
+      spin: rand(-8, 8),
+    });
+  }
+
+  if (celebrationParticles.length > MAX_CELEBRATION_PARTICLES) {
+    celebrationParticles.splice(0, celebrationParticles.length - MAX_CELEBRATION_PARTICLES);
+  }
+}
+
+function addCelebrationFlyout(text, x, y, options = {}) {
+  celebrationFlyouts.push({
+    text,
+    x,
+    y,
+    life: options.life ?? 0.9,
+    maxLife: options.life ?? 0.9,
+    vy: options.vy ?? -34,
+    color: options.color || '#fff0ba',
+    accent: options.accent || 'rgba(9, 16, 34, 0.72)',
+    size: options.size ?? 18,
+  });
+
+  if (celebrationFlyouts.length > MAX_CELEBRATION_FLYOUTS) {
+    celebrationFlyouts.splice(0, celebrationFlyouts.length - MAX_CELEBRATION_FLYOUTS);
+  }
+}
+
+function addCelebrationBanner(title, subtitle, tone = 'score') {
+  celebrationBanners.push({
+    title,
+    subtitle,
+    tone,
+    life: 1.7,
+    maxLife: 1.7,
+  });
+
+  if (celebrationBanners.length > MAX_CELEBRATION_BANNERS) {
+    celebrationBanners.splice(0, celebrationBanners.length - MAX_CELEBRATION_BANNERS);
+  }
+}
+
+function triggerScoreMilestone(targetScore, originX, originY) {
+  emitCelebrationBurst(originX, originY, {
+    count: 28,
+    minSpeed: 110,
+    maxSpeed: 260,
+    lifeMin: 0.48,
+    lifeMax: 0.92,
+    colors: ['#ffd372', '#fff6c1', '#9df2ff', '#ff9b73'],
+  });
+  addCelebrationBanner(`점수 ${targetScore}`, '속도를 유지하면 더 크게 터집니다', 'score');
+  addCelebrationFlyout(`Score ${targetScore}!`, originX, originY - 12, {
+    color: '#fff1a7',
+    size: 22,
+    life: 1.08,
+    vy: -42,
+  });
+  setScreenPulse(0.26, '255, 219, 128');
+  playCelebrationChord(660, 0.028);
+}
+
+function triggerLengthGain(lengthValue, isMilestone = false) {
+  emitCelebrationBurst(player.x, player.y, {
+    count: isMilestone ? 24 : 10,
+    minSpeed: isMilestone ? 96 : 54,
+    maxSpeed: isMilestone ? 220 : 136,
+    lifeMin: isMilestone ? 0.42 : 0.24,
+    lifeMax: isMilestone ? 0.86 : 0.52,
+    colors: isMilestone
+      ? ['#ffcf70', '#ffe7a8', '#ff9d3a', '#fff5d3']
+      : ['#ffd372', '#ffb96f', '#fff1c2'],
+    gravity: isMilestone ? 20 : 14,
+  });
+
+  if (isMilestone) {
+    addCelebrationBanner(`길이 ${lengthValue}`, '몸집이 커졌습니다. 급회전을 줄이세요', 'length');
+    addCelebrationFlyout(`Length ${lengthValue}!`, player.x, player.y - 18, {
+      color: '#ffd986',
+      size: 21,
+      life: 1,
+      vy: -40,
+    });
+    setScreenPulse(0.18, '255, 196, 105');
+    playCelebrationChord(560, 0.024);
+  } else {
+    setScreenPulse(0.08, '255, 196, 105');
+  }
+}
+
+function triggerKillCelebration(deadBot, bonusScore) {
+  emitCelebrationBurst(deadBot.x, deadBot.y, {
+    count: 30,
+    minSpeed: 120,
+    maxSpeed: 280,
+    lifeMin: 0.46,
+    lifeMax: 0.96,
+    colors: [deadBot.bodyColor, '#fff6ca', '#ffcf70', '#9df2ff'],
+  });
+  addCelebrationFlyout(`격추 +${bonusScore}`, deadBot.x, deadBot.y - 10, {
+    color: '#ffe88f',
+    size: 22,
+    life: 1.1,
+    vy: -46,
+  });
+  setScreenPulse(0.22, '255, 209, 114');
+  beep(920, 0.05, 0.022, 0);
+  beep(1280, 0.09, 0.016, 0.04);
+}
+
+function awardPlayerScore(points, originX = player?.x ?? W * 0.5, originY = player?.y ?? H * 0.5) {
+  if (!Number.isFinite(points) || points <= 0) return false;
+  score += Math.round(points);
+  updateHud();
+
+  let hitMilestone = false;
+  while (score >= nextScoreMilestone) {
+    triggerScoreMilestone(nextScoreMilestone, originX, originY);
+    nextScoreMilestone += SCORE_MILESTONE_STEP;
+    hitMilestone = true;
+  }
+
+  return hitMilestone;
+}
+
+function updateCelebrationEffects(dt) {
+  screenPulse = Math.max(0, screenPulse - dt * 1.28);
+
+  celebrationParticles = celebrationParticles.filter((particle) => {
+    particle.life -= dt;
+    if (particle.life <= 0) return false;
+    particle.vx *= particle.drag;
+    particle.vy = particle.vy * particle.drag + particle.gravity * dt;
+    particle.x += particle.vx * dt;
+    particle.y += particle.vy * dt;
+    particle.rotation += particle.spin * dt;
+    return true;
+  });
+
+  celebrationFlyouts = celebrationFlyouts.filter((flyout) => {
+    flyout.life -= dt;
+    if (flyout.life <= 0) return false;
+    flyout.y += flyout.vy * dt;
+    return true;
+  });
+
+  celebrationBanners = celebrationBanners.filter((banner) => {
+    banner.life -= dt;
+    return banner.life > 0;
+  });
+}
+
+function updatePlayerProgressFeedback() {
+  const currentLength = player?.segments.length ?? 0;
+  if (currentLength <= 0) return;
+
+  if (currentLength > previousPlayerLength) {
+    for (let len = previousPlayerLength + 1; len <= currentLength; len += 1) {
+      const milestoneHit = len >= nextLengthMilestone;
+      triggerLengthGain(len, milestoneHit);
+      if (milestoneHit) {
+        while (len >= nextLengthMilestone) {
+          nextLengthMilestone += LENGTH_MILESTONE_STEP;
+        }
+      }
+    }
+  }
+
+  previousPlayerLength = currentLength;
+  syncBestLength();
+}
+
 function updateRoundPressure() {
   roundProgress = clamp(roundElapsed / ROUND_DURATION, 0, 1);
   safeRadius = lerp(SAFE_RADIUS_START, SAFE_RADIUS_END, Math.pow(roundProgress, 1.08));
@@ -326,6 +570,12 @@ function resetGame() {
   safeRadius = SAFE_RADIUS_START;
   speedMultiplier = 1;
   gameOverReason = 'idle';
+  celebrationParticles = [];
+  celebrationFlyouts = [];
+  celebrationBanners = [];
+  screenPulse = 0;
+  screenPulseTint = '255, 211, 114';
+  nextScoreMilestone = SCORE_MILESTONE_STEP;
 
   player = createWorm({
     x: WORLD_W * 0.5,
@@ -353,10 +603,9 @@ function resetGame() {
   camera.y = clamp(player.y - H * 0.5, 0, WORLD_H - H);
 
   scoreEl.textContent = '0';
-  if (player.segments.length > bestLength) {
-    bestLength = player.segments.length;
-    localStorage.setItem(BEST_LENGTH_KEY, String(bestLength));
-  }
+  previousPlayerLength = player.segments.length;
+  nextLengthMilestone = getNextMilestone(previousPlayerLength, LENGTH_MILESTONE_STEP);
+  syncBestLength();
   updateHud();
   updateFullscreenButton();
 }
@@ -377,6 +626,7 @@ function endGame(reason = 'crash') {
   gameOverReason = reason;
   beep(gameOverReason === 'time' ? 320 : 160, 0.24, 0.06);
 
+  syncBestLength();
   best = Math.max(best, score);
   bestEl.textContent = String(best);
   localStorage.setItem(STORAGE_KEY, String(best));
@@ -514,12 +764,11 @@ function consumeFood(worm) {
     worm.grow += worm.isPlayer ? 0.95 : 0.62;
 
     if (worm.isPlayer) {
-      score += food.value;
-      if (worm.segments.length > bestLength) {
-        bestLength = worm.segments.length;
-        localStorage.setItem(BEST_LENGTH_KEY, String(bestLength));
+      const hitMilestone = awardPlayerScore(food.value, food.x, food.y);
+
+      if (hitMilestone) {
+        continue;
       }
-      updateHud();
 
       if (score % 10 === 0) {
         beep(820, 0.045, 0.02);
@@ -632,12 +881,13 @@ function resolveCollisions() {
     }
   }
 
-  const deadBotIndexes = [];
+  const deadBots = [];
 
   for (let i = 0; i < bots.length; i += 1) {
     const bot = bots[i];
     if (bot.spawnGrace > 0) continue;
-    let crashed = headHitsHead(bot, player) || headHitsBody(bot, player, OPPONENT_BODY_START);
+    const crashedIntoPlayer = headHitsHead(bot, player) || headHitsBody(bot, player, OPPONENT_BODY_START);
+    let crashed = crashedIntoPlayer;
 
     if (!crashed) {
       for (let j = 0; j < bots.length; j += 1) {
@@ -650,19 +900,38 @@ function resolveCollisions() {
       }
     }
 
-    if (crashed) deadBotIndexes.push(i);
+    if (crashed) {
+      deadBots.push({
+        index: i,
+        byPlayer: crashedIntoPlayer,
+      });
+    }
   }
 
-  if (deadBotIndexes.length === 0) return;
+  if (deadBots.length === 0) return;
 
-  deadBotIndexes.sort((a, b) => b - a);
-  for (const idx of deadBotIndexes) {
-    const deadBot = bots[idx];
+  deadBots.sort((a, b) => b.index - a.index);
+  let hadNonPlayerCrash = false;
+
+  for (const entry of deadBots) {
+    const deadBot = bots[entry.index];
+    if (!deadBot) continue;
+
+    if (entry.byPlayer) {
+      const bonusScore = Math.max(KILL_SCORE_MIN, Math.round(deadBot.segments.length * KILL_SCORE_SCALE));
+      awardPlayerScore(bonusScore, deadBot.x, deadBot.y);
+      triggerKillCelebration(deadBot, bonusScore);
+    } else {
+      hadNonPlayerCrash = true;
+    }
+
     scatterFoodFromWorm(deadBot, 16);
-    bots.splice(idx, 1);
+    bots.splice(entry.index, 1);
   }
 
-  beep(760, 0.05, 0.02);
+  if (hadNonPlayerCrash) {
+    beep(760, 0.05, 0.02);
+  }
 }
 
 function resolveSafeZone() {
@@ -876,6 +1145,131 @@ function drawMiniMap() {
   ctx.strokeRect(cx, cy, cw, ch);
 }
 
+function drawCelebrationParticles() {
+  ctx.save();
+  for (const particle of celebrationParticles) {
+    const x = particle.x - camera.x;
+    const y = particle.y - camera.y;
+    if (x < -40 || x > W + 40 || y < -40 || y > H + 40) continue;
+
+    const alpha = particle.life / particle.maxLife;
+    ctx.globalAlpha = alpha;
+    ctx.shadowColor = particle.color;
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = particle.color;
+
+    if (particle.shape === 'diamond') {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(particle.rotation);
+      ctx.fillRect(-particle.size * 0.5, -particle.size * 0.5, particle.size, particle.size);
+      ctx.restore();
+    } else {
+      ctx.beginPath();
+      ctx.arc(x, y, particle.size * (0.44 + alpha * 0.56), 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function drawCelebrationFlyouts() {
+  ctx.save();
+  ctx.textAlign = 'center';
+
+  for (const flyout of celebrationFlyouts) {
+    const x = flyout.x - camera.x;
+    const y = flyout.y - camera.y;
+    if (x < -80 || x > W + 80 || y < -80 || y > H + 80) continue;
+
+    const alpha = flyout.life / flyout.maxLife;
+    const textSize = Math.round(flyout.size + (1 - alpha) * 6);
+    ctx.globalAlpha = alpha;
+    ctx.font = `800 ${textSize}px "Noto Sans KR", system-ui`;
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = flyout.accent;
+    ctx.strokeText(flyout.text, x, y);
+    ctx.fillStyle = flyout.color;
+    ctx.fillText(flyout.text, x, y);
+  }
+
+  ctx.restore();
+}
+
+function drawCelebrationBanners() {
+  if (celebrationBanners.length === 0) return;
+
+  ctx.save();
+  ctx.textAlign = 'center';
+  const centerX = W * 0.5;
+
+  for (let i = 0; i < celebrationBanners.length; i += 1) {
+    const banner = celebrationBanners[i];
+    const alpha = clamp(banner.life / banner.maxLife, 0, 1);
+    const enter = easeOutCubic((banner.maxLife - banner.life) / 0.18);
+    const panelY = 136 + i * 58 - (1 - enter) * 18;
+    const panelW = 256;
+    const panelH = 44;
+    const left = centerX - panelW * 0.5;
+    const top = panelY - panelH * 0.5;
+
+    let fillStyle = 'rgba(31, 35, 70, 0.82)';
+    let strokeStyle = 'rgba(255, 223, 126, 0.72)';
+    let titleColor = '#fff1b0';
+    if (banner.tone === 'length') {
+      fillStyle = 'rgba(59, 34, 12, 0.84)';
+      strokeStyle = 'rgba(255, 183, 92, 0.78)';
+      titleColor = '#ffd987';
+    }
+
+    ctx.globalAlpha = alpha;
+    ctx.shadowColor = strokeStyle;
+    ctx.shadowBlur = 24;
+    ctx.fillStyle = fillStyle;
+    ctx.fillRect(left, top, panelW, panelH);
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = strokeStyle;
+    ctx.strokeRect(left, top, panelW, panelH);
+
+    ctx.font = '800 18px "Noto Sans KR", system-ui';
+    ctx.fillStyle = titleColor;
+    ctx.fillText(banner.title, centerX, panelY - 3);
+
+    ctx.font = '12px "Noto Sans KR", system-ui';
+    ctx.fillStyle = '#dfe9ff';
+    ctx.fillText(banner.subtitle, centerX, panelY + 14);
+  }
+
+  ctx.restore();
+}
+
+function drawScreenPulse() {
+  if (screenPulse <= 0.001) return;
+
+  const playerScreenX = player.x - camera.x;
+  const playerScreenY = player.y - camera.y;
+  const glow = ctx.createRadialGradient(
+    playerScreenX,
+    playerScreenY,
+    18,
+    playerScreenX,
+    playerScreenY,
+    Math.max(W, H) * 0.9,
+  );
+  glow.addColorStop(0, `rgba(${screenPulseTint}, ${screenPulse * 0.18})`);
+  glow.addColorStop(0.4, `rgba(${screenPulseTint}, ${screenPulse * 0.08})`);
+  glow.addColorStop(1, `rgba(${screenPulseTint}, 0)`);
+
+  ctx.save();
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = `rgba(${screenPulseTint}, ${screenPulse * 0.42})`;
+  ctx.lineWidth = 5;
+  ctx.strokeRect(2.5, 2.5, W - 5, H - 5);
+  ctx.restore();
+}
+
 function render() {
   ctx.fillStyle = '#2d448f';
   ctx.fillRect(0, 0, W, H);
@@ -920,6 +1314,8 @@ function render() {
   drawWorm(player);
 
   drawSafeZone();
+  drawCelebrationParticles();
+  drawCelebrationFlyouts();
   drawMiniMap();
 
   ctx.fillStyle = '#eaf1ff';
@@ -930,6 +1326,8 @@ function render() {
   ctx.fillText(`남은 시간 ${Math.max(0, ROUND_DURATION - roundElapsed).toFixed(1)}초`, 14, 70);
   ctx.fillText(`안전 구역 ${Math.round((safeRadius / SAFE_RADIUS_START) * 100)}%`, 14, 92);
   ctx.fillText(`속도 ${Math.round(speedMultiplier * 100)}%`, 14, 114);
+  drawScreenPulse();
+  drawCelebrationBanners();
 
   if (state === 'idle' || state === 'gameover') {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
@@ -962,6 +1360,7 @@ function render() {
 
 function update(dt) {
   tick += 1;
+  updateCelebrationEffects(dt);
 
   if (state !== 'running') return;
 
@@ -974,6 +1373,7 @@ function update(dt) {
   updateSpawnGrace(dt);
   moveWorm(player, dt);
   for (const bot of bots) moveWorm(bot, dt);
+  updatePlayerProgressFeedback();
 
   resolveSafeZone();
   if (state !== 'running') return;

@@ -102,16 +102,15 @@ button:hover {
 }
 
 .arena {
-  position: relative;
   flex: 1 1 auto;
   min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   overflow: hidden;
 }
 
 canvas {
+  grid-area: 1 / 1;
   width: auto;
   height: auto;
   max-width: 100%;
@@ -125,9 +124,11 @@ canvas {
 }
 
 .turn-pad-wrap {
-  position: absolute;
-  right: 14px;
-  bottom: calc(14px + env(safe-area-inset-bottom));
+  grid-area: 1 / 1;
+  justify-self: end;
+  align-self: end;
+  margin-right: 14px;
+  margin-bottom: calc(14px + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -291,8 +292,8 @@ body.is-pseudo-fullscreen canvas {
 
 .wrap:fullscreen .turn-pad-wrap,
 body.is-pseudo-fullscreen .turn-pad-wrap {
-  right: calc(18px + env(safe-area-inset-right));
-  bottom: calc(18px + env(safe-area-inset-bottom));
+  margin-right: calc(18px + env(safe-area-inset-right));
+  margin-bottom: calc(18px + env(safe-area-inset-bottom));
 }
 
 @media (max-width: 680px) {
