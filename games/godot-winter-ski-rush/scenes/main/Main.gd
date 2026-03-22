@@ -444,7 +444,7 @@ func _trigger_crash(hit_pos: Vector2, reason: String) -> void:
 	forward_speed = maxf(0.0, forward_speed * active_crash_keep_speed_ratio)
 	run_time += active_crash_penalty
 	_set_status(
-		"충돌 (%s) +%.1fs · 목숨 %d/%d" % [
+		"충돌 (%s) +%.1fs | 목숨 %d/%d" % [
 			_localized_crash_reason(reason),
 			active_crash_penalty,
 			lives_remaining,
@@ -651,7 +651,7 @@ func _show_game_over_popup() -> void:
 		return
 
 	if game_over_label != null:
-		game_over_label.text = "목숨을 모두 잃었습니다.\n다시 시작할까요?"
+		game_over_label.text = "목숨을 모두 사용했습니다.\n다시 도전할까요?"
 
 	game_over_overlay.visible = true
 
@@ -1025,6 +1025,12 @@ func _wake_run_from_ui_input() -> void:
 		_start_run()
 
 
+func _is_point_in_steer_pad(point: Vector2) -> bool:
+	if steer_pad_base == null or not is_instance_valid(steer_pad_base):
+		return false
+	return steer_pad_base.get_global_rect().has_point(point)
+
+
 func _on_steer_pad_gui_input(event: InputEvent) -> void:
 	if game_over_overlay != null and game_over_overlay.visible:
 		_release_steer_pad()
@@ -1242,7 +1248,7 @@ func _build_ui() -> void:
 	game_over_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	game_over_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	game_over_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	game_over_label.text = "목숨을 모두 잃었습니다.\n다시 시작할까요?"
+	game_over_label.text = "목숨을 모두 사용했습니다.\n다시 도전할까요?"
 	game_over_label.add_theme_color_override("font_color", Color(0.92, 0.97, 1.0))
 	_apply_ui_font(game_over_label, 14)
 	popup_box.add_child(game_over_label)
@@ -1655,19 +1661,33 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event is InputEventScreenTouch:
 		var touch_event := event as InputEventScreenTouch
+		if touch_event.pressed and _is_point_in_steer_pad(touch_event.position):
+			steer_pad_active = true
+			steer_pad_touch_index = touch_event.index
+			_update_steer_pad_from_local(steer_pad_base.to_local(touch_event.position))
+			return
 		if not touch_event.pressed and steer_pad_active and touch_event.index == steer_pad_touch_index:
 			_release_steer_pad()
+			return
 	elif event is InputEventScreenDrag and steer_pad_active and steer_pad_base != null:
 		var drag_event := event as InputEventScreenDrag
 		if drag_event.index == steer_pad_touch_index:
 			_update_steer_pad_from_local(steer_pad_base.to_local(drag_event.position))
+			return
 	elif event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
+		if mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed and _is_point_in_steer_pad(mb.position):
+			steer_pad_active = true
+			steer_pad_touch_index = -2
+			_update_steer_pad_from_local(steer_pad_base.to_local(mb.position))
+			return
 		if mb.button_index == MOUSE_BUTTON_LEFT and not mb.pressed and steer_pad_active and steer_pad_touch_index == -2:
 			_release_steer_pad()
+			return
 	elif event is InputEventMouseMotion and steer_pad_active and steer_pad_touch_index == -2 and steer_pad_base != null:
 		var mm := event as InputEventMouseMotion
 		_update_steer_pad_from_local(steer_pad_base.to_local(mm.position))
+		return
 
 	if event.is_action_pressed("restart_run") and not run_started:
 		_start_run()
