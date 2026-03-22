@@ -57,6 +57,8 @@ const isCompactViewport = window.matchMedia('(max-width: 860px)').matches;
 const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
 const isMobileView = isCompactViewport || isCoarsePointer;
 const MAX_BULLETS = 620;
+const MAX_TOWER_LEVEL = 8;
+const MIN_TOWER_RELOAD = isMobileView ? 0.2 : 0.15;
 
 const GRID_CELL = 64;
 const GRID = {
@@ -201,6 +203,51 @@ const ENEMY_TANK_SOURCES = {
 
 const ENEMY_TANK_IMAGES = Object.create(null);
 
+const IMPACT_SFX_SOURCES = {
+  build: [
+    '../assets/audio/kenney_impact/impactWood_medium_000.ogg',
+    '../assets/audio/kenney_impact/impactWood_medium_001.ogg',
+    '../assets/audio/kenney_impact/impactWood_medium_002.ogg',
+    '../assets/audio/kenney_impact/impactWood_medium_003.ogg',
+    '../assets/audio/kenney_impact/impactWood_medium_004.ogg',
+  ],
+  enemyHit: [
+    '../assets/audio/kenney_impact/impactMetal_light_000.ogg',
+    '../assets/audio/kenney_impact/impactMetal_light_001.ogg',
+    '../assets/audio/kenney_impact/impactMetal_light_002.ogg',
+    '../assets/audio/kenney_impact/impactMetal_light_003.ogg',
+    '../assets/audio/kenney_impact/impactMetal_light_004.ogg',
+  ],
+  enemyHitHeavy: [
+    '../assets/audio/kenney_impact/impactBell_heavy_000.ogg',
+    '../assets/audio/kenney_impact/impactBell_heavy_001.ogg',
+    '../assets/audio/kenney_impact/impactBell_heavy_002.ogg',
+    '../assets/audio/kenney_impact/impactBell_heavy_003.ogg',
+    '../assets/audio/kenney_impact/impactBell_heavy_004.ogg',
+  ],
+  towerHit: [
+    '../assets/audio/kenney_impact/impactPunch_heavy_000.ogg',
+    '../assets/audio/kenney_impact/impactPunch_heavy_001.ogg',
+    '../assets/audio/kenney_impact/impactPunch_heavy_002.ogg',
+    '../assets/audio/kenney_impact/impactPunch_heavy_003.ogg',
+    '../assets/audio/kenney_impact/impactPunch_heavy_004.ogg',
+  ],
+  towerBreak: [
+    '../assets/audio/kenney_impact/impactMetal_light_000.ogg',
+    '../assets/audio/kenney_impact/impactMetal_light_001.ogg',
+    '../assets/audio/kenney_impact/impactMetal_light_002.ogg',
+    '../assets/audio/kenney_impact/impactMetal_light_003.ogg',
+    '../assets/audio/kenney_impact/impactMetal_light_004.ogg',
+  ],
+  baseHit: [
+    '../assets/audio/kenney_impact/impactPlate_heavy_000.ogg',
+    '../assets/audio/kenney_impact/impactPlate_heavy_001.ogg',
+    '../assets/audio/kenney_impact/impactPlate_heavy_002.ogg',
+    '../assets/audio/kenney_impact/impactPlate_heavy_003.ogg',
+    '../assets/audio/kenney_impact/impactPlate_heavy_004.ogg',
+  ],
+};
+
 const audioSettings = {
   bgmEnabled: true,
   sfxEnabled: true,
@@ -226,6 +273,64 @@ function tone(freq, duration = 0.05, type = 'triangle', gainValue = 0.018) {
   osc.start(now);
   osc.stop(now + duration);
 }
+
+function isSfxEnabled() {
+  return audioSettings.sfxEnabled;
+}
+
+const impactSfx = (() => {
+  const pools = Object.create(null);
+  const roundRobin = Object.create(null);
+  const lastPlayed = Object.create(null);
+
+  function ensurePool(name) {
+    if (pools[name]) return pools[name];
+    const sources = IMPACT_SFX_SOURCES[name] || [];
+    const pool = [];
+    for (const src of sources) {
+      for (let i = 0; i < 2; i += 1) {
+        const audio = new Audio(src);
+        audio.preload = 'auto';
+        audio.setAttribute('playsinline', '');
+        pool.push(audio);
+      }
+    }
+    pools[name] = pool;
+    roundRobin[name] = 0;
+    return pool;
+  }
+
+  function play(name, {
+    volume = 0.36,
+    minGap = 0.06,
+    rateMin = 0.95,
+    rateMax = 1.05,
+  } = {}) {
+    if (!isSfxEnabled()) return;
+    const now = performance.now();
+    const last = lastPlayed[name] || 0;
+    if (now - last < minGap * 1000) return;
+    lastPlayed[name] = now;
+
+    const pool = ensurePool(name);
+    if (!pool.length) return;
+
+    const idx = roundRobin[name] % pool.length;
+    roundRobin[name] += 1;
+    const audio = pool[idx];
+    if (!audio) return;
+
+    audio.volume = clamp(volume, 0, 1);
+    audio.playbackRate = rand(rateMin, rateMax);
+    audio.currentTime = 0;
+    const played = audio.play();
+    if (played && typeof played.catch === 'function') {
+      played.catch(() => {});
+    }
+  }
+
+  return { play };
+})();
 
 function rand(min, max) {
   return min + Math.random() * (max - min);
@@ -514,21 +619,121 @@ function makeTower(kind, c, r) {
     damage,
     reload,
     bulletSpeed: base.bulletSpeed,
+    pierce: 0,
     splashRadius: (base.splashRadius || 0) * perks.splashMul,
     splashFalloff: base.splashFalloff || 0.5,
     maxHp: hp,
     hp,
     cooldown: rand(0.04, reload),
     color: base.color,
+    tauntRadius: 0,
+    damageMitigation: 0,
   };
 }
 
-function towerUpgradeCost(tower) {
-  return Math.floor(tower.baseCost * (0.95 + tower.level * 0.9));
+function upgradeCost(tower) {
+  const base = tower.baseCost || TOWER_TYPES[tower.kind].cost;
+  const lv = Math.max(1, tower.level);
+  const mid = Math.max(0, lv - 3);
+  const late = Math.max(0, lv - 5);
+  return Math.floor(base * (
+    1.05
+    + lv * 0.88
+    + lv * lv * 0.2
+    + mid * mid * 0.42
+    + late * late * 0.85
+  ));
+}
+
+function getTowerUpgradeFactors(kind) {
+  const rangeMul = kind === 'sunken'
+    ? 1.24
+    : kind === 'tankerSunken'
+      ? 1.08
+    : kind === 'sunkenNova'
+      ? 1.15
+    : kind === 'sunkenStun'
+      ? 1.14
+    : kind === 'sunkenSplash'
+      ? 1.18
+    : kind === 'sunkenHammer'
+      ? 1.12
+    : kind === 'lottoSunken'
+      ? 1.16
+    : kind === 'speedSunken'
+      ? 1.16
+      : 1.2;
+
+  const damageMul = kind === 'sunkenNova'
+    ? 1.24
+    : kind === 'tankerSunken'
+      ? 1.16
+    : kind === 'sunkenStun'
+      ? 1.22
+    : kind === 'sunkenSplash'
+      ? 1.3
+    : kind === 'sunkenHammer'
+      ? 1.33
+    : kind === 'lottoSunken'
+      ? 1.28
+      : 1.34;
+
+  const reloadMul = kind === 'sunken'
+    ? 0.88
+    : kind === 'tankerSunken'
+      ? 0.95
+    : kind === 'sunkenNova'
+      ? 0.9
+    : kind === 'sunkenStun'
+      ? 0.92
+    : kind === 'sunkenSplash'
+      ? 0.92
+    : kind === 'sunkenHammer'
+      ? 0.92
+    : kind === 'lottoSunken'
+      ? 0.9
+      : 0.9;
+
+  return { rangeMul, damageMul, reloadMul };
+}
+
+function applyTowerUpgradeScaling(tower, factors = null, kindOverride = null, levelForChain = null) {
+  const kind = kindOverride || tower.kind;
+  const stats = factors || getTowerUpgradeFactors(kind);
+  tower.range *= stats.rangeMul;
+  tower.damage *= stats.damageMul;
+  tower.reload = Math.max(MIN_TOWER_RELOAD, tower.reload * stats.reloadMul);
+  tower.pierce = Math.min(3, (Number.isFinite(tower.pierce) ? tower.pierce : 0) + (kind === 'obelisk' ? 1 : 0));
+
+  if (kind === 'sunkenSplash') {
+    tower.splashRadius *= 1.15;
+    tower.splashFalloff = clamp(tower.splashFalloff + 0.05, 0.3, 0.68);
+  } else if (kind === 'sunkenHammer') {
+    tower.splashRadius *= 1.12;
+    tower.splashFalloff = clamp(tower.splashFalloff + 0.04, 0.32, 0.7);
+  } else if (kind === 'lottoSunken') {
+    tower.poisonDuration = (tower.poisonDuration || 0) * 1.15;
+    tower.poisonDps = (tower.poisonDps || 0) * 1.12;
+  } else if (kind === 'tankerSunken') {
+    tower.tauntRadius = (tower.tauntRadius || 0) * 1.08;
+    tower.damageMitigation = clamp((tower.damageMitigation || 0) + 0.03, 0, 0.8);
+  } else if (kind === 'sunkenStun') {
+    tower.stunDuration = Math.min(2.1, (tower.stunDuration || 0) * 1.1);
+    tower.stunRadius = (tower.stunRadius || 0) * 1.06;
+    const chainLevel = levelForChain ?? tower.level;
+    if (chainLevel === 3 || chainLevel === 5 || chainLevel === 7) {
+      tower.stunChain = Math.min(6, (tower.stunChain || 3) + 1);
+    }
+  }
 }
 
 function upgradeTower(tower) {
-  const cost = towerUpgradeCost(tower);
+  if (tower.level >= MAX_TOWER_LEVEL) {
+    tone(210, 0.05, 'triangle', 0.014);
+    return false;
+  }
+
+  const cost = upgradeCost(tower);
   if (state.gold < cost) {
     tone(180, 0.06, 'sawtooth', 0.022);
     return false;
@@ -536,17 +741,12 @@ function upgradeTower(tower) {
 
   state.gold -= cost;
   tower.spent += cost;
-  tower.level += 1;
-  tower.damage *= tower.kind === 'speedSunken' ? 1.12 : tower.kind === 'sunkenHammer' ? 1.28 : 1.2;
-  tower.reload *= tower.kind === 'speedSunken' ? 0.84 : 0.9;
-  tower.range *= tower.kind === 'sunkenHammer' ? 1.03 : 1.05;
-  tower.maxHp *= tower.kind === 'tankerSunken' ? 1.35 : 1.26;
+  tower.level = Math.min(MAX_TOWER_LEVEL, tower.level + 1);
+  applyTowerUpgradeScaling(tower, getTowerUpgradeFactors(tower.kind), tower.kind, tower.level);
+  tower.maxHp *= 1.34;
   tower.hp = Math.min(tower.maxHp, tower.hp + tower.maxHp * 0.25);
-  if (tower.splashRadius > 0) {
-    tower.splashRadius *= 1.1;
-  }
 
-  tone(430, 0.05, 'triangle', 0.018);
+  tone(660, 0.07, 'triangle', 0.022);
   return true;
 }
 
@@ -580,6 +780,7 @@ function placeTower(c, r) {
   state.towers.push(tower);
   rebuildBlocked();
   buildDistanceMap();
+  impactSfx.play('build', { volume: 0.32, minGap: 0.04, rateMin: 0.95, rateMax: 1.05 });
   tone(360, 0.05, 'triangle', 0.017);
   return true;
 }
@@ -606,6 +807,17 @@ function makeEnemy(type) {
     color: base.color,
     tank: base.tank,
     boss: Boolean(base.boss),
+    fast: type === 'runner',
+    threat: type === 'scout'
+      ? 0.24
+      : type === 'runner'
+        ? 0.42
+      : type === 'brute'
+        ? 0.56
+      : type === 'crusher'
+        ? 0.72
+        : 0.9,
+    morph: Math.random() * TAU,
     targetC: SPAWN.c,
     targetR: SPAWN.r,
     targetX: spawn.x,
@@ -658,13 +870,47 @@ function removeEnemy(enemy) {
   }
 }
 
-function damageEnemy(enemy, damage) {
+function damageEnemy(enemy, damage, sourceKind = '', secondary = false) {
   enemy.hp -= damage;
+
+  if (sourceKind === 'sunken') {
+    impactSfx.play('enemyHit', {
+      volume: 0.28,
+      minGap: 0.04,
+      rateMin: 0.95,
+      rateMax: 1.06,
+    });
+    if (!secondary && Math.random() < 0.35) tone(286 + rand(-22, 18), 0.04, 'triangle', 0.011);
+  } else if (sourceKind === 'sunkenSplash') {
+    impactSfx.play('enemyHit', {
+      volume: 0.3,
+      minGap: 0.05,
+      rateMin: 0.93,
+      rateMax: 1.02,
+    });
+    if (!secondary && Math.random() < 0.5) tone(270 + rand(-16, 14), 0.04, 'square', 0.012);
+  } else if (sourceKind === 'speedSunken') {
+    impactSfx.play('enemyHit', {
+      volume: 0.24,
+      minGap: 0.03,
+      rateMin: 1.02,
+      rateMax: 1.16,
+    });
+    if (!secondary && Math.random() < 0.55) tone(468 + rand(-34, 30), 0.03, 'triangle', 0.009);
+  } else if (sourceKind) {
+    impactSfx.play('enemyHit', { volume: 0.26, minGap: 0.045, rateMin: 0.95, rateMax: 1.04 });
+  }
+
   if (enemy.hp > 0) return false;
   removeEnemy(enemy);
   state.kills += 1;
   state.gold += enemy.reward + state.perks.killGoldAdd;
-  tone(enemy.boss ? 560 : 490, 0.04, 'triangle', 0.015);
+  if (enemy.boss) {
+    impactSfx.play('enemyHitHeavy', { volume: 0.46, minGap: 0.12, rateMin: 0.88, rateMax: 0.95 });
+    tone(280, 0.2, 'sawtooth', 0.04);
+  } else if (Math.random() < 0.35) {
+    tone(560, 0.04, 'triangle', 0.013);
+  }
   return true;
 }
 
@@ -682,29 +928,42 @@ function findTargetsForSplash(centerX, centerY, radius) {
 }
 
 function shootTower(tower, target) {
-  const baseAngle = Math.atan2(target.y - tower.y, target.x - tower.x);
-  const spreadShots = tower.kind === 'sunkenSplash' ? 1 : tower.kind === 'speedSunken' ? 1 : 1;
+  if (state.bullets.length >= MAX_BULLETS) return;
 
-  for (let i = 0; i < spreadShots; i += 1) {
-    const angle = baseAngle + (spreadShots > 1 ? (i - (spreadShots - 1) * 0.5) * 0.08 : 0);
-    const vx = Math.cos(angle) * tower.bulletSpeed;
-    const vy = Math.sin(angle) * tower.bulletSpeed;
+  const dx = target.x - tower.x;
+  const dy = target.y - tower.y;
+  const d = Math.hypot(dx, dy) || 1;
+  const kind = tower.kind;
+  const isSplash = kind === 'sunkenSplash' || kind === 'sunkenHammer';
+  const isHammer = kind === 'sunkenHammer';
+  const baseColor = TOWER_TYPES[kind]?.color || tower.color;
 
-    state.bullets.push({
-      x: tower.x,
-      y: tower.y,
-      vx,
-      vy,
-      r: tower.kind === 'sunkenHammer' ? 7 : 5,
-      damage: tower.damage,
-      ttl: 1.7,
-      splashRadius: tower.splashRadius || 0,
-      splashFalloff: tower.splashFalloff || 0.5,
-      color: tower.color,
-    });
+  state.bullets.push({
+    x: tower.x,
+    y: tower.y,
+    vx: (dx / d) * tower.bulletSpeed,
+    vy: (dy / d) * tower.bulletSpeed,
+    r: isSplash ? 5.6 : 4,
+    damage: tower.damage,
+    ttl: 2,
+    splashRadius: isSplash ? tower.splashRadius : 0,
+    splashFalloff: isSplash ? tower.splashFalloff : 0,
+    color: baseColor,
+    sourceKind: kind,
+    lightning: isHammer,
+  });
+
+  if (kind === 'sunken') {
+    if (Math.random() < 0.4) tone(330 + rand(-24, 18), 0.03, 'triangle', 0.011);
+  } else if (kind === 'sunkenSplash') {
+    impactSfx.play('enemyHitHeavy', { volume: 0.26, minGap: 0.08, rateMin: 0.95, rateMax: 1.03 });
+    if (Math.random() < 0.6) tone(290 + rand(-18, 14), 0.04, 'square', 0.012);
+  } else if (kind === 'sunkenHammer') {
+    impactSfx.play('enemyHitHeavy', { volume: 0.28, minGap: 0.05, rateMin: 0.96, rateMax: 1.05 });
+    if (Math.random() < 0.58) tone(316 + rand(-20, 18), 0.04, 'square', 0.012);
+  } else if (Math.random() < 0.35) {
+    tone(430 + rand(-26, 28), 0.03, 'square', 0.01);
   }
-
-  tone(620 - Math.min(360, tower.level * 24), 0.028, 'triangle', 0.01);
 }
 
 function findClosestEnemy(x, y, range) {
@@ -773,12 +1032,13 @@ function updateBullets(dt) {
         const dx = enemy.x - hit.x;
         const dy = enemy.y - hit.y;
         const dist = Math.hypot(dx, dy);
-        const ratio = clamp(1 - (dist / Math.max(1, bullet.splashRadius)), 0.2, 1);
-        const splashDamage = bullet.damage * (bullet.splashFalloff + (1 - bullet.splashFalloff) * ratio);
-        damageEnemy(enemy, splashDamage);
+        const rawRate = 1 - (dist / Math.max(1, bullet.splashRadius));
+        const rate = clamp(rawRate, bullet.splashFalloff || 0.35, 1);
+        const splashDamage = bullet.damage * rate * 0.72;
+        damageEnemy(enemy, splashDamage, bullet.sourceKind || '', enemy !== hit);
       }
     } else {
-      damageEnemy(hit, bullet.damage);
+      damageEnemy(hit, bullet.damage, bullet.sourceKind || '', false);
     }
 
     state.bullets.splice(i, 1);
@@ -820,8 +1080,8 @@ function updateEnemies(dt) {
     const nx = dx / dist;
     const ny = dy / dist;
 
-    enemy.vx = nx;
-    enemy.vy = ny;
+    enemy.vx = nx * enemy.speed;
+    enemy.vy = ny * enemy.speed;
     enemy.x += nx * step;
     enemy.y += ny * step;
 
@@ -829,6 +1089,7 @@ function updateEnemies(dt) {
     if (gd <= enemy.r + GRID.cell * 0.26) {
       state.hp -= enemy.leak;
       removeEnemy(enemy);
+      impactSfx.play('baseHit', { volume: 0.4, minGap: 0.06, rateMin: 0.9, rateMax: 1.01 });
       tone(160, 0.08, 'sawtooth', 0.028);
       if (state.hp <= 0) {
         state.hp = 0;
@@ -1905,42 +2166,225 @@ function drawTowerSunken(tower, now) {
 }
 
 
-function drawEnemy(enemy) {
+function borderColorForTowerKind(kind) {
+  if (kind === 'sunken') return 'rgba(77, 163, 255, 0.9)';
+  if (kind === 'tankerSunken') return 'rgba(127, 224, 167, 0.95)';
+  if (kind === 'sunkenNova') return 'rgba(198, 155, 255, 0.9)';
+  if (kind === 'sunkenStun') return 'rgba(255, 205, 92, 0.95)';
+  if (kind === 'sunkenSplash') return 'rgba(30, 30, 30, 0.95)';
+  if (kind === 'sunkenHammer') return 'rgba(255, 77, 77, 0.95)';
+  if (kind === 'fusion') return 'rgba(174, 240, 255, 0.95)';
+  if (kind === 'speedSunken') return 'rgba(255, 255, 255, 0.95)';
+  return 'rgba(154, 232, 255, 0.88)';
+}
+
+function isFxHeavyLoad() {
+  if (!isMobileView) return state.bullets.length >= MAX_BULLETS * 0.7;
+  return state.bullets.length >= MAX_BULLETS * 0.48 || state.towers.length + state.enemies.length >= 90;
+}
+
+function isFxSevereLoad() {
+  if (!isMobileView) return state.bullets.length >= MAX_BULLETS * 0.88;
+  return state.bullets.length >= MAX_BULLETS * 0.72 || state.enemies.length >= 56;
+}
+
+function drawEnemyTankSprite(enemy) {
   const img = ENEMY_TANK_IMAGES[enemy.tank];
-  const angle = Math.atan2(enemy.vy || 1, enemy.vx || 0) + Math.PI * 0.5;
+  if (!img || !img.complete || !img.naturalWidth) return false;
+
+  const velLen = Math.hypot(enemy.vx, enemy.vy);
+  let dx = enemy.vx;
+  let dy = enemy.vy;
+  if (velLen < 6) {
+    dx = enemy.targetX - enemy.x;
+    dy = enemy.targetY - enemy.y;
+    if (Math.hypot(dx, dy) < 1) {
+      const goal = cellCenter(GOAL.c, GOAL.r);
+      dx = goal.x - enemy.x;
+      dy = goal.y - enemy.y;
+    }
+  }
+  const ang = Math.atan2(dy, dx);
+
+  let sizeMul = 2.2;
+  let sizeCap = 34;
+  if (enemy.fast) sizeMul = 2.05;
+  if (enemy.type === 'brute' || enemy.tank === 'brute') sizeMul = 2.35;
+  if (enemy.type === 'crusher' || enemy.tank === 'crusher') {
+    sizeMul = 2.6;
+    sizeCap = 45;
+  }
+  if (enemy.type === 'lord' || enemy.boss) {
+    sizeMul = 2.4;
+    sizeCap = 44;
+  }
+  const size = clamp(enemy.r * sizeMul, 18, sizeCap);
 
   ctx.save();
   ctx.translate(enemy.x, enemy.y);
-  ctx.rotate(angle);
+  ctx.rotate(ang);
+  if (enemy.snareTimer > 0) {
+    ctx.globalAlpha = 0.84;
+  } else if ((enemy.stunTimer || 0) > 0) {
+    ctx.globalAlpha = 0.72;
+  }
+  ctx.drawImage(img, -size * 0.5, -size * 0.5, size, size);
+  ctx.globalAlpha = 1;
+  ctx.restore();
+  return true;
+}
 
-  if (img && img.complete && img.naturalWidth > 0) {
-    const scale = enemy.r * 0.075;
-    const w = img.naturalWidth * scale;
-    const h = img.naturalHeight * scale;
-    ctx.drawImage(img, -w * 0.5, -h * 0.5, w, h);
-  } else {
+function drawEnemy(enemy, now) {
+  const severe = isFxSevereLoad();
+  const heavy = severe ? true : isFxHeavyLoad();
+  const threat = Number.isFinite(enemy.threat) ? enemy.threat : (enemy.boss ? 0.9 : 0.45);
+  const morph = Number.isFinite(enemy.morph) ? enemy.morph : 0;
+  const pulse = 0.5 + 0.5 * Math.sin(now * 5 + morph);
+  const auraRadius = enemy.r + 4 + threat * 6 + pulse * 2.6;
+  const spikeCount = 6 + Math.floor(threat * 8);
+
+  if (!heavy && threat >= 0.35) {
+    ctx.strokeStyle = enemy.boss
+      ? `rgba(255, 154, 178, ${0.25 + pulse * 0.2})`
+      : `rgba(195, 140, 255, ${0.2 + pulse * 0.16})`;
+    ctx.lineWidth = 2 + threat;
+    ctx.beginPath();
+    ctx.arc(enemy.x, enemy.y, auraRadius, 0, TAU);
+    ctx.stroke();
+  }
+
+  if (!heavy && threat >= 0.55) {
+    ctx.strokeStyle = enemy.boss ? 'rgba(255, 193, 143, 0.38)' : 'rgba(197, 150, 255, 0.32)';
+    ctx.lineWidth = 1.8;
+    for (let i = 0; i < spikeCount; i += 1) {
+      const ang = (i / spikeCount) * TAU + now * (enemy.boss ? 0.8 : 1.3);
+      const sx = enemy.x + Math.cos(ang) * (enemy.r + 1);
+      const sy = enemy.y + Math.sin(ang) * (enemy.r + 1);
+      const ex = enemy.x + Math.cos(ang) * (enemy.r + 4 + threat * 4);
+      const ey = enemy.y + Math.sin(ang) * (enemy.r + 4 + threat * 4);
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+    }
+  }
+
+  ctx.fillStyle = 'rgba(10, 14, 22, 0.62)';
+  ctx.beginPath();
+  ctx.ellipse(enemy.x, enemy.y + enemy.r * 0.15, enemy.r * 1.05, enemy.r * 0.72, 0, 0, TAU);
+  ctx.fill();
+
+  if (!drawEnemyTankSprite(enemy)) {
+    ctx.fillStyle = '#100f19';
+    ctx.beginPath();
+    ctx.arc(enemy.x, enemy.y, enemy.r + 3, 0, TAU);
+    ctx.fill();
+
     ctx.fillStyle = enemy.color;
     ctx.beginPath();
-    ctx.arc(0, 0, enemy.r, 0, Math.PI * 2);
+    ctx.arc(enemy.x, enemy.y, enemy.r, 0, TAU);
     ctx.fill();
   }
 
-  ctx.restore();
+  if (!severe && enemy.fast) {
+    const fastMarkAlpha = enemy.snareTimer > 0 ? 0.42 : 0.86;
+    ctx.strokeStyle = `rgba(255, 230, 180, ${fastMarkAlpha})`;
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(enemy.x - enemy.r * 0.55, enemy.y - enemy.r * 0.1);
+    ctx.lineTo(enemy.x + enemy.r * 0.55, enemy.y + enemy.r * 0.1);
+    ctx.moveTo(enemy.x + enemy.r * 0.28, enemy.y - enemy.r * 0.56);
+    ctx.lineTo(enemy.x - enemy.r * 0.2, enemy.y + enemy.r * 0.5);
+    ctx.stroke();
+  }
 
-  const hpRatio = clamp(enemy.hp / enemy.maxHp, 0, 1);
-  const barW = Math.max(24, enemy.r * 2.1);
-  const barY = enemy.y - enemy.r - 11;
-  ctx.fillStyle = 'rgba(8, 12, 17, 0.74)';
-  ctx.fillRect(enemy.x - barW * 0.5, barY, barW, 4);
-  ctx.fillStyle = enemy.boss ? '#ffb67f' : '#8df1b0';
-  ctx.fillRect(enemy.x - barW * 0.5, barY, barW * hpRatio, 4);
+  if (!severe && (enemy.stunTimer || 0) > 0) {
+    const stunRatio = clamp((enemy.stunTimer || 0) / 1.2, 0, 1);
+    const stunPulse = 0.4 + 0.6 * Math.sin(now * 11 + morph * 1.9);
+    ctx.strokeStyle = `rgba(255, 220, 120, ${0.58 + stunRatio * 0.24})`;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.arc(enemy.x, enemy.y, enemy.r + 7 + stunPulse * 1.6, 0, TAU);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = 'rgba(255, 235, 245, 0.72)';
+  ctx.beginPath();
+  ctx.arc(enemy.x - enemy.r * 0.24, enemy.y - enemy.r * 0.22, 1.4 + threat * 0.6, 0, TAU);
+  ctx.arc(enemy.x + enemy.r * 0.24, enemy.y - enemy.r * 0.22, 1.4 + threat * 0.6, 0, TAU);
+  ctx.fill();
+
+  if (threat >= 0.74 || enemy.boss) {
+    const horn = enemy.r * (enemy.boss ? 0.92 : 0.72);
+    ctx.fillStyle = enemy.boss ? 'rgba(255, 208, 145, 0.8)' : 'rgba(228, 187, 255, 0.68)';
+    ctx.beginPath();
+    ctx.moveTo(enemy.x - enemy.r * 0.44, enemy.y - enemy.r * 0.55);
+    ctx.lineTo(enemy.x - enemy.r * 0.14, enemy.y - horn);
+    ctx.lineTo(enemy.x + enemy.r * 0.04, enemy.y - enemy.r * 0.42);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(enemy.x + enemy.r * 0.44, enemy.y - enemy.r * 0.55);
+    ctx.lineTo(enemy.x + enemy.r * 0.14, enemy.y - horn);
+    ctx.lineTo(enemy.x - enemy.r * 0.04, enemy.y - enemy.r * 0.42);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  if (state.stage >= 6) {
+    ctx.fillStyle = enemy.boss ? 'rgba(255, 150, 174, 0.15)' : 'rgba(215, 136, 255, 0.12)';
+    ctx.beginPath();
+    ctx.arc(enemy.x - enemy.vx * 0.028, enemy.y - enemy.vy * 0.028, enemy.r * 0.85, 0, TAU);
+    ctx.fill();
+  }
+
+  const barW = enemy.r * 2;
+  const ratio = clamp(enemy.hp / enemy.maxHp, 0, 1);
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(enemy.x - barW * 0.5, enemy.y - enemy.r - 10, barW, 4);
+  ctx.fillStyle = enemy.boss ? '#ffd183' : '#f7a2bf';
+  ctx.fillRect(enemy.x - barW * 0.5, enemy.y - enemy.r - 10, barW * ratio, 4);
 }
 
 function drawBullets() {
-  for (const bullet of state.bullets) {
-    ctx.fillStyle = bullet.color;
+  const severe = isFxSevereLoad();
+  const stride = severe ? 2 : 1;
+  for (let i = 0; i < state.bullets.length; i += stride) {
+    const b = state.bullets[i];
+    if (b.lightning) {
+      const ang = Math.atan2(b.vy, b.vx);
+      const len = 16;
+      const sx = b.x - Math.cos(ang) * len * 0.5;
+      const sy = b.y - Math.sin(ang) * len * 0.5;
+      const ex = b.x + Math.cos(ang) * len * 0.6;
+      const ey = b.y + Math.sin(ang) * len * 0.6;
+      const nx = Math.cos(ang + Math.PI / 2);
+      const ny = Math.sin(ang + Math.PI / 2);
+
+      ctx.strokeStyle = '#f7e7a6';
+      ctx.lineWidth = 2.4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(sx + nx * 3, sy + ny * 3);
+      ctx.lineTo(b.x, b.y);
+      ctx.lineTo(ex - nx * 3, ey - ny * 3);
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#fff6cc';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(b.x, b.y);
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+      continue;
+    }
+
+    ctx.fillStyle = b.color;
     ctx.beginPath();
-    ctx.arc(bullet.x, bullet.y, bullet.r, 0, Math.PI * 2);
+    ctx.arc(b.x, b.y, b.r, 0, TAU);
     ctx.fill();
   }
 }
@@ -1966,23 +2410,68 @@ function drawSelectedCell(now) {
 }
 
 function draw() {
-  const now = performance.now();
+  const nowMs = performance.now();
+  const now = nowMs * 0.001;
   const backdrop = getBackgroundLayer();
   ctx.drawImage(backdrop, 0, 0);
   drawPathPreview();
   drawGrid();
-  drawEndpoints(now);
+  drawEndpoints(nowMs);
 
   for (const tower of state.towers) {
+    const footprint = tower.footprint || 1;
+    const x = tower.c * GRID.cell + 2;
+    const y = tower.r * GRID.cell + 2;
+    const w = GRID.cell * footprint - 4;
+    const h = GRID.cell * footprint - 4;
+
+    ctx.fillStyle = '#0f1727';
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = borderColorForTowerKind(tower.kind);
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+
     drawTower(tower, now);
+
+    const hpRatio = clamp(tower.hp / tower.maxHp, 0, 1);
+    if (hpRatio < 0.999) {
+      const hpBarW = 22 + (footprint - 1) * 18;
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(tower.x - hpBarW * 0.5, tower.y - 18 - (footprint - 1) * 4, hpBarW, 4);
+      ctx.fillStyle = hpRatio > 0.4 ? '#92f0b3' : '#ff8aa5';
+      ctx.fillRect(tower.x - hpBarW * 0.5, tower.y - 18 - (footprint - 1) * 4, hpBarW * hpRatio, 4);
+    }
+
+    if (tower.level > 1) {
+      const badgeR = 7 + (footprint - 1) * 2;
+      const label = `L${tower.level}`;
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `800 ${10 + (footprint - 1) * 2}px sans-serif`;
+      ctx.fillStyle = 'rgba(7, 13, 24, 0.78)';
+      ctx.strokeStyle = 'rgba(255, 209, 97, 0.92)';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(tower.x, tower.y, badgeR, 0, TAU);
+      ctx.fill();
+      ctx.stroke();
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = 3.2;
+      ctx.strokeStyle = 'rgba(8, 15, 27, 0.95)';
+      ctx.strokeText(label, tower.x, tower.y + 0.4);
+      ctx.fillStyle = '#ffe8a6';
+      ctx.fillText(label, tower.x, tower.y + 0.4);
+      ctx.restore();
+    }
   }
 
   for (const enemy of state.enemies) {
-    drawEnemy(enemy);
+    drawEnemy(enemy, now);
   }
 
   drawBullets();
-  drawSelectedCell(now);
+  drawSelectedCell(nowMs);
 }
 
 function transitionToFightPhase() {
