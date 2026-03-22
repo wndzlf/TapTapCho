@@ -1,5 +1,4 @@
 const RANK_LIMIT = 6;
-const STORE_LIMIT = 8;
 const FILTER_PREVIEW_LIMIT = 8;
 const SEARCH_RESULT_LIMIT = 8;
 
@@ -38,8 +37,6 @@ const refs = {
   categorySectionTitle: document.getElementById("category-section-title"),
   categoryNote: document.getElementById("category-note"),
   categoryList: document.getElementById("category-list"),
-  storeNote: document.getElementById("store-note"),
-  storeList: document.getElementById("store-list"),
   filterPicker: document.getElementById("filter-picker"),
   pickerBackdrop: document.getElementById("picker-backdrop"),
   pickerKicker: document.getElementById("picker-kicker"),
@@ -1344,58 +1341,6 @@ function renderIndustryRadar() {
   );
 }
 
-function buildStoreCards(items) {
-  return items
-    .map((item) => {
-      return `
-        <article class="store-card">
-          <div class="store-top">
-            <div class="store-badges">
-              <span class="badge area">${escapeHtml(getAreaLabel(item))}</span>
-              <span class="badge industry">${escapeHtml(getIndustryLabel(item))}</span>
-              <span class="badge area">${escapeHtml(item.stdrYm || "기준월 없음")}</span>
-            </div>
-          </div>
-          <h3 class="store-title">${escapeHtml(item.bizesNm || "상호 정보 없음")}</h3>
-          <p class="store-subtitle">${escapeHtml(item.indsLclsNm || "업종 분류 없음")} · ${escapeHtml(item.indsSclsNm || "세부 업종 없음")}</p>
-          <p class="store-address">${escapeHtml(item.rdnmAdr || item.lnoAdr || "주소 정보 없음")}</p>
-          <p class="store-micro">${escapeHtml(item.bizesId || "-")} · ${escapeHtml(item.lon || "-")}, ${escapeHtml(item.lat || "-")}</p>
-        </article>
-      `;
-    })
-    .join("");
-}
-
-function renderStoreList(items) {
-  const sortedItems = [...items].sort((left, right) => {
-    const areaCompared = getAreaLabel(left).localeCompare(getAreaLabel(right), "ko");
-    if (areaCompared !== 0) {
-      return areaCompared;
-    }
-
-    const industryCompared = getIndustryLabel(left).localeCompare(getIndustryLabel(right), "ko");
-    if (industryCompared !== 0) {
-      return industryCompared;
-    }
-
-    return (left.bizesNm || "").localeCompare(right.bizesNm || "", "ko");
-  });
-
-  const visibleItems = sortedItems.slice(0, STORE_LIMIT);
-  refs.storeNote.textContent = items.length
-    ? `총 ${formatNumber(items.length)}건 중 ${formatNumber(visibleItems.length)}건만 먼저 보여줍니다.`
-    : "현재 조건에 맞는 점포 샘플이 없습니다.";
-
-  if (!items.length) {
-    refs.storeList.innerHTML = `
-      <article class="placeholder-card">점포 샘플이 없습니다. 위 레이더에서 다른 동네나 업종을 눌러보세요.</article>
-    `;
-    return;
-  }
-
-  refs.storeList.innerHTML = buildStoreCards(visibleItems);
-}
-
 function handleSearchKeydown(type, event) {
   if (event.key === "Escape") {
     if (state[`${type}Query`]) {
@@ -1426,7 +1371,6 @@ function render() {
   renderBriefingVisual(items);
   renderAreaRadar();
   renderIndustryRadar();
-  renderStoreList(items);
   renderPicker();
 }
 
@@ -1501,7 +1445,6 @@ async function init() {
     refs.signalGrid.innerHTML = `<article class="placeholder-card">스냅샷이 없어 핵심 신호를 렌더링하지 못했습니다.</article>`;
     refs.areaList.innerHTML = `<article class="placeholder-card">스냅샷이 없어 동네 레이더를 렌더링하지 못했습니다.</article>`;
     refs.categoryList.innerHTML = `<article class="placeholder-card">스냅샷이 없어 업종 레이더를 렌더링하지 못했습니다.</article>`;
-    refs.storeList.innerHTML = `<article class="placeholder-card">스냅샷이 없어 점포 목록을 렌더링하지 못했습니다.</article>`;
   }
 }
 
