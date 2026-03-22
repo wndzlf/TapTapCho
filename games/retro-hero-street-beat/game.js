@@ -109,6 +109,17 @@ const MAX_HP = 3;
 const HERO_GAUGE_TARGET = 12;
 const HERO_MODE_DURATION = 8;
 const REVIVE_SHIELD_SEC = 2.2;
+const APPROACH_BEATS = 4;
+const APPROACH_SEC = APPROACH_BEATS * BEAT_SEC;
+const IMPACT_LOOKAHEAD_BEATS = APPROACH_BEATS;
+const JUDGE_WINDOWS_SEC = {
+  perfect: 0.06,
+  great: 0.11,
+  good: 0.17,
+  safe: 0.23,
+};
+const SAFE_PASS_GRACE_SEC = 0.07;
+const SAFE_AUTOLANE_NUDGE_SEC = 0.09;
 
 const ENEMY_SPAWN_Y = -82;
 const HERO_Y = H - 134;
@@ -169,6 +180,13 @@ const enemies = [];
 const particles = [];
 const slashFx = [];
 const laneFlash = [0, 0, 0];
+const timingFeedback = {
+  label: '',
+  color: 'rgba(255, 236, 183, ALPHA)',
+  life: 0,
+  maxLife: 0,
+  x: W * 0.5,
+};
 
 function safeLocalStorageGet(key) {
   try {
@@ -192,6 +210,14 @@ function clamp(value, min, max) {
 
 function lerp(a, b, t) {
   return a + (b - a) * t;
+}
+
+function colorAlpha(color, alpha) {
+  return color.replace('ALPHA', clamp(alpha, 0, 1).toFixed(3));
+}
+
+function beatToSongSec(beatIndex) {
+  return beatIndex * BEAT_SEC;
 }
 
 function random() {
@@ -228,6 +254,15 @@ function setElementHidden(element, hidden) {
   element?.classList.toggle('hidden', hidden);
 }
 
+function updateInteractionLock() {
+  const shouldLock = state === 'running'
+    && !pauseReason
+    && isHidden(infoModal)
+    && isHidden(exitModal)
+    && isHidden(gameOverModal);
+  document.body.classList.toggle('interaction-lock', shouldLock);
+}
+
 function updateBridgeBadge(text, className) {
   bridgeBadgeEl.textContent = text;
   bridgeBadgeEl.className = `badge ${className}`;
@@ -247,10 +282,12 @@ function updateAudioButtons() {
 function updateStartButtonLabel() {
   if (state === 'running') {
     btnStart.textContent = pauseReason === 'manual' ? '재개' : '일시정지';
+    updateInteractionLock();
     return;
   }
 
   btnStart.textContent = state === 'gameover' ? '다시 시작' : '시작';
+  updateInteractionLock();
 }
 
 function updateHud() {
@@ -276,7 +313,7 @@ function updateHud() {
 
 function defaultStatusByState() {
   if (state === 'idle') {
-    return '레인을 탭해 공격. 비트 라인 타이밍을 맞추면 Perfect 보너스가 커집니다.';
+    return '레인을 탭해 공격. Perfect/Great/Good/Safe 판정으로 박자를 따라가세요.';
   }
 
   if (state === 'gameover') {
@@ -287,7 +324,7 @@ function defaultStatusByState() {
     return '일시정지 상태입니다. 복귀하면 바로 이어서 플레이할 수 있어요.';
   }
 
-  return 'NEON HIT 라인에 맞춰 공격하면 Perfect, 콤보가 유지됩니다.';
+  return 'NEON HIT 라인에서 입력하면 고득점. SAFE도 통과하지만 점수/콤보는 낮습니다.';
 }
 
 function setStatus(message, durationSec = 1.1) {
@@ -368,8 +405,14 @@ const sfx = {
   perfect() {
     playTone({ freq: 720, endFreq: 1040, gain: 0.06, duration: 0.1, type: 'triangle' });
   },
+  great() {
+    playTone({ freq: 640, endFreq: 900, gain: 0.052, duration: 0.09, type: 'triangle' });
+  },
   good() {
     playTone({ freq: 560, endFreq: 780, gain: 0.045, duration: 0.08, type: 'triangle' });
+  },
+  safe() {
+    playTone({ freq: 460, endFreq: 620, gain: 0.035, duration: 0.075, type: 'triangle' });
   },
   miss() {
     playTone({ freq: 220, endFreq: 150, gain: 0.05, duration: 0.1, type: 'sawtooth' });
@@ -411,10 +454,58 @@ function getSongSeconds() {
   return Math.max(0, songClockFallbackSec - SONG_BEAT_OFFSET_SEC);
 }
 
-function getBeatErrorSec() {
-  const beatFloat = getSongSeconds() / BEAT_SEC;
-  const nearest = Math.round(beatFloat);
-  return Math.abs(beatFloat - nearest) * BEAT_SEC;
+function getBeatBiasLabel(timeDeltaSec) {
+  if (Math.abs(timeDeltaSec) <= 0.018) {
+    return 'CENTER';
+  }
+  return timeDeltaSec < 0 ? 'EARLY' : 'LATE';
+}
+
+function pushTimingFeedback(verdict, lane, timeDeltaSec = 0, overrideLabel = '') {
+  const feedbackColor = {
+    perfect: 'rgba(255, 224, 114, ALPHA)',
+    great: 'rgba(124, 236, 255, ALPHA)',
+    good: 'rgba(167, 192, 255, ALPHA)',
+    safe: 'rgba(125, 255, 196, ALPHA)',
+    miss: 'rgba(255, 132, 170, ALPHA)',
+  };
+
+  timingFeedback.label = overrideLabel || `${verdict.toUpperCase()} ${getBeatBiasLabel(timeDeltaSec)}`;
+  timingFeedback.color = feedbackColor[verdict] || feedbackColor.good;
+  timingFeedback.life = verdict === 'perfect' ? 0.56 : 0.48;
+  timingFeedback.maxLife = timingFeedback.life;
+  timingFeedback.x = LANES[clamp(lane, 0, LANES.length - 1)] || W * 0.5;
+}
+
+function getSectionProfile(beatIndex) {
+  const songSec = beatToSongSec(beatIndex);
+
+  if (songSec < 18) {
+    return { density: 0.42, doubleChance: 0.02, burstChance: 0 };
+  }
+  if (songSec < 46) {
+    return { density: 0.62, doubleChance: 0.12, burstChance: 0.02 };
+  }
+  if (songSec < 82) {
+    return { density: 0.74, doubleChance: 0.2, burstChance: 0.05 };
+  }
+  if (songSec < 122) {
+    return { density: 0.82, doubleChance: 0.27, burstChance: 0.08 };
+  }
+  return { density: 0.9, doubleChance: 0.34, burstChance: 0.12 };
+}
+
+function getBeatAccentWeight(beatIndex) {
+  const inBar = ((beatIndex % 4) + 4) % 4;
+  let weight = [1, 0.4, 0.82, 0.52][inBar];
+
+  if (beatIndex % 16 === 0) {
+    weight += 0.16;
+  } else if (beatIndex % 8 === 4) {
+    weight += 0.1;
+  }
+
+  return clamp(weight, 0.2, 1.25);
 }
 
 function pickSpawnLane() {
@@ -454,20 +545,22 @@ function addSlash(lane, verdict = 'good') {
   });
 }
 
-function spawnEnemy(beatIndex, forcedLane = null) {
+function spawnEnemy(targetBeat, forcedLane = null, accentWeight = 1) {
   const lane = forcedLane == null ? pickSpawnLane() : forcedLane;
-  const travelBeats = clamp(3.2 - wave * 0.08, 2.1, 3.2);
-  const travelSec = travelBeats * BEAT_SEC;
-  const speed = (HIT_LINE_Y - ENEMY_SPAWN_Y) / travelSec;
+  const hitSec = beatToSongSec(targetBeat);
+  const spawnSec = hitSec - APPROACH_SEC;
 
   enemies.push({
     id: enemyIdSeed,
     lane,
     x: LANES[lane],
     y: ENEMY_SPAWN_Y,
-    speed,
     phase: random() * Math.PI * 2,
-    beatBorn: beatIndex,
+    targetBeat,
+    spawnSec,
+    hitSec,
+    accent: clamp(accentWeight, 0.35, 1.35),
+    progress: 0,
   });
 
   enemyIdSeed += 1;
@@ -478,19 +571,31 @@ function updateWaveFromBeat(beatIndex) {
 }
 
 function handleBeat(beatIndex) {
-  updateWaveFromBeat(beatIndex);
+  const targetBeat = beatIndex + IMPACT_LOOKAHEAD_BEATS;
+  updateWaveFromBeat(targetBeat);
 
-  const density = clamp(0.54 + beatIndex * 0.003, 0.54, 0.95);
-  if (random() < density) {
-    spawnEnemy(beatIndex);
+  const profile = getSectionProfile(targetBeat);
+  const accentWeight = getBeatAccentWeight(targetBeat);
+  const spawnChance = clamp(profile.density * accentWeight, 0.08, 0.98);
+
+  if (random() > spawnChance) {
+    return;
   }
 
-  if (wave >= 3 && beatIndex % 8 === 4 && random() < 0.5) {
-    let bonusLane = pickSpawnLane();
-    if (enemies.length > 0 && bonusLane === enemies[enemies.length - 1].lane) {
-      bonusLane = (bonusLane + 1) % LANES.length;
+  const mainLane = pickSpawnLane();
+  spawnEnemy(targetBeat, mainLane, accentWeight);
+
+  let sideLane = -1;
+  if (accentWeight >= 0.88 && random() < profile.doubleChance) {
+    sideLane = (mainLane + (random() < 0.5 ? 1 : 2)) % LANES.length;
+    spawnEnemy(targetBeat, sideLane, accentWeight * 0.92);
+  }
+
+  if (accentWeight > 1.08 && random() < profile.burstChance) {
+    for (let lane = 0; lane < LANES.length; lane += 1) {
+      if (lane === mainLane || lane === sideLane) continue;
+      spawnEnemy(targetBeat, lane, accentWeight * 0.86);
     }
-    spawnEnemy(beatIndex, bonusLane);
   }
 }
 
@@ -515,63 +620,123 @@ function loseHp() {
   updateHud();
 }
 
-function findClosestEnemyInLane(lane) {
+function findClosestEnemyInLane(lane, songSec) {
   let bestIndex = -1;
-  let bestDistance = Infinity;
+  let bestTimeDistance = Infinity;
 
   for (let i = 0; i < enemies.length; i += 1) {
     const enemy = enemies[i];
     if (enemy.lane !== lane) continue;
 
-    const distance = Math.abs(enemy.y - HIT_LINE_Y);
-    if (distance < bestDistance) {
-      bestDistance = distance;
+    const timeDistance = Math.abs(songSec - enemy.hitSec);
+    if (timeDistance < bestTimeDistance) {
+      bestTimeDistance = timeDistance;
       bestIndex = i;
     }
   }
 
   if (bestIndex < 0) {
-    return { index: -1, enemy: null, distance: Infinity };
+    return { index: -1, enemy: null, timeDeltaSec: Infinity };
   }
 
   return {
     index: bestIndex,
     enemy: enemies[bestIndex],
-    distance: bestDistance,
+    timeDeltaSec: songSec - enemies[bestIndex].hitSec,
   };
 }
 
-function awardHit(verdict, enemy, lane) {
-  const base = verdict === 'perfect' ? 120 : 84;
-  const comboBonus = Math.min(120, combo * 6);
-  let earned = base + comboBonus;
+function resolveVerdict(timeDeltaSec) {
+  const abs = Math.abs(timeDeltaSec);
+  if (abs <= JUDGE_WINDOWS_SEC.perfect) return 'perfect';
+  if (abs <= JUDGE_WINDOWS_SEC.great) return 'great';
+  if (abs <= JUDGE_WINDOWS_SEC.good) return 'good';
+  if (abs <= JUDGE_WINDOWS_SEC.safe) return 'safe';
+  return 'miss';
+}
+
+function registerInputMiss(lane, label = 'MISS') {
+  combo = 0;
+  heroGauge = Math.max(0, heroGauge - 1);
+  shake = Math.max(shake, 4);
+  setStatus(label, 0.45);
+  sfx.miss();
+  addSlash(lane, 'miss');
+  pushTimingFeedback('miss', lane, 0, label);
+  updateHud();
+}
+
+function awardHit(verdict, enemy, lane, timeDeltaSec) {
+  const scoreByVerdict = {
+    perfect: 120,
+    great: 96,
+    good: 74,
+    safe: 42,
+  };
+  const comboScaleByVerdict = {
+    perfect: 1,
+    great: 0.84,
+    good: 0.64,
+    safe: 0,
+  };
+  const heroGaugeGain = {
+    perfect: 2,
+    great: 1.6,
+    good: 1,
+    safe: 0.45,
+  };
+
+  const comboBefore = combo;
+  const comboBonus = Math.round(Math.min(120, comboBefore * 6) * comboScaleByVerdict[verdict]);
+  let earned = scoreByVerdict[verdict] + comboBonus;
 
   if (heroModeSec > 0) {
     earned = Math.round(earned * 2);
   }
 
   score += earned;
-  combo += 1;
-  bestCombo = Math.max(bestCombo, combo);
-  heroGauge = clamp(heroGauge + (verdict === 'perfect' ? 2 : 1), 0, HERO_GAUGE_TARGET);
+  if (verdict === 'safe') {
+    combo = 0;
+  } else {
+    combo += 1;
+    bestCombo = Math.max(bestCombo, combo);
+  }
+  heroGauge = clamp(heroGauge + heroGaugeGain[verdict], 0, HERO_GAUGE_TARGET);
+
+  const timingBias = getBeatBiasLabel(timeDeltaSec);
+  const verdictText = verdict.toUpperCase();
 
   if (heroModeSec <= 0 && heroGauge >= HERO_GAUGE_TARGET) {
     heroModeSec = HERO_MODE_DURATION;
     heroGauge = 0;
-    setStatus('HERO MODE ON! 점수 2배', 1.4);
+    setStatus(`HERO MODE ON! ${verdictText} +${earned}`, 1.35);
     sfx.hero();
     addBurst(heroX, HERO_Y - 18, '#ffd463', 24, 5.1);
   } else if (verdict === 'perfect') {
-    setStatus(`PERFECT +${earned}`, 0.65);
+    setStatus(`PERFECT ${timingBias} +${earned}`, 0.68);
     sfx.perfect();
-  } else {
-    setStatus(`GOOD +${earned}`, 0.55);
+  } else if (verdict === 'great') {
+    setStatus(`GREAT ${timingBias} +${earned}`, 0.63);
+    sfx.great();
+  } else if (verdict === 'good') {
+    setStatus(`GOOD ${timingBias} +${earned}`, 0.58);
     sfx.good();
+  } else {
+    setStatus(`SAFE ${timingBias} +${earned}`, 0.62);
+    sfx.safe();
   }
 
   laneFlash[lane] = 1;
   addSlash(lane, verdict);
-  addBurst(enemy.x, enemy.y, verdict === 'perfect' ? '#ffe06c' : '#8ad5ff', 10, 3.2);
+  pushTimingFeedback(verdict, lane, timeDeltaSec);
+
+  const burstColorByVerdict = {
+    perfect: '#ffe06c',
+    great: '#98f1ff',
+    good: '#8ad5ff',
+    safe: '#8efac4',
+  };
+  addBurst(enemy.x, enemy.y, burstColorByVerdict[verdict], 10, 3.2);
 
   updateHud();
 }
@@ -581,30 +746,28 @@ function attemptAttack(lane) {
 
   targetLane = clamp(lane, 0, LANES.length - 1);
   laneFlash[targetLane] = 1;
-  addSlash(targetLane, 'miss');
   sfx.attack();
 
-  const pick = findClosestEnemyInLane(targetLane);
-  const beatError = getBeatErrorSec();
-  const perfectWindow = heroModeSec > 0 ? 0.12 : 0.085;
-  const goodWindow = heroModeSec > 0 ? 0.2 : 0.16;
-
-  const perfectDistance = 58;
-  const goodDistance = 98;
-
-  if (!pick.enemy || beatError > goodWindow || pick.distance > goodDistance) {
-    combo = 0;
-    heroGauge = Math.max(0, heroGauge - 1);
-    shake = Math.max(shake, 4);
-    setStatus('MISS', 0.45);
-    sfx.miss();
-    updateHud();
+  const songSec = getSongSeconds();
+  const pick = findClosestEnemyInLane(targetLane, songSec);
+  if (!pick.enemy) {
+    registerInputMiss(targetLane, 'MISS');
     return;
   }
 
-  const verdict = beatError <= perfectWindow && pick.distance <= perfectDistance ? 'perfect' : 'good';
+  const verdict = resolveVerdict(pick.timeDeltaSec);
+  if (verdict === 'miss') {
+    const missLabel = `MISS ${getBeatBiasLabel(pick.timeDeltaSec)}`;
+    registerInputMiss(targetLane, missLabel);
+    return;
+  }
+
+  if (verdict === 'safe' && Math.abs(pick.timeDeltaSec) <= SAFE_AUTOLANE_NUDGE_SEC) {
+    heroX = lerp(heroX, LANES[targetLane], 0.82);
+  }
+
   enemies.splice(pick.index, 1);
-  awardHit(verdict, pick.enemy, targetLane);
+  awardHit(verdict, pick.enemy, targetLane, pick.timeDeltaSec);
 }
 
 function startRun() {
@@ -624,6 +787,9 @@ function startRun() {
   songClockFallbackSec = 0;
   shake = 0;
   messageTimer = 0;
+  timingFeedback.life = 0;
+  timingFeedback.maxLife = 0;
+  timingFeedback.label = '';
 
   rewardedContinueUsed = false;
 
@@ -724,6 +890,10 @@ function updateGame(dt) {
     }
   }
 
+  if (timingFeedback.life > 0) {
+    timingFeedback.life = Math.max(0, timingFeedback.life - dt);
+  }
+
   for (let i = 0; i < laneFlash.length; i += 1) {
     laneFlash[i] = Math.max(0, laneFlash[i] - dt * 3.8);
   }
@@ -771,7 +941,8 @@ function updateGame(dt) {
     reviveShieldSec = Math.max(0, reviveShieldSec - dt);
   }
 
-  const beatFloat = getSongSeconds() / BEAT_SEC;
+  const songSec = getSongSeconds();
+  const beatFloat = songSec / BEAT_SEC;
   const beatIndex = Math.floor(beatFloat);
 
   if (beatIndex > lastBeatIndex) {
@@ -783,10 +954,13 @@ function updateGame(dt) {
 
   for (let i = enemies.length - 1; i >= 0; i -= 1) {
     const enemy = enemies[i];
-    enemy.y += enemy.speed * dt;
-    enemy.phase += dt * 5.6;
+    const travelSec = Math.max(0.001, enemy.hitSec - enemy.spawnSec);
+    const progress = (songSec - enemy.spawnSec) / travelSec;
+    enemy.progress = progress;
+    enemy.y = lerp(ENEMY_SPAWN_Y, HIT_LINE_Y, clamp(progress, 0, 1.28));
+    enemy.phase += dt * (4.8 + enemy.accent * 1.6);
 
-    if (enemy.y > HERO_Y + 50) {
+    if (songSec - enemy.hitSec > JUDGE_WINDOWS_SEC.safe + SAFE_PASS_GRACE_SEC) {
       enemies.splice(i, 1);
       loseHp();
     }
@@ -865,49 +1039,109 @@ function drawLanes(beatPulse) {
   ctx.fillText('NEON HIT', W / 2, HIT_LINE_Y - 10);
 }
 
-function drawEnemies() {
+function drawEnemies(songSec) {
   for (const enemy of enemies) {
     ctx.save();
     ctx.translate(enemy.x, enemy.y);
-    ctx.rotate(Math.sin(enemy.phase) * 0.07);
+    ctx.rotate(Math.sin(enemy.phase + enemy.id * 0.17) * 0.08);
 
-    const glow = 0.4 + Math.sin(enemy.phase * 2.4) * 0.2;
-    ctx.fillStyle = `rgba(255, 53, 141, ${0.74 + glow * 0.14})`;
+    const impactPulse = 0.48 + Math.sin(enemy.phase * 2.2) * 0.22;
+    const hitFocus = 1 - clamp(Math.abs(songSec - enemy.hitSec) / (JUDGE_WINDOWS_SEC.safe * 2.5), 0, 1);
+    const glowAlpha = 0.34 + impactPulse * 0.2 + hitFocus * 0.36;
+    const bodyW = 38 + enemy.accent * 4;
+    const bodyH = 24 + enemy.accent * 2;
+
+    ctx.fillStyle = `rgba(255, 73, 168, ${0.44 + glowAlpha * 0.38})`;
     ctx.beginPath();
-    ctx.moveTo(0, -22);
-    ctx.lineTo(17, 2);
-    ctx.lineTo(0, 22);
-    ctx.lineTo(-17, 2);
+    ctx.moveTo(-bodyW * 0.68, 0);
+    ctx.lineTo(-bodyW * 0.44, -bodyH * 0.68);
+    ctx.lineTo(-bodyW * 0.36, bodyH * 0.68);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(bodyW * 0.68, 0);
+    ctx.lineTo(bodyW * 0.44, -bodyH * 0.68);
+    ctx.lineTo(bodyW * 0.36, bodyH * 0.68);
     ctx.closePath();
     ctx.fill();
 
-    ctx.fillStyle = 'rgba(255, 234, 188, 0.9)';
-    ctx.fillRect(-9, -4, 18, 6);
+    const bodyGrad = ctx.createLinearGradient(0, -bodyH * 0.5, 0, bodyH * 0.5);
+    bodyGrad.addColorStop(0, `rgba(38, 26, 68, ${0.95 - hitFocus * 0.14})`);
+    bodyGrad.addColorStop(1, 'rgba(15, 14, 36, 0.96)');
+    ctx.fillStyle = bodyGrad;
+    ctx.fillRect(-bodyW * 0.5, -bodyH * 0.5, bodyW, bodyH);
+
+    ctx.strokeStyle = `rgba(125, 226, 255, ${0.58 + hitFocus * 0.22})`;
+    ctx.lineWidth = 1.8;
+    ctx.strokeRect(-bodyW * 0.5, -bodyH * 0.5, bodyW, bodyH);
+
+    ctx.fillStyle = `rgba(255, 214, 99, ${0.64 + impactPulse * 0.28})`;
+    ctx.fillRect(-bodyW * 0.38, -bodyH * 0.1, bodyW * 0.76, bodyH * 0.2);
+
+    ctx.fillStyle = `rgba(15, 22, 52, ${0.94 - hitFocus * 0.22})`;
+    ctx.beginPath();
+    ctx.arc(-bodyW * 0.2, 0, bodyH * 0.19, 0, Math.PI * 2);
+    ctx.arc(bodyW * 0.2, 0, bodyH * 0.19, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = `rgba(117, 244, 255, ${0.8 + impactPulse * 0.16})`;
+    ctx.beginPath();
+    ctx.arc(-bodyW * 0.2, 0, bodyH * 0.09, 0, Math.PI * 2);
+    ctx.arc(bodyW * 0.2, 0, bodyH * 0.09, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = `rgba(255, 112, 180, ${0.55 + hitFocus * 0.4})`;
+    ctx.fillRect(-2, bodyH * 0.5, 4, 6 + impactPulse * 5);
+
     ctx.restore();
   }
 }
 
 function drawHero(songSec) {
-  const bob = Math.sin(songSec * 7.5) * 2;
+  const bob = Math.sin(songSec * 7.2) * 2.2;
+  const laneOffset = (LANES[targetLane] - heroX) / 40;
+  const tilt = clamp(laneOffset * 0.08, -0.18, 0.18);
+  const enginePulse = 0.46 + Math.sin(songSec * 18) * 0.24;
 
   ctx.save();
   ctx.translate(heroX, HERO_Y + bob);
+  ctx.rotate(tilt);
 
-  const bodyGlow = heroModeSec > 0 ? 'rgba(255, 214, 102, 0.95)' : 'rgba(77, 211, 255, 0.95)';
-  ctx.fillStyle = bodyGlow;
+  const trailColor = heroModeSec > 0 ? 'rgba(255, 220, 118, 0.42)' : 'rgba(107, 229, 255, 0.34)';
+  ctx.fillStyle = trailColor;
   ctx.beginPath();
-  ctx.moveTo(0, -34);
-  ctx.lineTo(18, -10);
-  ctx.lineTo(12, 24);
-  ctx.lineTo(-12, 24);
-  ctx.lineTo(-18, -10);
+  ctx.moveTo(-15, 18);
+  ctx.quadraticCurveTo(0, 28 + enginePulse * 18, 15, 18);
+  ctx.lineTo(10, 26);
+  ctx.quadraticCurveTo(0, 38 + enginePulse * 18, -10, 26);
   ctx.closePath();
   ctx.fill();
 
-  ctx.fillStyle = 'rgba(12, 22, 44, 0.88)';
+  const boardGrad = ctx.createLinearGradient(-20, 0, 20, 0);
+  boardGrad.addColorStop(0, heroModeSec > 0 ? 'rgba(255, 171, 72, 0.98)' : 'rgba(72, 196, 255, 0.98)');
+  boardGrad.addColorStop(1, heroModeSec > 0 ? 'rgba(255, 231, 128, 0.98)' : 'rgba(98, 255, 230, 0.98)');
+  ctx.fillStyle = boardGrad;
   ctx.beginPath();
-  ctx.arc(0, -7, 9, 0, Math.PI * 2);
+  ctx.ellipse(0, 20, 20, 7, 0, 0, Math.PI * 2);
   ctx.fill();
+
+  ctx.fillStyle = 'rgba(12, 20, 42, 0.92)';
+  ctx.fillRect(-6, -4, 12, 18);
+
+  ctx.fillStyle = heroModeSec > 0 ? 'rgba(255, 216, 110, 0.96)' : 'rgba(114, 236, 255, 0.96)';
+  ctx.fillRect(-12, -25, 24, 24);
+  ctx.fillRect(-18, -19, 6, 16);
+  ctx.fillRect(12, -19, 6, 16);
+
+  ctx.fillStyle = 'rgba(18, 28, 55, 0.96)';
+  ctx.beginPath();
+  ctx.arc(0, -30, 11, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = heroModeSec > 0 ? 'rgba(255, 235, 148, 0.95)' : 'rgba(126, 242, 255, 0.95)';
+  ctx.fillRect(-7, -32, 14, 5);
+  ctx.fillStyle = 'rgba(255, 76, 165, 0.82)';
+  ctx.fillRect(-5, -12, 10, 3);
 
   if (reviveShieldSec > 0) {
     const shieldPulse = 0.4 + Math.sin(songSec * 12) * 0.2;
@@ -927,8 +1161,12 @@ function drawSlashFx() {
     const x = LANES[fx.lane];
     const color = fx.verdict === 'perfect'
       ? `rgba(255, 218, 114, ${alpha})`
+      : fx.verdict === 'great'
+        ? `rgba(124, 236, 255, ${alpha})`
       : fx.verdict === 'good'
         ? `rgba(125, 231, 255, ${alpha})`
+        : fx.verdict === 'safe'
+          ? `rgba(125, 255, 196, ${alpha})`
         : `rgba(255, 116, 154, ${alpha})`;
 
     ctx.strokeStyle = color;
@@ -943,9 +1181,24 @@ function drawSlashFx() {
 function drawParticles() {
   for (const p of particles) {
     const alpha = clamp(p.life / p.maxLife, 0, 1);
-    ctx.fillStyle = p.color.replace('ALPHA', alpha.toFixed(3));
+    ctx.fillStyle = colorAlpha(p.color, alpha);
     ctx.fillRect(p.x, p.y, p.size, p.size);
   }
+}
+
+function drawTimingFeedback() {
+  if (timingFeedback.life <= 0 || !timingFeedback.label) {
+    return;
+  }
+
+  const ratio = clamp(timingFeedback.life / Math.max(0.01, timingFeedback.maxLife), 0, 1);
+  const rise = (1 - ratio) * 20;
+  const alpha = ratio * ratio;
+
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 20px monospace';
+  ctx.fillStyle = colorAlpha(timingFeedback.color, alpha);
+  ctx.fillText(timingFeedback.label, timingFeedback.x, HIT_LINE_Y - 36 - rise);
 }
 
 function drawOverlayText(title, subtitle) {
@@ -973,10 +1226,11 @@ function render() {
   const songSec = getSongSeconds();
   drawBackground(songSec);
   drawLanes(beatPulse);
-  drawEnemies();
+  drawEnemies(songSec);
   drawHero(songSec);
   drawSlashFx();
   drawParticles();
+  drawTimingFeedback();
 
   if (heroModeSec > 0) {
     ctx.fillStyle = 'rgba(255, 214, 102, 0.14)';
@@ -1414,6 +1668,27 @@ function handleCanvasPointerDown(event) {
 }
 
 function bindEvents() {
+  const shouldBlockInteractionGesture = () => document.body.classList.contains('interaction-lock');
+  const blockInteractionGesture = (event) => {
+    if (!shouldBlockInteractionGesture()) return;
+    event.preventDefault();
+  };
+  let lastTouchEndTs = 0;
+
+  document.addEventListener('gesturestart', blockInteractionGesture, { passive: false });
+  document.addEventListener('gesturechange', blockInteractionGesture, { passive: false });
+  document.addEventListener('gestureend', blockInteractionGesture, { passive: false });
+  document.addEventListener('selectstart', blockInteractionGesture, { passive: false });
+  document.addEventListener('dblclick', blockInteractionGesture, { passive: false });
+  document.addEventListener('touchend', (event) => {
+    if (!shouldBlockInteractionGesture()) return;
+    const now = performance.now();
+    if (now - lastTouchEndTs < 320) {
+      event.preventDefault();
+    }
+    lastTouchEndTs = now;
+  }, { passive: false });
+
   window.addEventListener('resize', () => {
     // Stage ratio is fixed by CSS; no runtime resize needed.
   });

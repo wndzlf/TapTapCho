@@ -32,6 +32,8 @@ body {
   color: var(--text);
   font-family: 'Segoe UI', 'Noto Sans KR', sans-serif;
   overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -45,6 +47,8 @@ body {
     radial-gradient(circle at 18% 8%, rgba(0, 234, 255, 0.12), transparent 32%),
     radial-gradient(circle at 84% 4%, rgba(255, 46, 151, 0.15), transparent 34%),
     linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 46%, var(--bg-0) 100%);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body::before {
@@ -161,6 +165,11 @@ body.modal-open {
   height: 30px;
   font-weight: 600;
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .hud-grid {
@@ -227,6 +236,11 @@ body.modal-open {
   font-weight: 700;
   letter-spacing: 0.01em;
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .button:disabled {
@@ -289,6 +303,8 @@ body.modal-open {
   width: 100%;
   height: 100%;
   display: block;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .lane-controls {
@@ -306,6 +322,11 @@ body.modal-open {
   background: linear-gradient(180deg, rgba(22, 34, 68, 0.95), rgba(12, 20, 39, 0.95));
   color: #d6e6ff;
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .lane-btn-center {
@@ -415,6 +436,22 @@ body.modal-open {
   color: #dce6ff;
   background: rgba(18, 32, 64, 0.9);
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body.interaction-lock,
+body.interaction-lock * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+
+body.interaction-lock {
+  touch-action: none;
 }
 
 .info-links {

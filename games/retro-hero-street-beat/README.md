@@ -5,7 +5,8 @@
 ## 코어 루프
 
 - 적이 `NEON HIT` 라인에 도달할 때 맞는 레인을 탭해 처치
-- 판정: `Perfect`, `Good`, `Miss`
+- 판정: `Perfect`, `Great`, `Good`, `Safe`, `Miss`
+- `Safe`는 저점수 통과(콤보 끊김)로 박자를 살짝 놓쳐도 런을 이어갈 수 있음
 - 콤보와 정확도를 쌓아 `HERO MODE` 발동 (점수 2배)
 
 ## 조작
