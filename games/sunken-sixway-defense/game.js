@@ -455,6 +455,8 @@ const CHO_LOTTO_COST = 1000;
 const CHO_LOTTO_CHANCE = 0.1;
 const REWARD_GOLD_COOLDOWN = 18;
 const REWARD_GOLD_MAX_USES = 8;
+const EARLY_STAGE_EASE_MAX = 5;
+const EARLY_START_GOLD_BONUS = 80;
 
 const STUN_IMMUNE_BOSS_STAGES = [5, 15, 25, 35, 45];
 
@@ -2034,7 +2036,13 @@ function makeEnemy(type) {
   const breakerAttackMul = towerBreaker ? (1.35 + pressureIndex * 0.06 + nightmareIndex * 0.05 + brutalIndex * 0.07) : 1;
   const siegeAttackMul = siege ? 1.15 : 1;
   const runEnemyHpMul = Math.max(0.72, state.daily.enemyHpMul || 1);
-  const hp = Math.max(1, Math.floor(d.hp * adaptiveHpMul * runEnemyHpMul));
+  const introHpMul = s <= EARLY_STAGE_EASE_MAX
+    ? (0.62 + s * 0.06)
+    : 1;
+  const introSpeedMul = s <= EARLY_STAGE_EASE_MAX
+    ? (0.86 + s * 0.02)
+    : 1;
+  const hp = Math.max(1, Math.floor(d.hp * adaptiveHpMul * runEnemyHpMul * introHpMul));
   const stageRewardBase = d.reward + Math.floor(s * 1.6 + nightmareIndex * 4.4 + pressureIndex * 1.2);
   const bossRewardMul = d.boss ? (state.metaBossBountyMul || 1) : 1;
   const reward = Math.max(1, Math.floor(stageRewardBase * bossRewardMul));
@@ -2046,7 +2054,7 @@ function makeEnemy(type) {
     r: radius,
     hp,
     maxHp: hp,
-    speed: d.speed * adaptiveSpeedMul * BALANCE_SCALE,
+    speed: d.speed * adaptiveSpeedMul * introSpeedMul * BALANCE_SCALE,
     reward,
     leak,
     color: d.color,
@@ -2085,6 +2093,22 @@ function makeEnemy(type) {
 }
 
 function makeStageQueue(stage) {
+  if (stage <= EARLY_STAGE_EASE_MAX) {
+    const introQueue = [];
+    const introBaseCount = 8 + stage * 3;
+    for (let i = 0; i < introBaseCount; i += 1) {
+      const roll = Math.random();
+      let type = 'ghoul';
+      if (stage >= 3 && roll > 0.78) type = 'bat';
+      if (stage >= 4 && roll > 0.92) type = 'brute';
+      if (stage >= 5 && roll > 0.97) type = 'raider';
+      introQueue.push(type);
+    }
+    if (stage >= 2) introQueue.push('bat');
+    if (stage >= 4) introQueue.push('brute');
+    return introQueue;
+  }
+
   const queue = [];
   const earlyStage = Math.min(stage, 10);
   const lateIndex = Math.max(0, stage - 10);
@@ -2243,9 +2267,12 @@ function makeStageQueue(stage) {
 
 function startStage(stage) {
   state.stage = stage;
-  state.stageTimer = Math.max(0.2, 1.2 - stage * 0.05 - Math.max(0, stage - 10) * 0.025);
+  const earlyPrepBonus = stage <= EARLY_STAGE_EASE_MAX
+    ? (0.32 + (EARLY_STAGE_EASE_MAX + 1 - stage) * 0.06)
+    : 0;
+  state.stageTimer = Math.max(0.2, 1.2 - stage * 0.05 - Math.max(0, stage - 10) * 0.025 + earlyPrepBonus);
   state.spawnQueue = makeStageQueue(stage);
-  state.spawnTimer = 0.45;
+  state.spawnTimer = stage <= EARLY_STAGE_EASE_MAX ? 0.62 : 0.45;
   state.stageStartAt = performance.now();
   flashBanner(`스테이지 ${stage}`, 1.4);
   bgmAudio?.fx('success');
@@ -2257,7 +2284,7 @@ function startRun() {
   applyRuntimeMetaBonuses();
   state.baseMaxHp = 20 + (state.metaBaseHpBonus || 0);
   state.baseHp = state.baseMaxHp;
-  state.gold = 160 + (state.metaStartGoldBonus || 0);
+  state.gold = 160 + (state.metaStartGoldBonus || 0) + EARLY_START_GOLD_BONUS;
   state.kills = 0;
   state.score = 0;
   state.stageTimer = 0;
@@ -3911,7 +3938,10 @@ function updateSpawning(dt) {
     const earlyStage = Math.min(state.stage, 10);
     const lateIndex = Math.max(0, state.stage - 10);
     const nightmareIndex = Math.max(0, state.stage - 20);
-    const spawnDelay = Math.max(0.052, 0.43 - earlyStage * 0.018 - lateIndex * 0.009 - nightmareIndex * 0.004);
+    let spawnDelay = Math.max(0.052, 0.43 - earlyStage * 0.018 - lateIndex * 0.009 - nightmareIndex * 0.004);
+    if (state.stage <= EARLY_STAGE_EASE_MAX) {
+      spawnDelay *= 1.3;
+    }
     while (state.spawnTimer <= 0 && state.spawnQueue.length > 0) {
       spawnOne();
       state.spawnTimer += spawnDelay;
