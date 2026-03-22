@@ -51,4 +51,13 @@ jobs:
             exit 0
           fi
           git commit -m "chore: refresh real estate watch snapshot"
-          git push origin HEAD:${GITHUB_REF_NAME}
+          for attempt in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              echo "Push succeeded on attempt ${attempt}."
+              exit 0
+            fi
+            echo "Push rejected on attempt ${attempt}, retrying..."
+          done
+          echo "Failed to push snapshot after 3 attempts."
+          exit 1
