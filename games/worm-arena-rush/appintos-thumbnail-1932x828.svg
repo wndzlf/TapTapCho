@@ -1,0 +1,252 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1932" height="828" viewBox="0 0 1932 828" role="img" aria-label="Worm Arena Rush horizontal thumbnail">
+  <defs>
+    <linearGradient id="thumb-bg" x1="0" y1="0" x2="1932" y2="828" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#071a4b"/>
+      <stop offset="56%" stop-color="#0a235f"/>
+      <stop offset="100%" stop-color="#132f7a"/>
+    </linearGradient>
+    <radialGradient id="left-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(416 330) rotate(88) scale(410 580)">
+      <stop offset="0%" stop-color="#5ac7d8" stop-opacity="0.34"/>
+      <stop offset="100%" stop-color="#5ac7d8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="right-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1460 400) rotate(90) scale(410 560)">
+      <stop offset="0%" stop-color="#5570ff" stop-opacity="0.34"/>
+      <stop offset="100%" stop-color="#5570ff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="panel" x1="112" y1="128" x2="850" y2="710" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0b2f66" stop-opacity="0.92"/>
+      <stop offset="100%" stop-color="#0a1c44" stop-opacity="0.86"/>
+    </linearGradient>
+    <linearGradient id="title-grad" x1="200" y1="210" x2="880" y2="460" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f3fbff"/>
+      <stop offset="100%" stop-color="#bee9ff"/>
+    </linearGradient>
+    <radialGradient id="logo-halo" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1454 412) rotate(90) scale(310)">
+      <stop offset="0%" stop-color="#8bc5ff" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#8bc5ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="thumb-vignette" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(966 414) rotate(90) scale(520 1260)">
+      <stop offset="70%" stop-color="#050d28" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#020615" stop-opacity="0.52"/>
+    </radialGradient>
+    <filter id="panel-shadow" x="-12%" y="-14%" width="124%" height="132%">
+      <feDropShadow dx="0" dy="26" stdDeviation="24" flood-color="#020a22" flood-opacity="0.5"/>
+    </filter>
+    <filter id="badge-shadow" x="-40%" y="-70%" width="180%" height="240%">
+      <feDropShadow dx="0" dy="14" stdDeviation="12" flood-color="#030d28" flood-opacity="0.48"/>
+    </filter>
+    <filter id="logo-shadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="22" stdDeviation="24" flood-color="#020915" flood-opacity="0.62"/>
+    </filter>
+  </defs>
+
+  <rect width="1932" height="828" fill="url(#thumb-bg)"/>
+  <rect width="1932" height="828" fill="url(#left-glow)"/>
+  <rect width="1932" height="828" fill="url(#right-glow)"/>
+
+  <g opacity="0.22" fill="#b9dcff">
+    <circle cx="184" cy="98" r="14"/>
+    <circle cx="262" cy="72" r="7"/>
+    <circle cx="356" cy="128" r="9"/>
+    <circle cx="1686" cy="108" r="8"/>
+    <circle cx="1780" cy="142" r="11"/>
+    <circle cx="1602" cy="182" r="6"/>
+  </g>
+
+  <g filter="url(#panel-shadow)">
+    <rect x="102" y="122" width="860" height="584" rx="46" fill="url(#panel)"/>
+    <rect x="102" y="122" width="860" height="584" rx="46" fill="none" stroke="#7ec9ff" stroke-opacity="0.18" stroke-width="4"/>
+  </g>
+
+  <text x="166" y="228" fill="#95d8ff" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="46" font-weight="700" letter-spacing="8">SURVIVAL ACTION</text>
+  <text x="156" y="364" fill="url(#title-grad)" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="118" font-weight="900">웜 아레나</text>
+  <text x="156" y="484" fill="url(#title-grad)" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="118" font-weight="900">러시</text>
+  <text x="164" y="590" fill="#d5ebff" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="42" font-weight="600">좁아지는 안전 구역에서 끝까지 생존하세요</text>
+
+  <g filter="url(#badge-shadow)">
+    <rect x="162" y="630" width="302" height="66" rx="33" fill="#0a315f" fill-opacity="0.94"/>
+    <rect x="162" y="630" width="302" height="66" rx="33" fill="none" stroke="#78ddff" stroke-opacity="0.34" stroke-width="3"/>
+    <circle cx="202" cy="663" r="11" fill="#79efff"/>
+    <text x="232" y="677" fill="#ecfbff" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="30" font-weight="800">SAFE ZONE RUSH</text>
+  </g>
+
+  <g filter="url(#logo-shadow)">
+    <circle cx="1454" cy="412" r="326" fill="#071739" fill-opacity="0.68"/>
+    <circle cx="1454" cy="412" r="295" fill="none" stroke="#65d0ff" stroke-opacity="0.35" stroke-width="10"/>
+    <circle cx="1454" cy="412" r="339" fill="none" stroke="#7f7cff" stroke-opacity="0.22" stroke-width="20"/>
+    <rect x="1154" y="112" width="600" height="600" rx="300" fill="url(#logo-halo)"/>
+    <svg x="1154" y="112" width="600" height="600" viewBox="0 0 600 600" aria-hidden="true">
+      <defs>
+        <linearGradient id="logo-bg" x1="70" y1="50" x2="538" y2="550" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#071222"/>
+          <stop offset="48%" stop-color="#15285b"/>
+          <stop offset="100%" stop-color="#050a14"/>
+        </linearGradient>
+        <radialGradient id="logo-glow-teal" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(192 160) rotate(90) scale(250)">
+          <stop offset="0%" stop-color="#50e8cf" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="#50e8cf" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="logo-glow-violet" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(474 474) rotate(90) scale(214)">
+          <stop offset="0%" stop-color="#6e67ff" stop-opacity="0.24"/>
+          <stop offset="100%" stop-color="#6e67ff" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="logo-arena-fill" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(300 322) rotate(90) scale(244)">
+          <stop offset="0%" stop-color="#1d3267" stop-opacity="0.7"/>
+          <stop offset="100%" stop-color="#091224" stop-opacity="0.18"/>
+        </radialGradient>
+        <linearGradient id="logo-arena-ring" x1="166" y1="152" x2="442" y2="474" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#84efff"/>
+          <stop offset="52%" stop-color="#5df8cb"/>
+          <stop offset="100%" stop-color="#ffe070"/>
+        </linearGradient>
+        <linearGradient id="logo-segment-fill" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#f3c0ad"/>
+          <stop offset="44%" stop-color="#d88c88"/>
+          <stop offset="100%" stop-color="#8c5b72"/>
+        </linearGradient>
+        <linearGradient id="logo-segment-shine" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#fff5e2" stop-opacity="0.72"/>
+          <stop offset="100%" stop-color="#fff5e2" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="logo-clitellum-fill" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ffd6af"/>
+          <stop offset="100%" stop-color="#dfa282"/>
+        </linearGradient>
+        <radialGradient id="logo-head-fill" cx="35%" cy="28%" r="80%">
+          <stop offset="0%" stop-color="#ffe1b3"/>
+          <stop offset="55%" stop-color="#efb19c"/>
+          <stop offset="100%" stop-color="#ac6c80"/>
+        </radialGradient>
+        <radialGradient id="logo-food" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(474 176) rotate(90) scale(30)">
+          <stop offset="0%" stop-color="#fff8cb"/>
+          <stop offset="55%" stop-color="#ffd872"/>
+          <stop offset="100%" stop-color="#ff9c53"/>
+        </radialGradient>
+        <radialGradient id="logo-vignette" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(300 300) rotate(90) scale(362)">
+          <stop offset="72%" stop-color="#000000" stop-opacity="0"/>
+          <stop offset="100%" stop-color="#02060d" stop-opacity="0.44"/>
+        </radialGradient>
+        <filter id="logo-shadow-soft" x="-40%" y="-40%" width="180%" height="180%">
+          <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#02050c" flood-opacity="0.55"/>
+        </filter>
+        <filter id="logo-glow-arena" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="#7cf0ff" flood-opacity="0.34"/>
+        </filter>
+        <filter id="logo-glow-food" x="-40%" y="-40%" width="180%" height="180%">
+          <feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="#ffd872" flood-opacity="0.52"/>
+        </filter>
+        <g id="logo-worm-segment">
+          <ellipse cx="0" cy="0" rx="52" ry="34" fill="url(#logo-segment-fill)" stroke="#75495d" stroke-width="5"/>
+          <ellipse cx="-14" cy="-9" rx="20" ry="9" fill="url(#logo-segment-shine)" opacity="0.42"/>
+          <path d="M-16 -23 C-11 -8 -11 8 -16 23" fill="none" stroke="#7f5668" stroke-width="3.5" stroke-linecap="round" opacity="0.24"/>
+          <path d="M0 -25 C5 -9 5 9 0 25" fill="none" stroke="#7f5668" stroke-width="3.5" stroke-linecap="round" opacity="0.24"/>
+          <path d="M16 -23 C21 -8 21 8 16 23" fill="none" stroke="#7f5668" stroke-width="3.5" stroke-linecap="round" opacity="0.24"/>
+        </g>
+        <g id="logo-worm-collar">
+          <ellipse cx="0" cy="0" rx="52" ry="34" fill="url(#logo-clitellum-fill)" stroke="#9d6b61" stroke-width="5"/>
+          <ellipse cx="-10" cy="-8" rx="18" ry="8" fill="#fff0cf" opacity="0.3"/>
+          <path d="M-14 -22 C-10 -8 -10 8 -14 22" fill="none" stroke="#b17d6b" stroke-width="3.2" stroke-linecap="round" opacity="0.22"/>
+          <path d="M0 -24 C4 -8 4 8 0 24" fill="none" stroke="#b17d6b" stroke-width="3.2" stroke-linecap="round" opacity="0.22"/>
+          <path d="M14 -22 C18 -8 18 8 14 22" fill="none" stroke="#b17d6b" stroke-width="3.2" stroke-linecap="round" opacity="0.22"/>
+        </g>
+      </defs>
+
+      <rect width="600" height="600" fill="url(#logo-bg)"/>
+      <rect width="600" height="600" fill="url(#logo-glow-teal)"/>
+      <rect width="600" height="600" fill="url(#logo-glow-violet)"/>
+
+      <g opacity="0.22" fill="#eaf6ff">
+        <circle cx="94" cy="92" r="12"/>
+        <circle cx="142" cy="68" r="5"/>
+        <circle cx="492" cy="118" r="7"/>
+        <circle cx="454" cy="156" r="4"/>
+        <circle cx="128" cy="152" r="6"/>
+      </g>
+
+      <g filter="url(#logo-shadow-soft)">
+        <circle cx="300" cy="320" r="214" fill="#08111f" opacity="0.72"/>
+      </g>
+
+      <circle cx="300" cy="320" r="208" fill="url(#logo-arena-fill)"/>
+      <circle cx="300" cy="320" r="204" fill="none" stroke="#253f7b" stroke-width="26" opacity="0.5"/>
+      <circle cx="300" cy="320" r="176" fill="none" stroke="url(#logo-arena-ring)" stroke-width="16" opacity="0.96" filter="url(#logo-glow-arena)"/>
+      <circle cx="300" cy="320" r="128" fill="none" stroke="#ffd771" stroke-width="10" stroke-linecap="round" stroke-dasharray="6 18" opacity="0.92"/>
+      <circle cx="300" cy="320" r="86" fill="#13244b" opacity="0.56"/>
+
+      <path d="M478 170 A206 206 0 0 1 510 366" fill="none" stroke="#685dff" stroke-width="22" stroke-linecap="round" opacity="0.68"/>
+      <path d="M142 396 A206 206 0 0 1 174 206" fill="none" stroke="#44efbf" stroke-width="12" stroke-linecap="round" opacity="0.44"/>
+
+      <path
+        d="M166 286
+           C214 220 326 202 416 246
+           C500 287 521 406 458 484
+           C396 560 256 563 178 492
+           C113 434 121 317 198 269
+           C270 224 376 237 420 307
+           C455 362 441 448 392 488"
+        fill="none"
+        stroke="#060c17"
+        stroke-width="100"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        opacity="0.42"
+        filter="url(#logo-shadow-soft)"
+      />
+
+      <g>
+        <use href="#logo-worm-segment" transform="translate(168 286) rotate(-36) scale(0.5)"/>
+        <use href="#logo-worm-segment" transform="translate(206 258) rotate(-24) scale(0.72)"/>
+        <use href="#logo-worm-segment" transform="translate(260 236) rotate(-11) scale(0.86)"/>
+        <use href="#logo-worm-segment" transform="translate(324 228) rotate(4) scale(0.96)"/>
+        <use href="#logo-worm-segment" transform="translate(389 240) rotate(20) scale(1)"/>
+        <use href="#logo-worm-segment" transform="translate(440 276) rotate(48) scale(1)"/>
+        <use href="#logo-worm-segment" transform="translate(469 332) rotate(76) scale(1.02)"/>
+        <use href="#logo-worm-segment" transform="translate(469 397) rotate(98) scale(0.98)"/>
+        <use href="#logo-worm-segment" transform="translate(446 455) rotate(130) scale(0.98)"/>
+        <use href="#logo-worm-segment" transform="translate(399 496) rotate(156) scale(0.92)"/>
+        <use href="#logo-worm-segment" transform="translate(336 515) rotate(172) scale(0.88)"/>
+        <use href="#logo-worm-segment" transform="translate(273 510) rotate(-164) scale(0.84)"/>
+        <use href="#logo-worm-segment" transform="translate(220 480) rotate(-136) scale(0.8)"/>
+        <use href="#logo-worm-segment" transform="translate(187 429) rotate(-102) scale(0.76)"/>
+        <use href="#logo-worm-segment" transform="translate(180 369) rotate(-74) scale(0.72)"/>
+        <use href="#logo-worm-segment" transform="translate(201 317) rotate(-40) scale(0.7)"/>
+        <use href="#logo-worm-segment" transform="translate(250 286) rotate(-8) scale(0.68)"/>
+        <use href="#logo-worm-segment" transform="translate(309 286) rotate(22) scale(0.66)"/>
+        <use href="#logo-worm-collar" transform="translate(361 316) rotate(56) scale(0.66)"/>
+        <use href="#logo-worm-collar" transform="translate(390 366) rotate(92) scale(0.62)"/>
+        <use href="#logo-worm-segment" transform="translate(396 423) rotate(126) scale(0.58)"/>
+      </g>
+
+      <g transform="translate(410 490) rotate(18)" filter="url(#logo-shadow-soft)">
+        <ellipse cx="0" cy="0" rx="42" ry="35" fill="url(#logo-head-fill)" stroke="#75495d" stroke-width="5"/>
+        <ellipse cx="-12" cy="-10" rx="20" ry="11" fill="#fff5da" opacity="0.4"/>
+        <ellipse cx="18" cy="5" rx="10" ry="7" fill="#fff1cc" opacity="0.18"/>
+        <circle cx="-4" cy="-10" r="4.6" fill="#1a1e31"/>
+        <circle cx="11" cy="-7" r="4.8" fill="#1a1e31"/>
+        <circle cx="-5" cy="-12" r="1.4" fill="#ffffff" opacity="0.86"/>
+        <circle cx="10" cy="-9" r="1.5" fill="#ffffff" opacity="0.86"/>
+        <path d="M13 11 C4 16, -7 16, -18 10" fill="none" stroke="#965a69" stroke-width="4.2" stroke-linecap="round"/>
+        <path d="M24 8 C19 12, 13 15, 7 17" fill="none" stroke="#c7777a" stroke-width="3.6" stroke-linecap="round" opacity="0.56"/>
+      </g>
+
+      <g filter="url(#logo-glow-food)">
+        <circle cx="474" cy="176" r="21" fill="url(#logo-food)"/>
+        <circle cx="474" cy="176" r="6" fill="#fff9d0" opacity="0.86"/>
+      </g>
+      <g opacity="0.74" fill="#ffd972">
+        <circle cx="443" cy="154" r="4"/>
+        <circle cx="498" cy="209" r="4"/>
+        <circle cx="448" cy="206" r="3"/>
+      </g>
+
+      <rect width="600" height="600" fill="url(#logo-vignette)"/>
+    </svg>
+  </g>
+
+  <g opacity="0.78">
+    <path d="M1060 636 C1170 590, 1288 566, 1416 564" stroke="#8ce5ff" stroke-width="9" stroke-linecap="round" stroke-dasharray="2 24"/>
+    <circle cx="1416" cy="564" r="10" fill="#d9f7ff"/>
+  </g>
+
+  <rect width="1932" height="828" fill="url(#thumb-vignette)"/>
+</svg>
