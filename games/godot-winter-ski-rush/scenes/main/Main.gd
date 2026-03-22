@@ -11,6 +11,7 @@ const BGM_PATH := "res://assets/audio/winter-ski-rush-pixabay-286213.mp3"
 const BRAKE_SFX_PATH := "res://assets/audio/winter-ski-rush-brake-pixabay-46042.mp3"
 const NORMAL_SKI_LOOP_SFX_PATH := "res://assets/audio/winter-ski-rush-normal-ski-loop.mp3"
 const LEFT_RIGHT_SFX_PATH := "res://assets/audio/winter-ski-rush-left-right-sfx.mp3"
+const UI_FONT_PATH := "res://assets/fonts/NotoSansKR-Regular.ttf"
 const BASE_GRAVITY := 290.0
 const START_SPEED := 88.0
 const MAX_LIVES := 3
@@ -187,7 +188,12 @@ func _load_ui_font() -> void:
 		"sans-serif",
 	])
 
-	ui_font = ui_fallback_font
+	var bundled_ui_font := load(UI_FONT_PATH) as FontFile
+	if bundled_ui_font != null:
+		bundled_ui_font.fallbacks = [ui_fallback_font]
+		ui_font = bundled_ui_font
+	else:
+		ui_font = ui_fallback_font
 	ThemeDB.fallback_font = ui_fallback_font
 
 
