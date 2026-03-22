@@ -186,13 +186,25 @@ function getVisibleRankEntries(entries, selectedId) {
     return entries.slice(0, RANK_LIMIT);
   }
 
-  const topEntries = entries.slice(0, RANK_LIMIT - 1);
-  if (topEntries.some((entry) => entry.id === selectedId)) {
+  const selectedIndex = entries.findIndex((entry) => entry.id === selectedId);
+  if (selectedIndex === -1) {
     return entries.slice(0, RANK_LIMIT);
   }
 
-  const selectedEntry = entries.find((entry) => entry.id === selectedId);
-  return selectedEntry ? [...topEntries, selectedEntry] : entries.slice(0, RANK_LIMIT);
+  if (selectedIndex < RANK_LIMIT) {
+    return entries.slice(0, RANK_LIMIT);
+  }
+
+  const halfWindow = Math.floor(RANK_LIMIT / 2);
+  let startIndex = Math.max(0, selectedIndex - halfWindow);
+  let endIndex = startIndex + RANK_LIMIT;
+
+  if (endIndex > entries.length) {
+    endIndex = entries.length;
+    startIndex = Math.max(0, endIndex - RANK_LIMIT);
+  }
+
+  return entries.slice(startIndex, endIndex);
 }
 
 function withMissingSelection(entries, selectedEntry, foot) {
@@ -1295,12 +1307,16 @@ function renderAreaRadar() {
     `${selectedIndustry?.label || "선택 업종"} 기준 표본이 아직 없습니다.`,
   );
 
-  refs.areaSectionTitle.textContent = selectedIndustry
-    ? `${selectedIndustry.label}가 많이 보이는 동네`
-    : "점포가 많이 잡히는 동네";
-  refs.areaNote.textContent = selectedIndustry
-    ? `${selectedIndustry.label} 표본 ${formatNumber(sourceItems.length)}건을 기준으로 비교합니다.`
-    : `전체 ${formatNumber(sourceItems.length)}건 스냅샷에서 많이 포착된 동네 순서입니다.`;
+  if (selectedIndustry) {
+    refs.areaSectionTitle.textContent = `${selectedIndustry.label}가 많이 보이는 동네`;
+    refs.areaNote.textContent = `${selectedIndustry.label} 표본 ${formatNumber(sourceItems.length)}건을 기준으로 비교합니다.`;
+  } else if (selectedArea) {
+    refs.areaSectionTitle.textContent = `${selectedArea.label}의 전체 동네 순위`;
+    refs.areaNote.textContent = `${selectedArea.label}가 전체 ${formatNumber(areaEntries.length)}개 동네 중 어디쯤 있는지 주변 순위와 같이 봅니다.`;
+  } else {
+    refs.areaSectionTitle.textContent = "점포가 많이 잡히는 동네";
+    refs.areaNote.textContent = `전체 ${formatNumber(sourceItems.length)}건 스냅샷에서 많이 포착된 동네 순서입니다.`;
+  }
 
   renderRankList(refs.areaList, entries, state.area, sourceItems.length, "area", (areaId) => {
     state.area = areaId;
@@ -1312,21 +1328,27 @@ function renderIndustryRadar() {
   const allItems = getAllItems();
   const areaEntries = buildAreaEntries(allItems);
   const selectedArea = getSelectedAreaEntry(areaEntries);
+  const allIndustryEntries = buildIndustryEntries(allItems);
+  const selectedIndustry = getSelectedIndustryEntry(allIndustryEntries);
   const sourceItems = selectedArea
     ? allItems.filter((item) => getAreaId(item) === selectedArea.id)
     : allItems;
   const industryEntries = withMissingSelection(
     buildIndustryEntries(sourceItems),
-    getSelectedIndustryEntry(buildIndustryEntries(allItems)),
+    selectedIndustry,
     `${selectedArea?.label || "선택 동네"} 안에서는 아직 포착되지 않았습니다.`,
   );
 
-  refs.categorySectionTitle.textContent = selectedArea
-    ? `${selectedArea.label}에서 많이 보이는 업종`
-    : "자주 보이는 업종";
-  refs.categoryNote.textContent = selectedArea
-    ? `${selectedArea.label} 표본 ${formatNumber(sourceItems.length)}건을 기준으로 비교합니다.`
-    : `전체 ${formatNumber(sourceItems.length)}건 스냅샷에서 자주 보이는 업종 순서입니다.`;
+  if (selectedArea) {
+    refs.categorySectionTitle.textContent = `${selectedArea.label}에서 많이 보이는 업종`;
+    refs.categoryNote.textContent = `${selectedArea.label} 표본 ${formatNumber(sourceItems.length)}건을 기준으로 비교합니다.`;
+  } else if (selectedIndustry) {
+    refs.categorySectionTitle.textContent = `${selectedIndustry.label}의 전체 업종 순위`;
+    refs.categoryNote.textContent = `${selectedIndustry.label}가 전체 ${formatNumber(allIndustryEntries.length)}개 업종 중 어디쯤 있는지 주변 순위와 같이 봅니다.`;
+  } else {
+    refs.categorySectionTitle.textContent = "자주 보이는 업종";
+    refs.categoryNote.textContent = `전체 ${formatNumber(sourceItems.length)}건 스냅샷에서 자주 보이는 업종 순서입니다.`;
+  }
 
   renderRankList(
     refs.categoryList,
