@@ -94,10 +94,22 @@ const TOSS_REWARDED_AD_GROUP_ID = typeof window !== 'undefined'
   : DEFAULT_TOSS_REWARDED_AD_GROUP_ID;
 const REWARDED_CONTINUE_INVULN_TICKS = 150;
 
-const BASE_CENTER_X = W * 0.5;
-const BASE_CENTER_Y = H * 0.52;
-const center = { x: BASE_CENTER_X, y: BASE_CENTER_Y };
+function shouldUseThumbSafeOrbitZone() {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return false;
+  }
+
+  return window.matchMedia('(pointer: coarse)').matches
+    || window.matchMedia('(max-width: 900px)').matches;
+}
+
+const THUMB_SAFE_ORBIT_ZONE = shouldUseThumbSafeOrbitZone();
 const ORBIT_R = 126;
+const BASE_CENTER_X = W * 0.5;
+const BASE_CENTER_Y = THUMB_SAFE_ORBIT_ZONE ? H * 0.43 : H * 0.52;
+const DRIFT_MIN_Y = ORBIT_R + 48;
+const DRIFT_MAX_Y = THUMB_SAFE_ORBIT_ZONE ? H * 0.53 : H - ORBIT_R - 38;
+const center = { x: BASE_CENTER_X, y: BASE_CENTER_Y };
 const ORBIT_DRIFT_START_SCORE = 20;
 const MAX_LIVES = 3;
 const DRIFT_PATTERNS = [
@@ -847,8 +859,8 @@ function update() {
 
     const minX = ORBIT_R + 34;
     const maxX = W - ORBIT_R - 34;
-    const minY = ORBIT_R + 48;
-    const maxY = H - ORBIT_R - 38;
+    const minY = DRIFT_MIN_Y;
+    const maxY = DRIFT_MAX_Y;
 
     center.x += driftVX * orbitDriftSpeed;
     center.y += driftVY * orbitDriftSpeed;
