@@ -60,8 +60,19 @@ const STORAGE_PREFIX = 'nyang-jelly-cafe';
 const LEGACY_BEST_KEY = 'nyang-jelly-cafe-best';
 
 const ROUND_SECONDS = 60;
-const START_LIFE = 3;
+const START_LIFE = 4;
 const TAP_RADIUS = 72;
+
+const START_SPAWN_DELAY = 0.42;
+const SPAWN_INTERVAL_START = 2.35;
+const SPAWN_INTERVAL_DROP = 1.12;
+const SPAWN_INTERVAL_MIN = 1.02;
+
+const CAT_PATIENCE_START = 6.8;
+const CAT_PATIENCE_DROP = 2.3;
+const CAT_PATIENCE_RANDOM = 0.8;
+const CAT_PATIENCE_MIN = 3.4;
+const PATIENCE_DECAY_EXTRA = 0.55;
 
 const JELLIES = [
   { id: 'berry', label: '딸기 젤리', icon: 'B', color: '#ff88b9', light: '#ffd6e9' },
@@ -108,7 +119,7 @@ let cats = [];
 let popEffects = [];
 let nextCatId = 1;
 let spawnTimer = 0;
-let spawnBase = 2.25;
+let spawnBase = SPAWN_INTERVAL_START;
 let statusMessage = '요청 젤리와 같은 고양이를 바로 탭해서 서빙하세요.';
 
 let lastFrameAt = performance.now();
@@ -183,6 +194,27 @@ function randomJelly(except = -1) {
   return options[Math.floor(Math.random() * options.length)];
 }
 
+function activeJellyRequests(except = -1) {
+  const requests = [];
+
+  for (const cat of cats) {
+    if (cat.want === except) continue;
+    if (requests.includes(cat.want)) continue;
+    requests.push(cat.want);
+  }
+
+  return requests;
+}
+
+function pickNextRequestedJelly(previous = currentJelly) {
+  const activeRequests = activeJellyRequests(previous);
+  if (activeRequests.length > 0) {
+    return activeRequests[Math.floor(Math.random() * activeRequests.length)];
+  }
+
+  return randomJelly(previous);
+}
+
 function findCatAtSeat(seatIndex) {
   return cats.find((cat) => cat.seatIndex === seatIndex) || null;
 }
@@ -210,12 +242,17 @@ function spawnCat() {
 
   const seatIndex = free[Math.floor(Math.random() * free.length)];
   const progress = progressRatio();
+  const hasRequestedCat = cats.some((cat) => cat.want === currentJelly);
+  const nextWant = hasRequestedCat ? randomJelly(-1) : currentJelly;
 
-  const maxPatience = Math.max(2.7, 6.2 - progress * 2.6 + Math.random() * 0.6);
+  const maxPatience = Math.max(
+    CAT_PATIENCE_MIN,
+    CAT_PATIENCE_START - progress * CAT_PATIENCE_DROP + Math.random() * CAT_PATIENCE_RANDOM,
+  );
   cats.push({
     id: nextCatId,
     seatIndex,
-    want: randomJelly(-1),
+    want: nextWant,
     patience: maxPatience,
     maxPatience,
     wobble: Math.random() * Math.PI * 2,
@@ -434,8 +471,8 @@ function startGame() {
 
   cats = [];
   popEffects = [];
-  spawnTimer = 0.35;
-  spawnBase = 2.25;
+  spawnTimer = START_SPAWN_DELAY;
+  spawnBase = SPAWN_INTERVAL_START;
 
   updateStatus('요청 젤리와 같은 고양이를 탭해서 서빙하세요.');
   playSfx('start');
@@ -466,18 +503,29 @@ function removeCat(catId) {
   }
 }
 
-function onMiss(seat, text = '앗!') {
+function onMiss(
+  seat,
+  text = '앗!',
+  statusText = '메뉴가 달라요. 같은 색 젤리를 요청한 고양이를 탭해 주세요.',
+  options = {},
+) {
+  const { sound = 'miss', vibration = [26, 24, 26] } = options;
+
   life -= 1;
   combo = 0;
   addPopEffect(seat.x, seat.y - 34, text, '#ff7ea9');
-  playSfx('miss');
+  if (sound) {
+    playSfx(sound);
+  }
 
-  if (navigator.vibrate) navigator.vibrate([26, 24, 26]);
+  if (navigator.vibrate && vibration) {
+    navigator.vibrate(vibration);
+  }
 
   if (life <= 0) {
     endGame('life');
   } else {
-    updateStatus('메뉴가 달라요. 같은 색 젤리를 요청한 고양이를 탭해 주세요.');
+    updateStatus(statusText);
   }
 
   updateHud();
@@ -507,7 +555,7 @@ function serveSeat(seatIndex) {
     addPopEffect(seat.x, seat.y - 34, `+${gain}`, jelly.color);
     addPopEffect(seat.x + 18, seat.y - 66, '냥!', '#ffffff');
 
-    currentJelly = randomJelly(currentJelly);
+    currentJelly = pickNextRequestedJelly(currentJelly);
 
     if (score > best) {
       best = score;
@@ -523,7 +571,7 @@ function serveSeat(seatIndex) {
   }
 
   removeCat(cat.id);
-  currentJelly = randomJelly(currentJelly);
+  currentJelly = pickNextRequestedJelly(currentJelly);
   onMiss(seat, '메뉴 틀림');
 }
 
@@ -566,29 +614,42 @@ function update(dt) {
   }
 
   const progress = progressRatio();
-  spawnBase = Math.max(0.88, 2.25 - progress * 1.2);
+  spawnBase = Math.max(SPAWN_INTERVAL_MIN, SPAWN_INTERVAL_START - progress * SPAWN_INTERVAL_DROP);
   spawnTimer -= dt;
   if (spawnTimer <= 0) {
     spawnCat();
     spawnTimer = spawnBase;
   }
 
+  let timeoutCount = 0;
+  let timeoutSeat = null;
+
   for (let i = cats.length - 1; i >= 0; i -= 1) {
     const cat = cats[i];
     cat.wobble += dt * 2.4;
 
-    const patienceDecay = 1 + progress * 0.8;
+    const patienceDecay = 1 + progress * PATIENCE_DECAY_EXTRA;
     cat.patience -= dt * patienceDecay;
 
     if (cat.patience > 0) continue;
 
     const seat = SEATS[cat.seatIndex];
     removeCat(cat.id);
-
-    playSfx('timeout');
     addPopEffect(seat.x, seat.y - 34, '기다림 한계', '#ff9ca5');
+    timeoutCount += 1;
+    if (!timeoutSeat) {
+      timeoutSeat = seat;
+    }
+  }
 
-    onMiss(seat, '떠남');
+  if (timeoutCount > 0) {
+    currentJelly = pickNextRequestedJelly(currentJelly);
+    onMiss(
+      timeoutSeat || SEATS[0],
+      timeoutCount > 1 ? `연쇄 이탈 x${timeoutCount}` : '떠남',
+      '고양이가 오래 기다리면 떠나요. 요청한 젤리 색을 먼저 처리해 주세요.',
+      { sound: 'timeout', vibration: [34] },
+    );
   }
 
   updateHud();
