@@ -11,10 +11,13 @@ const BGM_PATH := "res://assets/audio/winter-ski-rush-pixabay-286213.mp3"
 const BRAKE_SFX_PATH := "res://assets/audio/winter-ski-rush-brake-pixabay-46042.mp3"
 const NORMAL_SKI_LOOP_SFX_PATH := "res://assets/audio/winter-ski-rush-normal-ski-loop.mp3"
 const LEFT_RIGHT_SFX_PATH := "res://assets/audio/winter-ski-rush-left-right-sfx.mp3"
-const UI_FONT_PATH := "res://assets/fonts/appintoss-kr-ui.ttf"
 const BASE_GRAVITY := 290.0
 const START_SPEED := 88.0
 const MAX_LIVES := 3
+const STEER_PAD_RADIUS := 56.0
+const STEER_PAD_KNOB_RADIUS := 24.0
+const STEER_PAD_DEADZONE := 0.08
+const MAX_REWARD_PARTICLES := 96
 
 const DIFFICULTY_EASY := 0
 const DIFFICULTY_NORMAL := 1
@@ -115,15 +118,26 @@ var obstacles: Array[Dictionary] = []
 var ice_patches: Array[Rect2] = []
 var snow_patches: Array[Rect2] = []
 
-var touch_steer_active := false
-var touch_steer_x := BASE_CENTER_X
+var touch_steer_axis := 0.0
 var touch_left := false
 var touch_right := false
 var touch_brake := false
 var touch_crouch := false
+var steer_pad_active := false
+var steer_pad_touch_index := -1
+var steer_pad_knob_offset := Vector2.ZERO
+var steer_pad_base: Control
+var steer_pad_knob: Control
 
 var status_text := ""
 var status_timer := 0.0
+var reward_particles: Array[Dictionary] = []
+var reward_wave_timer := 0.0
+var reward_wave_duration := 0.42
+var reward_wave_color := Color(0.94, 0.88, 0.62, 0.92)
+var reward_wave_origin := Vector2.ZERO
+var reward_screen_pulse := 0.0
+var reward_screen_tint := Color(0.78, 0.9, 1.0, 1.0)
 
 var camera: Camera2D
 var canvas_layer: CanvasLayer
@@ -163,16 +177,12 @@ func _localized_crash_reason(reason: String) -> String:
 
 
 func _load_ui_font() -> void:
-	ui_font = load(UI_FONT_PATH) as FontFile
-	if ui_font == null:
-		push_warning("Failed to load UI font: %s" % UI_FONT_PATH)
+	ui_font = null
 
 
 func _apply_ui_font(control: Control, font_size: int = -1) -> void:
 	if control == null:
 		return
-	if ui_font != null:
-		control.add_theme_font_override("font", ui_font)
 	if font_size > 0:
 		control.add_theme_font_size_override("font_size", font_size)
 
@@ -208,6 +218,7 @@ func _process(delta: float) -> void:
 		status_timer = max(0.0, status_timer - delta)
 		if status_timer == 0.0:
 			status_text = ""
+	_update_reward_fx(delta)
 	_update_ui_text()
 	_update_offtrack_warning_ui(delta)
 
@@ -284,6 +295,7 @@ func _simulate_player(delta: float) -> void:
 			shortcut_seen[sid] = true
 			_set_status("지름길 발견!", 1.2)
 			style_score += 120
+			_trigger_reward_fx(Color(0.72, 0.92, 1.0, 1.0), 0.9)
 
 	var slope := _slope_at(player_pos.y)
 	var accel := active_gravity * slope * 0.18
@@ -351,6 +363,7 @@ func _check_checkpoints() -> void:
 			respawn_pos = Vector2(_main_center_x(cp_y + 12.0), cp_y + 20.0)
 			style_score += 80
 			_set_status("체크포인트 %d" % (i + 1), 0.9)
+			_trigger_reward_fx(Color(1.0, 0.9, 0.6, 1.0), 1.0)
 
 
 func _check_finish() -> void:
@@ -368,6 +381,7 @@ func _check_finish() -> void:
 
 	var challenge_ok := no_crash_run and run_time <= challenge_target
 	_set_status("완주! %s" % _fmt_time(run_time), 2.4)
+	_trigger_reward_fx(Color(0.99, 0.93, 0.68, 1.0), 1.65)
 	if challenge_ok:
 		_set_status("무충돌 완주! 목표 달성!", 2.8)
 
@@ -526,6 +540,94 @@ func _respawn() -> void:
 	_set_status("복귀", 0.7)
 
 
+func _trigger_reward_fx(tint: Color, intensity: float = 1.0) -> void:
+	var power := clampf(intensity, 0.5, 2.0)
+	reward_wave_duration = 0.34 + power * 0.2
+	reward_wave_timer = reward_wave_duration
+	reward_wave_color = tint
+	reward_wave_origin = player_pos
+	reward_screen_tint = tint
+	reward_screen_pulse = maxf(reward_screen_pulse, 0.12 + power * 0.12)
+
+	var burst_count := int(round(10.0 + power * 18.0))
+	for i in range(burst_count):
+		var angle := rng.randf_range(0.0, TAU)
+		var speed := rng.randf_range(72.0, 210.0 + 48.0 * power)
+		var life := rng.randf_range(0.25, 0.68 + 0.18 * power)
+		reward_particles.append({
+			"pos": player_pos,
+			"vel": Vector2(cos(angle), sin(angle)) * speed,
+			"life": life,
+			"max_life": life,
+			"size": rng.randf_range(2.0, 5.6 + 1.2 * power),
+			"col": Color(
+				clampf(tint.r + rng.randf_range(-0.04, 0.08), 0.0, 1.0),
+				clampf(tint.g + rng.randf_range(-0.04, 0.08), 0.0, 1.0),
+				clampf(tint.b + rng.randf_range(-0.04, 0.08), 0.0, 1.0),
+				1.0
+			),
+		})
+
+	while reward_particles.size() > MAX_REWARD_PARTICLES:
+		reward_particles.remove_at(0)
+
+
+func _update_reward_fx(delta: float) -> void:
+	if reward_wave_timer > 0.0:
+		reward_wave_timer = maxf(0.0, reward_wave_timer - delta)
+
+	if reward_screen_pulse > 0.0:
+		reward_screen_pulse = maxf(0.0, reward_screen_pulse - delta * 1.45)
+
+	for i in range(reward_particles.size() - 1, -1, -1):
+		var p: Dictionary = reward_particles[i]
+		var life := float(p.get("life", 0.0)) - delta
+		if life <= 0.0:
+			reward_particles.remove_at(i)
+			continue
+
+		var pos: Vector2 = p.get("pos", Vector2.ZERO)
+		var vel: Vector2 = p.get("vel", Vector2.ZERO)
+		vel = vel * clampf(1.0 - delta * 2.4, 0.0, 1.0)
+		vel.y += 230.0 * delta
+		pos += vel * delta
+		p["life"] = life
+		p["pos"] = pos
+		p["vel"] = vel
+		reward_particles[i] = p
+
+
+func _draw_reward_fx(min_y: float, max_y: float, cam_pos: Vector2, cam_zoom: float) -> void:
+	if reward_particles.size() > 0:
+		for p in reward_particles:
+			var pos: Vector2 = p.get("pos", Vector2.ZERO)
+			if pos.y < min_y - 80.0 or pos.y > max_y + 80.0:
+				continue
+			var life := float(p.get("life", 0.0))
+			var max_life := maxf(0.001, float(p.get("max_life", life)))
+			var alpha := clampf(life / max_life, 0.0, 1.0)
+			var col := Color(p.get("col", Color.WHITE))
+			col.a = alpha
+			draw_circle(pos, float(p.get("size", 2.0)) * (0.45 + alpha * 0.55), col)
+
+	if reward_wave_timer > 0.0:
+		var progress := 1.0 - reward_wave_timer / maxf(0.001, reward_wave_duration)
+		var eased := 1.0 - pow(1.0 - progress, 3.0)
+		var radius := lerpf(18.0, 124.0, eased)
+		var wave_col := reward_wave_color
+		wave_col.a = clampf((1.0 - progress) * 0.82, 0.0, 0.82)
+		draw_arc(reward_wave_origin, radius, 0.0, TAU, 56, wave_col, 3.5)
+
+	if reward_screen_pulse > 0.001:
+		var vp := get_viewport_rect().size
+		var half_w := vp.x * cam_zoom * 0.56
+		var half_h := vp.y * cam_zoom * 0.56
+		var rect := Rect2(cam_pos - Vector2(half_w, half_h), Vector2(half_w * 2.0, half_h * 2.0))
+		var overlay := reward_screen_tint
+		overlay.a = clampf(reward_screen_pulse * 0.24, 0.0, 0.2)
+		draw_rect(rect, overlay, true)
+
+
 func _show_game_over_popup() -> void:
 	if game_over_overlay == null:
 		return
@@ -552,11 +654,7 @@ func _read_steer_input() -> float:
 		steer -= 1.0
 	if touch_right:
 		steer += 1.0
-
-	if touch_steer_active:
-		var delta_x := touch_steer_x - player_pos.x
-		if abs(delta_x) > 10.0:
-			steer += clampf(delta_x / 90.0, -1.0, 1.0)
+	steer += touch_steer_axis
 
 	return clampf(steer, -1.0, 1.0)
 
@@ -788,6 +886,167 @@ func _update_camera(delta: float) -> void:
 	camera.zoom = camera.zoom.lerp(Vector2.ONE * clampf(target_zoom, 0.74, 1.12), clampf(delta * 5.8, 0.04, 0.2))
 
 
+func _make_stylebox(bg: Color, border: Color, radius: int, border_width: int = 1) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.border_color = border
+	sb.set_border_width_all(border_width)
+	sb.corner_radius_top_left = radius
+	sb.corner_radius_top_right = radius
+	sb.corner_radius_bottom_left = radius
+	sb.corner_radius_bottom_right = radius
+	return sb
+
+
+func _apply_hold_button_theme(button: Button, tone: String) -> void:
+	var normal := Color(0.16, 0.28, 0.43, 0.84)
+	var hover := Color(0.2, 0.34, 0.52, 0.9)
+	var pressed := Color(0.14, 0.22, 0.35, 0.92)
+	var border := Color(0.58, 0.78, 0.95, 0.45)
+	var font_col := Color(0.92, 0.97, 1.0)
+
+	if tone == "boost":
+		normal = Color(0.47, 0.36, 0.16, 0.88)
+		hover = Color(0.55, 0.43, 0.18, 0.94)
+		pressed = Color(0.39, 0.29, 0.12, 0.96)
+		border = Color(0.97, 0.86, 0.6, 0.55)
+		font_col = Color(1.0, 0.96, 0.84)
+	elif tone == "brake":
+		normal = Color(0.12, 0.23, 0.38, 0.9)
+		hover = Color(0.15, 0.3, 0.48, 0.95)
+		pressed = Color(0.09, 0.18, 0.3, 0.95)
+		border = Color(0.62, 0.82, 0.97, 0.52)
+		font_col = Color(0.9, 0.97, 1.0)
+
+	button.add_theme_stylebox_override("normal", _make_stylebox(normal, border, 12))
+	button.add_theme_stylebox_override("hover", _make_stylebox(hover, border.lightened(0.08), 12))
+	button.add_theme_stylebox_override("pressed", _make_stylebox(pressed, border.darkened(0.08), 12))
+	button.add_theme_stylebox_override("focus", _make_stylebox(hover.lightened(0.07), border.lightened(0.12), 12, 2))
+	button.add_theme_color_override("font_color", font_col)
+	button.add_theme_color_override("font_pressed_color", font_col.lightened(0.08))
+	button.add_theme_color_override("font_hover_color", font_col.lightened(0.08))
+	button.add_theme_color_override("font_focus_color", font_col.lightened(0.08))
+	button.add_theme_constant_override("outline_size", 0)
+
+
+func _apply_popup_button_theme(button: Button, primary: bool) -> void:
+	if primary:
+		button.add_theme_stylebox_override(
+			"normal",
+			_make_stylebox(Color(0.24, 0.39, 0.61, 0.94), Color(0.7, 0.86, 0.99, 0.64), 10)
+		)
+		button.add_theme_stylebox_override(
+			"hover",
+			_make_stylebox(Color(0.29, 0.45, 0.68, 0.96), Color(0.78, 0.9, 1.0, 0.72), 10)
+		)
+		button.add_theme_stylebox_override(
+			"pressed",
+			_make_stylebox(Color(0.19, 0.31, 0.52, 0.98), Color(0.68, 0.84, 0.99, 0.72), 10)
+		)
+		button.add_theme_color_override("font_color", Color(0.93, 0.98, 1.0))
+	else:
+		button.add_theme_stylebox_override(
+			"normal",
+			_make_stylebox(Color(0.12, 0.2, 0.33, 0.86), Color(0.57, 0.73, 0.89, 0.44), 10)
+		)
+		button.add_theme_stylebox_override(
+			"hover",
+			_make_stylebox(Color(0.16, 0.27, 0.43, 0.9), Color(0.64, 0.8, 0.95, 0.52), 10)
+		)
+		button.add_theme_stylebox_override(
+			"pressed",
+			_make_stylebox(Color(0.1, 0.17, 0.29, 0.92), Color(0.54, 0.7, 0.86, 0.5), 10)
+		)
+		button.add_theme_color_override("font_color", Color(0.88, 0.95, 1.0))
+
+	button.add_theme_stylebox_override("focus", _make_stylebox(Color(0.2, 0.33, 0.52, 0.96), Color(0.8, 0.9, 1.0, 0.72), 10, 2))
+	button.add_theme_color_override("font_hover_color", Color(0.94, 0.98, 1.0))
+	button.add_theme_color_override("font_pressed_color", Color(0.98, 1.0, 1.0))
+	button.add_theme_constant_override("outline_size", 0)
+
+
+func _sync_steer_pad_visual() -> void:
+	if steer_pad_knob == null or steer_pad_base == null:
+		return
+
+	var knob_size := Vector2(STEER_PAD_KNOB_RADIUS * 2.0, STEER_PAD_KNOB_RADIUS * 2.0)
+	var center := Vector2(STEER_PAD_RADIUS, STEER_PAD_RADIUS)
+	steer_pad_knob.size = knob_size
+	steer_pad_knob.position = center - knob_size * 0.5 + steer_pad_knob_offset
+	steer_pad_base.modulate = Color(1.0, 1.0, 1.0, 1.0 if steer_pad_active else 0.95)
+
+
+func _update_steer_pad_from_local(local_pos: Vector2) -> void:
+	if steer_pad_base == null:
+		return
+
+	var center := Vector2(STEER_PAD_RADIUS, STEER_PAD_RADIUS)
+	var delta := local_pos - center
+	var max_dist := STEER_PAD_RADIUS - STEER_PAD_KNOB_RADIUS - 6.0
+	if delta.length() > max_dist and delta.length() > 0.001:
+		delta = delta.normalized() * max_dist
+
+	steer_pad_knob_offset = delta
+	var axis := 0.0 if max_dist <= 0.001 else clampf(delta.x / max_dist, -1.0, 1.0)
+	if abs(axis) < STEER_PAD_DEADZONE:
+		axis = 0.0
+	touch_steer_axis = axis
+	_sync_steer_pad_visual()
+
+
+func _release_steer_pad() -> void:
+	steer_pad_active = false
+	steer_pad_touch_index = -1
+	steer_pad_knob_offset = Vector2.ZERO
+	touch_steer_axis = 0.0
+	_sync_steer_pad_visual()
+
+
+func _wake_run_from_ui_input() -> void:
+	if not run_started and run_finished and (game_over_overlay == null or not game_over_overlay.visible):
+		_start_run()
+
+
+func _on_steer_pad_gui_input(event: InputEvent) -> void:
+	if game_over_overlay != null and game_over_overlay.visible:
+		_release_steer_pad()
+		return
+
+	if event is InputEventScreenTouch:
+		var e_touch := event as InputEventScreenTouch
+		if e_touch.pressed:
+			_wake_run_from_ui_input()
+			steer_pad_active = true
+			steer_pad_touch_index = e_touch.index
+			_update_steer_pad_from_local(steer_pad_base.to_local(e_touch.position))
+		elif steer_pad_active and e_touch.index == steer_pad_touch_index:
+			_release_steer_pad()
+		return
+
+	if event is InputEventScreenDrag:
+		var e_drag := event as InputEventScreenDrag
+		if steer_pad_active and e_drag.index == steer_pad_touch_index:
+			_update_steer_pad_from_local(steer_pad_base.to_local(e_drag.position))
+		return
+
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.button_index != MOUSE_BUTTON_LEFT:
+			return
+		if mb.pressed:
+			_wake_run_from_ui_input()
+			steer_pad_active = true
+			steer_pad_touch_index = -2
+			_update_steer_pad_from_local(steer_pad_base.to_local(mb.position))
+		elif steer_pad_active and steer_pad_touch_index == -2:
+			_release_steer_pad()
+		return
+
+	if event is InputEventMouseMotion and steer_pad_active and steer_pad_touch_index == -2:
+		var mm := event as InputEventMouseMotion
+		_update_steer_pad_from_local(steer_pad_base.to_local(mm.position))
+
+
 func _build_ui() -> void:
 	camera = Camera2D.new()
 	camera.enabled = true
@@ -803,15 +1062,18 @@ func _build_ui() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	canvas_layer.add_child(root)
 
-	var hud_bg := ColorRect.new()
+	var hud_bg := Panel.new()
 	hud_bg.position = Vector2(8, 8)
-	hud_bg.size = Vector2(236, 56)
-	hud_bg.color = Color(0.04, 0.09, 0.16, 0.58)
+	hud_bg.size = Vector2(240, 58)
+	hud_bg.add_theme_stylebox_override(
+		"panel",
+		_make_stylebox(Color(0.07, 0.14, 0.24, 0.62), Color(0.68, 0.84, 0.98, 0.28), 10)
+	)
 	root.add_child(hud_bg)
 
 	hud_label = Label.new()
 	hud_label.position = Vector2(14, 12)
-	hud_label.size = Vector2(222, 42)
+	hud_label.size = Vector2(226, 42)
 	hud_label.add_theme_color_override("font_color", Color(0.95, 0.98, 1.0))
 	_apply_ui_font(hud_label, 13)
 	hud_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -847,39 +1109,87 @@ func _build_ui() -> void:
 	left_controls.anchor_top = 1.0
 	left_controls.anchor_bottom = 1.0
 	left_controls.offset_left = 10
-	left_controls.offset_right = 124
-	left_controls.offset_top = -120
+	left_controls.offset_right = 128
+	left_controls.offset_top = -124
 	left_controls.offset_bottom = -10
 	left_controls.add_theme_constant_override("separation", 8)
 	left_controls.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(left_controls)
 
-	var brake_btn := _make_hold_button("브레이크", func() -> void: touch_brake = true, func() -> void: touch_brake = false)
-	var crouch_btn := _make_hold_button("부스트", func() -> void: touch_crouch = true, func() -> void: touch_crouch = false)
+	var brake_btn := _make_hold_button(
+		"브레이크",
+		func() -> void:
+			_wake_run_from_ui_input()
+			touch_brake = true,
+		func() -> void:
+			touch_brake = false,
+		"brake"
+	)
+	var crouch_btn := _make_hold_button(
+		"부스트",
+		func() -> void:
+			_wake_run_from_ui_input()
+			touch_crouch = true,
+		func() -> void:
+			touch_crouch = false,
+		"boost"
+	)
 	left_controls.add_child(brake_btn)
 	left_controls.add_child(crouch_btn)
 
-	var right_controls := VBoxContainer.new()
-	right_controls.anchor_left = 1.0
-	right_controls.anchor_right = 1.0
-	right_controls.anchor_top = 1.0
-	right_controls.anchor_bottom = 1.0
-	right_controls.offset_left = -124
-	right_controls.offset_right = -10
-	right_controls.offset_top = -120
-	right_controls.offset_bottom = -10
-	right_controls.add_theme_constant_override("separation", 8)
-	right_controls.mouse_filter = Control.MOUSE_FILTER_STOP
-	root.add_child(right_controls)
+	var steer_wrap := Control.new()
+	steer_wrap.anchor_left = 1.0
+	steer_wrap.anchor_right = 1.0
+	steer_wrap.anchor_top = 1.0
+	steer_wrap.anchor_bottom = 1.0
+	steer_wrap.offset_left = -126
+	steer_wrap.offset_right = -12
+	steer_wrap.offset_top = -126
+	steer_wrap.offset_bottom = -12
+	steer_wrap.mouse_filter = Control.MOUSE_FILTER_STOP
+	root.add_child(steer_wrap)
 
-	var left_btn := _make_hold_button("왼쪽", func() -> void: touch_left = true, func() -> void: touch_left = false)
-	var right_btn := _make_hold_button("오른쪽", func() -> void: touch_right = true, func() -> void: touch_right = false)
-	right_controls.add_child(left_btn)
-	right_controls.add_child(right_btn)
+	steer_pad_base = Panel.new()
+	steer_pad_base.set_anchors_preset(Control.PRESET_FULL_RECT)
+	steer_pad_base.add_theme_stylebox_override(
+		"panel",
+		_make_stylebox(Color(0.1, 0.2, 0.35, 0.88), Color(0.95, 0.86, 0.64, 0.52), 999)
+	)
+	steer_pad_base.gui_input.connect(_on_steer_pad_gui_input)
+	steer_wrap.add_child(steer_pad_base)
+
+	var steer_inner := Panel.new()
+	steer_inner.position = Vector2(18, 18)
+	steer_inner.size = Vector2(76, 76)
+	steer_inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	steer_inner.add_theme_stylebox_override(
+		"panel",
+		_make_stylebox(Color(0.16, 0.29, 0.48, 0.46), Color(0.82, 0.92, 1.0, 0.24), 999)
+	)
+	steer_pad_base.add_child(steer_inner)
+
+	var steer_center := Panel.new()
+	steer_center.position = Vector2(52, 52)
+	steer_center.size = Vector2(8, 8)
+	steer_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	steer_center.add_theme_stylebox_override(
+		"panel",
+		_make_stylebox(Color(0.9, 0.96, 1.0, 0.58), Color(0.9, 0.97, 1.0, 0.58), 999)
+	)
+	steer_pad_base.add_child(steer_center)
+
+	steer_pad_knob = Panel.new()
+	steer_pad_knob.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	steer_pad_knob.add_theme_stylebox_override(
+		"panel",
+		_make_stylebox(Color(0.86, 0.95, 1.0, 0.95), Color(0.74, 0.88, 1.0, 0.78), 999)
+	)
+	steer_pad_base.add_child(steer_pad_knob)
+	_sync_steer_pad_visual()
 
 	game_over_overlay = ColorRect.new()
 	game_over_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	game_over_overlay.color = Color(0.02, 0.04, 0.08, 0.58)
+	game_over_overlay.color = Color(0.04, 0.08, 0.14, 0.54)
 	game_over_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	game_over_overlay.visible = false
 	root.add_child(game_over_overlay)
@@ -896,8 +1206,8 @@ func _build_ui() -> void:
 	game_over_overlay.add_child(popup_card)
 
 	var popup_style := StyleBoxFlat.new()
-	popup_style.bg_color = Color(0.06, 0.11, 0.19, 0.97)
-	popup_style.border_color = Color(0.62, 0.77, 0.94, 0.42)
+	popup_style.bg_color = Color(0.07, 0.15, 0.26, 0.98)
+	popup_style.border_color = Color(0.72, 0.86, 0.98, 0.5)
 	popup_style.set_border_width_all(1)
 	popup_style.corner_radius_top_left = 16
 	popup_style.corner_radius_top_right = 16
@@ -915,6 +1225,7 @@ func _build_ui() -> void:
 	game_over_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	game_over_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	game_over_label.text = "목숨을 모두 잃었습니다.\n다시 시작할까요?"
+	game_over_label.add_theme_color_override("font_color", Color(0.92, 0.97, 1.0))
 	_apply_ui_font(game_over_label, 14)
 	popup_box.add_child(game_over_label)
 
@@ -927,6 +1238,7 @@ func _build_ui() -> void:
 	cancel_btn.text = "아니오"
 	cancel_btn.custom_minimum_size = Vector2(94, 40)
 	_apply_ui_font(cancel_btn, 13)
+	_apply_popup_button_theme(cancel_btn, false)
 	cancel_btn.pressed.connect(_on_game_over_cancel_pressed)
 	actions.add_child(cancel_btn)
 
@@ -934,6 +1246,7 @@ func _build_ui() -> void:
 	restart_btn.text = "다시 시작"
 	restart_btn.custom_minimum_size = Vector2(108, 40)
 	_apply_ui_font(restart_btn, 13)
+	_apply_popup_button_theme(restart_btn, true)
 	restart_btn.pressed.connect(_on_game_over_restart_pressed)
 	actions.add_child(restart_btn)
 
@@ -1103,8 +1416,8 @@ func _stop_ski_loop() -> void:
 
 func _update_left_right_sfx() -> void:
 	var active_run := run_started and not run_finished and not crashed
-	var left_pressed_now := active_run and (Input.is_action_pressed("steer_left") or touch_left)
-	var right_pressed_now := active_run and (Input.is_action_pressed("steer_right") or touch_right)
+	var left_pressed_now := active_run and (Input.is_action_pressed("steer_left") or touch_left or touch_steer_axis < -STEER_PAD_DEADZONE)
+	var right_pressed_now := active_run and (Input.is_action_pressed("steer_right") or touch_right or touch_steer_axis > STEER_PAD_DEADZONE)
 
 	if (left_pressed_now and not _left_was_pressed) or (right_pressed_now and not _right_was_pressed):
 		_play_left_right_sfx()
@@ -1125,11 +1438,12 @@ func _play_left_right_sfx() -> void:
 	left_right_sfx_player.play()
 
 
-func _make_hold_button(label: String, on_press: Callable, on_release: Callable) -> Button:
+func _make_hold_button(label: String, on_press: Callable, on_release: Callable, tone: String = "default") -> Button:
 	var b := Button.new()
 	b.text = label
 	b.custom_minimum_size = Vector2(114, 48)
 	_apply_ui_font(b, 13)
+	_apply_hold_button_theme(b, tone)
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	b.button_down.connect(on_press)
 	b.button_up.connect(on_release)
@@ -1223,21 +1537,27 @@ func _reset_run(start_immediately: bool) -> void:
 	shortcut_seen.clear()
 	_setup_map_data()
 	_touch_reset()
+	reward_particles.clear()
+	reward_wave_timer = 0.0
+	reward_screen_pulse = 0.0
 	_hide_game_over_popup()
 
 
 func _touch_reset() -> void:
-	touch_steer_active = false
-	touch_steer_x = BASE_CENTER_X
+	touch_steer_axis = 0.0
 	touch_left = false
 	touch_right = false
 	touch_brake = false
 	touch_crouch = false
+	steer_pad_active = false
+	steer_pad_touch_index = -1
+	steer_pad_knob_offset = Vector2.ZERO
 	_brake_was_pressed = false
 	_left_was_pressed = false
 	_right_was_pressed = false
 	offtrack_warning_target = 0.0
 	offtrack_warning_strength = 0.0
+	_sync_steer_pad_visual()
 
 
 func _set_status(text: String, ttl: float) -> void:
@@ -1317,27 +1637,46 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event is InputEventScreenTouch:
 		var touch_event := event as InputEventScreenTouch
-		if touch_event.pressed:
-			touch_steer_active = true
-			touch_steer_x = touch_event.position.x
-		else:
-			touch_steer_active = false
-	elif event is InputEventScreenDrag:
+		if not touch_event.pressed and steer_pad_active and touch_event.index == steer_pad_touch_index:
+			_release_steer_pad()
+	elif event is InputEventScreenDrag and steer_pad_active and steer_pad_base != null:
 		var drag_event := event as InputEventScreenDrag
-		touch_steer_active = true
-		touch_steer_x = drag_event.position.x
+		if drag_event.index == steer_pad_touch_index:
+			_update_steer_pad_from_local(steer_pad_base.to_local(drag_event.position))
 	elif event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
-		if mb.button_index == MOUSE_BUTTON_LEFT:
-			touch_steer_active = mb.pressed
-			touch_steer_x = mb.position.x
-	elif event is InputEventMouseMotion:
-		if touch_steer_active:
-			var mm := event as InputEventMouseMotion
-			touch_steer_x = mm.position.x
+		if mb.button_index == MOUSE_BUTTON_LEFT and not mb.pressed and steer_pad_active and steer_pad_touch_index == -2:
+			_release_steer_pad()
+	elif event is InputEventMouseMotion and steer_pad_active and steer_pad_touch_index == -2 and steer_pad_base != null:
+		var mm := event as InputEventMouseMotion
+		_update_steer_pad_from_local(steer_pad_base.to_local(mm.position))
 
 	if event.is_action_pressed("restart_run") and not run_started:
 		_start_run()
+
+
+func _input(event: InputEvent) -> void:
+	if not steer_pad_active or steer_pad_base == null:
+		return
+	if host_paused or (game_over_overlay != null and game_over_overlay.visible):
+		_release_steer_pad()
+		return
+
+	if event is InputEventScreenDrag:
+		var drag := event as InputEventScreenDrag
+		if drag.index == steer_pad_touch_index:
+			_update_steer_pad_from_local(steer_pad_base.to_local(drag.position))
+	elif event is InputEventScreenTouch:
+		var touch := event as InputEventScreenTouch
+		if not touch.pressed and touch.index == steer_pad_touch_index:
+			_release_steer_pad()
+	elif event is InputEventMouseMotion and steer_pad_touch_index == -2:
+		var mm := event as InputEventMouseMotion
+		_update_steer_pad_from_local(steer_pad_base.to_local(mm.position))
+	elif event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.button_index == MOUSE_BUTTON_LEFT and not mb.pressed and steer_pad_touch_index == -2:
+			_release_steer_pad()
 
 
 func _draw() -> void:
@@ -1360,6 +1699,7 @@ func _draw() -> void:
 	_draw_obstacles(min_y, max_y)
 	_draw_finish_gate(min_y, max_y)
 	_draw_player()
+	_draw_reward_fx(min_y, max_y, cam_pos, cam_zoom)
 
 
 func _draw_patches(min_y: float, max_y: float) -> void:
