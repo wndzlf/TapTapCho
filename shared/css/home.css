@@ -52,10 +52,6 @@ section { margin-bottom: 24px; }
   gap: 16px;
 }
 
-/* Curation mode fallback: keep top 12 cards visible even without JS */
-main > section:first-of-type .grid > .card:nth-of-type(n + 13) {
-  display: none;
-}
 .card {
   background: var(--card);
   border: 1px solid #1f2a44;
