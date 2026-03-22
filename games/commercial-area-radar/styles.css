@@ -157,6 +157,13 @@ body {
   line-height: 1.5;
 }
 
+.hero-note {
+  margin: 0;
+  color: rgba(246, 252, 251, 0.78);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 .hero-pill,
 .meta-chip,
 .placeholder-chip,
@@ -169,8 +176,64 @@ body {
   color: #f6fcfb;
 }
 
+.hero-pill-button {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.hero-pill-button::after {
+  content: "보기";
+  margin-left: 6px;
+  opacity: 0.72;
+}
+
+.hero-pill-button[aria-expanded="true"]::after {
+  content: "닫기";
+}
+
 .hero-pill-muted {
   background: rgba(240, 137, 79, 0.18);
+}
+
+.scope-details {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.scope-details[hidden] {
+  display: none;
+}
+
+.scope-details-head {
+  color: rgba(246, 252, 251, 0.76);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.scope-details-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.scope-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #f6fcfb;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .selection-summary,
@@ -422,6 +485,26 @@ body {
   display: grid;
   gap: 16px;
   margin-top: 16px;
+}
+
+.data-footnote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 16px 18px;
+  border: 1px solid rgba(17, 53, 55, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.66);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.data-footnote a {
+  color: var(--accent-deep);
+  font-weight: 800;
+  text-decoration: none;
 }
 
 .panel,

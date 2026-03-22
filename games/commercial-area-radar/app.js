@@ -5,6 +5,8 @@ const SEARCH_RESULT_LIMIT = 8;
 const RECENT_SELECTION_LIMIT = 3;
 const FREQUENT_SELECTION_LIMIT = 3;
 const SNAPSHOT_ARCHIVE_LIMIT = 6;
+const DATA_PORTAL_URL = "https://www.data.go.kr/data/15012005/openapi.do";
+const BIGDATA_PLATFORM_URL = "https://bigdata.sbiz.or.kr/";
 
 const state = {
   area: "all",
@@ -20,6 +22,7 @@ const state = {
   industryQuery: "",
   pickerType: null,
   pickerQuery: "",
+  scopeExpanded: false,
   recentAreas: [],
   recentIndustries: [],
   areaSelectionCounts: {},
@@ -33,6 +36,8 @@ const state = {
 const refs = {
   heroStatus: document.getElementById("hero-status"),
   snapshotChip: document.getElementById("snapshot-chip"),
+  heroNote: document.getElementById("hero-note"),
+  scopeDetails: document.getElementById("scope-details"),
   areaSearch: document.getElementById("area-search"),
   industrySearch: document.getElementById("industry-search"),
   areaSuggestions: document.getElementById("area-suggestions"),
@@ -59,6 +64,7 @@ const refs = {
   categoryNote: document.getElementById("category-note"),
   categoryActions: document.getElementById("category-actions"),
   categoryList: document.getElementById("category-list"),
+  dataFootnote: document.getElementById("data-footnote"),
   filterPicker: document.getElementById("filter-picker"),
   pickerBackdrop: document.getElementById("picker-backdrop"),
   pickerKicker: document.getElementById("picker-kicker"),
@@ -112,6 +118,29 @@ function formatDateTime(value) {
     minute: "2-digit",
     hour12: false,
   }).format(date);
+}
+
+function padNumber(value) {
+  return String(value).padStart(2, "0");
+}
+
+function formatBasisDateTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "기준 시점 확인 중";
+  }
+
+  const formatter = new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const parts = Object.fromEntries(formatter.formatToParts(date).map((part) => [part.type, part.value]));
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute} KST`;
 }
 
 function formatNumber(value) {
@@ -292,12 +321,51 @@ function saveSnapshotArchive(archive) {
 function normalizeLoadedSnapshot(data) {
   return {
     updatedAt: typeof data?.updatedAt === "string" ? data.updatedAt : new Date().toISOString(),
+    scope: typeof data?.scope === "string" ? data.scope : "",
     source: typeof data?.source === "string" ? data.source : "",
     basis: typeof data?.basis === "string" ? data.basis : "",
     items: Array.isArray(data?.items)
       ? data.items.filter((item) => item && typeof item === "object" && !Array.isArray(item))
       : [],
   };
+}
+
+function buildHeroNote(items = getAllItems()) {
+  return `${countUnique(items, getAreaId)}개 동네 · ${countUnique(items, getIndustryId)}개 업종 · ${formatNumber(items.length)}건 표본`;
+}
+
+function getScopeLabels(items = getAllItems()) {
+  return Array.from(new Set(items.map((item) => getSignguLabel(item)).filter(Boolean))).sort((left, right) => {
+    return left.localeCompare(right, "ko");
+  });
+}
+
+function renderScopeDetails() {
+  const labels = getScopeLabels();
+  refs.snapshotChip.setAttribute("aria-expanded", state.scopeExpanded ? "true" : "false");
+  refs.scopeDetails.hidden = !state.scopeExpanded || labels.length === 0;
+
+  if (refs.scopeDetails.hidden) {
+    refs.scopeDetails.innerHTML = "";
+    return;
+  }
+
+  refs.scopeDetails.innerHTML = `
+    <div class="scope-details-head">수집 대상 구</div>
+    <div class="scope-details-list">
+      ${labels.map((label) => `<span class="scope-chip">${escapeHtml(label)}</span>`).join("")}
+    </div>
+  `;
+}
+
+function buildDataFootnoteHtml(data) {
+  const scope = data?.scope ? `${escapeHtml(data.scope)} 범위에서 묶은 표본입니다.` : "최근 수집 기준 표본입니다.";
+  const source = data?.source ? `${escapeHtml(data.source)} 공개 데이터를 바탕으로 비교합니다.` : "공개 데이터를 바탕으로 비교합니다.";
+  return `
+    <span>${source} ${scope} 실시간 매출, 유동인구, 시세를 보여주는 서비스는 아닙니다.</span>
+    <a href="${DATA_PORTAL_URL}" target="_blank" rel="noreferrer">데이터 출처</a>
+    <a href="${BIGDATA_PLATFORM_URL}" target="_blank" rel="noreferrer">플랫폼 보기</a>
+  `;
 }
 
 function summarizeCounts(items, selector) {
@@ -2574,6 +2642,10 @@ async function init() {
   refs.industryPickerOpen.addEventListener("click", () => {
     openPicker("industry");
   });
+  refs.snapshotChip.addEventListener("click", () => {
+    state.scopeExpanded = !state.scopeExpanded;
+    renderScopeDetails();
+  });
   refs.pickerClose.addEventListener("click", () => {
     closePicker();
   });
@@ -2603,16 +2675,24 @@ async function init() {
 
     state.data = normalizeLoadedSnapshot(await response.json());
     syncSnapshotArchive(state.data);
-    refs.snapshotChip.textContent = "최근 수집본";
-    refs.heroStatus.textContent = `${formatDateTime(state.data.updatedAt)} 기준 · ${
-      countUnique(getAllItems(), getAreaId)
-    }개 동네 · ${
-      countUnique(getAllItems(), getIndustryId)
-    }개 업종`;
+    refs.snapshotChip.textContent = state.data.scope || "수집 범위 확인 중";
+    refs.heroStatus.textContent = `${formatBasisDateTime(state.data.updatedAt)} 기준`;
+    refs.heroNote.textContent = buildHeroNote(getAllItems());
+    refs.dataFootnote.innerHTML = buildDataFootnoteHtml(state.data);
+    renderScopeDetails();
     render();
   } catch (error) {
     console.error(error);
     refs.heroStatus.textContent = "기준 데이터를 불러오지 못했습니다.";
+    refs.snapshotChip.textContent = "수집 범위 확인 불가";
+    refs.snapshotChip.setAttribute("aria-expanded", "false");
+    refs.heroNote.textContent = "기준 시점과 표본 요약을 확인할 수 없습니다.";
+    refs.scopeDetails.hidden = true;
+    refs.scopeDetails.innerHTML = "";
+    refs.dataFootnote.innerHTML = `
+      <span>기준 데이터가 없어 안내 문구를 구성하지 못했습니다. 이 앱은 실시간 매출, 유동인구, 시세를 보여주는 서비스가 아닙니다.</span>
+      <a href="${DATA_PORTAL_URL}" target="_blank" rel="noreferrer">데이터 출처</a>
+    `;
     refs.areaFilter.innerHTML = `<article class="placeholder-card">commercial-area-radar/latest-commercial-area-snapshot.json 파일을 확인해 주세요.</article>`;
     refs.industryFilter.innerHTML = "";
     refs.briefingTitle.textContent = "브리핑을 렌더링하지 못했습니다.";

@@ -28,9 +28,13 @@
         <div class="hero-side">
           <div class="hero-status" id="hero-status">기준 데이터 불러오는 중</div>
           <div class="hero-pills">
-            <span class="hero-pill" id="snapshot-chip">최근 수집본</span>
+            <button class="hero-pill hero-pill-button" id="snapshot-chip" type="button" aria-expanded="false" aria-controls="scope-details">
+              수집 범위 확인 중
+            </button>
             <span class="hero-pill hero-pill-muted">실시간 아님</span>
           </div>
+          <p class="hero-note" id="hero-note">표본 요약을 준비하고 있습니다.</p>
+          <div class="scope-details" id="scope-details" hidden></div>
         </div>
       </div>
     </header>
@@ -137,6 +141,8 @@
           </div>
         </section>
       </section>
+
+      <section class="data-footnote" id="data-footnote"></section>
     </main>
   </div>
 
