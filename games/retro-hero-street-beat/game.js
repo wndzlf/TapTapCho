@@ -1277,7 +1277,26 @@ function renderResultReport() {
   renderResultHistogram();
 }
 
+function lockGameplayViewportMetrics() {
+  const viewportHeight = Math.max(
+    1,
+    Math.round(window.visualViewport?.height || window.innerHeight || document.documentElement.clientHeight || 1),
+  );
+  document.documentElement.style.setProperty('--gameplay-vh', `${viewportHeight}px`);
+
+  const computedSafeBottom = window.getComputedStyle(document.documentElement).getPropertyValue('--safe-bottom').trim();
+  const safeBottom = computedSafeBottom || '0px';
+  document.documentElement.style.setProperty('--safe-bottom-lock', safeBottom);
+}
+
+function unlockGameplayViewportMetrics() {
+  document.documentElement.style.removeProperty('--gameplay-vh');
+  document.documentElement.style.removeProperty('--safe-bottom-lock');
+}
+
 async function requestGameplayFullscreen() {
+  lockGameplayViewportMetrics();
+  document.body.classList.add('gameplay-immersive');
   const el = document.documentElement;
   if (!el?.requestFullscreen) return;
   if (document.fullscreenElement) return;
@@ -1289,6 +1308,8 @@ async function requestGameplayFullscreen() {
 }
 
 async function exitGameplayFullscreen() {
+  document.body.classList.remove('gameplay-immersive');
+  unlockGameplayViewportMetrics();
   if (!document.fullscreenElement || !document.exitFullscreen) return;
   try {
     await document.exitFullscreen();
@@ -1756,6 +1777,9 @@ function startRun() {
   resetResultStats();
 
   rewardedContinueUsed = false;
+  clearRewardedAdRetry();
+  clearRewardedAdLoadSubscription();
+  clearRewardedAdShowSubscription();
 
   enemies.length = 0;
   particles.length = 0;
@@ -2428,20 +2452,7 @@ async function initializeRewardedAds() {
     setRewardedAdStatus('hidden');
     return;
   }
-
-  if (typeof toss.ads.isLoaded === 'function') {
-    try {
-      const isLoaded = await toss.ads.isLoaded(TOSS_REWARDED_AD_GROUP_ID);
-      if (isLoaded) {
-        setRewardedAdStatus('ready');
-        return;
-      }
-    } catch (error) {
-      // Ignore and fallback to explicit load.
-    }
-  }
-
-  preloadRewardedContinueAd();
+  setRewardedAdStatus('idle');
 }
 
 function openInfoModal() {
@@ -2737,38 +2748,31 @@ function handleCanvasPointerDown(event) {
   if (event.pointerType === 'touch') {
     return;
   }
+
+  if (!isGameplayActive()) {
+    if (state === 'idle') {
+      startRun();
+    }
+    return;
+  }
+
   event.preventDefault();
 
   const lane = getLaneFromClientX(event.clientX);
-
-  if (state === 'idle') {
-    startRun();
-    return;
-  }
-
-  if (state === 'gameover') {
-    return;
-  }
-
   attemptAttack(lane);
 }
 
 function handleCanvasTouchStart(event) {
+  if (!isGameplayActive()) {
+    return;
+  }
+
   event.preventDefault();
   lastTouchInputAtMs = performance.now();
 
   const lanes = new Set();
   for (const touch of event.changedTouches) {
     lanes.add(getLaneFromClientX(touch.clientX));
-  }
-
-  if (state === 'idle') {
-    startRun();
-    return;
-  }
-
-  if (state === 'gameover') {
-    return;
   }
 
   for (const lane of lanes) {
@@ -2780,27 +2784,24 @@ function handleLaneButtonPointerDown(event, lane) {
   if (event.pointerType === 'touch') {
     return;
   }
+  if (!isGameplayActive()) {
+    return;
+  }
   if (performance.now() - lastTouchInputAtMs < 280) {
     return;
   }
   event.preventDefault();
 
-  if (state === 'idle') {
-    startRun();
-    return;
-  }
-
   attemptAttack(lane);
 }
 
 function handleLaneButtonTouchStart(event, lane) {
-  event.preventDefault();
-  lastTouchInputAtMs = performance.now();
-
-  if (state === 'idle') {
-    startRun();
+  if (!isGameplayActive()) {
     return;
   }
+
+  event.preventDefault();
+  lastTouchInputAtMs = performance.now();
 
   attemptAttack(lane);
 }

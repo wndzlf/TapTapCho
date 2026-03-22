@@ -3,6 +3,8 @@
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
+  --safe-bottom-lock: var(--safe-bottom);
+  --gameplay-vh: 100svh;
   --bg-0: #070a15;
   --bg-1: #0c1230;
   --bg-2: #21103d;
@@ -432,7 +434,7 @@ body.modal-open {
   width: 100%;
   height: 100%;
   display: block;
-  touch-action: none;
+  touch-action: pan-y;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -440,7 +442,7 @@ body.modal-open {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  touch-action: none;
+  touch-action: pan-y;
 }
 
 .lane-btn {
@@ -455,7 +457,7 @@ body.modal-open {
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
-  touch-action: none;
+  touch-action: pan-y;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -672,7 +674,7 @@ body.gameplay-immersive .stage-shell {
   padding: 0;
   gap: 0;
   width: 100vw;
-  height: 100dvh;
+  height: var(--gameplay-vh);
 }
 
 body.gameplay-immersive .stage-card {
@@ -680,12 +682,12 @@ body.gameplay-immersive .stage-card {
   border-radius: 0;
   background: #060b15;
   aspect-ratio: auto;
-  height: calc(100dvh - (88px + var(--safe-bottom)));
+  height: calc(var(--gameplay-vh) - (88px + var(--safe-bottom-lock)));
 }
 
 body.gameplay-immersive .lane-controls {
   padding: 8px;
-  padding-bottom: calc(8px + var(--safe-bottom));
+  padding-bottom: calc(8px + var(--safe-bottom-lock));
   background: linear-gradient(180deg, rgba(8, 12, 26, 0.96), rgba(6, 10, 22, 0.98));
 }
 
