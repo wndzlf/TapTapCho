@@ -198,30 +198,6 @@
   color: #b8cbe8;
 }
 
-.catalog-note {
-  margin-top: 14px;
-  border: 1px solid #355383;
-  border-radius: 12px;
-  padding: 12px;
-  background: rgba(13, 23, 41, 0.9);
-}
-
-.catalog-note h3 {
-  margin: 0 0 8px;
-  color: #9ce3ff;
-  font-size: 18px;
-}
-
-.catalog-note p {
-  margin: 0;
-  line-height: 1.5;
-  color: #cfe1ff;
-}
-
-.is-hidden-card {
-  display: none !important;
-}
-
 .floating-guide-btn {
   position: fixed;
   right: 12px;

@@ -601,34 +601,7 @@
   }
 
   function curateHomeTop12() {
-    var firstGrid = document.querySelector('main section .grid');
-    if (!firstGrid) return;
-
-    var cards = Array.prototype.slice.call(firstGrid.children).filter(function (node) {
-      return node.classList && node.classList.contains('card') && node.hasAttribute('href');
-    });
-
-    var limit = 12;
-    if (cards.length <= limit) return;
-
-    cards.forEach(function (card, idx) {
-      if (idx < limit) return;
-      card.classList.add('is-hidden-card');
-      card.dataset.hidden = 'true';
-      card.dataset.originHref = card.getAttribute('href') || '';
-      card.removeAttribute('href');
-      card.setAttribute('aria-hidden', 'true');
-      card.tabIndex = -1;
-    });
-
-    if (!document.querySelector('.catalog-note')) {
-      var note = document.createElement('div');
-      note.className = 'catalog-note';
-      note.innerHTML =
-        '<h3>큐레이션 모드: 상위 12개만 노출</h3>' +
-        '<p>현재는 콘텐츠 품질 집중 기간입니다. 하위 게임은 임시 숨김 처리되며, 2026년 3월 28일~2026년 4월 4일 운영 데이터 재검토 후 순차 재오픈합니다.</p>';
-      firstGrid.parentNode.appendChild(note);
-    }
+    // Home card curation is disabled. Keep all cards visible.
   }
 
   function run() {
