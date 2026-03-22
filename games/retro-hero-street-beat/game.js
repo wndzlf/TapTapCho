@@ -354,6 +354,7 @@ let lastSpawnBeat = -999;
 let hudRefreshCooldownSec = 0;
 let previewTimeoutId = 0;
 let spawnGuardCooldownSec = 0;
+let lastTouchInputAtMs = 0;
 
 let userHash = null;
 let unsubscribeSafeArea = () => {};
@@ -2733,6 +2734,9 @@ function handleStartButtonClick() {
 }
 
 function handleCanvasPointerDown(event) {
+  if (event.pointerType === 'touch') {
+    return;
+  }
   event.preventDefault();
 
   const lane = getLaneFromClientX(event.clientX);
@@ -2749,8 +2753,49 @@ function handleCanvasPointerDown(event) {
   attemptAttack(lane);
 }
 
-function handleLaneButtonPointerDown(event, lane) {
+function handleCanvasTouchStart(event) {
   event.preventDefault();
+  lastTouchInputAtMs = performance.now();
+
+  const lanes = new Set();
+  for (const touch of event.changedTouches) {
+    lanes.add(getLaneFromClientX(touch.clientX));
+  }
+
+  if (state === 'idle') {
+    startRun();
+    return;
+  }
+
+  if (state === 'gameover') {
+    return;
+  }
+
+  for (const lane of lanes) {
+    attemptAttack(lane);
+  }
+}
+
+function handleLaneButtonPointerDown(event, lane) {
+  if (event.pointerType === 'touch') {
+    return;
+  }
+  if (performance.now() - lastTouchInputAtMs < 280) {
+    return;
+  }
+  event.preventDefault();
+
+  if (state === 'idle') {
+    startRun();
+    return;
+  }
+
+  attemptAttack(lane);
+}
+
+function handleLaneButtonTouchStart(event, lane) {
+  event.preventDefault();
+  lastTouchInputAtMs = performance.now();
 
   if (state === 'idle') {
     startRun();
@@ -2868,6 +2913,7 @@ function bindEvents() {
   });
 
   canvas.addEventListener('pointerdown', handleCanvasPointerDown, { passive: false });
+  canvas.addEventListener('touchstart', handleCanvasTouchStart, { passive: false });
   canvas.addEventListener('contextmenu', (event) => {
     event.preventDefault();
   });
@@ -2965,13 +3011,22 @@ function bindEvents() {
   btnLane0.addEventListener('pointerdown', (event) => {
     handleLaneButtonPointerDown(event, 0);
   }, { passive: false });
+  btnLane0.addEventListener('touchstart', (event) => {
+    handleLaneButtonTouchStart(event, 0);
+  }, { passive: false });
 
   btnLane1.addEventListener('pointerdown', (event) => {
     handleLaneButtonPointerDown(event, 1);
   }, { passive: false });
+  btnLane1.addEventListener('touchstart', (event) => {
+    handleLaneButtonTouchStart(event, 1);
+  }, { passive: false });
 
   btnLane2.addEventListener('pointerdown', (event) => {
     handleLaneButtonPointerDown(event, 2);
+  }, { passive: false });
+  btnLane2.addEventListener('touchstart', (event) => {
+    handleLaneButtonTouchStart(event, 2);
   }, { passive: false });
 
   window.addEventListener('beforeunload', () => {
@@ -2998,11 +3053,6 @@ async function init() {
   bindEvents();
   window.requestAnimationFrame(loop);
   await initializeTossBridge();
-
-  for (const song of SONG_LIBRARY) {
-    if (song.id === activeSong.id) continue;
-    void loadBeatmapForSong(song);
-  }
 }
 
 void init();
