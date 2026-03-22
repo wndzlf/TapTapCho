@@ -206,16 +206,16 @@ footer {
 }
 
 .fullscreen-fab {
-  position: fixed;
-  top: calc(12px + env(safe-area-inset-top));
-  right: calc(12px + env(safe-area-inset-right));
+  position: relative;
   display: none;
   align-items: center;
   justify-content: center;
+  align-self: flex-end;
   min-width: 74px;
   min-height: 46px;
   padding: 0 14px;
-  z-index: 1200;
+  margin: 0 0 10px auto;
+  z-index: 4;
   border: 1px solid #87b4ff;
   border-radius: 999px;
   background: linear-gradient(180deg, rgba(24, 51, 107, 0.96), rgba(10, 23, 55, 0.96));
@@ -290,6 +290,17 @@ body.is-pseudo-fullscreen canvas {
   border-radius: 0;
 }
 
+.wrap:fullscreen .fullscreen-fab,
+body.is-pseudo-fullscreen .fullscreen-fab {
+  position: fixed;
+  left: calc(14px + env(safe-area-inset-left));
+  right: auto;
+  top: auto;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  margin: 0;
+  z-index: 1200;
+}
+
 .wrap:fullscreen .turn-pad-wrap,
 body.is-pseudo-fullscreen .turn-pad-wrap {
   margin-right: calc(18px + env(safe-area-inset-right));
@@ -305,6 +316,7 @@ body.is-pseudo-fullscreen .turn-pad-wrap {
     min-width: 70px;
     min-height: 44px;
     font-size: 13px;
+    margin-bottom: 12px;
   }
 
   .turn-pad {
