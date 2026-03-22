@@ -164,6 +164,13 @@ body {
   line-height: 1.6;
 }
 
+.hero-meta {
+  margin: -4px 0 0;
+  color: rgba(246, 252, 251, 0.64);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .hero-pill,
 .meta-chip,
 .placeholder-chip,
@@ -234,6 +241,17 @@ body {
   color: #f6fcfb;
   font-size: 12px;
   font-weight: 700;
+}
+
+.scope-chip-button {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.scope-chip-button.is-active {
+  background: rgba(240, 137, 79, 0.24);
+  color: #fff6ef;
 }
 
 .selection-summary,

@@ -7,10 +7,12 @@ const FREQUENT_SELECTION_LIMIT = 3;
 const SNAPSHOT_ARCHIVE_LIMIT = 6;
 const DATA_PORTAL_URL = "https://www.data.go.kr/data/15012005/openapi.do";
 const BIGDATA_PLATFORM_URL = "https://bigdata.sbiz.or.kr/";
+const REFRESH_CADENCE_LABEL = "정기 갱신 매일 07:00 KST";
 
 const state = {
   area: "all",
   industry: "all",
+  scopeSigngu: "all",
   areaBasis: "context",
   industryBasis: "context",
   areaGranularity: "adong",
@@ -37,6 +39,7 @@ const refs = {
   heroStatus: document.getElementById("hero-status"),
   snapshotChip: document.getElementById("snapshot-chip"),
   heroNote: document.getElementById("hero-note"),
+  heroRefresh: document.getElementById("hero-refresh"),
   scopeDetails: document.getElementById("scope-details"),
   areaSearch: document.getElementById("area-search"),
   industrySearch: document.getElementById("industry-search"),
@@ -330,20 +333,57 @@ function normalizeLoadedSnapshot(data) {
   };
 }
 
-function buildHeroNote(items = getAllItems()) {
-  return `${countUnique(items, getAreaId)}개 동네 · ${countUnique(items, getIndustryId)}개 업종 · ${formatNumber(items.length)}건 표본`;
+function getSourceItems() {
+  return state.data?.items || [];
 }
 
-function getScopeLabels(items = getAllItems()) {
-  return Array.from(new Set(items.map((item) => getSignguLabel(item)).filter(Boolean))).sort((left, right) => {
-    return left.localeCompare(right, "ko");
-  });
+function getScopeEntries(items = getSourceItems()) {
+  return Array.from(groupBy(items, getSignguId).values())
+    .map((groupedItems) => {
+      const item = groupedItems[0];
+      return {
+        id: getSignguId(item),
+        label: getSignguLabel(item),
+        count: groupedItems.length,
+      };
+    })
+    .sort((left, right) => left.label.localeCompare(right.label, "ko"));
+}
+
+function getScopeChipLabel(data) {
+  if (state.scopeSigngu === "all") {
+    return data?.scope || "수집 범위 확인 중";
+  }
+
+  const activeScope = getScopeEntries().find((entry) => entry.id === state.scopeSigngu);
+  return activeScope ? `${activeScope.label}만 보기` : data?.scope || "수집 범위 확인 중";
+}
+
+function buildHeroNote(items = getAllItems()) {
+  const prefix = state.scopeSigngu === "all"
+    ? ""
+    : `${getScopeEntries().find((entry) => entry.id === state.scopeSigngu)?.label || "선택 구"} 범위 · `;
+  return `${prefix}${countUnique(items, getAreaId)}개 동네 · ${countUnique(items, getIndustryId)}개 업종 · ${formatNumber(items.length)}건 표본`;
+}
+
+function buildRefreshNote() {
+  return `${REFRESH_CADENCE_LABEL} · 수동 갱신 시 더 이르게 반영될 수 있습니다.`;
+}
+
+function selectScopeSigngu(signguId) {
+  state.scopeSigngu = signguId;
+  state.area = "all";
+  state.areaQuery = "";
+  state.areaGranularity = "signgu";
+  state.areaDrillSigngu = signguId === "all" ? null : signguId;
+  state.areaDrillCollapsed = false;
+  render();
 }
 
 function renderScopeDetails() {
-  const labels = getScopeLabels();
+  const entries = getScopeEntries();
   refs.snapshotChip.setAttribute("aria-expanded", state.scopeExpanded ? "true" : "false");
-  refs.scopeDetails.hidden = !state.scopeExpanded || labels.length === 0;
+  refs.scopeDetails.hidden = !state.scopeExpanded || entries.length === 0;
 
   if (refs.scopeDetails.hidden) {
     refs.scopeDetails.innerHTML = "";
@@ -353,16 +393,42 @@ function renderScopeDetails() {
   refs.scopeDetails.innerHTML = `
     <div class="scope-details-head">수집 대상 구</div>
     <div class="scope-details-list">
-      ${labels.map((label) => `<span class="scope-chip">${escapeHtml(label)}</span>`).join("")}
+      <button
+        type="button"
+        class="scope-chip scope-chip-button${state.scopeSigngu === "all" ? " is-active" : ""}"
+        data-scope-signgu-id="all"
+      >
+        전체 범위
+      </button>
+      ${entries
+        .map((entry) => {
+          return `
+            <button
+              type="button"
+              class="scope-chip scope-chip-button${state.scopeSigngu === entry.id ? " is-active" : ""}"
+              data-scope-signgu-id="${escapeHtml(entry.id)}"
+            >
+              ${escapeHtml(entry.label)}
+            </button>
+          `;
+        })
+        .join("")}
     </div>
   `;
+
+  refs.scopeDetails.querySelectorAll("[data-scope-signgu-id]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const nextId = button.getAttribute("data-scope-signgu-id");
+      selectScopeSigngu(nextId);
+    });
+  });
 }
 
 function buildDataFootnoteHtml(data) {
   const scope = data?.scope ? `${escapeHtml(data.scope)} 범위에서 묶은 표본입니다.` : "최근 수집 기준 표본입니다.";
   const source = data?.source ? `${escapeHtml(data.source)} 공개 데이터를 바탕으로 비교합니다.` : "공개 데이터를 바탕으로 비교합니다.";
   return `
-    <span>${source} ${scope} 실시간 매출, 유동인구, 시세를 보여주는 서비스는 아닙니다.</span>
+    <span>${source} ${scope} 실시간 매출, 유동인구, 시세를 보여주는 서비스는 아닙니다. 표본 수집 범위 밖 지역, 폐업 여부, 실제 매출 규모는 반영되지 않을 수 있습니다.</span>
     <a href="${DATA_PORTAL_URL}" target="_blank" rel="noreferrer">데이터 출처</a>
     <a href="${BIGDATA_PLATFORM_URL}" target="_blank" rel="noreferrer">플랫폼 보기</a>
   `;
@@ -422,7 +488,12 @@ function rememberSelection(type, id) {
 }
 
 function getAllItems() {
-  return state.data?.items || [];
+  const items = getSourceItems();
+  if (state.scopeSigngu === "all") {
+    return items;
+  }
+
+  return items.filter((item) => getSignguId(item) === state.scopeSigngu);
 }
 
 function getSelectedAreaItem(items = getAllItems()) {
@@ -1983,6 +2054,13 @@ function renderSelectionSummary() {
     chips.push(`<span class="selection-pill selection-pill-muted">동네나 업종을 고르면 현재 조합이 여기에 고정됩니다.</span>`);
   }
 
+  if (state.scopeSigngu !== "all") {
+    const activeScope = getScopeEntries().find((entry) => entry.id === state.scopeSigngu);
+    if (activeScope) {
+      chips.push(`<span class="selection-pill selection-pill-muted">수집 범위 ${escapeHtml(activeScope.label)}</span>`);
+    }
+  }
+
   if (selectedArea) {
     chips.push(`<span class="selection-pill">${escapeHtml(selectedArea.label)}</span>`);
   }
@@ -2605,7 +2683,11 @@ function handleSearchKeydown(type, event) {
 
 function render() {
   const items = getFilteredItems();
+  refs.snapshotChip.textContent = getScopeChipLabel(state.data);
+  refs.heroNote.textContent = buildHeroNote(getAllItems());
+  refs.heroRefresh.textContent = buildRefreshNote();
   renderFilterSections();
+  renderScopeDetails();
   renderBriefing(items);
   renderSelectionSummary();
   renderSelectionTrends();
@@ -2675,11 +2757,10 @@ async function init() {
 
     state.data = normalizeLoadedSnapshot(await response.json());
     syncSnapshotArchive(state.data);
-    refs.snapshotChip.textContent = state.data.scope || "수집 범위 확인 중";
     refs.heroStatus.textContent = `${formatBasisDateTime(state.data.updatedAt)} 기준`;
     refs.heroNote.textContent = buildHeroNote(getAllItems());
+    refs.heroRefresh.textContent = buildRefreshNote();
     refs.dataFootnote.innerHTML = buildDataFootnoteHtml(state.data);
-    renderScopeDetails();
     render();
   } catch (error) {
     console.error(error);
@@ -2687,10 +2768,11 @@ async function init() {
     refs.snapshotChip.textContent = "수집 범위 확인 불가";
     refs.snapshotChip.setAttribute("aria-expanded", "false");
     refs.heroNote.textContent = "기준 시점과 표본 요약을 확인할 수 없습니다.";
+    refs.heroRefresh.textContent = REFRESH_CADENCE_LABEL;
     refs.scopeDetails.hidden = true;
     refs.scopeDetails.innerHTML = "";
     refs.dataFootnote.innerHTML = `
-      <span>기준 데이터가 없어 안내 문구를 구성하지 못했습니다. 이 앱은 실시간 매출, 유동인구, 시세를 보여주는 서비스가 아닙니다.</span>
+      <span>기준 데이터가 없어 안내 문구를 구성하지 못했습니다. 이 앱은 실시간 매출, 유동인구, 시세를 보여주는 서비스가 아니며, 표본 수집 범위 밖 지역과 폐업 여부는 반영되지 않을 수 있습니다.</span>
       <a href="${DATA_PORTAL_URL}" target="_blank" rel="noreferrer">데이터 출처</a>
     `;
     refs.areaFilter.innerHTML = `<article class="placeholder-card">commercial-area-radar/latest-commercial-area-snapshot.json 파일을 확인해 주세요.</article>`;
