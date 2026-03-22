@@ -11,6 +11,7 @@ const BGM_PATH := "res://assets/audio/winter-ski-rush-pixabay-286213.mp3"
 const BRAKE_SFX_PATH := "res://assets/audio/winter-ski-rush-brake-pixabay-46042.mp3"
 const NORMAL_SKI_LOOP_SFX_PATH := "res://assets/audio/winter-ski-rush-normal-ski-loop.mp3"
 const LEFT_RIGHT_SFX_PATH := "res://assets/audio/winter-ski-rush-left-right-sfx.mp3"
+const UI_FONT_PATH := "res://assets/fonts/appintoss-kr-ui.ttf"
 const BASE_GRAVITY := 290.0
 const START_SPEED := 88.0
 const MAX_LIVES := 3
@@ -151,7 +152,8 @@ var bgm_player: AudioStreamPlayer
 var brake_sfx_player: AudioStreamPlayer
 var ski_loop_player: AudioStreamPlayer
 var left_right_sfx_player: AudioStreamPlayer
-var ui_font: FontFile
+var ui_font: Font
+var ui_fallback_font: SystemFont
 var _brake_was_pressed := false
 var _left_was_pressed := false
 var _right_was_pressed := false
@@ -177,12 +179,28 @@ func _localized_crash_reason(reason: String) -> String:
 
 
 func _load_ui_font() -> void:
-	ui_font = null
+	ui_fallback_font = SystemFont.new()
+	ui_fallback_font.font_names = PackedStringArray([
+		"Apple SD Gothic Neo",
+		"Noto Sans KR",
+		"Noto Sans CJK KR",
+		"Malgun Gothic",
+		"sans-serif",
+	])
+
+	ui_font = ui_fallback_font
+	var brand_font := load(UI_FONT_PATH) as FontFile
+	if brand_font != null:
+		ui_fallback_font.fallbacks = [brand_font]
+
+	ThemeDB.fallback_font = ui_fallback_font
 
 
 func _apply_ui_font(control: Control, font_size: int = -1) -> void:
 	if control == null:
 		return
+	if ui_font != null:
+		control.add_theme_font_override("font", ui_font)
 	if font_size > 0:
 		control.add_theme_font_size_override("font_size", font_size)
 
