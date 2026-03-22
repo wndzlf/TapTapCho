@@ -2518,69 +2518,41 @@ function drawControlHints(alpha = 0.92) {
 }
 
 function drawTopInfo(difficulty) {
-  const plane = selectedPlane();
   const stageCfg = currentStageConfig();
-  ctx.fillStyle = 'rgba(7, 13, 27, 0.38)';
-  ctx.fillRect(12, 44, 286, 84);
-  ctx.strokeStyle = 'rgba(145, 186, 245, 0.32)';
-  ctx.strokeRect(12, 44, 286, 84);
-
-  ctx.fillStyle = '#d7e8ff';
-  ctx.font = 'bold 11px system-ui';
-  ctx.textAlign = 'left';
-  ctx.fillText(`스테이지 ${stage}`, 20, 62);
-  ctx.fillText(`웨이브 ${wave}/${stageCfg.wavesToBoss}`, 20, 76);
-  ctx.fillStyle = 'rgba(205, 230, 255, 0.82)';
-  ctx.fillText(`보스 격파 ${bossesDefeated}`, 154, 62);
-  ctx.fillText(`난이도 ${difficulty.level}`, 154, 76);
-
-  ctx.fillStyle = 'rgba(214, 234, 255, 0.84)';
-  ctx.font = '10px system-ui';
-  ctx.fillText('기체', 20, 90);
-  ctx.fillText('실드', 20, 104);
-
-  const hpCap = Math.max(3, maxHp);
-  for (let i = 0; i < hpCap; i += 1) {
-    const x = 54 + i * 12;
-    const y = 83;
-    ctx.fillStyle = i < hp ? '#ff9a96' : 'rgba(255, 154, 150, 0.22)';
-    ctx.fillRect(x, y, 8, 8);
-  }
-
-  for (let i = 0; i < 6; i += 1) {
-    const x = 54 + i * 10;
-    const y = 97;
-    ctx.fillStyle = i < player.shield ? '#8deeff' : 'rgba(141, 238, 255, 0.2)';
-    ctx.fillRect(x, y, 7, 5);
-  }
-
+  const boxX = 12;
+  const boxY = 10;
+  const boxW = 172;
+  const boxH = 48;
   const spRatio = clamp(specialCharge / 100, 0, 1);
-  ctx.fillStyle = 'rgba(40, 58, 96, 0.78)';
-  ctx.fillRect(132, 90, 154, 13);
-  ctx.fillStyle = specialCharge >= 100 && specialCooldown <= 0 ? '#ffe690' : '#9ed3ff';
-  ctx.fillRect(132, 90, 154 * spRatio, 13);
-  ctx.strokeStyle = 'rgba(190, 220, 255, 0.5)';
-  ctx.strokeRect(132, 90, 154, 13);
-
   const specialReady = specialCharge >= 100 && specialCooldown <= 0;
-  const specialText = specialReady ? '필살기 준비' : `필살기 ${Math.floor(specialCharge)}%`;
-  ctx.fillStyle = '#eff7ff';
-  ctx.font = 'bold 9px system-ui';
-  ctx.textAlign = 'center';
-  ctx.fillText(specialText, 132 + 77, 100);
-  ctx.textAlign = 'left';
 
-  ctx.save();
-  ctx.translate(274, 78);
-  ctx.fillStyle = plane.primary;
-  ctx.beginPath();
-  ctx.moveTo(0, -10);
-  ctx.lineTo(-8, 7);
-  ctx.lineTo(0, 3);
-  ctx.lineTo(8, 7);
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
+  ctx.fillStyle = 'rgba(7, 15, 33, 0.46)';
+  ctx.fillRect(boxX, boxY, boxW, boxH);
+  ctx.strokeStyle = 'rgba(171, 205, 252, 0.3)';
+  ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+  ctx.fillStyle = '#e6f2ff';
+  ctx.font = '600 11px system-ui';
+  ctx.textAlign = 'left';
+  ctx.fillText(`S${stage} · W${wave}/${stageCfg.wavesToBoss}`, boxX + 8, boxY + 15);
+
+  ctx.fillStyle = 'rgba(216, 234, 255, 0.86)';
+  ctx.font = '600 10px system-ui';
+  ctx.fillText(`HP ${Math.max(0, hp)} · Lv ${difficulty.level}`, boxX + 8, boxY + 29);
+
+  ctx.fillStyle = 'rgba(40, 58, 96, 0.72)';
+  ctx.fillRect(boxX + 8, boxY + 35, boxW - 16, 8);
+  ctx.fillStyle = specialCharge >= 100 && specialCooldown <= 0 ? '#ffe690' : '#9ed3ff';
+  ctx.fillRect(boxX + 8, boxY + 35, (boxW - 16) * spRatio, 8);
+  ctx.strokeStyle = 'rgba(190, 220, 255, 0.5)';
+  ctx.strokeRect(boxX + 8, boxY + 35, boxW - 16, 8);
+
+  if (specialReady) {
+    ctx.fillStyle = '#fff4c7';
+    ctx.fillRect(boxX + boxW - 24, boxY + 15, 8, 8);
+  }
+
+  ctx.textAlign = 'left';
 }
 
 function drawPowerupLegend() {
@@ -2619,31 +2591,19 @@ function drawPowerupLegend() {
 
 function drawMobileSpecialHint() {
   if (!IS_COARSE_POINTER || state !== 'running') return;
+  if (specialReadyHintTimer <= 0) return;
 
   ctx.save();
-  const hintTop = Math.max(154, MOBILE_CONTROL_ZONE_TOP - 54);
-  if (hintTimer > 0) {
-    ctx.fillStyle = 'rgba(11, 22, 45, 0.62)';
-    ctx.fillRect(W * 0.18, hintTop, W * 0.64, 28);
-    ctx.strokeStyle = 'rgba(166, 207, 255, 0.36)';
-    ctx.strokeRect(W * 0.18, hintTop, W * 0.64, 28);
-    ctx.fillStyle = '#dcedff';
-    ctx.font = 'bold 11px system-ui';
-    ctx.textAlign = 'center';
-    ctx.fillText('우하단 조향 · 좌하단 필살기', W * 0.5, hintTop + 18);
-  }
-
-  if (specialReadyHintTimer > 0) {
-    const alpha = 0.42 + Math.sin(tick * 0.42) * 0.2;
-    const readyTop = Math.max(146, MOBILE_CONTROL_ZONE_TOP - 96);
-    ctx.fillStyle = `rgba(96, 165, 255, ${alpha})`;
-    ctx.fillRect(W * 0.2, readyTop, W * 0.6, 34);
-    ctx.strokeStyle = 'rgba(206, 232, 255, 0.64)';
-    ctx.strokeRect(W * 0.2, readyTop, W * 0.6, 34);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 14px system-ui';
-    ctx.textAlign = 'center';
-    ctx.fillText('필살기 준비! 좌하단 버튼 탭', W / 2, readyTop + 22);
+  const alpha = 0.34 + Math.sin(tick * 0.42) * 0.18;
+  const cx = 54;
+  const cy = H - 54;
+  ctx.strokeStyle = `rgba(151, 212, 255, ${alpha})`;
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 3; i += 1) {
+    const r = 30 + i * 10 + Math.sin(tick * 0.24 + i) * 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
   }
   ctx.restore();
 }
