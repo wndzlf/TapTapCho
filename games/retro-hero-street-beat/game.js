@@ -287,6 +287,8 @@ const SAFE_AUTOLANE_NUDGE_SEC = 0.09;
 const PREVIEW_DURATION_SEC = 5;
 const AD_RESULT_BONUS_RATIO = 0.15;
 const MAX_BEATS_WITHOUT_SPAWN = 3.2;
+const CHORD_LINK_SEC = 0.055;
+const SPAWN_GUARD_CHECK_SEC = 0.2;
 
 const ENEMY_SPAWN_Y = -82;
 const HERO_Y = H - 134;
@@ -351,6 +353,7 @@ let missCount = 0;
 let lastSpawnBeat = -999;
 let hudRefreshCooldownSec = 0;
 let previewTimeoutId = 0;
+let spawnGuardCooldownSec = 0;
 
 let userHash = null;
 let unsubscribeSafeArea = () => {};
@@ -451,6 +454,29 @@ function setBgmAudioSource(audioSrc) {
   }
 
   bgmAudio = createBgmAudio(audioSrc);
+}
+
+function ensureBgmReadyForRun() {
+  stopTrackPreview({ rewind: true });
+
+  let expectedSrc = '';
+  try {
+    expectedSrc = new URL(activeSong.audioSrc, window.location.href).toString();
+  } catch (error) {
+    expectedSrc = activeSong.audioSrc;
+  }
+
+  if (!bgmAudio || !bgmAudio.src || bgmAudio.src !== expectedSrc) {
+    setBgmAudioSource(activeSong.audioSrc);
+    return;
+  }
+
+  bgmAudio.pause();
+  try {
+    bgmAudio.currentTime = 0;
+  } catch (error) {
+    setBgmAudioSource(activeSong.audioSrc);
+  }
 }
 
 function getSongDifficultyStars(song, difficultyId) {
@@ -1298,12 +1324,13 @@ function getSectionProfile(beatIndex) {
 }
 
 function getBeatAccentWeight(beatIndex) {
-  const inBar = ((beatIndex % 4) + 4) % 4;
+  const quantizedBeat = Math.round(beatIndex);
+  const inBar = ((quantizedBeat % 4) + 4) % 4;
   let weight = [1, 0.4, 0.82, 0.52][inBar];
 
-  if (beatIndex % 16 === 0) {
+  if (quantizedBeat % 16 === 0) {
     weight += 0.16;
-  } else if (beatIndex % 8 === 4) {
+  } else if (quantizedBeat % 8 === 4) {
     weight += 0.1;
   }
 
@@ -1378,28 +1405,81 @@ function primeOpeningSpawns() {
   }
 }
 
+function spawnEmergencyEnemy(songSec) {
+  if (!isGameplayActive()) return;
+  if (songSec < 0.2) return;
+  if (enemies.length > 0) return;
+
+  const durationSec = getActiveSongDurationSec();
+  if (durationSec > 0 && songSec >= durationSec - (beatSec * 1.2)) {
+    return;
+  }
+
+  const targetBeat = Math.max(Math.ceil((songSec + approachSec) / beatSec), 0);
+  if (targetBeat - lastSpawnBeat < 1) {
+    return;
+  }
+
+  spawnEnemy(targetBeat, pickSpawnLane(), 0.96);
+}
+
+function getUpcomingEnemyCount(songSec) {
+  let count = 0;
+  for (const enemy of enemies) {
+    if (enemy.hitSec >= songSec - (judgeWindowsSec.safe * 0.9)) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+function ensureMinimumSpawnPressure(songSec) {
+  if (!isGameplayActive()) return;
+  const durationSec = getActiveSongDurationSec();
+  if (durationSec > 0 && songSec >= durationSec - (beatSec * 1.4)) {
+    return;
+  }
+
+  const minUpcoming = selectedDifficultyId === 'hard' ? 2 : 1;
+  const upcoming = getUpcomingEnemyCount(songSec);
+  if (upcoming >= minUpcoming) {
+    return;
+  }
+
+  const needed = minUpcoming - upcoming;
+  let targetBeat = Math.max(Math.ceil((songSec + (approachSec * 0.78)) / beatSec), 0);
+  if (targetBeat <= lastSpawnBeat) {
+    targetBeat = lastSpawnBeat + 1;
+  }
+
+  for (let i = 0; i < needed; i += 1) {
+    spawnEnemy(targetBeat + i, null, 0.92 + (i * 0.06));
+  }
+}
+
 function updateWaveFromBeat(beatIndex) {
   wave = 1 + Math.floor(beatIndex / 16);
 }
 
 function handleBeat(beatIndex) {
   const targetBeat = beatIndex + impactLookaheadBeats;
+  const targetBeatKey = Math.round(targetBeat);
   const targetSec = beatToSongSec(targetBeat);
   const songDurationSec = getActiveSongDurationSec();
   if (songDurationSec > 0 && targetSec > songDurationSec - 0.06) {
     return;
   }
-  updateWaveFromBeat(targetBeat);
+  updateWaveFromBeat(targetBeatKey);
 
-  const profile = getSectionProfile(targetBeat);
-  const marker = getBeatmapMarker(targetBeat);
-  const accentWeight = marker?.weight || getBeatAccentWeight(targetBeat);
+  const profile = getSectionProfile(targetBeatKey);
+  const marker = getBeatmapMarker(targetBeatKey);
+  const accentWeight = marker?.weight || getBeatAccentWeight(targetBeatKey);
   const markerHitSec = Number.isFinite(Number(marker?.timeSec)) ? Number(marker.timeSec) : null;
   const spawnScale = Number(difficultyPreset?.spawnScale || 1);
   const spawnChance = marker?.forceSpawn
     ? 1
     : clamp(profile.density * accentWeight * spawnScale, 0.06, 0.99);
-  const beatsSinceSpawn = targetBeat - lastSpawnBeat;
+  const beatsSinceSpawn = targetBeatKey - lastSpawnBeat;
   const forceSpawnByGap = beatsSinceSpawn >= MAX_BEATS_WITHOUT_SPAWN;
 
   if (!forceSpawnByGap && random() > spawnChance) {
@@ -1475,6 +1555,13 @@ function resolveVerdict(timeDeltaSec) {
   return 'miss';
 }
 
+function softenVerdictForChord(verdict) {
+  if (verdict === 'perfect') return 'great';
+  if (verdict === 'great') return 'good';
+  if (verdict === 'good') return 'safe';
+  return 'safe';
+}
+
 function registerInputMiss(lane, label = 'MISS') {
   verdictStats.miss += 1;
   combo = 0;
@@ -1487,7 +1574,7 @@ function registerInputMiss(lane, label = 'MISS') {
   updateHud();
 }
 
-function awardHit(verdict, enemy, lane, timeDeltaSec) {
+function awardHit(verdict, enemy, lane, timeDeltaSec, assistHit = false) {
   verdictStats[verdict] += 1;
   recordTimingBucket(timeDeltaSec);
   const scoreByVerdict = {
@@ -1517,6 +1604,9 @@ function awardHit(verdict, enemy, lane, timeDeltaSec) {
   if (heroModeSec > 0) {
     earned = Math.round(earned * 2);
   }
+  if (assistHit) {
+    earned = Math.round(earned * 0.82);
+  }
 
   score += earned;
   if (verdict === 'safe') {
@@ -1530,29 +1620,35 @@ function awardHit(verdict, enemy, lane, timeDeltaSec) {
   const timingBias = getBeatBiasLabel(timeDeltaSec);
   const verdictText = verdict.toUpperCase();
 
-  if (heroModeSec <= 0 && heroGauge >= HERO_GAUGE_TARGET) {
-    heroModeSec = HERO_MODE_DURATION;
-    heroGauge = 0;
-    setStatus(`HERO MODE ON! ${verdictText} +${earned}`, 1.35);
-    sfx.hero();
-    addBurst(heroX, HERO_Y - 18, '#ffd463', 24, 5.1);
-  } else if (verdict === 'perfect') {
-    setStatus(`PERFECT ${timingBias} +${earned}`, 0.68);
-    sfx.perfect();
-  } else if (verdict === 'great') {
-    setStatus(`GREAT ${timingBias} +${earned}`, 0.63);
-    sfx.great();
-  } else if (verdict === 'good') {
-    setStatus(`GOOD ${timingBias} +${earned}`, 0.58);
-    sfx.good();
+  if (!assistHit) {
+    if (heroModeSec <= 0 && heroGauge >= HERO_GAUGE_TARGET) {
+      heroModeSec = HERO_MODE_DURATION;
+      heroGauge = 0;
+      setStatus(`HERO MODE ON! ${verdictText} +${earned}`, 1.35);
+      sfx.hero();
+      addBurst(heroX, HERO_Y - 18, '#ffd463', 24, 5.1);
+    } else if (verdict === 'perfect') {
+      setStatus(`PERFECT ${timingBias} +${earned}`, 0.68);
+      sfx.perfect();
+    } else if (verdict === 'great') {
+      setStatus(`GREAT ${timingBias} +${earned}`, 0.63);
+      sfx.great();
+    } else if (verdict === 'good') {
+      setStatus(`GOOD ${timingBias} +${earned}`, 0.58);
+      sfx.good();
+    } else {
+      setStatus(`SAFE ${timingBias} +${earned}`, 0.62);
+      sfx.safe();
+    }
   } else {
-    setStatus(`SAFE ${timingBias} +${earned}`, 0.62);
-    sfx.safe();
+    sfx.attack();
   }
 
   laneFlash[lane] = 1;
   addSlash(lane, verdict);
-  pushTimingFeedback(verdict, lane, timeDeltaSec);
+  if (!assistHit) {
+    pushTimingFeedback(verdict, lane, timeDeltaSec);
+  }
 
   const burstColorByVerdict = {
     perfect: '#ffe06c',
@@ -1563,6 +1659,41 @@ function awardHit(verdict, enemy, lane, timeDeltaSec) {
   addBurst(enemy.x, enemy.y, burstColorByVerdict[verdict], 10, 3.2);
 
   updateHud();
+}
+
+function resolveChordAssist(anchorHitSec, songSec, anchorLane) {
+  const linkedTargets = [];
+
+  for (const enemy of enemies) {
+    if (enemy.lane === anchorLane) continue;
+    if (Math.abs(enemy.hitSec - anchorHitSec) > CHORD_LINK_SEC) continue;
+
+    const deltaSec = songSec - enemy.hitSec;
+    const verdict = resolveVerdict(deltaSec);
+    if (verdict === 'miss') continue;
+
+    linkedTargets.push({
+      enemy,
+      lane: enemy.lane,
+      timeDeltaSec: deltaSec,
+      verdict: softenVerdictForChord(verdict),
+    });
+  }
+
+  linkedTargets.sort((a, b) => Math.abs(a.timeDeltaSec) - Math.abs(b.timeDeltaSec));
+
+  let cleared = 0;
+  for (const target of linkedTargets) {
+    const index = enemies.indexOf(target.enemy);
+    if (index < 0) continue;
+    enemies.splice(index, 1);
+    awardHit(target.verdict, target.enemy, target.lane, target.timeDeltaSec, true);
+    cleared += 1;
+  }
+
+  if (cleared > 0) {
+    setStatus(`CHORD x${cleared + 1}`, 0.44);
+  }
 }
 
 function attemptAttack(lane) {
@@ -1590,8 +1721,10 @@ function attemptAttack(lane) {
     heroX = lerp(heroX, LANES[targetLane], 0.82);
   }
 
+  const anchorHitSec = pick.enemy.hitSec;
   enemies.splice(pick.index, 1);
   awardHit(verdict, pick.enemy, targetLane, pick.timeDeltaSec);
+  resolveChordAssist(anchorHitSec, songSec, targetLane);
 }
 
 function startRun() {
@@ -1613,6 +1746,7 @@ function startRun() {
   shake = 0;
   lastSpawnBeat = -999;
   hudRefreshCooldownSec = 0;
+  spawnGuardCooldownSec = 0;
   messageTimer = 0;
   timingFeedback.life = 0;
   timingFeedback.maxLife = 0;
@@ -1630,9 +1764,7 @@ function startRun() {
     laneFlash[i] = 0;
   }
 
-  if (bgmAudio) {
-    bgmAudio.currentTime = 0;
-  }
+  ensureBgmReadyForRun();
   gameOverTitleEl.textContent = 'Stage Clear';
 
   hideGameOverModal();
@@ -1664,6 +1796,7 @@ function resumeGame(reason = null) {
   pauseReason = null;
   updateStartButtonLabel();
   refreshStatusLine();
+  spawnEmergencyEnemy(getSongSeconds());
   void syncAudio();
 }
 
@@ -1799,6 +1932,13 @@ function updateGame(dt) {
       handleBeat(beat);
     }
     lastBeatIndex = beatIndex;
+  }
+
+  spawnEmergencyEnemy(songSec);
+  spawnGuardCooldownSec -= dt;
+  if (spawnGuardCooldownSec <= 0) {
+    spawnGuardCooldownSec = SPAWN_GUARD_CHECK_SEC;
+    ensureMinimumSpawnPressure(songSec);
   }
 
   for (let i = enemies.length - 1; i >= 0; i -= 1) {
@@ -2609,6 +2749,17 @@ function handleCanvasPointerDown(event) {
   attemptAttack(lane);
 }
 
+function handleLaneButtonPointerDown(event, lane) {
+  event.preventDefault();
+
+  if (state === 'idle') {
+    startRun();
+    return;
+  }
+
+  attemptAttack(lane);
+}
+
 function bindEvents() {
   const shouldBlockInteractionGesture = () => document.body.classList.contains('interaction-lock');
   const blockInteractionGesture = (event) => {
@@ -2811,29 +2962,17 @@ function bindEvents() {
     void handleRewardContinueClick();
   });
 
-  btnLane0.addEventListener('click', () => {
-    if (state === 'idle') {
-      startRun();
-      return;
-    }
-    attemptAttack(0);
-  });
+  btnLane0.addEventListener('pointerdown', (event) => {
+    handleLaneButtonPointerDown(event, 0);
+  }, { passive: false });
 
-  btnLane1.addEventListener('click', () => {
-    if (state === 'idle') {
-      startRun();
-      return;
-    }
-    attemptAttack(1);
-  });
+  btnLane1.addEventListener('pointerdown', (event) => {
+    handleLaneButtonPointerDown(event, 1);
+  }, { passive: false });
 
-  btnLane2.addEventListener('click', () => {
-    if (state === 'idle') {
-      startRun();
-      return;
-    }
-    attemptAttack(2);
-  });
+  btnLane2.addEventListener('pointerdown', (event) => {
+    handleLaneButtonPointerDown(event, 2);
+  }, { passive: false });
 
   window.addEventListener('beforeunload', () => {
     unsubscribeSafeArea();
