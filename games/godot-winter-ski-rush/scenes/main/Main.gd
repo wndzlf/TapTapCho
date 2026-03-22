@@ -1659,62 +1659,58 @@ func _unhandled_input(event: InputEvent) -> void:
 			_start_run()
 			return
 
-	if event is InputEventScreenTouch:
-		var touch_event := event as InputEventScreenTouch
-		if touch_event.pressed and _is_point_in_steer_pad(touch_event.position):
-			steer_pad_active = true
-			steer_pad_touch_index = touch_event.index
-			_update_steer_pad_from_local(steer_pad_base.to_local(touch_event.position))
-			return
-		if not touch_event.pressed and steer_pad_active and touch_event.index == steer_pad_touch_index:
-			_release_steer_pad()
-			return
-	elif event is InputEventScreenDrag and steer_pad_active and steer_pad_base != null:
-		var drag_event := event as InputEventScreenDrag
-		if drag_event.index == steer_pad_touch_index:
-			_update_steer_pad_from_local(steer_pad_base.to_local(drag_event.position))
-			return
-	elif event is InputEventMouseButton:
-		var mb := event as InputEventMouseButton
-		if mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed and _is_point_in_steer_pad(mb.position):
-			steer_pad_active = true
-			steer_pad_touch_index = -2
-			_update_steer_pad_from_local(steer_pad_base.to_local(mb.position))
-			return
-		if mb.button_index == MOUSE_BUTTON_LEFT and not mb.pressed and steer_pad_active and steer_pad_touch_index == -2:
-			_release_steer_pad()
-			return
-	elif event is InputEventMouseMotion and steer_pad_active and steer_pad_touch_index == -2 and steer_pad_base != null:
-		var mm := event as InputEventMouseMotion
-		_update_steer_pad_from_local(steer_pad_base.to_local(mm.position))
-		return
-
 	if event.is_action_pressed("restart_run") and not run_started:
 		_start_run()
 
 
 func _input(event: InputEvent) -> void:
-	if not steer_pad_active or steer_pad_base == null:
+	if steer_pad_base == null:
 		return
 	if host_paused or (game_over_overlay != null and game_over_overlay.visible):
 		_release_steer_pad()
 		return
 
+	if event is InputEventScreenTouch:
+		var touch := event as InputEventScreenTouch
+		if touch.pressed and _is_point_in_steer_pad(touch.position):
+			_wake_run_from_ui_input()
+			steer_pad_active = true
+			steer_pad_touch_index = touch.index
+			_update_steer_pad_from_local(steer_pad_base.to_local(touch.position))
+			get_viewport().set_input_as_handled()
+			return
+		if steer_pad_active and touch.index == steer_pad_touch_index and not touch.pressed:
+			_release_steer_pad()
+			get_viewport().set_input_as_handled()
+			return
+
 	if event is InputEventScreenDrag:
 		var drag := event as InputEventScreenDrag
-		if drag.index == steer_pad_touch_index:
+		if steer_pad_active and drag.index == steer_pad_touch_index:
 			_update_steer_pad_from_local(steer_pad_base.to_local(drag.position))
-	elif event is InputEventScreenTouch:
-		var touch := event as InputEventScreenTouch
-		if not touch.pressed and touch.index == steer_pad_touch_index:
+			get_viewport().set_input_as_handled()
+			return
+
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.button_index != MOUSE_BUTTON_LEFT:
+			return
+		if mb.pressed and _is_point_in_steer_pad(mb.position):
+			_wake_run_from_ui_input()
+			steer_pad_active = true
+			steer_pad_touch_index = -2
+			_update_steer_pad_from_local(steer_pad_base.to_local(mb.position))
+			get_viewport().set_input_as_handled()
+			return
+		if steer_pad_active and steer_pad_touch_index == -2 and not mb.pressed:
 			_release_steer_pad()
-	elif event is InputEventMouseMotion and steer_pad_touch_index == -2:
+			get_viewport().set_input_as_handled()
+			return
+
+	if event is InputEventMouseMotion and steer_pad_active and steer_pad_touch_index == -2:
 		var mm := event as InputEventMouseMotion
 		_update_steer_pad_from_local(steer_pad_base.to_local(mm.position))
-	elif event is InputEventMouseButton:
-		var mb := event as InputEventMouseButton
-		if mb.button_index == MOUSE_BUTTON_LEFT and not mb.pressed and steer_pad_touch_index == -2:
-			_release_steer_pad()
+		get_viewport().set_input_as_handled()
 
 
 func _draw() -> void:
