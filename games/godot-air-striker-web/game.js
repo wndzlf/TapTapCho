@@ -2694,7 +2694,9 @@ function renderOverlay() {
       ctx.fillText(`최종 점수: ${score}`, W / 2, H / 2 + 56);
     }
 
-    drawControlHints(0.95);
+    if (!IS_COARSE_POINTER) {
+      drawControlHints(0.95);
+    }
 
     for (let i = 0; i < PLANES.length; i += 1) {
       const p = PLANES[i];
@@ -2774,7 +2776,7 @@ function renderOverlay() {
     ctx.textAlign = 'left';
   }
 
-  if (state === 'running' && hintTimer > 0) {
+  if (state === 'running' && hintTimer > 0 && !IS_COARSE_POINTER) {
     drawControlHints(Math.min(1, hintTimer / 2.4));
   }
 
