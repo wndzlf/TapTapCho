@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" role="img" aria-label="Retro Hero Street Beat thumbnail">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#3b1364"/>
+      <stop offset="46%" stop-color="#111d45"/>
+      <stop offset="100%" stop-color="#070f24"/>
+    </linearGradient>
+    <linearGradient id="sun" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ff8ec1"/>
+      <stop offset="100%" stop-color="#ff4ea7"/>
+    </linearGradient>
+    <linearGradient id="hero" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#79edff"/>
+      <stop offset="100%" stop-color="#4bc5ff"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="400" height="240" rx="20" fill="url(#bg)"/>
+  <circle cx="200" cy="58" r="43" fill="url(#sun)" opacity="0.95"/>
+  <rect x="0" y="114" width="400" height="126" fill="#08122a" opacity="0.8"/>
+
+  <g stroke="#2de6ff" stroke-opacity="0.45" stroke-width="2">
+    <path d="M0 126H400"/>
+    <path d="M0 144H400"/>
+    <path d="M0 162H400"/>
+    <path d="M0 180H400"/>
+    <path d="M0 198H400"/>
+    <path d="M0 216H400"/>
+    <path d="M56 114V240"/>
+    <path d="M106 114V240"/>
+    <path d="M156 114V240"/>
+    <path d="M206 114V240"/>
+    <path d="M256 114V240"/>
+    <path d="M306 114V240"/>
+    <path d="M356 114V240"/>
+  </g>
+
+  <g transform="translate(200 150)">
+    <path d="M0 -34L22 -6L16 34H-16L-22 -6Z" fill="url(#hero)"/>
+    <rect x="-12" y="-6" width="24" height="8" rx="3" fill="#14294c"/>
+  </g>
+
+  <rect x="16" y="154" width="368" height="74" rx="12" fill="rgba(7, 10, 24, 0.55)"/>
+  <text x="32" y="183" font-family="Verdana, sans-serif" font-size="28" font-weight="700" fill="#f4f7ff">Retro Hero</text>
+  <text x="32" y="211" font-family="Verdana, sans-serif" font-size="22" font-weight="700" fill="#ffd669">Street Beat</text>
+  <text x="278" y="208" font-family="Verdana, sans-serif" font-size="12" fill="#7cecff">80s / 90s</text>
+</svg>
