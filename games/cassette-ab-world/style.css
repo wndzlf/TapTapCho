@@ -359,6 +359,27 @@ canvas {
   cursor: pointer;
 }
 
+.world-switch.warning {
+  border-color: rgba(255, 127, 120, 0.72);
+  box-shadow:
+    0 0 0 2px rgba(255, 127, 120, 0.2),
+    0 0 24px rgba(255, 127, 120, 0.38);
+  animation: warning-switch 0.28s linear infinite;
+}
+
+@keyframes warning-switch {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-1px);
+  }
+  75% {
+    transform: translateX(1px);
+  }
+}
+
 .world-side {
   display: flex;
   justify-content: center;

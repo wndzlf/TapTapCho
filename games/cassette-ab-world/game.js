@@ -87,9 +87,21 @@ const rewardContinueHintEl = document.getElementById('rewardContinueHint');
 const W = canvas.width;
 const H = canvas.height;
 const ROUND_MS = 59000;
+const TUTORIAL_DURATION_MS = 8000;
+const DANGER_WARNING_LEAD_SEC = 0.3;
 const PLAYER_Y = H - 124;
 const PLAYER_W = 140;
 const PLAYER_H = 34;
+
+const TUTORIAL_SPAWN_PLAN = [
+  { timeSec: 0.35, world: 'A' },
+  { timeSec: 1.2, world: 'A' },
+  { timeSec: 2.35, world: 'B' },
+  { timeSec: 3.45, world: 'A' },
+  { timeSec: 4.55, world: 'B' },
+  { timeSec: 5.75, world: 'A' },
+  { timeSec: 6.9, world: 'B' },
+];
 
 const LEGACY_BEST_KEY = 'cassette-ab-world-best';
 const LEGACY_SETTINGS_KEY = 'cassette-ab-world-settings';
@@ -139,7 +151,13 @@ let gateId = 0;
 let lastSwitchAt = 0;
 let lastSpawnWorld = 'A';
 let sameWorldChain = 0;
+let tutorialSpawnIndex = 0;
 let userHash = null;
+
+let dangerGateId = null;
+let dangerLevel = 0;
+let dangerWarningCooldownMs = 0;
+let dangerFlashMs = 0;
 
 let lastFrameAt = performance.now();
 let unsubscribeSafeArea = () => {};
@@ -258,6 +276,12 @@ function getStatusText() {
     if (invulnMs > 0) {
       return '이어달리기 보호 활성';
     }
+    if (dangerLevel > 0.28) {
+      return '지금 전환';
+    }
+    if (elapsedMs < TUTORIAL_DURATION_MS) {
+      return '같은 색 게이트는 위험';
+    }
     return world === 'A' ? 'A 채널' : 'B 채널';
   }
 
@@ -275,6 +299,10 @@ function updateWorldUi() {
   btnSwitch.classList.toggle('world-b-active', world === 'B');
 }
 
+function setSwitchWarningActive(active) {
+  btnSwitch.classList.toggle('warning', Boolean(active));
+}
+
 function updateHud() {
   scoreEl.textContent = String(score);
   bestEl.textContent = String(best);
@@ -282,7 +310,12 @@ function updateHud() {
   timerEl.closest('.hud-card')?.classList.toggle('timer-low', timerMs <= 10000 && state === 'running');
   statusLineEl.textContent = getStatusText();
   updateWorldUi();
-  switchPulseEl.classList.toggle('hidden', state === 'running');
+
+  const warnNow = state === 'running' && dangerLevel > 0.28;
+  const inTutorial = state === 'running' && elapsedMs < TUTORIAL_DURATION_MS;
+  const showPulse = state !== 'running' || inTutorial || warnNow;
+  switchPulseEl.textContent = warnNow ? 'NOW' : inTutorial ? 'SWITCH' : 'TAP';
+  switchPulseEl.classList.toggle('hidden', !showPulse);
 }
 
 function applySafeAreaInsets(insets) {
@@ -388,6 +421,11 @@ function playSwitchSfx() {
 
 function playPassSfx() {
   beep(780, 0.028, 0.012, 'triangle');
+}
+
+function playDangerWarningSfx() {
+  beep(198, 0.05, 0.024, 'square');
+  beep(142, 0.08, 0.018, 'sawtooth');
 }
 
 function playFailSfx() {
@@ -527,6 +565,10 @@ async function continueFromReward() {
   worldFlash = 1;
   beatPulse = 1;
   streak = 0;
+  dangerGateId = null;
+  dangerLevel = 0;
+  dangerFlashMs = 0;
+  setSwitchWarningActive(false);
 
   gates = gates.filter((gate) => Math.abs(gate.y - PLAYER_Y) > 180);
   addBurst(W * 0.5, PLAYER_Y, '#8fffce', 24);
@@ -664,6 +706,9 @@ async function loadPersistedState() {
 
 function setPauseReason(nextReason) {
   pauseReason = nextReason;
+  if (pauseReason) {
+    setSwitchWarningActive(false);
+  }
   updateHud();
   void syncAudio();
 }
@@ -738,8 +783,8 @@ function scheduleNextSpawn() {
   spawnTimer = minGap + Math.random() * (maxGap - minGap);
 }
 
-function spawnGate() {
-  const gateWorld = chooseGateWorld();
+function spawnGate(forcedWorld = null, isTutorial = false) {
+  const gateWorld = forcedWorld || chooseGateWorld();
   const widthScale = 0.66 + Math.random() * 0.16;
 
   gates.push({
@@ -750,6 +795,7 @@ function spawnGate() {
     world: gateWorld,
     speedMul: 0.96 + Math.random() * 0.14,
     scored: false,
+    isTutorial,
   });
 
   lastSpawnWorld = gateWorld;
@@ -787,6 +833,7 @@ function gateCollidesWithPlayer(gate) {
 function finishRun(reason) {
   state = 'gameover';
   runEndReason = reason;
+  setSwitchWarningActive(false);
 
   if (score > best) {
     best = score;
@@ -824,10 +871,16 @@ function resetRunState() {
   lastSwitchAt = performance.now();
   lastSpawnWorld = 'A';
   sameWorldChain = 0;
+  tutorialSpawnIndex = 0;
   runEndReason = 'crash';
+  dangerGateId = null;
+  dangerLevel = 0;
+  dangerWarningCooldownMs = 0;
+  dangerFlashMs = 0;
 
   gates = [];
   particles = [];
+  setSwitchWarningActive(false);
 
   rewardedContinueUsed = false;
   rewardedAdRewardGranted = false;
@@ -878,6 +931,7 @@ function crashNow() {
 function updateRunning(dt, now) {
   if (!isRunning()) return;
 
+  const prevElapsedMs = elapsedMs;
   elapsedMs += dt * 1000;
   timerMs = Math.max(0, ROUND_MS - elapsedMs);
 
@@ -891,11 +945,34 @@ function updateRunning(dt, now) {
   }
 
   const speed = 260 + Math.min(160, elapsedMs / 1000 * 2.2);
+  const warningWindowPx = speed * DANGER_WARNING_LEAD_SEC + 10;
+  const playerTop = PLAYER_Y - PLAYER_H * 0.5;
 
-  spawnTimer -= dt;
-  if (spawnTimer <= 0) {
-    spawnGate();
+  dangerWarningCooldownMs = Math.max(0, dangerWarningCooldownMs - dt * 1000);
+  dangerFlashMs = Math.max(0, dangerFlashMs - dt * 1000);
+
+  const inTutorial = elapsedMs < TUTORIAL_DURATION_MS;
+  if (inTutorial) {
+    while (
+      tutorialSpawnIndex < TUTORIAL_SPAWN_PLAN.length
+      && elapsedMs >= TUTORIAL_SPAWN_PLAN[tutorialSpawnIndex].timeSec * 1000
+    ) {
+      const plan = TUTORIAL_SPAWN_PLAN[tutorialSpawnIndex];
+      spawnGate(plan.world, true);
+      tutorialSpawnIndex += 1;
+    }
+  } else {
+    if (prevElapsedMs < TUTORIAL_DURATION_MS) {
+      spawnTimer = Math.min(spawnTimer, 0.36);
+    }
+
+    spawnTimer -= dt;
+    if (spawnTimer <= 0) {
+      spawnGate();
+    }
   }
+
+  let warningCandidate = null;
 
   for (const gate of gates) {
     gate.y += speed * gate.speedMul * dt;
@@ -904,9 +981,45 @@ function updateRunning(dt, now) {
       scoreGate(gate, now);
     }
 
-    if (invulnMs <= 0 && gate.world === world && gateCollidesWithPlayer(gate)) {
-      crashNow();
-      return;
+    if (invulnMs <= 0 && gate.world === world) {
+      const gateBottom = gate.y + gate.h * 0.5;
+      const distance = playerTop - gateBottom;
+
+      if (distance >= 0 && distance <= warningWindowPx) {
+        if (!warningCandidate || distance < warningCandidate.distance) {
+          warningCandidate = {
+            id: gate.id,
+            distance,
+          };
+        }
+      }
+
+      if (gateCollidesWithPlayer(gate)) {
+        crashNow();
+        return;
+      }
+    }
+  }
+
+  if (warningCandidate) {
+    const gateChanged = warningCandidate.id !== dangerGateId;
+    const nextLevel = 1 - warningCandidate.distance / Math.max(1, warningWindowPx);
+
+    dangerGateId = warningCandidate.id;
+    dangerLevel = Math.max(dangerLevel * 0.72, nextLevel);
+    dangerFlashMs = 320;
+    setSwitchWarningActive(true);
+
+    if (dangerWarningCooldownMs <= 0 || gateChanged) {
+      playDangerWarningSfx();
+      vibrate(8);
+      dangerWarningCooldownMs = 220;
+    }
+  } else {
+    dangerGateId = null;
+    dangerLevel = Math.max(0, dangerLevel - dt * 2.7);
+    if (dangerLevel <= 0.12) {
+      setSwitchWarningActive(false);
     }
   }
 
@@ -973,6 +1086,7 @@ function drawBeatLine() {
 
 function drawGate(gate) {
   const isActive = gate.world === world;
+  const isDangerGate = state === 'running' && gate.id === dangerGateId && invulnMs <= 0;
   const theme = WORLD_COLORS[gate.world];
   const alpha = isActive ? 0.96 : 0.28;
   const glow = isActive ? 18 : 6;
@@ -1003,6 +1117,21 @@ function drawGate(gate) {
   for (let index = 0; index < 5; index += 1) {
     const stripeX = x + 28 + index * ((gate.w - 56) / 4);
     ctx.fillRect(stripeX, y + 13, 2, gate.h - 26);
+  }
+
+  if (isDangerGate) {
+    const pulse = Math.max(0, dangerLevel);
+    ctx.globalAlpha = 0.78;
+    ctx.strokeStyle = `rgba(255, 118, 108, ${0.68 + pulse * 0.3})`;
+    ctx.lineWidth = 3 + pulse * 3;
+    drawRoundedRect(x - 4, y - 4, gate.w + 8, gate.h + 8, 14);
+    ctx.stroke();
+  } else if (gate.isTutorial && !gate.scored) {
+    ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = 'rgba(244, 249, 255, 0.68)';
+    ctx.lineWidth = 1.5;
+    drawRoundedRect(x - 2, y - 2, gate.w + 4, gate.h + 4, 13);
+    ctx.stroke();
   }
 
   ctx.restore();
@@ -1086,6 +1215,29 @@ function drawWorldMark() {
   ctx.globalAlpha = 1;
 }
 
+function drawDangerOverlay() {
+  if (state !== 'running' || invulnMs > 0 || dangerLevel <= 0) return;
+
+  const pulse = Math.max(dangerLevel, dangerFlashMs > 0 ? 0.42 : 0);
+  const overlayAlpha = 0.06 + pulse * 0.17;
+  const top = PLAYER_Y - 180;
+  const height = 260;
+
+  const gradient = ctx.createLinearGradient(0, top, 0, top + height);
+  gradient.addColorStop(0, 'rgba(255, 96, 90, 0)');
+  gradient.addColorStop(1, `rgba(255, 110, 96, ${overlayAlpha})`);
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, top, W, height);
+
+  ctx.globalAlpha = 0.5 + pulse * 0.4;
+  ctx.fillStyle = '#ff8b7b';
+  ctx.font = '700 30px "SF Pro Display", "Avenir Next", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('!', W * 0.5, PLAYER_Y - 56);
+  ctx.globalAlpha = 1;
+}
+
 function drawIdleOverlay() {
   if (state === 'running') return;
 
@@ -1131,6 +1283,7 @@ function render(now) {
   }
 
   drawBeatLine();
+  drawDangerOverlay();
   drawPlayer(now);
   drawParticles();
   drawWorldMark();
