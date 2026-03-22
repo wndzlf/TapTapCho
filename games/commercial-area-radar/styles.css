@@ -238,6 +238,14 @@ body {
   background: linear-gradient(180deg, rgba(241, 249, 247, 0.92), rgba(255, 255, 255, 0.84));
 }
 
+.trend-card.tone-contrast {
+  background: linear-gradient(180deg, rgba(247, 245, 238, 0.94), rgba(255, 255, 255, 0.86));
+}
+
+.trend-card-compare {
+  grid-column: 1 / -1;
+}
+
 .trend-card-head,
 .trend-metric {
   display: grid;
@@ -287,21 +295,127 @@ body {
   stroke-linejoin: round;
 }
 
+.trend-sparkline-node {
+  pointer-events: all;
+}
+
+.trend-sparkline-hit {
+  fill: transparent;
+  pointer-events: all;
+}
+
+.trend-sparkline-point,
+.trend-sparkline-dot {
+  stroke: #fff;
+}
+
+.trend-sparkline-point {
+  stroke-width: 1.25;
+  opacity: 0.7;
+}
+
 .trend-sparkline-dot {
   stroke: #fff;
   stroke-width: 1.5;
 }
 
+.trend-sparkline-node.is-latest .trend-sparkline-point {
+  opacity: 1;
+}
+
 .trend-sparkline.tone-high .trend-sparkline-track,
+.trend-sparkline.tone-high .trend-sparkline-point,
 .trend-sparkline.tone-high .trend-sparkline-dot {
   stroke: var(--high);
   fill: var(--high);
 }
 
 .trend-sparkline.tone-medium .trend-sparkline-track,
+.trend-sparkline.tone-medium .trend-sparkline-point,
 .trend-sparkline.tone-medium .trend-sparkline-dot {
   stroke: var(--accent-deep);
   fill: var(--accent-deep);
+}
+
+.trend-compare {
+  display: grid;
+  gap: 12px;
+}
+
+.trend-compare-row {
+  display: grid;
+  gap: 8px;
+}
+
+.trend-compare-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.trend-compare-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.trend-compare-delta {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.trend-compare-delta.is-up {
+  color: var(--accent-deep);
+}
+
+.trend-compare-delta.is-down {
+  color: var(--high);
+}
+
+.trend-compare-delta.is-flat {
+  color: var(--muted);
+}
+
+.trend-compare-bars {
+  display: grid;
+  gap: 8px;
+}
+
+.trend-compare-bar {
+  position: relative;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 14px;
+  background: rgba(17, 53, 55, 0.06);
+  overflow: hidden;
+}
+
+.trend-compare-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--compare-width);
+  min-width: 0;
+  border-radius: inherit;
+}
+
+.trend-compare-bar.is-selected::before {
+  background: linear-gradient(90deg, rgba(11, 122, 111, 0.22), rgba(11, 122, 111, 0.12));
+}
+
+.trend-compare-bar.is-average::before {
+  background: linear-gradient(90deg, rgba(95, 113, 130, 0.22), rgba(95, 113, 130, 0.12));
+}
+
+.trend-compare-bar span {
+  position: relative;
+  z-index: 1;
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .content {
@@ -1364,15 +1478,33 @@ body.picker-open {
   grid-template-columns: 36px minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
+  width: 100%;
   padding: 12px 13px;
   border: 1px solid rgba(17, 53, 55, 0.08);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.72);
+  appearance: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .drilldown-industry-card.is-active {
   border-color: rgba(11, 122, 111, 0.22);
   background: rgba(241, 249, 247, 0.86);
+}
+
+.drilldown-industry-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(11, 122, 111, 0.18);
+  box-shadow: 0 12px 24px rgba(15, 43, 49, 0.08);
+}
+
+.drilldown-industry-card:focus-visible {
+  outline: 2px solid rgba(11, 122, 111, 0.36);
+  outline-offset: 2px;
 }
 
 .drilldown-industry-rank,

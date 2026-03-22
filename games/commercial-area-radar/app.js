@@ -140,6 +140,15 @@ function formatPointDelta(value) {
   })}%p`;
 }
 
+function formatCountValue(value) {
+  const safeValue = Number.isFinite(value) ? value : 0;
+  const hasFraction = Math.abs(safeValue % 1) > 0.001;
+  return `${safeValue.toLocaleString("ko-KR", {
+    minimumFractionDigits: hasFraction ? 1 : 0,
+    maximumFractionDigits: 1,
+  })}건`;
+}
+
 function formatMultiple(value) {
   if (!Number.isFinite(value) || value <= 0) {
     return "-";
@@ -501,19 +510,17 @@ function formatShareDeltaLabel(delta) {
   return `비중 ${formatPointDelta(delta)}`;
 }
 
-function buildSparklinePoints(values) {
+function buildSparklineCoords(values) {
   const safeValues = values.length <= 1 ? [values[0] || 0, values[0] || 0] : values;
   const minValue = Math.min(...safeValues);
   const maxValue = Math.max(...safeValues);
   const valueRange = maxValue - minValue || 1;
 
-  return safeValues
-    .map((value, index) => {
-      const x = (index / Math.max(safeValues.length - 1, 1)) * 100;
-      const y = 28 - (((value - minValue) / valueRange) * 20);
-      return `${x},${y}`;
-    })
-    .join(" ");
+  return safeValues.map((value, index) => {
+    const x = (index / Math.max(safeValues.length - 1, 1)) * 100;
+    const y = 28 - (((value - minValue) / valueRange) * 20);
+    return { value, x, y };
+  });
 }
 
 function buildTrendSeries(archive, countsKey, id) {
@@ -534,10 +541,27 @@ function buildTrendSeries(archive, countsKey, id) {
     });
 }
 
-function renderTrendMetric(label, value, values, tone) {
-  const points = buildSparklinePoints(values);
-  const pointTokens = points.split(" ");
-  const latestPoint = (pointTokens[pointTokens.length - 1] || "100,28").split(",");
+function renderTrendMetric(label, value, series, metricKey, tone, valueFormatter) {
+  const metricSeries = series.length <= 1 ? [series[0], series[0]].filter(Boolean) : series;
+  const coords = buildSparklineCoords(metricSeries.map((point) => point?.[metricKey] || 0));
+  const points = coords.map((point) => `${point.x},${point.y}`).join(" ");
+  const latestPoint = coords[coords.length - 1] || { x: 100, y: 28 };
+  const pointNodes = coords
+    .map((point, index) => {
+      const snapshot = metricSeries[index] || metricSeries[metricSeries.length - 1];
+      const tooltip = snapshot
+        ? `${formatDateTime(snapshot.updatedAt)} · ${label} ${valueFormatter(point.value)}`
+        : `${label} ${valueFormatter(point.value)}`;
+      return `
+        <g class="trend-sparkline-node${index === coords.length - 1 ? " is-latest" : ""}">
+          <circle class="trend-sparkline-hit" cx="${point.x}" cy="${point.y}" r="7">
+            <title>${escapeHtml(tooltip)}</title>
+          </circle>
+          <circle class="trend-sparkline-point" cx="${point.x}" cy="${point.y}" r="${index === coords.length - 1 ? 3 : 2.25}"></circle>
+        </g>
+      `;
+    })
+    .join("");
 
   return `
     <div class="trend-metric">
@@ -547,7 +571,8 @@ function renderTrendMetric(label, value, values, tone) {
       </div>
       <svg class="trend-sparkline tone-${escapeHtml(tone)}" viewBox="0 0 100 32" aria-hidden="true">
         <polyline class="trend-sparkline-track" points="${escapeHtml(points)}"></polyline>
-        <circle class="trend-sparkline-dot" cx="${escapeHtml(latestPoint[0])}" cy="${escapeHtml(latestPoint[1])}" r="3"></circle>
+        ${pointNodes}
+        <circle class="trend-sparkline-dot" cx="${latestPoint.x}" cy="${latestPoint.y}" r="3"></circle>
       </svg>
     </div>
   `;
@@ -566,11 +591,109 @@ function renderTrendCard(title, subtitle, series, tone = "medium") {
         <div class="trend-card-note">${escapeHtml(subtitle)}</div>
       </div>
       <div class="trend-metrics">
-        ${renderTrendMetric("건수", `${formatNumber(latest.count)}건`, series.map((point) => point.count), tone)}
-        ${renderTrendMetric("비중", formatPercent(latest.share), series.map((point) => point.share), tone)}
+        ${renderTrendMetric("건수", `${formatNumber(latest.count)}건`, series, "count", tone, formatCountValue)}
+        ${renderTrendMetric("비중", formatPercent(latest.share), series, "share", tone, formatPercent)}
       </div>
       <div class="trend-card-foot">
-        ${escapeHtml(series.length > 1 ? `최근 ${formatNumber(series.length)}회 스냅샷` : "첫 스냅샷")}
+        ${escapeHtml(series.length > 1 ? `최근 ${formatNumber(series.length)}회 스냅샷 · 점에 마우스를 올리면 시점값` : "첫 스냅샷")}
+      </div>
+    </article>
+  `;
+}
+
+function getComparisonBarWidth(value, maxValue) {
+  if (!value || value <= 0) {
+    return 0;
+  }
+
+  return Math.max(18, (value / Math.max(maxValue, 1)) * 100);
+}
+
+function getRelativeTone(delta) {
+  if (Math.abs(delta) < 0.05) {
+    return "flat";
+  }
+
+  return delta > 0 ? "up" : "down";
+}
+
+function buildAreaVsDistrictAverageCard(allItems) {
+  const selectedAreaItem = getSelectedAreaItem(allItems);
+  if (!selectedAreaItem?.signguCd) {
+    return "";
+  }
+
+  const selectedIndustry = getSelectedIndustryEntry(buildIndustryEntries(allItems));
+  const sourceItems = selectedIndustry
+    ? allItems.filter((item) => getIndustryId(item) === selectedIndustry.id)
+    : allItems;
+  const signguItems = sourceItems.filter((item) => getSignguId(item) === selectedAreaItem.signguCd);
+  const areaEntries = buildAreaEntries(signguItems, "adong");
+  const selectedEntry = areaEntries.find((entry) => entry.id === selectedAreaItem.adongCd);
+
+  if (!selectedEntry || !areaEntries.length) {
+    return "";
+  }
+
+  const signguLabel = getSignguLabel(selectedAreaItem);
+  const averageEntryCount = averageCount(areaEntries);
+  const averageEntryShare = toPercent(averageEntryCount, signguItems.length || 1);
+  const countDelta = selectedEntry.count - averageEntryCount;
+  const shareDelta = selectedEntry.share - averageEntryShare;
+  const countMax = Math.max(selectedEntry.count, averageEntryCount, 1);
+  const shareMax = Math.max(selectedEntry.share, averageEntryShare, 0.1);
+  const rank = getEntryRank(areaEntries, selectedEntry.id);
+  const countTone = getRelativeTone(countDelta);
+  const shareTone = getRelativeTone(shareDelta);
+
+  return `
+    <article class="trend-card trend-card-compare tone-contrast">
+      <div class="trend-card-head">
+        <div class="trend-card-title">${escapeHtml(getAreaLabel(selectedAreaItem))} vs ${escapeHtml(signguLabel)} 평균</div>
+        <div class="trend-card-note">
+          ${escapeHtml(selectedIndustry ? `${selectedIndustry.label} 기준 비교` : "전체 점포 기준 비교")}
+        </div>
+      </div>
+      <div class="trend-compare">
+        <div class="trend-compare-row">
+          <div class="trend-compare-head">
+            <span class="trend-compare-label">건수</span>
+            <span class="trend-compare-delta is-${countTone}">
+              ${escapeHtml(
+                Math.abs(countDelta) < 0.05
+                  ? "구 평균과 비슷함"
+                  : `구 평균보다 ${countDelta > 0 ? "+" : ""}${formatCountValue(countDelta).replace("건", "")}건`,
+              )}
+            </span>
+          </div>
+          <div class="trend-compare-bars">
+            <div class="trend-compare-bar is-selected" style="--compare-width:${getComparisonBarWidth(selectedEntry.count, countMax)}%">
+              <span>선택 ${escapeHtml(formatCountValue(selectedEntry.count))}</span>
+            </div>
+            <div class="trend-compare-bar is-average" style="--compare-width:${getComparisonBarWidth(averageEntryCount, countMax)}%">
+              <span>구 평균 ${escapeHtml(formatCountValue(averageEntryCount))}</span>
+            </div>
+          </div>
+        </div>
+        <div class="trend-compare-row">
+          <div class="trend-compare-head">
+            <span class="trend-compare-label">비중</span>
+            <span class="trend-compare-delta is-${shareTone}">
+              ${escapeHtml(Math.abs(shareDelta) < 0.05 ? "구 평균과 비슷함" : `구 평균보다 ${formatPointDelta(shareDelta)}`)}
+            </span>
+          </div>
+          <div class="trend-compare-bars">
+            <div class="trend-compare-bar is-selected" style="--compare-width:${getComparisonBarWidth(selectedEntry.share, shareMax)}%">
+              <span>선택 ${escapeHtml(formatPercent(selectedEntry.share))}</span>
+            </div>
+            <div class="trend-compare-bar is-average" style="--compare-width:${getComparisonBarWidth(averageEntryShare, shareMax)}%">
+              <span>구 평균 ${escapeHtml(formatPercent(averageEntryShare))}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="trend-card-foot">
+        ${escapeHtml(`${signguLabel} 안 ${rank || "-"}위 · ${formatNumber(areaEntries.length)}개 행정동 평균과 비교`)}
       </div>
     </article>
   `;
@@ -1870,6 +1993,10 @@ function renderSelectionTrends() {
     }
   }
 
+  if (selectedAreaItem) {
+    cards.push(buildAreaVsDistrictAverageCard(allItems));
+  }
+
   if (selectedIndustry) {
     const series = buildTrendSeries(state.snapshotArchive, "industryCounts", selectedIndustry.id);
     if (series.length) {
@@ -1884,8 +2011,9 @@ function renderSelectionTrends() {
     }
   }
 
-  refs.selectionTrends.hidden = cards.length === 0;
-  refs.selectionTrends.innerHTML = cards.join("");
+  const visibleCards = cards.filter(Boolean);
+  refs.selectionTrends.hidden = visibleCards.length === 0;
+  refs.selectionTrends.innerHTML = visibleCards.join("");
 }
 
 function renderBriefingVisual(items) {
@@ -2104,8 +2232,8 @@ function renderAreaDrilldown(target, allItems, sourceItems, signguId, selectedAr
         <p class="drilldown-note">
           ${escapeHtml(
             selectedIndustry && selectedIndustryRank
-              ? `${selectedIndustry.label}는 ${signguLabel} 안에서 ${selectedIndustryRank}위입니다.`
-              : `${signguLabel} 안에서 같이 자주 잡히는 업종을 바로 봅니다.`,
+              ? `${selectedIndustry.label}는 ${signguLabel} 안에서 ${selectedIndustryRank}위입니다. 카드를 누르면 바로 업종을 바꿉니다.`
+              : `${signguLabel} 안에서 같이 자주 잡히는 업종입니다. 카드를 누르면 바로 업종을 바꿉니다.`,
           )}
         </p>
       </div>
@@ -2113,7 +2241,12 @@ function renderAreaDrilldown(target, allItems, sourceItems, signguId, selectedAr
         ${topIndustryEntries
           .map((entry) => {
             return `
-              <article class="drilldown-industry-card${selectedIndustry?.id === entry.id ? " is-active" : ""}">
+              <button
+                type="button"
+                class="drilldown-industry-card${selectedIndustry?.id === entry.id ? " is-active" : ""}"
+                data-drilldown-industry-id="${escapeHtml(entry.id)}"
+                aria-pressed="${selectedIndustry?.id === entry.id ? "true" : "false"}"
+              >
                 <div class="drilldown-industry-rank">#${getEntryRank(signguIndustryEntries, entry.id)}</div>
                 <div class="drilldown-industry-copy">
                   <div class="drilldown-industry-label">${escapeHtml(entry.label)}</div>
@@ -2123,12 +2256,17 @@ function renderAreaDrilldown(target, allItems, sourceItems, signguId, selectedAr
                   <div class="drilldown-industry-value">${formatNumber(entry.count)}건</div>
                   <div class="drilldown-industry-share">${formatPercent(entry.share)}</div>
                 </div>
-              </article>
+              </button>
             `;
           })
           .join("")}
       </div>
     `;
+    industryPanel.querySelectorAll("[data-drilldown-industry-id]").forEach((button) => {
+      button.addEventListener("click", () => {
+        selectFilter("industry", button.getAttribute("data-drilldown-industry-id"));
+      });
+    });
     drilldownPanel.appendChild(industryPanel);
   }
 
