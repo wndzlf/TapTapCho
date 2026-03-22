@@ -252,12 +252,6 @@ body.modal-open {
   box-shadow: none;
 }
 
-
-#tabSingle.active {
-  color: #c9d8ef;
-  font-weight: 500;
-  background: linear-gradient(180deg, #151f33, #101a2d);
-}
 .game-header h1 {
   margin: 0;
   color: var(--accent);
@@ -592,6 +586,11 @@ body.rank-mode .top-row {
   box-shadow: 0 0 6px rgba(255, 212, 117, 0.25);
 }
 
+.build-btn[data-kind].mergeable .name,
+.build-btn[data-kind].mergeable .cost {
+  padding-right: 14px;
+}
+
 .build-btn[data-kind] .icon {
   display: block;
   width: 24px;
@@ -718,6 +717,11 @@ body.rank-mode .top-row {
   height: 18px;
   font-size: 0;
   background: url('../assets/dollar-icon.svg?v=7') center/contain no-repeat;
+}
+
+#btnChoLotto .name,
+#btnChoLotto .cost {
+  padding-left: 18px;
 }
 
 .build-btn.active {
@@ -1418,7 +1422,7 @@ footer {
 
   .build-btn {
     min-width: 72px;
-    min-height: 46px;
+    min-height: 50px;
     padding: 4px 5px;
     gap: 2px 3px;
   }
@@ -1449,15 +1453,26 @@ footer {
   }
 
   .build-btn .name {
-    font-size: clamp(7px, 2.2vw, 9px);
+    font-size: clamp(8px, 2.2vw, 10px);
   }
 
   .build-btn .cost {
-    font-size: clamp(6px, 2vw, 7px);
+    font-size: clamp(7px, 2vw, 8px);
+  }
+
+  .build-btn[data-kind].mergeable .name,
+  .build-btn[data-kind].mergeable .cost {
+    padding-right: 12px;
+  }
+
+  #btnChoLotto .name,
+  #btnChoLotto .cost {
+    padding-left: 16px;
   }
 
   canvas {
     max-height: 82vh;
+    touch-action: pan-y;
   }
 
   .reward-grid {
@@ -1503,6 +1518,18 @@ footer {
 }
 
 @media (max-width: 540px) {
+  .quick-build {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .build-btn .name {
+    font-size: 9px;
+  }
+
+  .build-btn .cost {
+    font-size: 8px;
+  }
+
   .stat {
     font-size: 10px;
   }

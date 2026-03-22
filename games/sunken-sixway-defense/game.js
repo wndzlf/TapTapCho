@@ -27,7 +27,6 @@ const rankStatusEl = document.getElementById('rankStatus');
 const rankPanelEl = document.getElementById('singleRankPanel');
 const rankToggleBtn = document.getElementById('btnRankToggle');
 const detailToggleBtn = document.getElementById('btnDetailToggle');
-const singleTabEl = document.getElementById('tabSingle');
 const detailPanelEl = document.getElementById('detailPanel');
 
 const btnSellMode = document.getElementById('btnSellMode');
@@ -6058,7 +6057,7 @@ function handleCanvasAction(event) {
   }
 }
 
-const MOBILE_TAP_MAX_MOVE = 14;
+const MOBILE_TAP_MAX_MOVE = 18;
 const MOBILE_TAP_MAX_MS = 260;
 const MOBILE_SCROLL_GUARD_MS = 140;
 
@@ -6097,9 +6096,6 @@ canvas.addEventListener('pointerdown', (event) => {
     return;
   }
 
-  event.preventDefault();
-  try { canvas.setPointerCapture(event.pointerId); } catch (_) {}
-
   mobileTapState.active = true;
   mobileTapState.pointerId = event.pointerId;
   mobileTapState.startX = event.clientX;
@@ -6110,13 +6106,11 @@ canvas.addEventListener('pointerdown', (event) => {
 
 canvas.addEventListener('pointermove', (event) => {
   if (!mobileTapState.active || event.pointerId !== mobileTapState.pointerId) return;
-  event.preventDefault();
   if (tapMovedTooFar(event)) mobileTapState.moved = true;
 });
 
 canvas.addEventListener('pointerup', (event) => {
   if (!mobileTapState.active || event.pointerId !== mobileTapState.pointerId) return;
-  event.preventDefault();
 
   const elapsed = performance.now() - mobileTapState.startAt;
   const moved = mobileTapState.moved || tapMovedTooFar(event);
@@ -6127,14 +6121,12 @@ canvas.addEventListener('pointerup', (event) => {
   }
 
   clearMobileTap();
-  try { canvas.releasePointerCapture(event.pointerId); } catch (_) {}
 });
 
 canvas.addEventListener('pointercancel', (event) => {
   if (mobileTapState.active && event.pointerId === mobileTapState.pointerId) {
     clearMobileTap();
   }
-  try { canvas.releasePointerCapture(event.pointerId); } catch (_) {}
 });
 
 window.addEventListener('keydown', (event) => {
@@ -6361,7 +6353,6 @@ if (rankToggleBtn && rankPanelEl) {
     rankToggleBtn.classList.toggle('active', show);
     if (detailToggleBtn) detailToggleBtn.classList.toggle('active', false);
     if (detailPanelEl) detailPanelEl.classList.toggle('detail-hidden', true);
-    if (singleTabEl) singleTabEl.classList.toggle('active', !show);
     document.body.classList.toggle('rank-mode', show);
     document.body.classList.toggle('detail-mode', false);
   };
@@ -6378,7 +6369,6 @@ if (detailToggleBtn && detailPanelEl) {
     detailToggleBtn.classList.toggle('active', show);
     if (rankToggleBtn) rankToggleBtn.classList.toggle('active', false);
     if (rankPanelEl) rankPanelEl.classList.toggle('rank-hidden', true);
-    if (singleTabEl) singleTabEl.classList.toggle('active', !show);
     document.body.classList.toggle('detail-mode', show);
     document.body.classList.toggle('rank-mode', false);
   };
@@ -6386,18 +6376,6 @@ if (detailToggleBtn && detailPanelEl) {
   detailToggleBtn.addEventListener('click', () => {
     const show = detailPanelEl.classList.contains('detail-hidden');
     setDetailVisible(show);
-  });
-}
-
-if (singleTabEl) {
-  singleTabEl.addEventListener('click', () => {
-    if (rankToggleBtn) rankToggleBtn.classList.toggle('active', false);
-    if (rankPanelEl) rankPanelEl.classList.toggle('rank-hidden', true);
-    if (detailToggleBtn) detailToggleBtn.classList.toggle('active', false);
-    if (detailPanelEl) detailPanelEl.classList.toggle('detail-hidden', true);
-    singleTabEl.classList.toggle('active', true);
-    document.body.classList.toggle('rank-mode', false);
-    document.body.classList.toggle('detail-mode', false);
   });
 }
 
