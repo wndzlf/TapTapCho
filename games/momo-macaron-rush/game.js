@@ -409,13 +409,15 @@ function spawnItem() {
   nextItemId += 1;
 }
 
-function collectItem(item) {
+function collectItem(item, { rotateCraving = true } = {}) {
   const flavor = FLAVORS[item.flavor];
   const gain = 1 + Math.floor(combo / 4);
   score += gain;
   combo += 1;
 
-  craving = randomFlavor(craving);
+  if (rotateCraving) {
+    craving = randomFlavor(craving);
+  }
   addParticle(LANES[item.lane], CATCH_Y - 54, `+${gain}`, flavor.shell);
   addParticle(LANES[item.lane] + 16, CATCH_Y - 82, '모모!', '#fff');
   playSfx('collect');
@@ -449,13 +451,14 @@ function missItem(item) {
   updateHud();
 }
 
-function handleCaughtItem(item) {
-  if (item.flavor === craving) {
-    collectItem(item);
-    return;
+function handleCaughtItem(item, targetFlavor = craving, options) {
+  if (item.flavor === targetFlavor) {
+    collectItem(item, options);
+    return true;
   }
 
   missItem(item);
+  return false;
 }
 
 function update(dt) {
@@ -490,20 +493,35 @@ function update(dt) {
     spawnTimer = spawnBase;
   }
 
+  const catchFlavor = craving;
+  let collectedThisFrame = 0;
+
   for (let i = items.length - 1; i >= 0; i -= 1) {
     const item = items[i];
+    if (!item) continue;
+
     item.y += item.speed * dt;
     item.wobble += dt * 6;
 
     if (item.y >= CATCH_Y && item.lane === playerLane) {
       items.splice(i, 1);
-      handleCaughtItem(item);
+      const collected = handleCaughtItem(item, catchFlavor, { rotateCraving: false });
+      if (collected) {
+        collectedThisFrame += 1;
+      }
+      if (!isRoundActive()) {
+        break;
+      }
       continue;
     }
 
     if (item.y > H + 84) {
       items.splice(i, 1);
     }
+  }
+
+  if (collectedThisFrame > 0 && isRoundActive() && craving === catchFlavor) {
+    craving = randomFlavor(catchFlavor);
   }
 
   updateHud();
