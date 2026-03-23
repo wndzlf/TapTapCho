@@ -266,17 +266,6 @@ canvas {
   color: rgba(75, 43, 29, 0.74);
 }
 
-.asset-credit {
-  margin: -4px 0 0;
-  font-size: 12px;
-  line-height: 1.45;
-  color: rgba(75, 43, 29, 0.6);
-}
-
-.asset-credit a {
-  color: inherit;
-}
-
 .sheet-modal {
   position: fixed;
   inset: 0;
@@ -334,34 +323,78 @@ canvas {
 
 @media (max-width: 460px) {
   .app-shell {
-    gap: 10px;
+    gap: 8px;
     padding:
-      calc(var(--safe-top) + 10px)
-      calc(var(--safe-right) + 10px)
-      calc(var(--safe-bottom) + 10px)
-      calc(var(--safe-left) + 10px);
+      calc(var(--safe-top) + 8px)
+      calc(var(--safe-right) + 8px)
+      calc(var(--safe-bottom) + 8px)
+      calc(var(--safe-left) + 8px);
   }
 
   .hero {
-    padding: 14px;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 20px;
   }
 
   .hero-actions {
     flex-direction: row;
     align-self: flex-start;
+    gap: 6px;
+  }
+
+  .eyebrow,
+  .status-hint,
+  .mini-guide {
+    display: none;
+  }
+
+  h1 {
+    margin-top: 0;
+    font-size: 24px;
+  }
+
+  .status-line {
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .btn {
+    min-height: 38px;
+    padding: 0 12px;
+    border-radius: 12px;
+  }
+
+  .btn-music {
+    min-width: 82px;
+    font-size: 12px;
   }
 
   .hud {
-    gap: 8px;
-    padding: 8px;
+    gap: 6px;
+    padding: 6px;
+    border-radius: 18px;
+  }
+
+  .hud-item {
+    padding: 8px 10px 10px;
+    border-radius: 14px;
   }
 
   .hud-item strong {
+    margin-top: 4px;
     font-size: 22px;
   }
 
+  .stage {
+    padding: 6px;
+    border-radius: 22px;
+  }
+
   canvas {
-    max-height: calc(100dvh - 310px);
+    max-height: none;
+    border-radius: 20px;
   }
 
   .actions {
@@ -370,5 +403,15 @@ canvas {
 
   .btn {
     width: 100%;
+  }
+}
+
+@media (max-width: 460px), (max-height: 860px) {
+  .app-shell {
+    grid-template-rows: auto auto 1fr;
+  }
+
+  .mini-guide {
+    display: none;
   }
 }

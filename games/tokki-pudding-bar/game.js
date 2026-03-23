@@ -179,7 +179,8 @@ function resizeStage() {
   }
 
   const bounds = stageEl.getBoundingClientRect();
-  const padding = 24;
+  const compactViewport = window.innerWidth <= 460 || window.innerHeight <= 860;
+  const padding = compactViewport ? 8 : 24;
   const availableWidth = Math.max(160, bounds.width - padding);
   const availableHeight = Math.max(280, bounds.height - padding);
   const ratio = W / H;
