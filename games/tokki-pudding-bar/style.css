@@ -116,6 +116,14 @@ button {
   min-width: 0;
 }
 
+.hero-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .eyebrow {
   margin: 0;
   font-size: 11px;
@@ -168,6 +176,18 @@ h1 {
 
 .btn-exit {
   background: linear-gradient(135deg, #7b4424, #b46639);
+}
+
+.btn-music {
+  min-width: 92px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.btn-music[aria-pressed="true"] {
+  color: #fffaf3;
+  border-color: rgba(103, 63, 39, 0.16);
+  background: linear-gradient(135deg, #d98f55, #c45f3d);
 }
 
 .btn-secondary {
@@ -246,6 +266,17 @@ canvas {
   color: rgba(75, 43, 29, 0.74);
 }
 
+.asset-credit {
+  margin: -4px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(75, 43, 29, 0.6);
+}
+
+.asset-credit a {
+  color: inherit;
+}
+
 .sheet-modal {
   position: fixed;
   inset: 0;
@@ -313,6 +344,11 @@ canvas {
 
   .hero {
     padding: 14px;
+  }
+
+  .hero-actions {
+    flex-direction: row;
+    align-self: flex-start;
   }
 
   .hud {

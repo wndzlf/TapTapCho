@@ -47,6 +47,7 @@ const nextPieceEl = document.getElementById('nextPiece');
 const statusLineEl = document.getElementById('statusLine');
 const userKeyHintEl = document.getElementById('userKeyHint');
 
+const btnMusic = document.getElementById('btnMusic');
 const btnExit = document.getElementById('btnExit');
 const btnCancelExit = document.getElementById('btnCancelExit');
 const btnConfirmExit = document.getElementById('btnConfirmExit');
@@ -71,6 +72,9 @@ const MAX_FRAME = 0.05;
 const MAX_ACCUMULATOR = 0.12;
 const DROP_COOLDOWN = 0.22;
 const DANGER_LIMIT = 1.1;
+const MERGE_CONTACT_TOLERANCE = 2.5;
+const BGM_SRC = 'assets/audio/tokki-pudding-bar-bgm-puzzle-game-249202.mp3';
+const BGM_VOLUME = 0.22;
 
 const PIECES = [
   { label: '말랑 젤리', short: '젤리', fill: '#ffd6e7', rim: '#ff9dc0', accent: '#fff6fb', ear: '#ffc2d8', points: 10, radius: 24 },
@@ -85,6 +89,7 @@ const PIECES = [
 
 const AudioContextCtor = window.AudioContext || window.webkitAudioContext || null;
 const audioCtx = AudioContextCtor ? new AudioContextCtor() : null;
+const bgmPlayer = typeof Audio === 'undefined' ? null : new Audio(BGM_SRC);
 
 let state = 'idle';
 let score = 0;
@@ -119,6 +124,19 @@ let dangerNoticeLevel = 0;
 let unsubscribeSafeArea = () => {};
 let unsubscribeBack = () => {};
 let unsubscribeHome = () => {};
+let bgmEnabled = true;
+let bgmFailed = false;
+
+if (bgmPlayer) {
+  bgmPlayer.loop = true;
+  bgmPlayer.preload = 'auto';
+  bgmPlayer.volume = BGM_VOLUME;
+  bgmPlayer.playsInline = true;
+  bgmPlayer.addEventListener('error', () => {
+    bgmFailed = true;
+    updateMusicButton();
+  });
+}
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -195,6 +213,65 @@ function updateHud() {
   scoreEl.textContent = String(score);
   bestEl.textContent = String(best);
   nextPieceEl.textContent = queuedPiece ? PIECES[queuedPiece.tier].short : '-';
+}
+
+function updateMusicButton() {
+  if (!btnMusic) {
+    return;
+  }
+
+  const unavailable = !bgmPlayer || bgmFailed;
+  btnMusic.disabled = unavailable;
+  btnMusic.setAttribute('aria-pressed', bgmEnabled && !unavailable ? 'true' : 'false');
+  btnMusic.textContent = unavailable ? 'BGM 오류' : (bgmEnabled ? 'BGM 켜짐' : 'BGM 꺼짐');
+}
+
+async function readBgmPreference() {
+  const raw = await toss.storage.getItem(getScopedStorageKey('bgm-enabled'));
+  if (raw === null) {
+    bgmEnabled = true;
+  } else {
+    bgmEnabled = raw === 'true';
+  }
+  updateMusicButton();
+}
+
+async function saveBgmPreference() {
+  await toss.storage.setItem(getScopedStorageKey('bgm-enabled'), String(bgmEnabled));
+}
+
+function pauseBgm() {
+  if (!bgmPlayer || bgmPlayer.paused) {
+    return;
+  }
+  bgmPlayer.pause();
+}
+
+async function ensureBgmPlayback() {
+  if (!bgmPlayer || bgmFailed || !bgmEnabled) {
+    return;
+  }
+
+  bgmPlayer.volume = BGM_VOLUME;
+
+  try {
+    await bgmPlayer.play();
+  } catch (error) {
+    // Ignore autoplay blocking and wait for the next gesture.
+  }
+}
+
+async function setBgmEnabled(nextEnabled) {
+  bgmEnabled = nextEnabled;
+  updateMusicButton();
+  await saveBgmPreference();
+
+  if (!bgmEnabled) {
+    pauseBgm();
+    return;
+  }
+
+  await ensureBgmPlayback();
 }
 
 function showUserKeyHint(value) {
@@ -621,13 +698,13 @@ function processMerges() {
         const dy = b.y - a.y;
         const dist = Math.hypot(dx, dy);
         const minDist = a.r + b.r;
-        if (dist >= minDist * 0.9) {
+        if (dist > minDist + MERGE_CONTACT_TOLERANCE) {
           continue;
         }
 
-        const overlap = minDist - dist;
+        const contactGap = dist - minDist;
         const relativeSpeed = Math.hypot(b.vx - a.vx, b.vy - a.vy);
-        candidates.push({ a, b, overlap, relativeSpeed });
+        candidates.push({ a, b, contactGap, relativeSpeed });
       }
     }
 
@@ -636,8 +713,8 @@ function processMerges() {
     }
 
     candidates.sort((left, right) => {
-      if (right.overlap !== left.overlap) {
-        return right.overlap - left.overlap;
+      if (left.contactGap !== right.contactGap) {
+        return left.contactGap - right.contactGap;
       }
       return left.relativeSpeed - right.relativeSpeed;
     });
@@ -703,7 +780,7 @@ function updateDanger(dt) {
     dangerTimer = Math.min(DANGER_LIMIT + 0.4, dangerTimer + dt);
     if (dangerTimer > 0.35 && dangerNoticeLevel === 0) {
       dangerNoticeLevel = 1;
-      setStatus('잔이 거의 넘쳐요. 낮은 쪽으로 합체를 유도해 보세요.');
+      setStatus('잔이 거의 넘쳐요. 바닥 쪽에서 같은 푸딩을 붙여 보세요.');
     }
   } else {
     dangerTimer = Math.max(0, dangerTimer - dt * 1.8);
@@ -1258,6 +1335,7 @@ function loop(now) {
 function onCanvasPointerDown(event) {
   event.preventDefault();
   ensureAudioContext();
+  void ensureBgmPlayback();
   updateAim(event.clientX);
   pointerActive = true;
   pointerId = event.pointerId;
@@ -1360,10 +1438,15 @@ async function boot() {
   currentPiece = createPreviewPiece(randomSpawnTier());
   queuedPiece = createPreviewPiece(randomSpawnTier());
   setStatus('손가락으로 위치를 맞추고 놓으면 토끼푸딩이 말랑하게 떨어집니다.');
+  await readBgmPreference();
   await readBestScore();
   queueResize();
   window.requestAnimationFrame(loop);
 }
+
+btnMusic?.addEventListener('click', () => {
+  void setBgmEnabled(!bgmEnabled);
+});
 
 btnExit.addEventListener('click', () => {
   setExitModalOpen(true);
@@ -1396,6 +1479,8 @@ window.addEventListener('pagehide', () => {
   unsubscribeSafeArea();
   unsubscribeBack();
   unsubscribeHome();
+  pauseBgm();
 });
 
+updateMusicButton();
 void boot();

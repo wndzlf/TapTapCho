@@ -45,6 +45,10 @@ async function buildWebBundle() {
   await writeTextFile(path.join(SOURCE_ROOT, 'index.html'), path.join(OUTDIR, 'index.html'));
   await copyRawFile(path.join(SOURCE_ROOT, 'style.css'), path.join(OUTDIR, 'style.css'));
   await copyRawFile(path.join(SOURCE_ROOT, 'game.js'), path.join(OUTDIR, 'game.js'));
+  await copyRawFile(
+    path.join(SOURCE_ROOT, 'assets', 'audio', 'tokki-pudding-bar-bgm-puzzle-game-249202.mp3'),
+    path.join(OUTDIR, 'assets', 'audio', 'tokki-pudding-bar-bgm-puzzle-game-249202.mp3'),
+  );
   await buildBridge();
   await copyRawFile(BRIDGE_OUTFILE, path.join(OUTDIR, 'toss-bridge.js'));
 }
