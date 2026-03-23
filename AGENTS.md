@@ -18,3 +18,9 @@
 - `brand.icon`은 가능하면 생성형 `data:` URI 대신 안정적인 HTTPS 이미지 URL을 우선 사용합니다. 아이콘 정보 누락 또는 비정상 값은 심사 반려 원인이 될 수 있습니다.
 - 토스 개발자센터 미니앱 설정에도 같은 아이콘이 등록되어 있어야 합니다.
 - 토스 제출 전에는 개발자센터의 실제 `appName`과 `.ait` 내부 `appName`이 정확히 같은지 확인합니다.
+- 토스 심사 반려 트러블슈팅(2026-03-23, zigzag-memory-run)
+- 반려 사유 1: 미니앱 이름 불일치. 콘솔 이름(`지그재그메모리런`)과 `.ait` 내부 이름이 다르면 반려됩니다.
+- 이름 관련 재발 방지: `granite.config.ts`에서 `appName`, `brand.displayName`을 환경변수(`TOSS_APP_NAME`, `TOSS_BRAND_DISPLAY_NAME`)로 주입 가능하게 유지합니다.
+- 반려 사유 2: 아이콘 정보 누락/불일치. `brand.icon`은 실제 접근 가능한 HTTPS PNG URL을 사용하고 콘솔 아이콘과 동일하게 맞춥니다.
+- 빌드 스크립트 재발 방지: `games/<project>/toss-package/package.json`의 `build` 경로는 `../../../node_modules/.bin/ait build`를 사용합니다.
+- 업로드 직전 검증: `.ait` 생성 후 `strings -n 6 <file>.ait | rg "appName|displayName|static.toss.im/appsintoss"`로 이름/아이콘 반영을 확인합니다.
