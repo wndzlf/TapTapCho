@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1932" height="828" viewBox="0 0 1932 828" role="img" aria-label="동네 상권 레이더 가로형 썸네일">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1932" y2="828" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0A2A37"/>
+      <stop offset="58%" stop-color="#0F5E66"/>
+      <stop offset="100%" stop-color="#173147"/>
+    </linearGradient>
+    <radialGradient id="glow-left" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(380 268) rotate(90) scale(420 620)">
+      <stop offset="0%" stop-color="#6FD2C8" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#6FD2C8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-right" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1536 514) rotate(90) scale(360 540)">
+      <stop offset="0%" stop-color="#F6A26D" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#F6A26D" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vignette" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(966 414) rotate(90) scale(560 1280)">
+      <stop offset="72%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#050D12" stop-opacity="0.46"/>
+    </radialGradient>
+    <linearGradient id="left-panel" x1="98" y1="118" x2="938" y2="712" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0D2B3C" stop-opacity="0.92"/>
+      <stop offset="100%" stop-color="#0A1B28" stop-opacity="0.84"/>
+    </linearGradient>
+    <linearGradient id="chip-teal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1CA79E"/>
+      <stop offset="100%" stop-color="#0D817D"/>
+    </linearGradient>
+    <linearGradient id="chip-orange" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F8AF74"/>
+      <stop offset="100%" stop-color="#EB8A4C"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F2FCFB" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#DCEFF0" stop-opacity="0.82"/>
+    </linearGradient>
+    <filter id="panel-shadow" x="-14%" y="-16%" width="132%" height="146%">
+      <feDropShadow dx="0" dy="26" stdDeviation="26" flood-color="#041018" flood-opacity="0.44"/>
+    </filter>
+    <filter id="card-shadow" x="-20%" y="-30%" width="160%" height="180%">
+      <feDropShadow dx="0" dy="18" stdDeviation="16" flood-color="#06131C" flood-opacity="0.34"/>
+    </filter>
+    <filter id="ring-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="14" flood-color="#74E4D4" flood-opacity="0.32"/>
+    </filter>
+  </defs>
+
+  <rect width="1932" height="828" fill="url(#bg)"/>
+  <rect width="1932" height="828" fill="url(#glow-left)"/>
+  <rect width="1932" height="828" fill="url(#glow-right)"/>
+
+  <g opacity="0.15" fill="#D9F6F2">
+    <circle cx="178" cy="92" r="12"/>
+    <circle cx="246" cy="122" r="8"/>
+    <circle cx="1768" cy="112" r="10"/>
+    <circle cx="1692" cy="162" r="7"/>
+  </g>
+
+  <g filter="url(#panel-shadow)">
+    <rect x="94" y="118" width="862" height="592" rx="48" fill="url(#left-panel)"/>
+    <rect x="94" y="118" width="862" height="592" rx="48" fill="none" stroke="#82C7C6" stroke-opacity="0.24" stroke-width="4"/>
+  </g>
+
+  <text x="154" y="212" fill="#8AD5CC" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="44" font-weight="700" letter-spacing="7">LOCAL BUSINESS SNAPSHOT</text>
+  <text x="146" y="348" fill="#F2FFFE" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="112" font-weight="900">동네 상권</text>
+  <text x="146" y="470" fill="#F2FFFE" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="112" font-weight="900">레이더</text>
+  <text x="154" y="570" fill="#CBE4E5" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="40" font-weight="600">행정동·업종별 분포를 빠르게 읽는 상권 브리핑</text>
+
+  <g filter="url(#card-shadow)">
+    <rect x="154" y="618" width="268" height="72" rx="36" fill="#113446" fill-opacity="0.98"/>
+    <rect x="154" y="618" width="268" height="72" rx="36" fill="none" stroke="#78D7CC" stroke-opacity="0.38" stroke-width="3"/>
+    <circle cx="198" cy="654" r="10" fill="#79E0D4"/>
+    <text x="226" y="669" fill="#ECFFFD" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="30" font-weight="800">행정동 비교</text>
+  </g>
+
+  <g filter="url(#card-shadow)">
+    <rect x="442" y="618" width="258" height="72" rx="36" fill="#433025" fill-opacity="0.98"/>
+    <rect x="442" y="618" width="258" height="72" rx="36" fill="none" stroke="#FFBE86" stroke-opacity="0.4" stroke-width="3"/>
+    <circle cx="486" cy="654" r="10" fill="#FFB97E"/>
+    <text x="514" y="669" fill="#FFF5EB" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="30" font-weight="800">업종 비중</text>
+  </g>
+
+  <g filter="url(#card-shadow)">
+    <rect x="720" y="618" width="210" height="72" rx="36" fill="#173C32" fill-opacity="0.98"/>
+    <rect x="720" y="618" width="210" height="72" rx="36" fill="none" stroke="#98E6BC" stroke-opacity="0.4" stroke-width="3"/>
+    <circle cx="764" cy="654" r="10" fill="#9CE9C0"/>
+    <text x="792" y="669" fill="#EEFFF4" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="30" font-weight="800">일간 갱신</text>
+  </g>
+
+  <g>
+    <circle cx="1456" cy="404" r="300" fill="#0A2233" fill-opacity="0.72"/>
+    <circle cx="1456" cy="404" r="278" fill="none" stroke="#79DACE" stroke-opacity="0.36" stroke-width="10"/>
+    <circle cx="1456" cy="404" r="236" fill="none" stroke="#7DD6CC" stroke-opacity="0.36" stroke-width="18"/>
+    <circle cx="1456" cy="404" r="174" fill="none" stroke="#8CE3DA" stroke-opacity="0.42" stroke-width="16"/>
+    <circle cx="1456" cy="404" r="112" fill="none" stroke="#98ECE4" stroke-opacity="0.5" stroke-width="14"/>
+  </g>
+
+  <g filter="url(#ring-glow)">
+    <circle cx="1456" cy="404" r="50" fill="#0E7B7D"/>
+    <circle cx="1456" cy="404" r="18" fill="#D7FFFA"/>
+    <path d="M1456 404L1628 294" stroke="#F6A062" stroke-width="24" stroke-linecap="round"/>
+    <circle cx="1628" cy="294" r="24" fill="#F6A062"/>
+  </g>
+
+  <g filter="url(#card-shadow)">
+    <rect x="1168" y="146" width="570" height="126" rx="30" fill="url(#glass)"/>
+    <rect x="1168" y="146" width="570" height="126" rx="30" fill="none" stroke="#4D8E97" stroke-opacity="0.22" stroke-width="3"/>
+    <rect x="1200" y="178" width="122" height="62" rx="31" fill="url(#chip-teal)"/>
+    <text x="1240" y="220" fill="#F0FFFD" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="30" font-weight="800">TOP</text>
+    <text x="1350" y="200" fill="#10313A" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="30" font-weight="700">강남구 역삼1동</text>
+    <text x="1350" y="236" fill="#3A5962" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="26" font-weight="600">표본 내 점포 집중도 상위</text>
+  </g>
+
+  <g filter="url(#card-shadow)">
+    <rect x="1168" y="542" width="570" height="126" rx="30" fill="url(#glass)"/>
+    <rect x="1168" y="542" width="570" height="126" rx="30" fill="none" stroke="#4D8E97" stroke-opacity="0.22" stroke-width="3"/>
+    <rect x="1200" y="574" width="144" height="62" rx="31" fill="url(#chip-orange)"/>
+    <text x="1236" y="616" fill="#FFF4E8" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="30" font-weight="800">업종</text>
+    <text x="1372" y="596" fill="#3D2C22" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="30" font-weight="700">한식 · 카페 · 편의점</text>
+    <text x="1372" y="632" fill="#6A4F3D" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="26" font-weight="600">중분류 기준 비교 브리핑</text>
+  </g>
+
+  <g opacity="0.26">
+    <path d="M1068 402H1832" stroke="#D7FFFA" stroke-width="2"/>
+    <path d="M1456 82V746" stroke="#D7FFFA" stroke-width="2"/>
+  </g>
+
+  <rect width="1932" height="828" fill="url(#vignette)"/>
+</svg>

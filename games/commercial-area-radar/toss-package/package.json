@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "../../node_modules/.bin/ait build",
+    "build": "../../../node_modules/.bin/ait build",
     "build:web": "node scripts/build-web.mjs",
     "dev": "node scripts/dev-server.mjs"
   },

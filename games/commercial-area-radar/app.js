@@ -32,6 +32,7 @@ const state = {
   snapshotArchive: [],
   currentSnapshotSummary: null,
   previousSnapshotSummary: null,
+  snapshotSource: "",
   data: null,
 };
 
@@ -82,6 +83,38 @@ const refs = {
 const getAreaId = (item) => item.adongCd || item.signguCd || "";
 const getSignguId = (item) => item.signguCd || "";
 const getIndustryId = (item) => item.indsMclsCd || item.indsLclsCd || "";
+
+function getMetaContent(name) {
+  return document
+    .querySelector(`meta[name="${name}"]`)
+    ?.getAttribute("content")
+    ?.trim();
+}
+
+function getSnapshotCandidates() {
+  const candidates = [
+    { url: getMetaContent("live-snapshot-url"), label: "Vercel" },
+    { url: getMetaContent("backup-snapshot-url"), label: "GitHub Raw" },
+    { url: getMetaContent("snapshot-path"), label: "번들 JSON" },
+    { url: "./latest-commercial-area-snapshot.json", label: "번들 JSON" },
+    { url: "../latest-commercial-area-snapshot.json", label: "번들 JSON" },
+  ].filter((candidate) => candidate.url);
+
+  return candidates.filter((candidate, index, array) => {
+    return array.findIndex((entry) => entry.url === candidate.url) === index;
+  });
+}
+
+async function fetchSnapshotCandidate(candidate) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 4500);
+
+  try {
+    return await fetch(candidate.url, { cache: "no-store", signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 function getAreaLabel(item) {
   return [item.signguNm, item.adongNm].filter(Boolean).join(" ").trim() || item.signguNm || "미상 동네";
@@ -2750,14 +2783,32 @@ async function init() {
   });
 
   try {
-    const response = await fetch("./latest-commercial-area-snapshot.json", { cache: "no-store" });
-    if (!response.ok) {
-      throw new Error(`Failed to load JSON: ${response.status}`);
+    let response = null;
+    let snapshotSource = "";
+
+    for (const candidate of getSnapshotCandidates()) {
+      try {
+        const candidateResponse = await fetchSnapshotCandidate(candidate);
+        if (candidateResponse.ok) {
+          response = candidateResponse;
+          snapshotSource = candidate.label;
+          break;
+        }
+      } catch (error) {
+        console.warn(`[commercial-area-radar] Failed to fetch ${candidate.label}: ${candidate.url}`, error);
+      }
+    }
+
+    if (!response) {
+      throw new Error("Failed to load commercial area snapshot from all candidates.");
     }
 
     state.data = normalizeLoadedSnapshot(await response.json());
+    state.snapshotSource = snapshotSource;
     syncSnapshotArchive(state.data);
-    refs.heroStatus.textContent = `${formatBasisDateTime(state.data.updatedAt)} 기준`;
+    refs.heroStatus.textContent = `${formatBasisDateTime(state.data.updatedAt)} 기준${
+      state.snapshotSource ? ` · ${state.snapshotSource}` : ""
+    }`;
     refs.heroNote.textContent = buildHeroNote(getAllItems());
     refs.heroRefresh.textContent = buildRefreshNote();
     refs.dataFootnote.innerHTML = buildDataFootnoteHtml(state.data);
