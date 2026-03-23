@@ -29,6 +29,11 @@ const MAX_SPEED = 230;
 const JUMP_SPEED = 780;
 const COYOTE_TIME = 0.12;
 const JUMP_BUFFER = 0.12;
+const FOOTSTEP_MIN_SPEED = 38;
+const FOOTSTEP_SAMPLE_PATHS = Array.from(
+  { length: 8 },
+  (_, index) => `assets/audio/footsteps-metal/${index}.ogg`,
+);
 
 const CHAPTERS = [
   { minX: 0, label: '배수로' },
@@ -53,6 +58,8 @@ const player = {
   facing: 1,
   checkpoint: { x: 132, y: FLOOR_Y - 54 },
   hiddenBlend: 0,
+  groundSurface: 'concrete',
+  stepTimer: 0,
 };
 
 const state = {
@@ -83,6 +90,10 @@ const state = {
 const audio = (() => {
   const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
   let audioCtx = null;
+  let sampleLoadStarted = false;
+  const sampleBanks = {
+    metalSteps: [],
+  };
 
   function ensure() {
     if (!AudioContextCtor) return null;
@@ -93,6 +104,31 @@ const audio = (() => {
       audioCtx.resume().catch(() => {});
     }
     return audioCtx;
+  }
+
+  async function fetchAndDecode(path) {
+    const ctxAudio = ensure();
+    if (!ctxAudio) return null;
+    const response = await fetch(path);
+    if (!response.ok) {
+      throw new Error(`Failed to load sample: ${path}`);
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    return ctxAudio.decodeAudioData(arrayBuffer);
+  }
+
+  function primeSampleBanks() {
+    if (sampleLoadStarted) return;
+    sampleLoadStarted = true;
+    for (const path of FOOTSTEP_SAMPLE_PATHS) {
+      fetchAndDecode(path)
+        .then((buffer) => {
+          if (buffer) {
+            sampleBanks.metalSteps.push(buffer);
+          }
+        })
+        .catch(() => {});
+    }
   }
 
   function tone({
@@ -122,14 +158,83 @@ const audio = (() => {
     oscillator.stop(now + duration + 0.02);
   }
 
+  function noiseBurst({
+    duration = 0.05,
+    gain = 0.02,
+    highpass = 360,
+    lowpass = 1800,
+  }) {
+    const ctxAudio = ensure();
+    if (!ctxAudio) return;
+    const frames = Math.max(1, Math.floor(ctxAudio.sampleRate * duration));
+    const buffer = ctxAudio.createBuffer(1, frames, ctxAudio.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < frames; i += 1) {
+      data[i] = (Math.random() * 2 - 1) * (1 - i / frames);
+    }
+
+    const source = ctxAudio.createBufferSource();
+    const hp = ctxAudio.createBiquadFilter();
+    const lp = ctxAudio.createBiquadFilter();
+    const amplifier = ctxAudio.createGain();
+    const now = ctxAudio.currentTime;
+
+    source.buffer = buffer;
+    hp.type = 'highpass';
+    hp.frequency.setValueAtTime(highpass, now);
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(lowpass, now);
+    amplifier.gain.setValueAtTime(0.0001, now);
+    amplifier.gain.linearRampToValueAtTime(gain, now + 0.004);
+    amplifier.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+    source.connect(hp);
+    hp.connect(lp);
+    lp.connect(amplifier);
+    amplifier.connect(ctxAudio.destination);
+    source.start(now);
+    source.stop(now + duration + 0.02);
+  }
+
+  function randomFrom(list) {
+    if (!list.length) return null;
+    return list[(Math.random() * list.length) | 0];
+  }
+
+  function playBuffer(buffer, { gain = 0.16, rate = 1 } = {}) {
+    const ctxAudio = ensure();
+    if (!ctxAudio || !buffer) return false;
+    const source = ctxAudio.createBufferSource();
+    const amplifier = ctxAudio.createGain();
+    const now = ctxAudio.currentTime;
+    source.buffer = buffer;
+    source.playbackRate.setValueAtTime(rate, now);
+    amplifier.gain.setValueAtTime(gain, now);
+    source.connect(amplifier);
+    amplifier.connect(ctxAudio.destination);
+    source.start(now);
+    return true;
+  }
+
   return {
     unlock() {
       ensure();
+      primeSampleBanks();
     },
     jump() {
       tone({ freq: 210, end: 310, duration: 0.12, gain: 0.03, type: 'sine' });
     },
-    land() {
+    land(surface = 'concrete') {
+      if (surface === 'metal') {
+        const played = playBuffer(randomFrom(sampleBanks.metalSteps), {
+          gain: 0.1,
+          rate: 0.84 + Math.random() * 0.08,
+        });
+        if (played) {
+          tone({ freq: 104, end: 84, duration: 0.05, gain: 0.015, type: 'triangle' });
+          return;
+        }
+      }
       tone({ freq: 120, end: 96, duration: 0.08, gain: 0.028, type: 'triangle' });
     },
     collect() {
@@ -142,6 +247,22 @@ const audio = (() => {
     switch() {
       tone({ freq: 300, end: 540, duration: 0.16, gain: 0.04, type: 'triangle' });
     },
+    footstep(surface = 'concrete', intensity = 0.5) {
+      if (surface === 'metal') {
+        const played = playBuffer(randomFrom(sampleBanks.metalSteps), {
+          gain: 0.12 + intensity * 0.05,
+          rate: 0.94 + Math.random() * 0.14,
+        });
+        if (played) {
+          return;
+        }
+        tone({ freq: 180, end: 132, duration: 0.06, gain: 0.018, type: 'triangle' });
+        noiseBurst({ duration: 0.028, gain: 0.012, highpass: 640, lowpass: 2600 });
+        return;
+      }
+      tone({ freq: 148, end: 120, duration: 0.05, gain: 0.012, type: 'triangle' });
+      noiseBurst({ duration: 0.022, gain: 0.008, highpass: 220, lowpass: 1200 });
+    },
     end() {
       tone({ freq: 180, end: 260, duration: 0.3, gain: 0.05, type: 'sine' });
       tone({ freq: 320, end: 420, duration: 0.28, gain: 0.03, delay: 0.08, type: 'triangle' });
@@ -149,21 +270,21 @@ const audio = (() => {
   };
 })();
 
-function rect(x, y, w, h) {
-  return { x, y, w, h };
+function rect(x, y, w, h, extras = null) {
+  return extras ? { x, y, w, h, ...extras } : { x, y, w, h };
 }
 
 const world = {
   solids: [
     rect(-120, FLOOR_Y, 1360, 220),
     rect(376, 356, 174, 20),
-    rect(1160, FLOOR_Y, 1120, 220),
-    rect(1490, 404, 420, 20),
-    rect(2230, FLOOR_Y, 1410, 220),
-    rect(2430, 390, 120, 18),
-    rect(2578, 332, 120, 18),
-    rect(2722, 274, 200, 18),
-    rect(3084, 274, 170, 18),
+    rect(1160, FLOOR_Y, 1120, 220, { surface: 'metal' }),
+    rect(1490, 404, 420, 20, { surface: 'metal' }),
+    rect(2230, FLOOR_Y, 1410, 220, { surface: 'metal' }),
+    rect(2430, 390, 120, 18, { surface: 'metal' }),
+    rect(2578, 332, 120, 18, { surface: 'metal' }),
+    rect(2722, 274, 200, 18, { surface: 'metal' }),
+    rect(3084, 274, 170, 18, { surface: 'metal' }),
   ],
   shelters: [
     rect(388, 356, 150, 114),
@@ -411,6 +532,8 @@ function respawnPlayer() {
   player.vy = 0;
   player.onGround = false;
   player.coyote = 0;
+  player.groundSurface = 'concrete';
+  player.stepTimer = 0;
   input.jumpBuffer = 0;
   state.flash = 0;
   state.fade = 1;
@@ -475,6 +598,7 @@ function currentDoorSolid() {
     y: currentY,
     w: world.door.w,
     h: world.door.h,
+    surface: 'metal',
   };
 }
 
@@ -503,6 +627,7 @@ function resolveVertical(entity, solids) {
   const wasGrounded = entity.onGround;
   entity.y += entity.vy * STEP;
   entity.onGround = false;
+  entity.groundSurface = null;
 
   for (let i = 0; i < solids.length; i += 1) {
     const solid = solids[i];
@@ -512,6 +637,7 @@ function resolveVertical(entity, solids) {
       entity.vy = 0;
       entity.onGround = true;
       entity.coyote = COYOTE_TIME;
+      entity.groundSurface = solid.surface || 'concrete';
     } else if (entity.vy < 0) {
       entity.y = solid.y + solid.h;
       entity.vy = 0;
@@ -519,7 +645,24 @@ function resolveVertical(entity, solids) {
   }
 
   if (entity.onGround && !wasGrounded) {
-    audio.land();
+    audio.land(entity.groundSurface || 'concrete');
+    entity.stepTimer = 0.08;
+  }
+}
+
+function updateFootsteps() {
+  if (!player.onGround || Math.abs(player.vx) < FOOTSTEP_MIN_SPEED) {
+    player.stepTimer = 0;
+    return;
+  }
+
+  const intensity = clamp(Math.abs(player.vx) / MAX_SPEED, 0, 1);
+  const cadence = lerp(0.34, 0.19, intensity);
+  player.stepTimer -= STEP;
+
+  if (player.stepTimer <= 0) {
+    audio.footstep(player.groundSurface || 'concrete', intensity);
+    player.stepTimer = cadence;
   }
 }
 
@@ -722,6 +865,7 @@ function updatePlayer() {
 
   const blendTarget = isPlayerInCrowd() ? 1 : 0;
   player.hiddenBlend = lerp(player.hiddenBlend, blendTarget, 0.12);
+  updateFootsteps();
 }
 
 function updateSceneStatus() {

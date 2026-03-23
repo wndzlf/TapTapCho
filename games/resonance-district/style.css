@@ -223,6 +223,18 @@ canvas {
   text-align: center;
 }
 
+.credits {
+  margin: 0;
+  color: rgba(182, 196, 212, 0.52);
+  font-size: 11px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.credits a {
+  color: rgba(216, 227, 237, 0.84);
+}
+
 .touch-controls {
   position: absolute;
   left: 50%;
@@ -335,5 +347,9 @@ body.is-pseudo-fullscreen .hint {
     top: 12px;
     font-size: 12px;
     letter-spacing: 0.08em;
+  }
+
+  .credits {
+    font-size: 10px;
   }
 }
