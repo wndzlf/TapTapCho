@@ -12,6 +12,7 @@
 - `games/<project>/toss-package/` 패키지
 - `granite.config.ts`, `package.json`, `scripts/build-web.mjs`, `scripts/dev-server.mjs`
 - 앱 아이콘 원본 또는 결과물인 정사각형 `600x600` PNG 파일
+- 가로형 썸네일 원본 또는 결과물인 `1932x828` PNG 파일
 - 필요 시 토스 등록용 스크린샷과 출시 문안 초안
 - `npm run build:web && npm run build`로 `.ait`를 다시 만들 수 있는 상태
 - 토스 미니앱 `.ait` 패키지에서는 `granite.config.ts`의 `brand.icon` 값을 항상 확인합니다.

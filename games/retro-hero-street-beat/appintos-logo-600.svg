@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" role="img" aria-label="Retro Hero Street Beat icon">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#071124"/>
+      <stop offset="0.52" stop-color="#15113B"/>
+      <stop offset="1" stop-color="#040814"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.5" cy="0.38" r="0.42">
+      <stop offset="0" stop-color="#FFD874"/>
+      <stop offset="0.5" stop-color="#FF8A7B"/>
+      <stop offset="1" stop-color="#FF2E97"/>
+    </radialGradient>
+    <linearGradient id="heroFill" x1="0.5" y1="0.18" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#7AF1FF"/>
+      <stop offset="1" stop-color="#13B7FF"/>
+    </linearGradient>
+    <linearGradient id="visor" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFE483"/>
+      <stop offset="1" stop-color="#FF7F73"/>
+    </linearGradient>
+    <filter id="glowPink" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glowCyan" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="600" height="600" rx="136" fill="url(#bg)"/>
+
+  <circle cx="300" cy="188" r="120" fill="url(#sun)" opacity="0.95" filter="url(#glowPink)"/>
+
+  <path
+    d="M0 332C70 304 122 290 178 292C224 294 263 314 303 314C351 314 386 284 442 282C497 280 552 300 600 322V600H0Z"
+    fill="#050C1B"
+  />
+
+  <path d="M32 362H568" stroke="#21D7FF" stroke-width="4" stroke-opacity="0.58"/>
+  <path d="M56 396H544" stroke="#21D7FF" stroke-width="3" stroke-opacity="0.42"/>
+  <path d="M82 432H518" stroke="#21D7FF" stroke-width="3" stroke-opacity="0.34"/>
+  <path d="M110 470H490" stroke="#21D7FF" stroke-width="3" stroke-opacity="0.28"/>
+  <path d="M140 510H460" stroke="#21D7FF" stroke-width="2.5" stroke-opacity="0.24"/>
+  <path d="M170 550H430" stroke="#21D7FF" stroke-width="2.5" stroke-opacity="0.2"/>
+
+  <path d="M300 332V600" stroke="#21D7FF" stroke-width="4" stroke-opacity="0.48"/>
+  <path d="M300 332L144 600" stroke="#21D7FF" stroke-width="3" stroke-opacity="0.3"/>
+  <path d="M300 332L456 600" stroke="#21D7FF" stroke-width="3" stroke-opacity="0.3"/>
+  <path d="M300 332L88 600" stroke="#21D7FF" stroke-width="2.5" stroke-opacity="0.18"/>
+  <path d="M300 332L512 600" stroke="#21D7FF" stroke-width="2.5" stroke-opacity="0.18"/>
+
+  <g filter="url(#glowPink)">
+    <circle cx="170" cy="392" r="22" fill="#FF2E97"/>
+    <circle cx="430" cy="418" r="20" fill="#FFB84E"/>
+    <circle cx="300" cy="366" r="18" fill="#FF5BA8"/>
+  </g>
+
+  <g transform="translate(300 314)">
+    <circle cx="0" cy="-106" r="60" fill="#0C1730" stroke="#7AF1FF" stroke-width="10"/>
+    <rect x="-38" y="-118" width="76" height="28" rx="14" fill="url(#visor)" filter="url(#glowPink)"/>
+    <path d="M-22 -40H22L50 34L28 168H-28L-50 34Z" fill="url(#heroFill)" filter="url(#glowCyan)"/>
+    <path d="M-24 14L-82 74" stroke="#7AF1FF" stroke-width="18" stroke-linecap="round"/>
+    <path d="M24 14L82 74" stroke="#7AF1FF" stroke-width="18" stroke-linecap="round"/>
+    <path d="M-12 164L-58 246" stroke="#16C1FF" stroke-width="20" stroke-linecap="round"/>
+    <path d="M12 164L58 246" stroke="#16C1FF" stroke-width="20" stroke-linecap="round"/>
+    <rect x="-20" y="16" width="40" height="72" rx="14" fill="#091528"/>
+    <path d="M-64 96L-16 78" stroke="#FF2E97" stroke-width="12" stroke-linecap="round" filter="url(#glowPink)"/>
+    <path d="M64 96L16 78" stroke="#FF2E97" stroke-width="12" stroke-linecap="round" filter="url(#glowPink)"/>
+  </g>
+
+  <rect x="24" y="24" width="552" height="552" rx="112" fill="none" stroke="#FFFFFF" stroke-opacity="0.12"/>
+</svg>

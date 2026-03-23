@@ -47,4 +47,16 @@
 - 브리지 소스: `toss-bridge-source.js`
 - 브리지 번들: `toss-bridge.js`
 - 패키지: `toss-package/`
+- 아이콘 산출물: `appintos-logo-600.svg`, `appintos-logo-600.png`
+- 가로형 썸네일: `appintos-thumbnail-1932x828.svg`, `appintos-thumbnail-1932x828.png`
+- 스크린샷 산출물: `appintos-screenshots/`
+- 제출 가이드: `TOSS_LAUNCH_PACK.md`
 - 보상형 광고 이어하기 지원 (라운드당 1회)
+
+업로드 직전 검증:
+
+```bash
+cd /Users/user/TapTapCho/games/retro-hero-street-beat/toss-package
+TOSS_APP_NAME="retro-hero-beat" npm run build:web && npm run build
+strings -n 6 retro-hero-beat.ait | rg "appName|displayName|raw.githubusercontent.com|static.toss.im/appsintoss"
+```

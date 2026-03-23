@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1932" height="828" viewBox="0 0 1932 828" role="img" aria-label="Retro Hero Street Beat horizontal thumbnail">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1932" y2="828" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#070d1d"/>
+      <stop offset="46%" stop-color="#18133f"/>
+      <stop offset="100%" stop-color="#090e20"/>
+    </linearGradient>
+    <radialGradient id="pink-halo" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1372 356) rotate(90) scale(340 340)">
+      <stop offset="0%" stop-color="#ff4ca8" stop-opacity="0.92"/>
+      <stop offset="58%" stop-color="#ff4ca8" stop-opacity="0.24"/>
+      <stop offset="100%" stop-color="#ff4ca8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="cyan-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1290 520) rotate(90) scale(380 520)">
+      <stop offset="0%" stop-color="#4ee9ff" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#4ee9ff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="panel" x1="108" y1="118" x2="908" y2="720" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0d1430" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#0a1127" stop-opacity="0.86"/>
+    </linearGradient>
+    <linearGradient id="title" x1="144" y1="186" x2="844" y2="454" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f8fbff"/>
+      <stop offset="48%" stop-color="#ffbfd8"/>
+      <stop offset="100%" stop-color="#8decff"/>
+    </linearGradient>
+    <linearGradient id="hero-fill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8af4ff"/>
+      <stop offset="100%" stop-color="#22b9ff"/>
+    </linearGradient>
+    <linearGradient id="visor" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffe28e"/>
+      <stop offset="100%" stop-color="#ff8d79"/>
+    </linearGradient>
+    <filter id="panel-shadow" x="-12%" y="-16%" width="130%" height="140%">
+      <feDropShadow dx="0" dy="28" stdDeviation="24" flood-color="#030716" flood-opacity="0.5"/>
+    </filter>
+    <filter id="soft-glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="0" stdDeviation="16" flood-color="#ff4ca8" flood-opacity="0.42"/>
+    </filter>
+    <filter id="cyan-soft-glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="0" stdDeviation="14" flood-color="#4ee9ff" flood-opacity="0.38"/>
+    </filter>
+    <filter id="vignette" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="0" stdDeviation="90" flood-color="#02040d" flood-opacity="0.82"/>
+    </filter>
+  </defs>
+
+  <rect width="1932" height="828" fill="url(#bg)"/>
+  <rect width="1932" height="828" fill="url(#cyan-glow)"/>
+
+  <g opacity="0.22" fill="#d7f4ff">
+    <circle cx="148" cy="102" r="10"/>
+    <circle cx="238" cy="78" r="6"/>
+    <circle cx="1710" cy="118" r="8"/>
+    <circle cx="1788" cy="146" r="10"/>
+    <circle cx="1650" cy="184" r="5"/>
+  </g>
+
+  <g filter="url(#panel-shadow)">
+    <rect x="92" y="116" width="874" height="596" rx="48" fill="url(#panel)"/>
+    <rect x="92" y="116" width="874" height="596" rx="48" fill="none" stroke="#77cfff" stroke-opacity="0.18" stroke-width="4"/>
+  </g>
+
+  <text x="154" y="214" fill="#98b7ff" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="42" font-weight="700" letter-spacing="8">3-LANE RHYTHM ACTION</text>
+  <text x="146" y="354" fill="url(#title)" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="120" font-weight="900" letter-spacing="2">RETRO HERO</text>
+  <text x="146" y="472" fill="url(#title)" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="108" font-weight="900" letter-spacing="2">STREET BEAT</text>
+  <text x="156" y="560" fill="#d7e2ff" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="38" font-weight="600">Tap the neon lanes on the beat and chain your combo.</text>
+  <text x="156" y="616" fill="#d7e2ff" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="38" font-weight="600">Perfect timing unlocks HERO MODE and score multipliers.</text>
+
+  <g filter="url(#soft-glow)">
+    <rect x="156" y="650" width="312" height="70" rx="35" fill="#141c45"/>
+    <rect x="156" y="650" width="312" height="70" rx="35" fill="none" stroke="#ff74bc" stroke-opacity="0.54" stroke-width="3"/>
+    <circle cx="198" cy="685" r="11" fill="#ff4ca8"/>
+    <text x="228" y="699" fill="#fff3fb" font-family="Avenir Next, Pretendard, Apple SD Gothic Neo, sans-serif" font-size="30" font-weight="800">HERO MODE x2 SCORE</text>
+  </g>
+
+  <g opacity="0.92">
+    <rect x="1088" y="104" width="744" height="620" rx="56" fill="#0a1026" fill-opacity="0.44"/>
+    <rect x="1088" y="104" width="744" height="620" rx="56" fill="none" stroke="#71cfff" stroke-opacity="0.14" stroke-width="3"/>
+  </g>
+
+  <circle cx="1372" cy="356" r="208" fill="url(#pink-halo)" filter="url(#soft-glow)"/>
+
+  <path d="M1038 536 C1144 486 1248 454 1370 448 C1498 442 1610 476 1734 536 V828 H1038 Z" fill="#050a18"/>
+
+  <g opacity="0.56" stroke="#21d7ff" stroke-linecap="round">
+    <path d="M1066 548H1740" stroke-width="5"/>
+    <path d="M1098 592H1706" stroke-width="4"/>
+    <path d="M1130 640H1674" stroke-width="4"/>
+    <path d="M1160 690H1642" stroke-width="3.5"/>
+    <path d="M1188 744H1614" stroke-width="3.5"/>
+    <path d="M1402 454V828" stroke-width="4.5"/>
+    <path d="M1402 454L1220 828" stroke-width="3.5"/>
+    <path d="M1402 454L1584 828" stroke-width="3.5"/>
+    <path d="M1402 454L1142 828" stroke-width="2.8" stroke-opacity="0.42"/>
+    <path d="M1402 454L1662 828" stroke-width="2.8" stroke-opacity="0.42"/>
+  </g>
+
+  <g transform="translate(1398 474)">
+    <rect x="-160" y="148" width="320" height="8" rx="4" fill="#22d7ff" opacity="0.6"/>
+    <g filter="url(#cyan-soft-glow)">
+      <circle cx="-180" cy="-6" r="26" fill="#ff2e97"/>
+      <circle cx="172" cy="42" r="24" fill="#ffc15b"/>
+    </g>
+    <g filter="url(#cyan-soft-glow)">
+      <circle cx="0" cy="-176" r="64" fill="#0c1730" stroke="#7cf0ff" stroke-width="10"/>
+      <rect x="-38" y="-190" width="76" height="28" rx="14" fill="url(#visor)"/>
+      <path d="M-24 -108H24L58 -22L30 176H-30L-58 -22Z" fill="url(#hero-fill)"/>
+      <path d="M-24 -42L-104 42" stroke="#7cf0ff" stroke-width="22" stroke-linecap="round"/>
+      <path d="M24 -42L104 42" stroke="#7cf0ff" stroke-width="22" stroke-linecap="round"/>
+      <path d="M-18 172L-78 292" stroke="#1fc2ff" stroke-width="24" stroke-linecap="round"/>
+      <path d="M18 172L78 292" stroke="#1fc2ff" stroke-width="24" stroke-linecap="round"/>
+      <rect x="-22" y="0" width="44" height="82" rx="16" fill="#081326"/>
+      <path d="M-72 74L-18 54" stroke="#ff2e97" stroke-width="14" stroke-linecap="round"/>
+      <path d="M72 74L18 54" stroke="#ff2e97" stroke-width="14" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <g filter="url(#vignette)">
+    <rect width="1932" height="828" fill="none"/>
+  </g>
+</svg>
