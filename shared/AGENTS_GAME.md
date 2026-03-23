@@ -1,9 +1,12 @@
 # AGENTS
 
-- Work only inside this project unless the task needs shared files.
-- Shared runtime code lives in `/shared`.
-- Static media lives in `/static`.
-- Root-level same-name path is a compatibility symlink.
-- Preserve gameplay, asset URLs, and Toss/package behavior.
-- Do not edit sibling games unless explicitly requested.
-- Keep README focused on this project.
+- 공용 파일이 꼭 필요하지 않다면 이 프로젝트 안에서만 작업합니다.
+- 공용 런타임 코드는 `/shared`에 둡니다.
+- 정적 미디어는 `/static`에 둡니다.
+- 루트의 같은 이름 경로는 호환성용 심볼릭 링크입니다.
+- 게임 플레이, 자산 URL, 토스 패키지 동작은 유지합니다.
+- 명시적 요청이 없으면 다른 게임 프로젝트는 수정하지 않습니다.
+- `README`는 이 프로젝트 기준으로 유지합니다.
+- 이 프로젝트가 토스 미니앱 대상이면, 작업할 때 처음부터 앱인토스 업로드 가능 상태를 목표로 맞춥니다.
+- 토스 미니앱 대상 프로젝트에는 가능하면 `toss-package/`, `granite.config.ts`, 빌드 스크립트, `.ait` 생성 경로, `600x600` PNG 아이콘을 함께 준비합니다.
+- 토스 제출 전에 `brand.icon`, 개발자센터 아이콘 설정, 실제 `appName`, `.ait` 재생성 여부를 반드시 확인합니다.
