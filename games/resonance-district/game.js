@@ -185,6 +185,9 @@ const world = {
     width: 254,
     speed: 48,
     pause: 0,
+    holdX: 1606,
+    holdDuration: 1.6,
+    holdUsed: false,
     phase: 0,
     count: 7,
     baseY: FLOOR_Y - 54,
@@ -388,6 +391,7 @@ function resetWorldState() {
   world.crowd.active = false;
   world.crowd.leadX = 1320;
   world.crowd.pause = 0;
+  world.crowd.holdUsed = false;
   world.crowd.phase = 0;
   world.scanner.flash = 0;
   world.door.progress = 0;
@@ -566,10 +570,33 @@ function updateSearchlight(dt) {
   }
 }
 
+function syncPlayerWithCrowd() {
+  if (!world.crowd.active || !player.onGround) return;
+
+  const range = queueRange();
+  const center = player.x + player.w * 0.5;
+  const latchStart = range.first - 28;
+  const latchEnd = range.last + 16;
+  if (center < latchStart || center > latchEnd) return;
+  if (player.y + player.h <= world.crowd.baseY + 32) return;
+
+  const minCenter = range.first + 52;
+  const maxCenter = range.last - 34;
+  const syncedCenter = clamp(center, minCenter, maxCenter);
+  player.x = syncedCenter - player.w * 0.5;
+
+  const syncedSpeed = world.crowd.pause > 0 ? 0 : world.crowd.speed;
+  player.vx = Math.min(player.vx, syncedSpeed + 18);
+  if (world.crowd.pause > 0 && player.vx > 0) {
+    player.vx = 0;
+  }
+}
+
 function updateCrowd(dt) {
   if (player.x > 1260 && !world.crowd.active) {
     world.crowd.active = true;
-    showMessage('기숙동', 1100);
+    world.crowd.leadX = Math.max(world.crowd.leadX, 1450);
+    showMessage('군중 뒤에 붙으면 함께 통과한다', 1500);
   }
 
   if (!world.crowd.active) return;
@@ -580,12 +607,23 @@ function updateCrowd(dt) {
   if (crowd.pause > 0) {
     crowd.pause -= dt;
   } else {
-    crowd.leadX += crowd.speed * dt;
+    if (!crowd.holdUsed && crowd.leadX >= crowd.holdX) {
+      crowd.leadX = crowd.holdX;
+      crowd.pause = crowd.holdDuration;
+      crowd.holdUsed = true;
+      showMessage('줄이 멈췄다', 1100);
+    } else {
+      crowd.leadX += crowd.speed * dt;
+    }
+
     if (crowd.leadX > 1910) {
       crowd.leadX = 1320;
       crowd.pause = 1.15;
+      crowd.holdUsed = false;
     }
   }
+
+  syncPlayerWithCrowd();
 
   const scanner = world.scanner;
   scanner.flash = Math.max(0, scanner.flash - dt * 2.6);
