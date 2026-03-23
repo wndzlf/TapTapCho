@@ -40,6 +40,7 @@ const toss = window.TokkiPuddingBarToss || {
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const stageEl = document.getElementById('stage');
+const previewParams = new URLSearchParams(window.location.search);
 
 const scoreEl = document.getElementById('score');
 const bestEl = document.getElementById('best');
@@ -76,6 +77,8 @@ const DANGER_LIMIT = 1.1;
 const MERGE_CONTACT_TOLERANCE = 2.5;
 const BGM_SRC = 'assets/audio/tokki-pudding-bar-bgm-puzzle-game-249202.mp3';
 const BGM_VOLUME = 0.22;
+const PREVIEW_MODE = previewParams.get('preview') || '';
+const PREVIEW_FOCUS = previewParams.get('focus') === '1';
 
 const PIECES = [
   { label: '말랑 젤리', short: '젤리', fill: '#ffd6e7', rim: '#ff9dc0', accent: '#fff6fb', ear: '#ffc2d8', points: 10, radius: 24 },
@@ -130,6 +133,7 @@ let bgmFailed = false;
 let compactViewport = false;
 let performanceMode = false;
 let focusMode = false;
+let previewDemoStarted = false;
 
 if (bgmPlayer) {
   bgmPlayer.loop = true;
@@ -223,6 +227,18 @@ function updateHud() {
   scoreEl.textContent = String(score);
   bestEl.textContent = String(best);
   nextPieceEl.textContent = queuedPiece ? PIECES[queuedPiece.tier].short : '-';
+}
+
+function enableFocusMode() {
+  focusMode = true;
+  document.body.classList.add('focus-mode');
+  updateFocusButton();
+}
+
+function disableFocusMode() {
+  focusMode = false;
+  document.body.classList.remove('focus-mode');
+  updateFocusButton();
 }
 
 function updateFocusButton() {
@@ -404,6 +420,26 @@ function resetRound() {
 function restartGame() {
   resetRound();
   playTone('start');
+}
+
+function startPreviewDemo() {
+  if (previewDemoStarted || PREVIEW_MODE !== 'demo') {
+    return;
+  }
+
+  previewDemoStarted = true;
+  const steps = [0.22, 0.5, 0.78, 0.34, 0.64, 0.48, 0.26, 0.72, 0.56];
+
+  steps.forEach((ratio, index) => {
+    window.setTimeout(() => {
+      if (state !== 'running') {
+        return;
+      }
+      aimX = clamp(FIELD_LEFT + (FIELD_RIGHT - FIELD_LEFT) * ratio, FIELD_LEFT + 28, FIELD_RIGHT - 28);
+      renderedAimX = aimX;
+      dropCurrentPiece();
+    }, 450 + index * 520);
+  });
 }
 
 function finishGame(reason = 'overflow') {
@@ -1391,9 +1427,7 @@ function onCanvasPointerDown(event) {
   ensureAudioContext();
   void ensureBgmPlayback();
   if (performanceMode && !focusMode) {
-    document.body.classList.add('focus-mode');
-    focusMode = true;
-    updateFocusButton();
+    enableFocusMode();
     queueResize();
   }
   updateAim(event.clientX);
@@ -1501,6 +1535,13 @@ async function boot() {
   syncViewportMode();
   await readBgmPreference();
   await readBestScore();
+  if (PREVIEW_FOCUS) {
+    enableFocusMode();
+  }
+  if (PREVIEW_MODE === 'demo') {
+    restartGame();
+    startPreviewDemo();
+  }
   queueResize();
   window.requestAnimationFrame(loop);
 }
@@ -1525,9 +1566,11 @@ btnFocus?.addEventListener('click', async () => {
     }
   }
 
-  focusMode = !focusMode;
-  document.body.classList.toggle('focus-mode', focusMode);
-  updateFocusButton();
+  if (focusMode) {
+    disableFocusMode();
+  } else {
+    enableFocusMode();
+  }
   queueResize();
 });
 

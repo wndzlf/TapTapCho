@@ -6,6 +6,7 @@
 - 토스 브리지 소스: `/games/tokki-pudding-bar/toss-bridge-source.js`
 - 토스 패키지 루트: `/games/tokki-pudding-bar/toss-package`
 - 배경음악: `assets/audio/tokki-pudding-bar-bgm-puzzle-game-249202.mp3`
+- 토스 제출 산출물: `appintos-logo-600.*`, `appintos-thumbnail-1932x828.*`, `appintos-screenshots/`, `TOSS_LAUNCH_PACK.md`
 
 ## BGM License Note
 
