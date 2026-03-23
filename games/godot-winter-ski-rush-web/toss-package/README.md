@@ -10,7 +10,7 @@
 ## 선택 환경변수
 
 - `TOSS_BRAND_DISPLAY_NAME`
-  - 기본값: `윈터 스키 러시`
+  - 기본값: `윈터스키러시`
 - `TOSS_BRAND_ICON_URL`
   - 기본값: `https://static.toss.im/appsintoss/29647/f5106af5-8b92-4378-96df-2259b8142405.png`
 
@@ -18,7 +18,7 @@
 
 ```bash
 cd /Users/user/TapTapCho
-TOSS_APP_NAME="winter-ski-rush" npm --prefix games/godot-winter-ski-rush-web/toss-package run build
+TOSS_APP_NAME="winter-ski-rush" TOSS_BRAND_DISPLAY_NAME="윈터스키러시" npm --prefix games/godot-winter-ski-rush-web/toss-package run build
 ```
 
 ## 웹 미리보기

@@ -3,7 +3,7 @@ import { defineConfig } from '@apps-in-toss/web-framework/config';
 const DEFAULT_ICON_URL =
   'https://static.toss.im/appsintoss/29647/f5106af5-8b92-4378-96df-2259b8142405.png';
 const appName = process.env.TOSS_APP_NAME?.trim() || 'winter-ski-rush';
-const displayName = process.env.TOSS_BRAND_DISPLAY_NAME?.trim() || '윈터 스키 러시';
+const displayName = process.env.TOSS_BRAND_DISPLAY_NAME?.trim() || '윈터스키러시';
 const icon = process.env.TOSS_BRAND_ICON_URL?.trim() || DEFAULT_ICON_URL;
 
 export default defineConfig({
