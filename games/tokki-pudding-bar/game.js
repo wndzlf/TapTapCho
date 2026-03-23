@@ -47,6 +47,7 @@ const nextPieceEl = document.getElementById('nextPiece');
 const statusLineEl = document.getElementById('statusLine');
 const userKeyHintEl = document.getElementById('userKeyHint');
 
+const btnFocus = document.getElementById('btnFocus');
 const btnMusic = document.getElementById('btnMusic');
 const btnExit = document.getElementById('btnExit');
 const btnCancelExit = document.getElementById('btnCancelExit');
@@ -126,6 +127,9 @@ let unsubscribeBack = () => {};
 let unsubscribeHome = () => {};
 let bgmEnabled = true;
 let bgmFailed = false;
+let compactViewport = false;
+let performanceMode = false;
+let focusMode = false;
 
 if (bgmPlayer) {
   bgmPlayer.loop = true;
@@ -179,7 +183,6 @@ function resizeStage() {
   }
 
   const bounds = stageEl.getBoundingClientRect();
-  const compactViewport = window.innerWidth <= 460 || window.innerHeight <= 860;
   const padding = compactViewport ? 8 : 24;
   const availableWidth = Math.max(160, bounds.width - padding);
   const availableHeight = Math.max(280, bounds.height - padding);
@@ -189,6 +192,12 @@ function resizeStage() {
 
   canvas.style.width = `${displayWidth}px`;
   canvas.style.height = `${displayHeight}px`;
+}
+
+function syncViewportMode() {
+  compactViewport = window.innerWidth <= 460 || window.innerHeight <= 860;
+  performanceMode = compactViewport;
+  document.body.classList.toggle('performance-mode', performanceMode);
 }
 
 function queueResize() {
@@ -214,6 +223,16 @@ function updateHud() {
   scoreEl.textContent = String(score);
   bestEl.textContent = String(best);
   nextPieceEl.textContent = queuedPiece ? PIECES[queuedPiece.tier].short : '-';
+}
+
+function updateFocusButton() {
+  if (!btnFocus) {
+    return;
+  }
+
+  const active = focusMode || Boolean(document.fullscreenElement);
+  btnFocus.setAttribute('aria-pressed', active ? 'true' : 'false');
+  btnFocus.textContent = active ? '기본' : '집중';
 }
 
 function updateMusicButton() {
@@ -410,7 +429,11 @@ function updateAim(clientX) {
 }
 
 function spawnSparkles(x, y, color, count = 12, spread = 1) {
+  const limit = performanceMode ? 5 : count;
   for (let i = 0; i < count; i += 1) {
+    if (i >= limit) {
+      break;
+    }
     sparkles.push({
       x,
       y,
@@ -422,9 +445,16 @@ function spawnSparkles(x, y, color, count = 12, spread = 1) {
       color,
     });
   }
+
+  if (performanceMode && sparkles.length > 36) {
+    sparkles.splice(0, sparkles.length - 36);
+  }
 }
 
 function spawnRing(x, y, color, radius = 16) {
+  if (performanceMode && rings.length >= 10) {
+    return;
+  }
   rings.push({
     x,
     y,
@@ -827,7 +857,11 @@ function updateRunning(dt) {
     updateBody(body, dt);
   }
 
-  for (let iteration = 0; iteration < 4; iteration += 1) {
+  const solverIterations = performanceMode
+    ? (bodies.length > 18 ? 2 : 3)
+    : 4;
+
+  for (let iteration = 0; iteration < solverIterations; iteration += 1) {
     for (const body of bodies) {
       resolveWorld(body);
     }
@@ -898,6 +932,10 @@ function drawBackground() {
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, W, H);
 
+  if (performanceMode) {
+    return;
+  }
+
   ctx.save();
   ctx.globalAlpha = 0.28;
   ctx.fillStyle = '#ffffff';
@@ -954,12 +992,14 @@ function drawJar() {
   const jarW = FIELD_RIGHT - FIELD_LEFT + 16;
   const jarH = FIELD_BOTTOM - FIELD_TOP + 20;
 
-  ctx.save();
-  ctx.shadowColor = 'rgba(170, 95, 45, 0.18)';
-  ctx.shadowBlur = 28;
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-  drawRoundedRect(jarX, jarY + 12, jarW, jarH, 44, 'rgba(255, 255, 255, 0.45)');
-  ctx.restore();
+  if (!performanceMode) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(170, 95, 45, 0.18)';
+    ctx.shadowBlur = 28;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+    drawRoundedRect(jarX, jarY + 12, jarW, jarH, 44, 'rgba(255, 255, 255, 0.45)');
+    ctx.restore();
+  }
 
   const glassGradient = ctx.createLinearGradient(jarX, jarY, jarX, jarY + jarH);
   glassGradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
@@ -1098,7 +1138,7 @@ function drawPiece(tier, x, y, options = {}) {
   gradient.addColorStop(1, piece.rim);
 
   ctx.shadowColor = options.preview ? 'rgba(255, 255, 255, 0.18)' : `${piece.rim}88`;
-  ctx.shadowBlur = options.preview ? 8 : 16;
+  ctx.shadowBlur = performanceMode ? 0 : (options.preview ? 8 : 16);
   ctx.fillStyle = gradient;
   ctx.beginPath();
   ctx.arc(0, 0, piece.radius, 0, Math.PI * 2);
@@ -1175,6 +1215,19 @@ function drawBodies() {
 }
 
 function drawEffects() {
+  if (performanceMode) {
+    for (const label of floatTexts) {
+      ctx.save();
+      ctx.globalAlpha = label.life / label.maxLife;
+      ctx.fillStyle = label.color;
+      ctx.font = '800 18px "Noto Sans KR", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(label.text, label.x, label.y);
+      ctx.restore();
+    }
+    return;
+  }
+
   for (const ring of rings) {
     ctx.save();
     ctx.globalAlpha = ring.life / ring.maxLife;
@@ -1337,6 +1390,12 @@ function onCanvasPointerDown(event) {
   event.preventDefault();
   ensureAudioContext();
   void ensureBgmPlayback();
+  if (performanceMode && !focusMode) {
+    document.body.classList.add('focus-mode');
+    focusMode = true;
+    updateFocusButton();
+    queueResize();
+  }
   updateAim(event.clientX);
   pointerActive = true;
   pointerId = event.pointerId;
@@ -1439,11 +1498,38 @@ async function boot() {
   currentPiece = createPreviewPiece(randomSpawnTier());
   queuedPiece = createPreviewPiece(randomSpawnTier());
   setStatus('손가락으로 위치를 맞추고 놓으면 토끼푸딩이 말랑하게 떨어집니다.');
+  syncViewportMode();
   await readBgmPreference();
   await readBestScore();
   queueResize();
   window.requestAnimationFrame(loop);
 }
+
+btnFocus?.addEventListener('click', async () => {
+  if (document.fullscreenEnabled && !document.fullscreenElement && stageEl.requestFullscreen) {
+    try {
+      await stageEl.requestFullscreen();
+      updateFocusButton();
+      queueResize();
+      return;
+    } catch (error) {
+      // Fall back to in-page focus mode below.
+    }
+  }
+
+  if (document.fullscreenElement && document.exitFullscreen) {
+    try {
+      await document.exitFullscreen();
+    } catch (error) {
+      // Ignore and continue with page focus mode toggle.
+    }
+  }
+
+  focusMode = !focusMode;
+  document.body.classList.toggle('focus-mode', focusMode);
+  updateFocusButton();
+  queueResize();
+});
 
 btnMusic?.addEventListener('click', () => {
   void setBgmEnabled(!bgmEnabled);
@@ -1475,6 +1561,12 @@ canvas.addEventListener('pointercancel', onCanvasPointerCancel, { passive: true 
 
 window.addEventListener('resize', queueResize);
 window.addEventListener('orientationchange', queueResize);
+document.addEventListener('fullscreenchange', () => {
+  updateFocusButton();
+  queueResize();
+});
+window.addEventListener('resize', syncViewportMode);
+window.addEventListener('orientationchange', syncViewportMode);
 window.addEventListener('pointerdown', ensureAudioContext, { passive: true });
 window.addEventListener('pagehide', () => {
   unsubscribeSafeArea();
@@ -1483,5 +1575,7 @@ window.addEventListener('pagehide', () => {
   pauseBgm();
 });
 
+syncViewportMode();
+updateFocusButton();
 updateMusicButton();
 void boot();

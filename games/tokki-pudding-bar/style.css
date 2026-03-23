@@ -41,6 +41,10 @@ body {
     linear-gradient(180deg, var(--bg-0), var(--bg-1) 46%, var(--bg-2));
 }
 
+body.performance-mode {
+  background: linear-gradient(180deg, #fff8f0, #ffe8d4 52%, #ffd4b6);
+}
+
 body::before,
 body::after {
   content: "";
@@ -65,6 +69,11 @@ body::after {
   right: -120px;
   bottom: -80px;
   background: radial-gradient(circle, rgba(255, 224, 147, 0.34), transparent 70%);
+}
+
+body.performance-mode::before,
+body.performance-mode::after {
+  display: none;
 }
 
 body.modal-open {
@@ -184,6 +193,18 @@ h1 {
   white-space: nowrap;
 }
 
+.btn-focus {
+  min-width: 70px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.btn-focus[aria-pressed="true"] {
+  color: #fffaf3;
+  border-color: rgba(103, 63, 39, 0.16);
+  background: linear-gradient(135deg, #9f5a31, #c47a42);
+}
+
 .btn-music[aria-pressed="true"] {
   color: #fffaf3;
   border-color: rgba(103, 63, 39, 0.16);
@@ -264,6 +285,63 @@ canvas {
   font-size: 13px;
   line-height: 1.45;
   color: rgba(75, 43, 29, 0.74);
+}
+
+body.performance-mode .hero,
+body.performance-mode .hud,
+body.performance-mode .sheet-modal {
+  backdrop-filter: none;
+}
+
+body.performance-mode .hero,
+body.performance-mode .hud,
+body.performance-mode .stage,
+body.performance-mode .mini-guide,
+body.performance-mode .sheet-card {
+  box-shadow: 0 12px 24px rgba(141, 87, 45, 0.1);
+}
+
+body.focus-mode .app-shell {
+  grid-template-rows: 1fr;
+  padding:
+    calc(var(--safe-top) + 6px)
+    calc(var(--safe-right) + 6px)
+    calc(var(--safe-bottom) + 6px)
+    calc(var(--safe-left) + 6px);
+}
+
+body.focus-mode .hero {
+  position: fixed;
+  top: calc(var(--safe-top) + 8px);
+  right: calc(var(--safe-right) + 8px);
+  z-index: 30;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
+body.focus-mode .hero-copy,
+body.focus-mode .hud,
+body.focus-mode .mini-guide {
+  display: none;
+}
+
+body.focus-mode .hero-actions {
+  flex-direction: row;
+  gap: 6px;
+}
+
+body.focus-mode .stage {
+  padding: 4px;
+  border-radius: 20px;
+}
+
+body.focus-mode canvas {
+  width: 100%;
+  max-width: none;
+  max-height: none;
 }
 
 .sheet-modal {
@@ -368,6 +446,11 @@ canvas {
 
   .btn-music {
     min-width: 82px;
+    font-size: 12px;
+  }
+
+  .btn-focus {
+    min-width: 58px;
     font-size: 12px;
   }
 
