@@ -10,7 +10,7 @@
 ## 선택 환경변수
 
 - `TOSS_BRAND_DISPLAY_NAME`
-  - 기본값: `선큰 식스웨이 디펜스 2`
+  - 기본값: `성큰디펜스2`
 - `TOSS_BRAND_ICON_URL`
   - 기본값: 로컬 `appintos-logo-600.svg`를 읽어 만든 `data:` URI
   - 실제 업로드 전에는 개발자센터 아이콘과 동일한 HTTPS PNG URL로 덮어쓰는 편이 안전합니다.
@@ -30,7 +30,7 @@ TOSS_APP_NAME="sunkendefense2" npm run build
 ```bash
 cd /Users/user/TapTapCho/games/sunken-sixway-defense-2/toss-package
 TOSS_APP_NAME="sunkendefense2" \
-TOSS_BRAND_DISPLAY_NAME="선큰 식스웨이 디펜스 2" \
+TOSS_BRAND_DISPLAY_NAME="성큰디펜스2" \
 TOSS_BRAND_ICON_URL="https://static.toss.im/appsintoss/..." \
 npm run build
 ```
