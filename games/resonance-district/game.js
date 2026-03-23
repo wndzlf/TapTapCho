@@ -75,6 +75,9 @@ const state = {
   cameraTargetX: 0,
   sceneEnterAt: 0,
   lastStageTouchAt: 0,
+  searchlightPrompted: false,
+  searchlightHinted: false,
+  scannerHinted: false,
 };
 
 const audio = (() => {
@@ -164,6 +167,7 @@ const world = {
   ],
   shelters: [
     rect(388, 356, 150, 114),
+    rect(732, 356, 150, 114),
   ],
   searchlight: {
     active: true,
@@ -428,6 +432,9 @@ function startGame() {
   state.sceneEnterAt = state.now;
   state.cameraX = 0;
   state.cameraTargetX = 0;
+  state.searchlightPrompted = false;
+  state.searchlightHinted = false;
+  state.scannerHinted = false;
   showMessage('배수로', 1200);
   respawnPlayer();
 }
@@ -524,6 +531,14 @@ function triggerDeath(reason) {
   world.scanner.flash = 0.7;
   audio.alarm();
   updateHud();
+
+  if (reason === '탐조등' && !state.searchlightHinted) {
+    state.searchlightHinted = true;
+    showMessage('빛이 지나가면 다음 엄폐물로', 1500);
+  } else if (reason === '스캐너' && !state.scannerHinted) {
+    state.scannerHinted = true;
+    showMessage('군중에 섞여 스캐너를 통과한다', 1500);
+  }
 }
 
 function updateSearchlight(dt) {
@@ -536,6 +551,11 @@ function updateSearchlight(dt) {
   } else if (beam.x >= beam.maxX) {
     beam.x = beam.maxX;
     beam.dir = -1;
+  }
+
+  if (player.x > 548 && !state.searchlightPrompted) {
+    state.searchlightPrompted = true;
+    showMessage('빛이 비면 엄폐물 사이로', 1400);
   }
 
   const withinX = player.x + player.w * 0.5 > beam.x - beam.width * 0.5
@@ -607,7 +627,7 @@ function updateEchoes() {
 }
 
 function updateChainInteraction() {
-  if (!world.chain.active || input.jumpBuffer <= 0) return;
+  if (!world.chain.active) return;
   const nearChain = Math.abs(player.x + player.w * 0.5 - world.chain.x) < 30
     && Math.abs(player.y + player.h * 0.5 - 248) < 68;
   if (nearChain && player.onGround) {
@@ -880,8 +900,11 @@ function drawWorldGeometry() {
   }
 
   ctx.fillStyle = 'rgba(17, 22, 28, 0.96)';
-  ctx.fillRect(388 - cam, 356, 12, 114);
-  ctx.fillRect(526 - cam, 356, 12, 114);
+  for (const shelter of world.shelters) {
+    ctx.fillRect(shelter.x - cam, shelter.y, 12, shelter.h);
+    ctx.fillRect(shelter.x + shelter.w - 12 - cam, shelter.y, 12, shelter.h);
+    ctx.fillRect(shelter.x - cam, shelter.y, shelter.w, 12);
+  }
 
   const doorSolid = currentDoorSolid();
   if (doorSolid) {
