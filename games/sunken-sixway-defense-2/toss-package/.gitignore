@@ -1,0 +1,5 @@
+.granite/
+dist/
+node_modules/
+*.ait
+*.alt

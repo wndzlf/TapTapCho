@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" role="img" aria-label="Sunken Sixway Defense 2 app logo">
+  <defs>
+    <linearGradient id="bg" x1="64" y1="38" x2="546" y2="584" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#091a2b"/>
+      <stop offset="52%" stop-color="#12355c"/>
+      <stop offset="100%" stop-color="#08111d"/>
+    </linearGradient>
+    <radialGradient id="glow-left" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(164 170) rotate(90) scale(246)">
+      <stop offset="0%" stop-color="#3cd2c8" stop-opacity="0.34"/>
+      <stop offset="100%" stop-color="#3cd2c8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-right" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(434 430) rotate(90) scale(228)">
+      <stop offset="0%" stop-color="#f2b74f" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#f2b74f" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="board-fill" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(300 304) rotate(90) scale(236)">
+      <stop offset="0%" stop-color="#1a3e67" stop-opacity="0.82"/>
+      <stop offset="100%" stop-color="#0b1524" stop-opacity="0.24"/>
+    </radialGradient>
+    <radialGradient id="center-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(300 300) rotate(90) scale(144)">
+      <stop offset="0%" stop-color="#ffe38e" stop-opacity="0.34"/>
+      <stop offset="100%" stop-color="#ffe38e" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="lane-core" x1="300" y1="90" x2="300" y2="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#8ff0ff"/>
+      <stop offset="100%" stop-color="#54a8ff"/>
+    </linearGradient>
+    <linearGradient id="lane-edge" x1="300" y1="102" x2="300" y2="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#d5f8ff"/>
+      <stop offset="100%" stop-color="#8cc7ff"/>
+    </linearGradient>
+    <linearGradient id="tower-cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c9f6ff"/>
+      <stop offset="100%" stop-color="#68b8ff"/>
+    </linearGradient>
+    <linearGradient id="tower-orange" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffd9a2"/>
+      <stop offset="100%" stop-color="#ff9d64"/>
+    </linearGradient>
+    <linearGradient id="tower-green" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c6ffd7"/>
+      <stop offset="100%" stop-color="#5ad58d"/>
+    </linearGradient>
+    <linearGradient id="enemy" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffddb0"/>
+      <stop offset="100%" stop-color="#e28e59"/>
+    </linearGradient>
+    <pattern id="grid" width="70" height="60" patternUnits="userSpaceOnUse">
+      <path d="M17.5 0H52.5L70 30L52.5 60H17.5L0 30Z" fill="none" stroke="#2a4c6e" stroke-width="2"/>
+    </pattern>
+    <filter id="soft-shadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#020711" flood-opacity="0.56"/>
+    </filter>
+    <filter id="board-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="#7cd8ff" flood-opacity="0.28"/>
+    </filter>
+    <filter id="tower-glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="0" stdDeviation="9" flood-color="#c4f3ff" flood-opacity="0.32"/>
+    </filter>
+    <g id="lane">
+      <path d="M300 300L300 96" stroke="#091423" stroke-width="56" stroke-linecap="round" opacity="0.44"/>
+      <path d="M300 300L300 96" stroke="url(#lane-core)" stroke-width="28" stroke-linecap="round" filter="url(#board-glow)"/>
+      <path d="M300 300L300 96" stroke="url(#lane-edge)" stroke-width="8" stroke-linecap="round" opacity="0.92"/>
+      <circle cx="300" cy="180" r="12" fill="#16314c" stroke="#8ddfff" stroke-width="4"/>
+      <circle cx="300" cy="134" r="8" fill="#ffb872" opacity="0.86"/>
+    </g>
+    <g id="tower">
+      <circle cx="0" cy="0" r="31" fill="#0d1a2b" stroke="#97dcff" stroke-width="5"/>
+      <circle cx="0" cy="0" r="21" fill="url(#tower-cyan)" filter="url(#tower-glow)"/>
+      <path d="M0 -32L12 -12L0 -2L-12 -12Z" fill="#ecf9ff" opacity="0.88"/>
+      <circle cx="0" cy="0" r="7" fill="#08203a"/>
+    </g>
+    <g id="tower-heavy">
+      <circle cx="0" cy="0" r="36" fill="#111f31" stroke="#ffd697" stroke-width="5"/>
+      <circle cx="0" cy="0" r="23" fill="url(#tower-orange)" filter="url(#tower-glow)"/>
+      <rect x="-18" y="-8" width="36" height="16" rx="8" fill="#fff0c8" opacity="0.86"/>
+      <circle cx="0" cy="0" r="8" fill="#4e2e13"/>
+    </g>
+    <g id="tower-tank">
+      <circle cx="0" cy="0" r="34" fill="#102231" stroke="#9cf0bd" stroke-width="5"/>
+      <circle cx="0" cy="0" r="22" fill="url(#tower-green)" filter="url(#tower-glow)"/>
+      <path d="M-12 12H12L0 -16Z" fill="#effff2" opacity="0.82"/>
+      <circle cx="0" cy="0" r="7" fill="#173a21"/>
+    </g>
+    <g id="enemy-mark">
+      <rect x="-11" y="-11" width="22" height="22" rx="5" transform="rotate(45)" fill="url(#enemy)" stroke="#fff1d7" stroke-width="3"/>
+      <circle cx="0" cy="0" r="4" fill="#6e361b"/>
+    </g>
+  </defs>
+
+  <rect width="600" height="600" fill="url(#bg)"/>
+  <rect width="600" height="600" fill="url(#glow-left)"/>
+  <rect width="600" height="600" fill="url(#glow-right)"/>
+  <rect width="600" height="600" fill="url(#grid)" opacity="0.24"/>
+
+  <g opacity="0.2" fill="#d8f6ff">
+    <circle cx="96" cy="84" r="11"/>
+    <circle cx="146" cy="118" r="5"/>
+    <circle cx="486" cy="102" r="8"/>
+    <circle cx="452" cy="146" r="4"/>
+    <circle cx="132" cy="478" r="7"/>
+  </g>
+
+  <g filter="url(#soft-shadow)">
+    <circle cx="300" cy="300" r="222" fill="#07111d" opacity="0.78"/>
+  </g>
+  <circle cx="300" cy="300" r="214" fill="url(#board-fill)"/>
+  <circle cx="300" cy="300" r="205" fill="none" stroke="#23466c" stroke-width="24" opacity="0.6"/>
+  <circle cx="300" cy="300" r="166" fill="none" stroke="#74d4ff" stroke-width="12" opacity="0.94" filter="url(#board-glow)"/>
+  <circle cx="300" cy="300" r="116" fill="none" stroke="#ffd47a" stroke-width="8" stroke-dasharray="8 18" opacity="0.88"/>
+  <circle cx="300" cy="300" r="88" fill="#102441" opacity="0.58"/>
+  <circle cx="300" cy="300" r="86" fill="url(#center-glow)"/>
+
+  <g>
+    <use href="#lane"/>
+    <use href="#lane" transform="rotate(60 300 300)"/>
+    <use href="#lane" transform="rotate(120 300 300)"/>
+    <use href="#lane" transform="rotate(180 300 300)"/>
+    <use href="#lane" transform="rotate(240 300 300)"/>
+    <use href="#lane" transform="rotate(300 300 300)"/>
+  </g>
+
+  <g>
+    <use href="#tower" transform="translate(300 140)"/>
+    <use href="#tower-heavy" transform="translate(434 220) rotate(18)"/>
+    <use href="#tower-tank" transform="translate(434 378) rotate(-12)"/>
+    <use href="#tower" transform="translate(300 462) rotate(180)"/>
+    <use href="#tower-heavy" transform="translate(166 378) rotate(-18)"/>
+    <use href="#tower-tank" transform="translate(166 220) rotate(10)"/>
+  </g>
+
+  <g>
+    <use href="#enemy-mark" transform="translate(300 110)"/>
+    <use href="#enemy-mark" transform="translate(468 208)"/>
+    <use href="#enemy-mark" transform="translate(468 392)"/>
+    <use href="#enemy-mark" transform="translate(300 490)"/>
+    <use href="#enemy-mark" transform="translate(132 392)"/>
+    <use href="#enemy-mark" transform="translate(132 208)"/>
+  </g>
+
+  <g filter="url(#soft-shadow)">
+    <polygon points="300,224 356,256 356,320 300,352 244,320 244,256" fill="#132840" stroke="#ffd67d" stroke-width="8"/>
+    <polygon points="300,244 338,266 338,310 300,332 262,310 262,266" fill="#ffcf66"/>
+    <circle cx="300" cy="288" r="18" fill="#fff1b2"/>
+    <path d="M284 304L300 268L316 304Z" fill="#8b5a1d"/>
+  </g>
+
+  <circle cx="300" cy="300" r="256" fill="none" stroke="#97c7ff" stroke-width="2" opacity="0.08"/>
+  <rect width="600" height="600" fill="#020711" opacity="0.12"/>
+</svg>
