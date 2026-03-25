@@ -7,10 +7,15 @@
 - `TOSS_APP_NAME`
   - 토스 콘솔에 등록한 앱의 `appName` 슬러그와 동일해야 합니다.
 
+현재 콘솔 기준 권장값:
+
+- `TOSS_APP_NAME=real-estate-watch`
+- `TOSS_BRAND_DISPLAY_NAME=서울경기실시간아파트`
+
 ## 선택 환경변수
 
 - `TOSS_BRAND_DISPLAY_NAME`
-  - 기본값: `서울·경기 아파트 실거래`
+  - 기본값: `서울경기실시간아파트`
 - `TOSS_BRAND_ICON_URL`
   - 기본값: `https://static.toss.im/appsintoss/29647/18a3c412-0033-4217-89c2-7219a4e43034.png`
 - `TOSS_INLINE_AD_GROUP_ID`
