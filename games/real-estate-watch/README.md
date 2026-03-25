@@ -34,6 +34,16 @@ REAL_ESTATE_API_SERVICE_KEY="your-key" npm run sync-real-estate-watch
 
 `TOSS_APP_NAME`은 토스 콘솔에 등록한 앱 슬러그와 동일해야 합니다.
 
+## 공개 정책 페이지
+
+- 서비스 이용약관: `/Users/user/TapTapCho/games/real-estate-watch/terms.html`
+- 개인정보처리방침: `/Users/user/TapTapCho/games/real-estate-watch/privacy.html`
+
+배포 후 기준 URL 예시는 아래와 같습니다.
+
+- `https://tap-tap-cho.vercel.app/real-estate-watch/terms.html`
+- `https://tap-tap-cho.vercel.app/real-estate-watch/privacy.html`
+
 ## 주의
 
 - 스케줄은 GitHub Actions 기준 UTC 크론입니다.
