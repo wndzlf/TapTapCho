@@ -4,7 +4,7 @@
 
 ## 1) 필수 값 확정
 
-- `TOSS_APP_NAME`: 토스 개발자센터 앱 `appName`과 동일
+- `TOSS_APP_NAME`: `commercial-radar` (토스 개발자센터 앱 `appName`과 동일)
 - `TOSS_BRAND_DISPLAY_NAME`: 콘솔 표기명과 동일
 - `TOSS_BRAND_ICON_URL`: `https://` PNG URL (콘솔 아이콘과 동일 파일)
 - 약관 등록 URL:
@@ -20,7 +20,7 @@
 
 ```bash
 cd /Users/user/TapTapCho/games/commercial-area-radar/toss-package
-TOSS_APP_NAME="commercial-area-radar" \
+TOSS_APP_NAME="commercial-radar" \
 TOSS_BRAND_DISPLAY_NAME="동네 상권 레이더" \
 TOSS_BRAND_ICON_URL="https://static.toss.im/appsintoss/<app-id>/<icon-file>.png" \
 npm run build:web && npm run build
@@ -30,7 +30,7 @@ npm run build:web && npm run build
 
 ```bash
 cd /Users/user/TapTapCho/games/commercial-area-radar/toss-package
-strings -n 6 commercial-area-radar.ait | rg "appName|displayName|static.toss.im/appsintoss|raw.githubusercontent.com"
+strings -n 6 commercial-radar.ait | rg "appName|displayName|static.toss.im/appsintoss|raw.githubusercontent.com"
 ```
 
 검증 시 아래가 원하는 값으로 노출되어야 합니다.

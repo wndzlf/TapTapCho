@@ -22,19 +22,19 @@
 
 ```bash
 cd /Users/user/TapTapCho
-TOSS_APP_NAME="commercial-area-radar" npm run commercial-area-radar:toss:build
+TOSS_APP_NAME="commercial-radar" npm run commercial-area-radar:toss:build
 ```
 
 패키지 폴더에서 실행:
 
 ```bash
 cd /Users/user/TapTapCho/games/commercial-area-radar/toss-package
-TOSS_APP_NAME="commercial-area-radar" npm run build:web && npm run build
+TOSS_APP_NAME="commercial-radar" npm run build:web && npm run build
 ```
 
 ## 업로드 전 검증
 
 ```bash
 cd /Users/user/TapTapCho/games/commercial-area-radar/toss-package
-strings -n 6 commercial-area-radar.ait | rg "appName|displayName|raw.githubusercontent.com|static.toss.im/appsintoss"
+strings -n 6 commercial-radar.ait | rg "appName|displayName|raw.githubusercontent.com|static.toss.im/appsintoss"
 ```

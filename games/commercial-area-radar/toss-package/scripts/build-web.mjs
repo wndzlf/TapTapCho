@@ -8,6 +8,8 @@ const OUTDIR = path.join(PACKAGE_ROOT, 'dist');
 
 const FILES_TO_COPY = [
   'index.html',
+  'terms.html',
+  'privacy.html',
   'styles.css',
   'app.js',
   'latest-commercial-area-snapshot.json',

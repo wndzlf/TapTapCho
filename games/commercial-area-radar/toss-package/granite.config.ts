@@ -3,7 +3,7 @@ import { defineConfig } from '@apps-in-toss/web-framework/config';
 const DEFAULT_ICON =
   'https://raw.githubusercontent.com/wndzlf/TapTapCho/main/games/commercial-area-radar/appintos-logo-600.png';
 
-const appName = process.env.TOSS_APP_NAME ?? 'commercial-area-radar';
+const appName = process.env.TOSS_APP_NAME ?? 'commercial-radar';
 const displayName = process.env.TOSS_BRAND_DISPLAY_NAME ?? '동네 상권 레이더';
 const envIcon = process.env.TOSS_BRAND_ICON_URL?.trim();
 const icon = envIcon || DEFAULT_ICON;

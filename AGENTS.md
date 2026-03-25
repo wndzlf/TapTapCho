@@ -26,6 +26,11 @@
 - 반려 사유 2: 아이콘 정보 누락/불일치. `brand.icon`은 실제 접근 가능한 HTTPS PNG URL을 사용하고 콘솔 아이콘과 동일하게 맞춥니다.
 - 빌드 스크립트 재발 방지: `games/<project>/toss-package/package.json`의 `build` 경로는 `../../../node_modules/.bin/ait build`를 사용합니다.
 - 업로드 직전 검증: `.ait` 생성 후 `strings -n 6 <file>.ait | rg "appName|displayName|static.toss.im/appsintoss"`로 이름/아이콘 반영을 확인합니다.
+- 앱인토스 패키징 트러블슈팅(2026-03-25, commercial-area-radar)
+- 반려/등록 실패 사유 1: 프로젝트 폴더명(`commercial-area-radar`)과 토스 콘솔 실제 `appName`(`commercial-radar`)을 혼동하면 `.ait` 파일명과 내부 `appName`이 달라져 등록이 실패할 수 있습니다.
+- 이름 관련 재발 방지: `games/<project>/toss-package/granite.config.ts`의 기본 `appName`도 실제 콘솔 값으로 맞추고, 빌드/검증 예시 명령 역시 같은 값으로 유지합니다.
+- 반려/누락 사유 2: `terms.html`, `privacy.html`을 서비스 폴더에만 만들고 `toss-package/scripts/build-web.mjs` 복사 목록에 넣지 않으면 `.ait` 내부에 약관 페이지가 포함되지 않습니다.
+- 약관 관련 재발 방지: 약관/개인정보처리방침을 추가한 뒤에는 `dist/web/terms.html`, `dist/web/privacy.html` 존재 여부와 `.ait` 내부 `web/terms.html`, `web/privacy.html` 문자열까지 확인합니다.
 - 모바일 웹게임 성능 기본 원칙(2026-03-24)
 - 모바일 브라우저와 토스 웹뷰에서 주소창/시스템 UI를 웹 코드로 강제 전체화면 고정할 수 있다고 가정하지 않습니다.
 - 전체화면 요구가 있으면 우선 `requestFullscreen()` 지원 여부를 확인하고, 미지원 환경에서는 인게임 `집중 모드`처럼 HUD를 접어 게임판이 뷰포트 대부분을 차지하도록 설계합니다.

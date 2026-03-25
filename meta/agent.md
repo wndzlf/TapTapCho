@@ -42,6 +42,14 @@
 - 스토어 선출시가 없다면 기본 경로는 `GRAC 직접 신청 -> 등급분류증명서 등록`으로 본다.
 - 상세 절차와 준비물은 `/Users/user/TapTapCho/docs/repo-guide.md`의 `8-7) 게임 등급 정보 적용방법`을 따른다.
 
+## 앱인토스 패키징 트러블슈팅 메모
+
+- 2026-03-25 `commercial-area-radar`
+- 프로젝트 폴더명과 토스 콘솔 실제 `appName`이 다를 수 있다. 이 경우 `.ait` 파일명과 내부 `appName`은 반드시 콘솔 값(`commercial-radar`)으로 맞춘다.
+- `granite.config.ts` 기본 `appName`과 README/TOSS 문서의 빌드 예시도 실제 콘솔 값으로 유지한다.
+- 서비스 폴더에 `terms.html`, `privacy.html`을 추가했으면 `toss-package/scripts/build-web.mjs` 복사 목록에도 같이 넣어야 한다.
+- 빌드 후에는 `dist/web/terms.html`, `dist/web/privacy.html`와 최종 `.ait` 내부 `web/terms.html`, `web/privacy.html` 문자열을 함께 검증한다.
+
 ## Builder Prompt Template
 
 "`templates/webgame-template`를 기반으로 [게임명]을 구현해줘.
