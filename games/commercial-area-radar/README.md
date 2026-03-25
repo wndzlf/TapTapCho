@@ -55,6 +55,7 @@ COMMERCIAL_AREA_API_SERVICE_KEY="your-key" npm run sync-commercial-area-radar
 - `brand.displayName`과 콘솔 표기명이 일치해야 합니다.
 - `brand.icon`은 `https://` PNG URL을 사용하고, 토스 콘솔 아이콘과 동일 이미지로 맞춰야 합니다.
 - 아이콘 기본 산출물: `appintos-logo-600.svg`, `appintos-logo-600.png`.
+- 토스 콘솔 약관/동의문 등록용 문서: `terms.html`, `privacy.html`
 
 업로드 직전 검증:
 

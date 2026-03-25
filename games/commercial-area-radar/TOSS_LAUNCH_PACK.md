@@ -7,6 +7,9 @@
 - `TOSS_APP_NAME`: 토스 개발자센터 앱 `appName`과 동일
 - `TOSS_BRAND_DISPLAY_NAME`: 콘솔 표기명과 동일
 - `TOSS_BRAND_ICON_URL`: `https://` PNG URL (콘솔 아이콘과 동일 파일)
+- 약관 등록 URL:
+  - `https://tap-tap-cho.vercel.app/commercial-area-radar/terms.html`
+  - `https://tap-tap-cho.vercel.app/commercial-area-radar/privacy.html`
 
 ## 2) 아이콘 산출물
 
@@ -41,3 +44,4 @@ strings -n 6 commercial-area-radar.ait | rg "appName|displayName|static.toss.im/
 - 서비스 유형: 상권 정보 요약 앱
 - 데이터 기준: 소상공인시장진흥공단 상가(상권)정보 API 기반 주기 수집 스냅샷
 - 비고: 실시간 매출/유동인구/시세를 제공하지 않으며, 정보 제공 목적 서비스
+- 운영 문서: 서비스 이용약관, 개인정보처리방침 별도 URL 제공
