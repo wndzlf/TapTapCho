@@ -1,45 +1,36 @@
 # AGENTS
 
-- 루트의 게임 폴더는 호환성용 심볼릭 링크로 취급합니다.
-- 실제 작업은 항상 `games/<project>/` 안에서 진행합니다.
+## Workspace
+
+- 루트 게임 폴더는 호환성용 심볼릭 링크로 취급하고, 실제 작업은 항상 `games/<project>/` 안에서 진행합니다.
 - 별도 요청이 없으면 수정 범위는 한 프로젝트 안으로 제한합니다.
-- 공용 자산과 공용 코드는 `shared/`, `static/`에 둡니다.
-- 서버 코드는 `scripts/`에 둡니다.
-- 도구와 작업 절차 문서는 `meta/`, `docs/`에 둡니다.
+- 공용 자산/코드는 `shared/`, `static/`, 서버 코드는 `scripts/`, 도구/절차 문서는 `meta/`, `docs/`에 둡니다.
 - 런타임 동작과 공개 URL은 유지합니다.
-- 토스 미니앱 대상 프로젝트는 가능하면 처음부터 `orbitSurvivor`, `worm-arena-rush`처럼 앱인토스 업로드까지 한 번에 갈 수 있는 구조로 만듭니다.
-- 토스 미니앱 대상 프로젝트를 만들 때는 게임 본체 외에 아래 항목을 기본 산출물로 함께 준비합니다.
-- `games/<project>/toss-package/` 패키지
-- `granite.config.ts`, `package.json`, `scripts/build-web.mjs`, `scripts/dev-server.mjs`
-- 앱 아이콘 원본 또는 결과물인 정사각형 `600x600` PNG 파일
-- 가로형 썸네일 원본 또는 결과물인 `1932x828` PNG 파일
-- 필요 시 토스 등록용 스크린샷과 출시 문안 초안
-- `npm run build:web && npm run build`로 `.ait`를 다시 만들 수 있는 상태
-- 토스 미니앱 `.ait` 패키지에서는 `granite.config.ts`의 `brand.icon` 값을 항상 확인합니다.
-- `brand.icon`은 가능하면 생성형 `data:` URI 대신 안정적인 HTTPS 이미지 URL을 우선 사용합니다. 아이콘 정보 누락 또는 비정상 값은 심사 반려 원인이 될 수 있습니다.
-- 토스 개발자센터 미니앱 설정에도 같은 아이콘이 등록되어 있어야 합니다.
-- 토스 제출 전에는 개발자센터의 실제 `appName`과 `.ait` 내부 `appName`이 정확히 같은지 확인합니다.
-- 토스 제출 전에는 개발자센터의 콘솔 표기명과 `.ait` 내부 `brand.displayName`도 정확히 같아야 합니다.
-- 토스 심사 반려 트러블슈팅(2026-03-23, zigzag-memory-run)
-- 반려 사유 1: 미니앱 이름 불일치. 콘솔 이름(`지그재그메모리런`)과 `.ait` 내부 이름이 다르면 반려됩니다.
-- 이름 관련 재발 방지: `granite.config.ts`에서 `appName`, `brand.displayName`을 환경변수(`TOSS_APP_NAME`, `TOSS_BRAND_DISPLAY_NAME`)로 주입 가능하게 유지합니다.
-- 반려 사유 2: 아이콘 정보 누락/불일치. `brand.icon`은 실제 접근 가능한 HTTPS PNG URL을 사용하고 콘솔 아이콘과 동일하게 맞춥니다.
-- 빌드 스크립트 재발 방지: `games/<project>/toss-package/package.json`의 `build` 경로는 `../../../node_modules/.bin/ait build`를 사용합니다.
-- 업로드 직전 검증: `.ait` 생성 후 `strings -n 6 <file>.ait | rg "appName|displayName|static.toss.im/appsintoss"`로 이름/아이콘 반영을 확인합니다.
-- 앱인토스 패키징 트러블슈팅(2026-03-25, commercial-area-radar)
-- 반려/등록 실패 사유 1: 프로젝트 폴더명(`commercial-area-radar`)과 토스 콘솔 실제 `appName`(`commercial-radar`)을 혼동하면 `.ait` 파일명과 내부 `appName`이 달라져 등록이 실패할 수 있습니다.
-- 이름 관련 재발 방지: `games/<project>/toss-package/granite.config.ts`의 기본 `appName`도 실제 콘솔 값으로 맞추고, 빌드/검증 예시 명령 역시 같은 값으로 유지합니다.
-- 반려/누락 사유 2: `terms.html`, `privacy.html`을 서비스 폴더에만 만들고 `toss-package/scripts/build-web.mjs` 복사 목록에 넣지 않으면 `.ait` 내부에 약관 페이지가 포함되지 않습니다.
-- 약관 관련 재발 방지: 약관/개인정보처리방침을 추가한 뒤에는 `dist/web/terms.html`, `dist/web/privacy.html` 존재 여부와 `.ait` 내부 `web/terms.html`, `web/privacy.html` 문자열까지 확인합니다.
-- 모바일 웹게임 성능 기본 원칙(2026-03-24)
-- 모바일 브라우저와 토스 웹뷰에서 주소창/시스템 UI를 웹 코드로 강제 전체화면 고정할 수 있다고 가정하지 않습니다.
-- 전체화면 요구가 있으면 우선 `requestFullscreen()` 지원 여부를 확인하고, 미지원 환경에서는 인게임 `집중 모드`처럼 HUD를 접어 게임판이 뷰포트 대부분을 차지하도록 설계합니다.
-- 모바일 레이아웃은 `390x844` 전후 뷰포트를 기본 검수 기준으로 삼고, 세로 높이를 많이 먹는 헤더·가이드·크레딧은 모바일에서 축소하거나 숨기는 쪽을 우선 검토합니다.
+
+## Apps in Toss
+
+- 토스 미니앱 대상 프로젝트는 처음부터 업로드 가능한 구조로 만듭니다.
+- 기본 산출물: `games/<project>/toss-package/`, `granite.config.ts`, `package.json`, `scripts/build-web.mjs`, `scripts/dev-server.mjs`, `600x600` 아이콘, `1932x828` 썸네일, 필요 시 스크린샷/출시 문안.
+- 항상 `npm run build:web && npm run build`로 `.ait`를 다시 만들 수 있어야 합니다.
+- `brand.icon`은 생성형 `data:` URI보다 안정적인 HTTPS PNG를 우선 사용하고, 개발자센터 등록 아이콘과 동일하게 맞춥니다.
+- `.ait`의 `appName`과 `brand.displayName`은 토스 콘솔 값과 정확히 같아야 합니다. 프로젝트 폴더명과 콘솔 `appName`이 다를 수 있으니 혼동하지 않습니다.
+- `granite.config.ts`는 실제 콘솔 값 기준으로 유지하고, 필요하면 `TOSS_APP_NAME`, `TOSS_BRAND_DISPLAY_NAME`으로 주입 가능하게 둡니다.
+- `games/<project>/toss-package/package.json`의 `build` 경로는 `../../../node_modules/.bin/ait build`를 사용합니다.
+- `terms.html`, `privacy.html`를 추가했으면 `toss-package/scripts/build-web.mjs` 복사 목록에도 포함합니다.
+- 업로드 전에는 `strings -n 6 <file>.ait | rg "appName|displayName|static.toss.im/appsintoss"`로 이름/아이콘 반영을 확인합니다.
+- 약관 페이지를 넣은 프로젝트는 `dist/web/terms.html`, `dist/web/privacy.html` 존재 여부와 `.ait` 내부 `web/terms.html`, `web/privacy.html` 문자열도 확인합니다.
+
+## Mobile Web Performance
+
+- 모바일 브라우저와 토스 웹뷰에서 웹 코드로 전체화면을 강제할 수 있다고 가정하지 않습니다. 필요하면 `requestFullscreen()` 지원 여부를 먼저 보고, 미지원 환경은 인게임 집중 모드로 대응합니다.
+- 모바일 검수는 `390x844` 전후 뷰포트를 기본으로 보고, 세로 공간을 많이 먹는 헤더/가이드/크레딧은 모바일에서 축소하거나 숨기는 쪽을 우선 검토합니다.
 - 모바일/저사양 환경에서는 `backdrop-filter`, 과한 `box-shadow`, 큰 blur, 다량 파티클, 캔버스 그림자, 과도한 물리 반복 같은 고비용 효과를 기본적으로 경계합니다.
-- 캔버스 물리 게임은 모바일에서 성능 모드를 기본 옵션으로 두고, 파티클 수와 이펙트 수를 제한하며 충돌/솔버 반복 횟수도 기기 상황에 맞춰 줄일 수 있게 설계합니다.
+- 캔버스 물리 게임은 모바일에서 성능 모드를 기본 옵션으로 두고, 파티클/이펙트 수와 충돌/솔버 반복 횟수를 제한할 수 있게 설계합니다.
 - 웹게임 작업 후에는 가능하면 모바일 뷰포트 스크린샷이나 실제 기기 확인으로 화면 점유율과 버벅임을 함께 검수합니다.
-- 앱인토스 게임 등급 메모(2026-03-25)
-- 앱인토스에 게임을 정식 출시하려면 원칙적으로 `게임 등급분류`가 필요합니다.
+
+## Apps in Toss Game Rating
+
+- 앱인토스에 게임을 정식 출시하려면 원칙적으로 외부 `게임 등급분류`가 필요합니다.
 - 토스가 등급을 직접 발급하지는 않으며, 콘솔 `게임 등급분류` 단계에 외부 등급 정보를 등록하는 방식으로 진행합니다.
-- 확보 경로는 보통 `GRAC 직접 신청` 또는 `스토어 IARC 등급 + 스토어 링크 제출` 2가지입니다.
+- 확보 경로는 보통 `GRAC 직접 신청` 또는 `스토어 IARC 등급 + 스토어 링크 제출`입니다.
 - 스토어 선출시가 없다면 기본 경로는 `GRAC 직접 신청 -> 등급분류증명서 등록`으로 봅니다.
