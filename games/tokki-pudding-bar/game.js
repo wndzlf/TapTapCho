@@ -117,6 +117,8 @@ let bodies = [];
 let sparkles = [];
 let rings = [];
 let bursts = [];
+let confetti = [];
+let celebrations = [];
 let floatTexts = [];
 
 let currentPiece = null;
@@ -418,6 +420,8 @@ function resetRound() {
   sparkles = [];
   rings = [];
   bursts = [];
+  confetti = [];
+  celebrations = [];
   floatTexts = [];
   screenShake = 0;
   aimX = FIELD_CENTER_X;
@@ -558,6 +562,95 @@ function spawnFloatText(x, y, text, color) {
     text,
     color,
   });
+}
+
+function spawnConfetti(x, y, colors, strength = 1) {
+  const palette = Array.isArray(colors) ? colors : [colors];
+  const count = performanceMode
+    ? Math.min(12, Math.round(4 + strength * 3))
+    : Math.min(34, Math.round(10 + strength * 7));
+
+  for (let i = 0; i < count; i += 1) {
+    const life = randomBetween(0.68, 1.12) + strength * 0.08;
+    confetti.push({
+      x,
+      y,
+      vx: randomBetween(-180, 180) * (0.55 + strength * 0.18),
+      vy: randomBetween(-320, -120) * (0.62 + strength * 0.16),
+      gravity: randomBetween(420, 720),
+      size: randomBetween(4, 9) * (0.85 + strength * 0.12),
+      rotation: randomBetween(-Math.PI, Math.PI),
+      spin: randomBetween(-7.5, 7.5),
+      life,
+      maxLife: life,
+      color: palette[i % palette.length],
+    });
+  }
+
+  if (performanceMode && confetti.length > 36) {
+    confetti.splice(0, confetti.length - 36);
+  } else if (confetti.length > 120) {
+    confetti.splice(0, confetti.length - 120);
+  }
+}
+
+function getCelebrationCopy(tier, isJackpot = false) {
+  if (isJackpot) {
+    return { headline: '황금 폭죽!', subhead: '잭팟' };
+  }
+
+  const piece = PIECES[tier];
+  if (tier >= PIECES.length - 1) {
+    return { headline: '달토끼 카니발!', subhead: '전설 합체' };
+  }
+  if (tier >= 6) {
+    return { headline: `${piece.short} 축제!`, subhead: '메가 합체' };
+  }
+  if (tier >= 4) {
+    return { headline: `${piece.short} 파티!`, subhead: '대성공' };
+  }
+  return { headline: `${piece.short} 합체!`, subhead: '팡!' };
+}
+
+function spawnCenterCelebration(tier, options = {}) {
+  const piece = PIECES[tier];
+  const isJackpot = Boolean(options.isJackpot);
+  const copy = getCelebrationCopy(tier, isJackpot);
+  const power = clamp(0.9 + tier * 0.24 + (isJackpot ? 0.8 : 0), 0.95, 3.2);
+  const life = 0.78 + power * 0.14 + (isJackpot ? 0.24 : 0);
+  const x = FIELD_CENTER_X;
+  const y = FIELD_TOP + (FIELD_BOTTOM - FIELD_TOP) * 0.42;
+
+  celebrations.push({
+    x,
+    y,
+    tier,
+    power,
+    life,
+    maxLife: life,
+    headline: copy.headline,
+    subhead: copy.subhead,
+    color: piece.rim,
+    accent: piece.accent,
+    fill: piece.fill,
+  });
+
+  if (celebrations.length > (performanceMode ? 2 : 4)) {
+    celebrations.splice(0, celebrations.length - (performanceMode ? 2 : 4));
+  }
+
+  spawnConfetti(x, y + 8, [piece.rim, piece.fill, piece.accent, '#fffdf5'], power);
+  spawnBurst(x, y, [piece.rim, piece.accent, '#ffffff'], 0.85 + power * 0.4);
+  spawnSparkles(x, y, piece.accent, 8 + Math.round(power * 4), 0.7 + power * 0.15);
+  spawnRing(x, y, piece.rim, 16 + power * 12);
+  if (!performanceMode && (tier >= 4 || isJackpot)) {
+    spawnRing(x, y, '#fffdf5', 10 + power * 7);
+  }
+
+  screenShake = Math.max(
+    screenShake,
+    performanceMode ? 0.8 + power * 0.25 : Math.min(7.2, 1.5 + power * 1.1),
+  );
 }
 
 function ensureAudioContext() {
@@ -800,6 +893,7 @@ function mergeBodies(primary, secondary) {
   spawnSparkles(merged.x, merged.y, piece.rim, 14 + combo * 2, 1 + combo * 0.08);
   spawnBurst(merged.x, merged.y, [piece.rim, piece.accent, '#ffffff'], 0.85 + combo * 0.12);
   spawnFloatText(merged.x, merged.y - piece.radius * 0.1, `+${piece.points + comboBonus}`, piece.rim);
+  spawnCenterCelebration(newTier);
 
   if (newTier === PIECES.length - 1) {
     setStatus('달토끼 푸딩 등장! 계속 쌓으면 더 오래 버틸 수 있어요.');
@@ -831,6 +925,7 @@ function clearLegendBodies(primary, secondary) {
   spawnSparkles(x, y, legendPiece.rim, 20 + combo * 3, 1.2 + combo * 0.06);
   spawnBurst(x, y, [legendPiece.rim, '#fff7cb', '#ffffff'], 1.7 + combo * 0.08);
   spawnFloatText(x, y - legendPiece.radius * 0.08, `+${reward}`, legendPiece.rim);
+  spawnCenterCelebration(primary.tier, { isJackpot: true });
 
   setStatus(combo > 1 ? `황금 달토끼 정리! 연쇄 ${combo}회 보너스!` : '황금 달토끼 2개가 터졌어요! 대보너스 획득!');
   playTone('jackpot', primary.tier);
@@ -940,6 +1035,26 @@ function updateEffects(dt) {
     burst.life -= dt;
     if (burst.life <= 0) {
       bursts.splice(i, 1);
+    }
+  }
+
+  for (let i = confetti.length - 1; i >= 0; i -= 1) {
+    const piece = confetti[i];
+    piece.vy += piece.gravity * dt;
+    piece.x += piece.vx * dt;
+    piece.y += piece.vy * dt;
+    piece.rotation += piece.spin * dt;
+    piece.life -= dt;
+    if (piece.life <= 0) {
+      confetti.splice(i, 1);
+    }
+  }
+
+  for (let i = celebrations.length - 1; i >= 0; i -= 1) {
+    const celebration = celebrations[i];
+    celebration.life -= dt;
+    if (celebration.life <= 0) {
+      celebrations.splice(i, 1);
     }
   }
 
@@ -1374,6 +1489,91 @@ function drawBodies() {
   }
 }
 
+function drawConfetti() {
+  for (const piece of confetti) {
+    ctx.save();
+    ctx.translate(piece.x, piece.y);
+    ctx.rotate(piece.rotation);
+    ctx.globalAlpha = piece.life / piece.maxLife;
+    ctx.fillStyle = piece.color;
+    ctx.fillRect(-piece.size * 0.5, -piece.size * 0.28, piece.size, piece.size * 0.56);
+    if (!performanceMode) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+      ctx.fillRect(-piece.size * 0.5, -piece.size * 0.28, piece.size * 0.24, piece.size * 0.56);
+    }
+    ctx.restore();
+  }
+}
+
+function drawCelebrations() {
+  for (const celebration of celebrations) {
+    const alpha = celebration.life / celebration.maxLife;
+    const progress = 1 - alpha;
+    const coreRadius = 26 + celebration.power * 14 + progress * 22;
+    const haloRadius = coreRadius * (1.35 + progress * 0.2);
+
+    ctx.save();
+    ctx.translate(celebration.x, celebration.y - progress * 12);
+    ctx.globalAlpha = alpha;
+
+    const glow = ctx.createRadialGradient(0, 0, 6, 0, 0, haloRadius);
+    glow.addColorStop(0, '#ffffffee');
+    glow.addColorStop(0.28, `${celebration.accent}bb`);
+    glow.addColorStop(0.62, `${celebration.color}40`);
+    glow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(0, 0, haloRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = celebration.color;
+    ctx.lineWidth = performanceMode ? 2 : 3 + celebration.power * 0.25;
+    ctx.beginPath();
+    ctx.arc(0, 0, coreRadius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    if (!performanceMode) {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.76)';
+      ctx.setLineDash([8, 10]);
+      ctx.beginPath();
+      ctx.arc(0, 0, coreRadius * 0.72, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      if (celebration.power > 1.8) {
+        ctx.strokeStyle = '#fffdf5';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 8; i += 1) {
+          const angle = progress * 1.6 + i * (Math.PI / 4);
+          const inner = coreRadius + 8;
+          const outer = inner + 10 + celebration.power * 5;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+          ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+          ctx.stroke();
+        }
+      }
+    }
+
+    ctx.textAlign = 'center';
+    ctx.shadowColor = `${celebration.color}aa`;
+    ctx.shadowBlur = performanceMode ? 10 : 18;
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = 'rgba(97, 57, 35, 0.24)';
+    ctx.lineWidth = performanceMode ? 2.5 : 4;
+    ctx.fillStyle = '#fffdf8';
+    ctx.font = `900 ${Math.round(18 + celebration.power * 3.2)}px "Noto Sans KR", sans-serif`;
+    ctx.strokeText(celebration.headline, 0, 8);
+    ctx.fillText(celebration.headline, 0, 8);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = celebration.color;
+    ctx.font = `800 ${Math.round(11 + celebration.power * 1.8)}px "Noto Sans KR", sans-serif`;
+    ctx.strokeText(celebration.subhead, 0, -20 - celebration.power * 2);
+    ctx.fillText(celebration.subhead, 0, -20 - celebration.power * 2);
+    ctx.restore();
+  }
+}
+
 function drawEffects() {
   if (performanceMode) {
     for (const burst of bursts) {
@@ -1387,6 +1587,9 @@ function drawEffects() {
       ctx.stroke();
       ctx.restore();
     }
+
+    drawConfetti();
+    drawCelebrations();
 
     for (const label of floatTexts) {
       ctx.save();
@@ -1439,6 +1642,9 @@ function drawEffects() {
   }
   ctx.restore();
 
+  drawConfetti();
+  drawCelebrations();
+
   for (const label of floatTexts) {
     ctx.save();
     ctx.globalAlpha = label.life / label.maxLife;
@@ -1467,22 +1673,6 @@ function drawComboChip() {
   drawRoundedRect(x, y, width, 42, 22, gradient);
   ctx.fillStyle = '#fffdf9';
   ctx.fillText(text, x + 13, y + 27);
-  ctx.restore();
-}
-
-function drawStatusChip() {
-  const text = statusMessage;
-  ctx.save();
-  ctx.font = '700 14px "Noto Sans KR", sans-serif';
-  const width = Math.min(W - 34, ctx.measureText(text).width + 24);
-  const x = (W - width) * 0.5;
-  const y = H - 84;
-  const gradient = ctx.createLinearGradient(x, y, x + width, y + 38);
-  gradient.addColorStop(0, 'rgba(255, 255, 255, 0.88)');
-  gradient.addColorStop(1, 'rgba(255, 243, 230, 0.96)');
-  drawRoundedRect(x, y, width, 38, 19, gradient, 'rgba(103, 63, 39, 0.08)');
-  ctx.fillStyle = '#4b2b1d';
-  ctx.fillText(text, x + 12, y + 24);
   ctx.restore();
 }
 
@@ -1567,7 +1757,6 @@ function render() {
   drawAimGuide();
   drawEffects();
   drawComboChip();
-  drawStatusChip();
   drawIdleOverlay();
   drawGameOverOverlay();
   ctx.restore();
