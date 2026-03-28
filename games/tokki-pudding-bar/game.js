@@ -75,20 +75,26 @@ const MAX_ACCUMULATOR = 0.12;
 const DROP_COOLDOWN = 0.22;
 const DANGER_LIMIT = 1.1;
 const MERGE_CONTACT_TOLERANCE = 2.5;
+const MAX_HORIZONTAL_SPEED = 240;
+const MAX_RISE_SPEED = 320;
+const MAX_FALL_SPEED = 980;
+const MAX_SPIN_SPEED = 2.2;
+const IMPACT_EFFECT_THRESHOLD = 44;
+const LEGEND_CLEAR_POINTS = 1400;
 const BGM_SRC = 'assets/audio/tokki-pudding-bar-bgm-puzzle-game-249202.mp3';
 const BGM_VOLUME = 0.22;
 const PREVIEW_MODE = previewParams.get('preview') || '';
 const PREVIEW_FOCUS = previewParams.get('focus') === '1';
 
 const PIECES = [
-  { label: '말랑 젤리', short: '젤리', fill: '#ffd6e7', rim: '#ff9dc0', accent: '#fff6fb', ear: '#ffc2d8', points: 10, radius: 24 },
-  { label: '토끼 비즈', short: '비즈', fill: '#ffe9bf', rim: '#ffca77', accent: '#fff9ea', ear: '#ffd5a6', points: 18, radius: 30 },
-  { label: '딸기 푸딩', short: '딸기', fill: '#ffbfd1', rim: '#ff7ea8', accent: '#fff4f8', ear: '#ffb1cc', points: 32, radius: 37 },
-  { label: '민트 푸딩', short: '민트', fill: '#c9f7e6', rim: '#77d8b4', accent: '#eefdf8', ear: '#a5f1d4', points: 52, radius: 45 },
-  { label: '크림 푸딩', short: '크림', fill: '#fff0cf', rim: '#ffc676', accent: '#fffaf0', ear: '#ffdba3', points: 82, radius: 54 },
-  { label: '별 토끼볼', short: '별토끼', fill: '#e9d9ff', rim: '#bf8cff', accent: '#fbf6ff', ear: '#dcc6ff', points: 128, radius: 64 },
-  { label: '구름 토끼', short: '구름', fill: '#d7ecff', rim: '#7cb7ff', accent: '#f4faff', ear: '#bfdcff', points: 192, radius: 75 },
-  { label: '달토끼 푸딩', short: '달토끼', fill: '#fff3d1', rim: '#ffde78', accent: '#fffdf6', ear: '#ffe7b0', points: 300, radius: 87 },
+  { label: '말랑 젤리', short: '젤리', fill: '#ffd9ef', rim: '#ff86bb', accent: '#fff4fb', ear: '#ffc0dc', points: 10, radius: 24 },
+  { label: '토끼 비즈', short: '비즈', fill: '#ffe1b7', rim: '#ffad55', accent: '#fff8e9', ear: '#ffd09f', points: 18, radius: 30 },
+  { label: '딸기 푸딩', short: '딸기', fill: '#ffb8cb', rim: '#ff5d8e', accent: '#fff3f7', ear: '#ff9cba', points: 32, radius: 37 },
+  { label: '민트 푸딩', short: '민트', fill: '#caf5d7', rim: '#55cf8c', accent: '#effdf4', ear: '#9be8b8', points: 52, radius: 45 },
+  { label: '소다 푸딩', short: '소다', fill: '#d5e4ff', rim: '#7e9fff', accent: '#f4f7ff', ear: '#b7c7ff', points: 82, radius: 54 },
+  { label: '별 토끼볼', short: '별토끼', fill: '#ead3ff', rim: '#b47eff', accent: '#fcf6ff', ear: '#d8bcff', points: 128, radius: 64 },
+  { label: '구름 토끼', short: '구름', fill: '#cbf4ff', rim: '#57cff6', accent: '#effcff', ear: '#9feaff', points: 192, radius: 75 },
+  { label: '달토끼 푸딩', short: '달토끼', fill: '#fff1a5', rim: '#ffc62f', accent: '#fffbe1', ear: '#ffe179', points: 300, radius: 87 },
 ];
 
 const AudioContextCtor = window.AudioContext || window.webkitAudioContext || null;
@@ -110,6 +116,7 @@ let statusMessage = '손가락으로 위치를 맞추고 놓으면 토끼푸딩�
 let bodies = [];
 let sparkles = [];
 let rings = [];
+let bursts = [];
 let floatTexts = [];
 
 let currentPiece = null;
@@ -124,6 +131,7 @@ let lastFrameAt = performance.now();
 let accumulator = 0;
 let resizeQueued = false;
 let dangerNoticeLevel = 0;
+let screenShake = 0;
 
 let unsubscribeSafeArea = () => {};
 let unsubscribeBack = () => {};
@@ -367,6 +375,7 @@ function createBody(tier, x, y) {
     spin: randomBetween(-1.2, 1.2),
     squish: 0,
     mergeCooldown: 0.14,
+    impactCooldown: 0,
     blinkAt: randomBetween(1.2, 3.8),
     blinkTime: 0,
   };
@@ -408,7 +417,9 @@ function resetRound() {
   bodies = [];
   sparkles = [];
   rings = [];
+  bursts = [];
   floatTexts = [];
+  screenShake = 0;
   aimX = FIELD_CENTER_X;
   renderedAimX = FIELD_CENTER_X;
   currentPiece = createPreviewPiece(randomSpawnTier());
@@ -502,6 +513,41 @@ function spawnRing(x, y, color, radius = 16) {
   });
 }
 
+function spawnBurst(x, y, colors, strength = 1) {
+  const palette = Array.isArray(colors) ? colors : [colors];
+  const count = performanceMode
+    ? Math.min(5, Math.round(2 + strength * 2))
+    : Math.min(14, Math.round(5 + strength * 4));
+
+  for (let i = 0; i < count; i += 1) {
+    const angle = (Math.PI * 2 * i) / count + randomBetween(-0.18, 0.18);
+    const speed = randomBetween(70, 170) * (0.6 + strength * 0.35);
+    const life = randomBetween(0.14, 0.28);
+    bursts.push({
+      x,
+      y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      width: randomBetween(1.6, 3.8),
+      length: randomBetween(8, 18) * (0.75 + strength * 0.25),
+      life,
+      maxLife: life,
+      color: palette[i % palette.length],
+    });
+  }
+
+  if (performanceMode && bursts.length > 28) {
+    bursts.splice(0, bursts.length - 28);
+  } else if (bursts.length > 72) {
+    bursts.splice(0, bursts.length - 72);
+  }
+
+  screenShake = Math.max(
+    screenShake,
+    performanceMode ? 0.6 + strength * 0.4 : Math.min(5.8, 1.1 + strength * 1.7),
+  );
+}
+
 function spawnFloatText(x, y, text, color) {
   floatTexts.push({
     x,
@@ -542,8 +588,10 @@ function playTone(kind, tier = 0) {
   filter.type = 'lowpass';
   filter.frequency.setValueAtTime(1800, now);
   gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.exponentialRampToValueAtTime(kind === 'finish' ? 0.12 : 0.1, now + 0.018);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + (kind === 'finish' ? 0.72 : 0.32));
+  const peakGain = kind === 'jackpot' ? 0.14 : (kind === 'finish' ? 0.12 : 0.1);
+  const fadeTime = kind === 'jackpot' ? 0.58 : (kind === 'finish' ? 0.72 : 0.32);
+  gain.gain.exponentialRampToValueAtTime(peakGain, now + 0.018);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + fadeTime);
   filter.connect(gain);
   gain.connect(audioCtx.destination);
 
@@ -561,6 +609,10 @@ function playTone(kind, tier = 0) {
   } else if (kind === 'legend') {
     addVoice(oscillators, 'triangle', 420, 960, 0, 0.2, now, gain, filter);
     addVoice(oscillators, 'sine', 640, 1280, 0.08, 0.2, now, gain, filter);
+  } else if (kind === 'jackpot') {
+    addVoice(oscillators, 'triangle', 520, 1040, 0, 0.18, now, gain, filter);
+    addVoice(oscillators, 'triangle', 780, 1560, 0.06, 0.18, now, gain, filter);
+    addVoice(oscillators, 'sine', 980, 760, 0.18, 0.24, now, gain, filter);
   } else if (kind === 'finish') {
     addVoice(oscillators, 'triangle', 420, 260, 0, 0.22, now, gain, filter);
     addVoice(oscillators, 'sine', 260, 180, 0.12, 0.34, now, gain, filter);
@@ -618,15 +670,18 @@ function resolveWorld(body) {
     body.y = floor;
     if (body.vy > 0) {
       const impact = Math.abs(body.vy);
-      body.vy *= -0.18;
-      body.vx *= 0.97;
-      body.spin *= 0.92;
+      body.vy *= -0.12;
+      body.vx *= 0.9;
+      body.spin *= 0.76;
       body.squish = Math.max(body.squish, Math.min(0.26, impact * 0.00018));
       if (Math.abs(body.vy) < 24) {
         body.vy = 0;
       }
-      if (Math.abs(body.vx) < 3) {
+      if (Math.abs(body.vx) < 8) {
         body.vx = 0;
+      }
+      if (Math.abs(body.spin) < 0.08) {
+        body.spin = 0;
       }
     }
   }
@@ -661,9 +716,11 @@ function resolvePair(a, b) {
   const rvx = b.vx - a.vx;
   const rvy = b.vy - a.vy;
   const normalSpeed = rvx * nx + rvy * ny;
+  const contactX = a.x + nx * (a.r - overlap * 0.5);
+  const contactY = a.y + ny * (a.r - overlap * 0.5);
 
   if (normalSpeed < 0) {
-    const restitution = a.tier === b.tier ? 0.1 : 0.18;
+    const restitution = a.tier === b.tier ? 0.05 : 0.12;
     const impulse = (-(1 + restitution) * normalSpeed) / ((1 / a.mass) + (1 / b.mass));
     const ix = impulse * nx;
     const iy = impulse * ny;
@@ -677,9 +734,9 @@ function resolvePair(a, b) {
     const ty = nx;
     const tangentSpeed = rvx * tx + rvy * ty;
     const tangentImpulse = clamp(
-      (-tangentSpeed * 0.08) / ((1 / a.mass) + (1 / b.mass)),
-      -Math.abs(impulse) * 0.4,
-      Math.abs(impulse) * 0.4,
+      (-tangentSpeed * 0.18) / ((1 / a.mass) + (1 / b.mass)),
+      -Math.abs(impulse) * 0.5,
+      Math.abs(impulse) * 0.5,
     );
     const fx = tangentImpulse * tx;
     const fy = tangentImpulse * ty;
@@ -689,9 +746,26 @@ function resolvePair(a, b) {
     b.vy += fy / b.mass;
   }
 
+  const impactStrength = Math.max(overlap * 20, -normalSpeed * 0.62);
+  if (impactStrength > IMPACT_EFFECT_THRESHOLD && a.impactCooldown === 0 && b.impactCooldown === 0) {
+    const leadPiece = PIECES[Math.max(a.tier, b.tier)];
+    const burstStrength = clamp(impactStrength / 90, 0.45, 1.5);
+    spawnRing(contactX, contactY, leadPiece.rim, 8 + burstStrength * 9);
+    spawnSparkles(contactX, contactY, leadPiece.accent, 4 + Math.round(burstStrength * 6), 0.4 + burstStrength * 0.2);
+    spawnBurst(contactX, contactY, [PIECES[a.tier].rim, PIECES[b.tier].rim, '#ffffff'], burstStrength);
+    a.impactCooldown = 0.09;
+    b.impactCooldown = 0.09;
+  }
+
   const squishAmount = Math.min(0.26, overlap / minDist);
   a.squish = Math.max(a.squish, squishAmount);
   b.squish = Math.max(b.squish, squishAmount);
+}
+
+function triggerCombo() {
+  combo = comboTimer > 0 ? combo + 1 : 1;
+  comboTimer = 1.08;
+  return combo > 1 ? combo * 6 : 0;
 }
 
 function mergeBodies(primary, secondary) {
@@ -706,9 +780,9 @@ function mergeBodies(primary, secondary) {
     (primary.y + secondary.y) * 0.5 - 2,
   );
 
-  merged.vx = (primary.vx + secondary.vx) * 0.22;
-  merged.vy = Math.min(primary.vy, secondary.vy) * 0.15 - 28;
-  merged.spin = (primary.spin + secondary.spin) * 0.32;
+  merged.vx = clamp((primary.vx + secondary.vx) * 0.18, -84, 84);
+  merged.vy = clamp(Math.min(primary.vy, secondary.vy) * 0.12 - 18, -68, 44);
+  merged.spin = clamp((primary.spin + secondary.spin) * 0.18, -0.72, 0.72);
   merged.squish = 0.24;
   merged.mergeCooldown = 0.24;
   maxTierReached = Math.max(maxTierReached, newTier);
@@ -716,17 +790,15 @@ function mergeBodies(primary, secondary) {
   bodies = bodies.filter((body) => body.id !== primary.id && body.id !== secondary.id);
   bodies.push(merged);
 
-  combo = comboTimer > 0 ? combo + 1 : 1;
-  comboTimer = 1.08;
-
   const piece = PIECES[newTier];
-  const comboBonus = combo > 1 ? combo * 6 : 0;
+  const comboBonus = triggerCombo();
   score += piece.points + comboBonus;
   updateHud();
   updateBestIfNeeded();
 
   spawnRing(merged.x, merged.y, piece.rim, piece.radius * 0.45);
   spawnSparkles(merged.x, merged.y, piece.rim, 14 + combo * 2, 1 + combo * 0.08);
+  spawnBurst(merged.x, merged.y, [piece.rim, piece.accent, '#ffffff'], 0.85 + combo * 0.12);
   spawnFloatText(merged.x, merged.y - piece.radius * 0.1, `+${piece.points + comboBonus}`, piece.rim);
 
   if (newTier === PIECES.length - 1) {
@@ -739,6 +811,29 @@ function mergeBodies(primary, secondary) {
     setStatus(`${piece.label} 완성!`);
     playTone('merge', newTier);
   }
+}
+
+function clearLegendBodies(primary, secondary) {
+  const legendPiece = PIECES[primary.tier];
+  const x = (primary.x + secondary.x) * 0.5;
+  const y = (primary.y + secondary.y) * 0.5;
+
+  bodies = bodies.filter((body) => body.id !== primary.id && body.id !== secondary.id);
+
+  const comboBonus = triggerCombo();
+  const reward = LEGEND_CLEAR_POINTS + comboBonus;
+  score += reward;
+  updateHud();
+  updateBestIfNeeded();
+
+  spawnRing(x, y, legendPiece.rim, legendPiece.radius * 0.62);
+  spawnRing(x, y, '#fff7cb', legendPiece.radius * 0.28);
+  spawnSparkles(x, y, legendPiece.rim, 20 + combo * 3, 1.2 + combo * 0.06);
+  spawnBurst(x, y, [legendPiece.rim, '#fff7cb', '#ffffff'], 1.7 + combo * 0.08);
+  spawnFloatText(x, y - legendPiece.radius * 0.08, `+${reward}`, legendPiece.rim);
+
+  setStatus(combo > 1 ? `황금 달토끼 정리! 연쇄 ${combo}회 보너스!` : '황금 달토끼 2개가 터졌어요! 대보너스 획득!');
+  playTone('jackpot', primary.tier);
 }
 
 function processMerges() {
@@ -754,7 +849,7 @@ function processMerges() {
         const a = bodies[i];
         const b = bodies[j];
 
-        if (a.tier !== b.tier || a.tier >= PIECES.length - 1) {
+        if (a.tier !== b.tier) {
           continue;
         }
         if (a.mergeCooldown > 0 || b.mergeCooldown > 0) {
@@ -796,7 +891,11 @@ function processMerges() {
 
       used.add(candidate.a.id);
       used.add(candidate.b.id);
-      mergeBodies(candidate.a, candidate.b);
+      if (candidate.a.tier === PIECES.length - 1) {
+        clearLegendBodies(candidate.a, candidate.b);
+      } else {
+        mergeBodies(candidate.a, candidate.b);
+      }
       mergedThisPass = true;
       mergedAny = true;
     }
@@ -810,6 +909,8 @@ function processMerges() {
 }
 
 function updateEffects(dt) {
+  screenShake = Math.max(0, screenShake - dt * 18);
+
   for (let i = sparkles.length - 1; i >= 0; i -= 1) {
     const sparkle = sparkles[i];
     sparkle.vy += 260 * dt;
@@ -827,6 +928,18 @@ function updateEffects(dt) {
     ring.life -= dt;
     if (ring.life <= 0) {
       rings.splice(i, 1);
+    }
+  }
+
+  for (let i = bursts.length - 1; i >= 0; i -= 1) {
+    const burst = bursts[i];
+    burst.x += burst.vx * dt;
+    burst.y += burst.vy * dt;
+    burst.vx *= 0.9;
+    burst.vy *= 0.9;
+    burst.life -= dt;
+    if (burst.life <= 0) {
+      bursts.splice(i, 1);
     }
   }
 
@@ -865,12 +978,23 @@ function updateBody(body, dt) {
   body.vy += GRAVITY * dt;
   body.x += body.vx * dt;
   body.y += body.vy * dt;
-  body.vx *= 0.998;
-  body.vy *= 0.9992;
-  body.spin *= 0.997;
+  body.vx *= 0.992;
+  body.vy *= 0.9982;
+  body.spin *= 0.972;
+
+  const floor = FIELD_BOTTOM - body.r;
+  if (body.y >= floor - 1.5) {
+    body.vx = approach(body.vx, 0, dt * 360);
+    body.spin = approach(body.spin, 0, dt * 7.2);
+  }
+
+  body.vx = clamp(body.vx, -MAX_HORIZONTAL_SPEED, MAX_HORIZONTAL_SPEED);
+  body.vy = clamp(body.vy, -MAX_RISE_SPEED, MAX_FALL_SPEED);
+  body.spin = clamp(body.spin, -MAX_SPIN_SPEED, MAX_SPIN_SPEED);
   body.rotation += body.spin * dt;
   body.squish = approach(body.squish, 0, dt * 1.7);
   body.mergeCooldown = Math.max(0, body.mergeCooldown - dt);
+  body.impactCooldown = Math.max(0, body.impactCooldown - dt);
   body.blinkAt -= dt;
   if (body.blinkAt <= 0) {
     body.blinkTime = 0.12;
@@ -1252,6 +1376,18 @@ function drawBodies() {
 
 function drawEffects() {
   if (performanceMode) {
+    for (const burst of bursts) {
+      ctx.save();
+      ctx.globalAlpha = burst.life / burst.maxLife;
+      ctx.strokeStyle = burst.color;
+      ctx.lineWidth = Math.max(1.6, burst.width * 0.9);
+      ctx.beginPath();
+      ctx.moveTo(burst.x, burst.y);
+      ctx.lineTo(burst.x - burst.vx * 0.035, burst.y - burst.vy * 0.035);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     for (const label of floatTexts) {
       ctx.save();
       ctx.globalAlpha = label.life / label.maxLife;
@@ -1284,6 +1420,24 @@ function drawEffects() {
     ctx.fill();
     ctx.restore();
   }
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const burst of bursts) {
+    ctx.save();
+    ctx.translate(burst.x, burst.y);
+    ctx.rotate(Math.atan2(burst.vy, burst.vx));
+    ctx.globalAlpha = burst.life / burst.maxLife;
+    ctx.fillStyle = burst.color;
+    ctx.beginPath();
+    ctx.moveTo(-burst.length * 0.18, -burst.width);
+    ctx.lineTo(burst.length, 0);
+    ctx.lineTo(-burst.length * 0.18, burst.width);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
 
   for (const label of floatTexts) {
     ctx.save();
@@ -1400,6 +1554,10 @@ function drawGameOverOverlay() {
 
 function render() {
   ctx.clearRect(0, 0, W, H);
+  ctx.save();
+  if (screenShake > 0) {
+    ctx.translate(randomBetween(-screenShake, screenShake), randomBetween(-screenShake, screenShake));
+  }
   drawBackground();
   drawPreviewPanel();
   drawDangerLine();
@@ -1412,6 +1570,7 @@ function render() {
   drawStatusChip();
   drawIdleOverlay();
   drawGameOverOverlay();
+  ctx.restore();
 }
 
 function loop(now) {
