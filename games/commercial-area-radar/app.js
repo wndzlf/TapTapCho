@@ -8,6 +8,11 @@ const SNAPSHOT_ARCHIVE_LIMIT = 6;
 const DATA_PORTAL_URL = "https://www.data.go.kr/data/15012005/openapi.do";
 const BIGDATA_PLATFORM_URL = "https://bigdata.sbiz.or.kr/";
 const REFRESH_CADENCE_LABEL = "정기 갱신 매일 07:00 KST";
+const ROUTE_SECTION_MAP = {
+  "/briefing": "briefing-panel",
+  "/neighborhoods": "area-panel",
+  "/industries": "industry-panel",
+};
 
 const state = {
   area: "all",
@@ -80,6 +85,8 @@ const refs = {
   pickerClose: document.getElementById("picker-close"),
 };
 
+let pendingRouteSectionId = getRouteSectionId();
+
 const getAreaId = (item) => item.adongCd || item.signguCd || "";
 const getSignguId = (item) => item.signguCd || "";
 const getIndustryId = (item) => item.indsMclsCd || item.indsLclsCd || "";
@@ -89,6 +96,42 @@ function getMetaContent(name) {
     .querySelector(`meta[name="${name}"]`)
     ?.getAttribute("content")
     ?.trim();
+}
+
+function normalizeRoutePath(pathname) {
+  if (!pathname) {
+    return "/";
+  }
+
+  if (pathname.length > 1 && pathname.endsWith("/")) {
+    return pathname.slice(0, -1);
+  }
+
+  return pathname;
+}
+
+function getRouteSectionId() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return ROUTE_SECTION_MAP[normalizeRoutePath(window.location.pathname)] || null;
+}
+
+function scrollToRouteSectionIfNeeded() {
+  if (!pendingRouteSectionId) {
+    return;
+  }
+
+  const target = document.getElementById(pendingRouteSectionId);
+  if (!target) {
+    return;
+  }
+
+  requestAnimationFrame(() => {
+    target.scrollIntoView({ block: "start" });
+  });
+  pendingRouteSectionId = null;
 }
 
 function getSnapshotCandidates() {
@@ -2728,6 +2771,7 @@ function render() {
   renderAreaRadar();
   renderIndustryRadar();
   renderPicker();
+  scrollToRouteSectionIfNeeded();
 }
 
 async function init() {

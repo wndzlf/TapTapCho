@@ -15,10 +15,12 @@
 - `brand.icon`은 생성형 `data:` URI보다 안정적인 HTTPS PNG를 우선 사용하고, 개발자센터 등록 아이콘과 동일하게 맞춥니다.
 - `.ait`의 `appName`과 `brand.displayName`은 토스 콘솔 값과 정확히 같아야 합니다. 프로젝트 폴더명과 콘솔 `appName`이 다를 수 있으니 혼동하지 않습니다.
 - 이름 불일치 반려가 나면 `brand.displayName`과 콘솔 `앱 정보등록` 이름이 정확히 같은지 먼저 확인하고 다시 빌드합니다.
+- 실제 사례: `real-estate-watch`는 콘솔명이 `서울경기실시간아파트`인데 번들/웹 표기가 달라 반려됐고, `granite.config.ts`의 `brand.displayName`뿐 아니라 `index.html`, `terms.html`, `privacy.html`까지 콘솔명으로 통일한 뒤 `.ait`를 다시 빌드해 해결했습니다. 참조: [`games/real-estate-watch/toss-package/granite.config.ts`](games/real-estate-watch/toss-package/granite.config.ts), [`games/real-estate-watch/toss-package/real-estate-watch.ait`](games/real-estate-watch/toss-package/real-estate-watch.ait)
 - `granite.config.ts`는 실제 콘솔 값 기준으로 유지하고, 필요하면 `TOSS_APP_NAME`, `TOSS_BRAND_DISPLAY_NAME`으로 주입 가능하게 둡니다.
 - `web.commands`는 가능하면 `jiti scripts/*.mjs`를 우선 사용합니다. `ait build`가 `npx node ...` 형태로 실행되면 네트워크 오류가 날 수 있습니다.
 - `games/<project>/toss-package/package.json`의 `build` 경로는 `../../../node_modules/.bin/ait build`를 사용합니다.
 - `terms.html`, `privacy.html`를 추가했으면 `toss-package/scripts/build-web.mjs` 복사 목록에도 포함합니다.
+- 콘솔 `앱 내 기능`이 `intoss://<appName>/<uri>`를 요구하면 임의 URI를 쓰지 말고 실제 열리는 하위 경로를 만듭니다. 정적 웹은 `dist/<uri>/index.html`까지 생성해 `intoss://commercial-radar/briefing` 같은 피처 주소가 200 응답하는지 확인합니다. 참고: https://developers-apps-in-toss.toss.im/development/test/function.html
 - 업로드 전에는 `strings -n 6 <file>.ait | rg "appName|displayName|static.toss.im/appsintoss"`로 이름/아이콘 반영을 확인합니다.
 - 약관 페이지를 넣은 프로젝트는 `dist/web/terms.html`, `dist/web/privacy.html` 존재 여부와 `.ait` 내부 `web/terms.html`, `web/privacy.html` 문자열도 확인합니다.
 

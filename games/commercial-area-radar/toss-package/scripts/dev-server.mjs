@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import http from 'node:http';
 import { createReadStream } from 'node:fs';
-import { access } from 'node:fs/promises';
+import { stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -28,30 +28,39 @@ if (buildResult.status !== 0) {
   process.exit(buildResult.status ?? 1);
 }
 
-function resolveFilePath(requestUrl) {
+async function resolveFilePath(requestUrl) {
   const requestPath = new URL(requestUrl || '/', 'http://127.0.0.1').pathname;
   const normalizedPath = requestPath === '/' ? '/index.html' : requestPath;
-  const resolvedPath = path.resolve(OUTDIR, `.${normalizedPath}`);
+  const candidates = [normalizedPath];
 
-  if (!resolvedPath.startsWith(OUTDIR)) {
-    return null;
+  if (!path.extname(normalizedPath)) {
+    candidates.push(path.posix.join(normalizedPath, 'index.html'));
   }
 
-  return resolvedPath;
+  for (const candidate of candidates) {
+    const resolvedPath = path.resolve(OUTDIR, `.${candidate}`);
+
+    if (!resolvedPath.startsWith(OUTDIR)) {
+      return null;
+    }
+
+    try {
+      const fileStat = await stat(resolvedPath);
+      if (fileStat.isFile()) {
+        return resolvedPath;
+      }
+    } catch {
+      // Try the next candidate path.
+    }
+  }
+
+  return null;
 }
 
 const server = http.createServer(async (request, response) => {
-  const filePath = resolveFilePath(request.url);
+  const filePath = await resolveFilePath(request.url);
 
   if (!filePath) {
-    response.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    response.end('Bad request');
-    return;
-  }
-
-  try {
-    await access(filePath);
-  } catch {
     response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     response.end('Not found');
     return;
