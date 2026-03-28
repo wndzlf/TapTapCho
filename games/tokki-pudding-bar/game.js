@@ -117,7 +117,7 @@ let bodies = [];
 let sparkles = [];
 let rings = [];
 let bursts = [];
-let confetti = [];
+let fireworks = [];
 let celebrations = [];
 let floatTexts = [];
 
@@ -134,6 +134,7 @@ let accumulator = 0;
 let resizeQueued = false;
 let dangerNoticeLevel = 0;
 let screenShake = 0;
+let ignoreReleaseDrop = false;
 
 let unsubscribeSafeArea = () => {};
 let unsubscribeBack = () => {};
@@ -420,7 +421,7 @@ function resetRound() {
   sparkles = [];
   rings = [];
   bursts = [];
-  confetti = [];
+  fireworks = [];
   celebrations = [];
   floatTexts = [];
   screenShake = 0;
@@ -564,62 +565,50 @@ function spawnFloatText(x, y, text, color) {
   });
 }
 
-function spawnConfetti(x, y, colors, strength = 1) {
+function spawnFireworks(x, y, colors, strength = 1, spread = 1) {
   const palette = Array.isArray(colors) ? colors : [colors];
   const count = performanceMode
-    ? Math.min(12, Math.round(4 + strength * 3))
-    : Math.min(34, Math.round(10 + strength * 7));
+    ? Math.min(18, Math.round(6 + strength * 4))
+    : Math.min(56, Math.round(16 + strength * 10));
 
   for (let i = 0; i < count; i += 1) {
-    const life = randomBetween(0.68, 1.12) + strength * 0.08;
-    confetti.push({
+    const angle = randomBetween(0, Math.PI * 2);
+    const speed = randomBetween(70, 190) * (0.75 + strength * 0.28) * spread;
+    const life = randomBetween(0.52, 0.96) + strength * 0.08;
+    fireworks.push({
       x,
       y,
-      vx: randomBetween(-180, 180) * (0.55 + strength * 0.18),
-      vy: randomBetween(-320, -120) * (0.62 + strength * 0.16),
-      gravity: randomBetween(420, 720),
-      size: randomBetween(4, 9) * (0.85 + strength * 0.12),
-      rotation: randomBetween(-Math.PI, Math.PI),
-      spin: randomBetween(-7.5, 7.5),
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      gravity: randomBetween(36, 104) * (0.8 + strength * 0.1),
+      drag: randomBetween(0.9, 0.945),
+      size: randomBetween(2.2, 5.2) * (0.82 + strength * 0.15),
+      trail: randomBetween(10, 22) * (0.9 + strength * 0.18),
+      twinkle: randomBetween(5.5, 12),
       life,
       maxLife: life,
       color: palette[i % palette.length],
     });
   }
 
-  if (performanceMode && confetti.length > 36) {
-    confetti.splice(0, confetti.length - 36);
-  } else if (confetti.length > 120) {
-    confetti.splice(0, confetti.length - 120);
+  if (performanceMode && fireworks.length > 48) {
+    fireworks.splice(0, fireworks.length - 48);
+  } else if (fireworks.length > 160) {
+    fireworks.splice(0, fireworks.length - 160);
   }
-}
-
-function getCelebrationCopy(tier, isJackpot = false) {
-  if (isJackpot) {
-    return { headline: '황금 폭죽!', subhead: '잭팟' };
-  }
-
-  const piece = PIECES[tier];
-  if (tier >= PIECES.length - 1) {
-    return { headline: '달토끼 카니발!', subhead: '전설 합체' };
-  }
-  if (tier >= 6) {
-    return { headline: `${piece.short} 축제!`, subhead: '메가 합체' };
-  }
-  if (tier >= 4) {
-    return { headline: `${piece.short} 파티!`, subhead: '대성공' };
-  }
-  return { headline: `${piece.short} 합체!`, subhead: '팡!' };
 }
 
 function spawnCenterCelebration(tier, options = {}) {
   const piece = PIECES[tier];
   const isJackpot = Boolean(options.isJackpot);
-  const copy = getCelebrationCopy(tier, isJackpot);
   const power = clamp(0.9 + tier * 0.24 + (isJackpot ? 0.8 : 0), 0.95, 3.2);
-  const life = 0.78 + power * 0.14 + (isJackpot ? 0.24 : 0);
+  const life = 0.72 + power * 0.16 + (isJackpot ? 0.22 : 0);
   const x = FIELD_CENTER_X;
-  const y = FIELD_TOP + (FIELD_BOTTOM - FIELD_TOP) * 0.42;
+  const y = FIELD_TOP + (FIELD_BOTTOM - FIELD_TOP) * 0.34;
+  const burstCount = performanceMode
+    ? (isJackpot ? 2 : 1)
+    : Math.min(4, 2 + Math.floor(power * 0.75));
+  const rotation = randomBetween(-Math.PI, Math.PI);
 
   celebrations.push({
     x,
@@ -628,23 +617,29 @@ function spawnCenterCelebration(tier, options = {}) {
     power,
     life,
     maxLife: life,
-    headline: copy.headline,
-    subhead: copy.subhead,
     color: piece.rim,
     accent: piece.accent,
     fill: piece.fill,
+    rotation,
+    burstCount,
+    isJackpot,
   });
 
   if (celebrations.length > (performanceMode ? 2 : 4)) {
     celebrations.splice(0, celebrations.length - (performanceMode ? 2 : 4));
   }
 
-  spawnConfetti(x, y + 8, [piece.rim, piece.fill, piece.accent, '#fffdf5'], power);
-  spawnBurst(x, y, [piece.rim, piece.accent, '#ffffff'], 0.85 + power * 0.4);
-  spawnSparkles(x, y, piece.accent, 8 + Math.round(power * 4), 0.7 + power * 0.15);
-  spawnRing(x, y, piece.rim, 16 + power * 12);
-  if (!performanceMode && (tier >= 4 || isJackpot)) {
-    spawnRing(x, y, '#fffdf5', 10 + power * 7);
+  for (let i = 0; i < burstCount; i += 1) {
+    const angle = rotation + (Math.PI * 2 * i) / burstCount + randomBetween(-0.24, 0.24);
+    const offset = performanceMode ? 10 + power * 5 : 16 + power * 8;
+    const burstX = x + Math.cos(angle) * offset * randomBetween(0.22, 0.72);
+    const burstY = y + Math.sin(angle) * offset * randomBetween(0.18, 0.46) - power * 7;
+    const palette = [piece.rim, piece.fill, piece.accent, '#fffdf5'];
+
+    spawnFireworks(burstX, burstY, palette, power, 0.86 + i * 0.08);
+    spawnBurst(burstX, burstY, [piece.rim, piece.accent, '#ffffff'], 0.72 + power * 0.34);
+    spawnSparkles(burstX, burstY, piece.accent, 6 + Math.round(power * 4), 0.6 + power * 0.14);
+    spawnRing(burstX, burstY, i % 2 === 0 ? piece.rim : '#fffdf5', 12 + power * 7);
   }
 
   screenShake = Math.max(
@@ -892,7 +887,6 @@ function mergeBodies(primary, secondary) {
   spawnRing(merged.x, merged.y, piece.rim, piece.radius * 0.45);
   spawnSparkles(merged.x, merged.y, piece.rim, 14 + combo * 2, 1 + combo * 0.08);
   spawnBurst(merged.x, merged.y, [piece.rim, piece.accent, '#ffffff'], 0.85 + combo * 0.12);
-  spawnFloatText(merged.x, merged.y - piece.radius * 0.1, `+${piece.points + comboBonus}`, piece.rim);
   spawnCenterCelebration(newTier);
 
   if (newTier === PIECES.length - 1) {
@@ -924,7 +918,6 @@ function clearLegendBodies(primary, secondary) {
   spawnRing(x, y, '#fff7cb', legendPiece.radius * 0.28);
   spawnSparkles(x, y, legendPiece.rim, 20 + combo * 3, 1.2 + combo * 0.06);
   spawnBurst(x, y, [legendPiece.rim, '#fff7cb', '#ffffff'], 1.7 + combo * 0.08);
-  spawnFloatText(x, y - legendPiece.radius * 0.08, `+${reward}`, legendPiece.rim);
   spawnCenterCelebration(primary.tier, { isJackpot: true });
 
   setStatus(combo > 1 ? `황금 달토끼 정리! 연쇄 ${combo}회 보너스!` : '황금 달토끼 2개가 터졌어요! 대보너스 획득!');
@@ -1038,15 +1031,15 @@ function updateEffects(dt) {
     }
   }
 
-  for (let i = confetti.length - 1; i >= 0; i -= 1) {
-    const piece = confetti[i];
-    piece.vy += piece.gravity * dt;
-    piece.x += piece.vx * dt;
-    piece.y += piece.vy * dt;
-    piece.rotation += piece.spin * dt;
-    piece.life -= dt;
-    if (piece.life <= 0) {
-      confetti.splice(i, 1);
+  for (let i = fireworks.length - 1; i >= 0; i -= 1) {
+    const spark = fireworks[i];
+    spark.vx *= spark.drag;
+    spark.vy = spark.vy * spark.drag + spark.gravity * dt;
+    spark.x += spark.vx * dt;
+    spark.y += spark.vy * dt;
+    spark.life -= dt;
+    if (spark.life <= 0) {
+      fireworks.splice(i, 1);
     }
   }
 
@@ -1489,87 +1482,95 @@ function drawBodies() {
   }
 }
 
-function drawConfetti() {
-  for (const piece of confetti) {
+function drawFireworks() {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const spark of fireworks) {
+    const alpha = spark.life / spark.maxLife;
+    const twinkle = 0.62 + 0.38 * Math.sin((1 - alpha) * spark.twinkle);
+
     ctx.save();
-    ctx.translate(piece.x, piece.y);
-    ctx.rotate(piece.rotation);
-    ctx.globalAlpha = piece.life / piece.maxLife;
-    ctx.fillStyle = piece.color;
-    ctx.fillRect(-piece.size * 0.5, -piece.size * 0.28, piece.size, piece.size * 0.56);
-    if (!performanceMode) {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
-      ctx.fillRect(-piece.size * 0.5, -piece.size * 0.28, piece.size * 0.24, piece.size * 0.56);
-    }
+    ctx.globalAlpha = alpha * twinkle;
+    ctx.strokeStyle = spark.color;
+    ctx.lineWidth = Math.max(1, spark.size * 0.48);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(spark.x, spark.y);
+    ctx.lineTo(spark.x - spark.vx * 0.03 * spark.trail, spark.y - spark.vy * 0.03 * spark.trail);
+    ctx.stroke();
+
+    ctx.fillStyle = '#fffdf8';
+    ctx.beginPath();
+    ctx.arc(spark.x, spark.y, spark.size * 0.46, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = spark.color;
+    ctx.beginPath();
+    ctx.arc(spark.x, spark.y, spark.size * 0.3, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
   }
+  ctx.restore();
 }
 
 function drawCelebrations() {
   for (const celebration of celebrations) {
     const alpha = celebration.life / celebration.maxLife;
     const progress = 1 - alpha;
-    const coreRadius = 26 + celebration.power * 14 + progress * 22;
-    const haloRadius = coreRadius * (1.35 + progress * 0.2);
+    const bloom = Math.sin(progress * Math.PI);
+    const coreRadius = 18 + celebration.power * 18 + progress * 20;
+    const haloRadius = coreRadius * (1.45 + progress * 0.22);
 
     ctx.save();
-    ctx.translate(celebration.x, celebration.y - progress * 12);
+    ctx.translate(celebration.x, celebration.y - progress * 18);
     ctx.globalAlpha = alpha;
 
     const glow = ctx.createRadialGradient(0, 0, 6, 0, 0, haloRadius);
-    glow.addColorStop(0, '#ffffffee');
-    glow.addColorStop(0.28, `${celebration.accent}bb`);
-    glow.addColorStop(0.62, `${celebration.color}40`);
+    glow.addColorStop(0, '#ffffffd8');
+    glow.addColorStop(0.2, `${celebration.accent}cc`);
+    glow.addColorStop(0.52, `${celebration.color}4a`);
     glow.addColorStop(1, 'rgba(255, 255, 255, 0)');
     ctx.fillStyle = glow;
     ctx.beginPath();
     ctx.arc(0, 0, haloRadius, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.strokeStyle = celebration.color;
-    ctx.lineWidth = performanceMode ? 2 : 3 + celebration.power * 0.25;
-    ctx.beginPath();
-    ctx.arc(0, 0, coreRadius, 0, Math.PI * 2);
-    ctx.stroke();
+    const spokeCount = performanceMode
+      ? 10 + Math.round(celebration.power * 1.5)
+      : 16 + celebration.burstCount * 5;
+    ctx.lineCap = 'round';
+    for (let i = 0; i < spokeCount; i += 1) {
+      const angle = celebration.rotation + progress * 1.4 + (Math.PI * 2 * i) / spokeCount;
+      const inner = coreRadius * (0.16 + (i % 3) * 0.04);
+      const outer = inner + coreRadius * (0.72 + 0.22 * Math.sin(progress * 6 + i));
 
-    if (!performanceMode) {
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.76)';
-      ctx.setLineDash([8, 10]);
+      ctx.strokeStyle = i % 2 === 0 ? celebration.color : celebration.accent;
+      ctx.lineWidth = performanceMode ? 1.6 : 2 + celebration.power * 0.2;
       ctx.beginPath();
-      ctx.arc(0, 0, coreRadius * 0.72, 0, Math.PI * 2);
+      ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+      ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
       ctx.stroke();
-      ctx.setLineDash([]);
 
-      if (celebration.power > 1.8) {
-        ctx.strokeStyle = '#fffdf5';
-        ctx.lineWidth = 2;
-        for (let i = 0; i < 8; i += 1) {
-          const angle = progress * 1.6 + i * (Math.PI / 4);
-          const inner = coreRadius + 8;
-          const outer = inner + 10 + celebration.power * 5;
-          ctx.beginPath();
-          ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
-          ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
-          ctx.stroke();
-        }
+      if (!performanceMode && celebration.power > 1.6 && i % 3 === 0) {
+        const orbRadius = 1.6 + celebration.power * 0.35;
+        ctx.fillStyle = '#fffdf6';
+        ctx.beginPath();
+        ctx.arc(Math.cos(angle) * outer, Math.sin(angle) * outer, orbRadius, 0, Math.PI * 2);
+        ctx.fill();
       }
     }
 
-    ctx.textAlign = 'center';
-    ctx.shadowColor = `${celebration.color}aa`;
-    ctx.shadowBlur = performanceMode ? 10 : 18;
-    ctx.lineJoin = 'round';
-    ctx.strokeStyle = 'rgba(97, 57, 35, 0.24)';
-    ctx.lineWidth = performanceMode ? 2.5 : 4;
-    ctx.fillStyle = '#fffdf8';
-    ctx.font = `900 ${Math.round(18 + celebration.power * 3.2)}px "Noto Sans KR", sans-serif`;
-    ctx.strokeText(celebration.headline, 0, 8);
-    ctx.fillText(celebration.headline, 0, 8);
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = celebration.color;
-    ctx.font = `800 ${Math.round(11 + celebration.power * 1.8)}px "Noto Sans KR", sans-serif`;
-    ctx.strokeText(celebration.subhead, 0, -20 - celebration.power * 2);
-    ctx.fillText(celebration.subhead, 0, -20 - celebration.power * 2);
+    if (!performanceMode) {
+      ctx.globalAlpha = alpha * (0.5 + bloom * 0.3);
+      ctx.strokeStyle = '#fffdf5';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 9]);
+      ctx.beginPath();
+      ctx.arc(0, 0, coreRadius * 0.7, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
     ctx.restore();
   }
 }
@@ -1588,7 +1589,7 @@ function drawEffects() {
       ctx.restore();
     }
 
-    drawConfetti();
+    drawFireworks();
     drawCelebrations();
 
     for (const label of floatTexts) {
@@ -1642,7 +1643,7 @@ function drawEffects() {
   }
   ctx.restore();
 
-  drawConfetti();
+  drawFireworks();
   drawCelebrations();
 
   for (const label of floatTexts) {
@@ -1657,7 +1658,7 @@ function drawEffects() {
 }
 
 function drawComboChip() {
-  if (combo < 2 || comboTimer <= 0) {
+  if (combo < 2 || comboTimer <= 0 || celebrations.length > 0 || fireworks.length > 0) {
     return;
   }
 
@@ -1674,6 +1675,54 @@ function drawComboChip() {
   ctx.fillStyle = '#fffdf9';
   ctx.fillText(text, x + 13, y + 27);
   ctx.restore();
+}
+
+function drawWrappedText(text, x, y, maxWidth, lineHeight) {
+  const words = String(text).split(' ');
+  const lines = [];
+  let current = '';
+
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (ctx.measureText(candidate).width <= maxWidth) {
+      current = candidate;
+      continue;
+    }
+
+    if (current) {
+      lines.push(current);
+      current = '';
+    }
+
+    if (ctx.measureText(word).width <= maxWidth) {
+      current = word;
+      continue;
+    }
+
+    let fragment = '';
+    for (const char of word) {
+      const nextFragment = `${fragment}${char}`;
+      if (ctx.measureText(nextFragment).width <= maxWidth) {
+        fragment = nextFragment;
+      } else {
+        if (fragment) {
+          lines.push(fragment);
+        }
+        fragment = char;
+      }
+    }
+    current = fragment;
+  }
+
+  if (current) {
+    lines.push(current);
+  }
+
+  lines.forEach((line, index) => {
+    ctx.fillText(line, x, y + index * lineHeight);
+  });
+
+  return lines.length;
 }
 
 function drawIdleOverlay() {
@@ -1700,12 +1749,14 @@ function drawIdleOverlay() {
   ctx.font = '900 28px "Noto Sans KR", sans-serif';
   ctx.fillText('토끼푸딩 바', x + 20, y + 72);
   ctx.font = '700 15px "Noto Sans KR", sans-serif';
-  ctx.fillText('손가락으로 위치를 잡고 놓아서 드롭하세요.', x + 20, y + 112);
-  ctx.fillText('같은 푸딩끼리 닿으면 더 큰 디저트로 합체합니다.', x + 20, y + 140);
-  ctx.fillText('넘침 라인을 오래 넘기면 게임 오버입니다.', x + 20, y + 168);
+  const textX = x + 24;
+  const textWidth = panelW - 48;
+  drawWrappedText('손가락으로 위치를 잡고 놓아서 드롭하세요.', textX, y + 112, textWidth, 22);
+  drawWrappedText('같은 푸딩끼리 닿으면 더 큰 디저트로 합체합니다.', textX, y + 142, textWidth, 22);
+  drawWrappedText('넘침 라인을 오래 넘기면 게임 오버입니다.', textX, y + 172, textWidth, 22);
   ctx.fillStyle = '#c45f3d';
   ctx.font = '800 15px "Noto Sans KR", sans-serif';
-  ctx.fillText('화면을 눌러 시작', x + 20, y + 194);
+  ctx.fillText('화면을 눌러 시작', textX, y + 206);
   ctx.restore();
 }
 
@@ -1738,7 +1789,7 @@ function drawGameOverOverlay() {
   ctx.fillText(`가장 큰 푸딩 ${PIECES[maxTierReached]?.label || PIECES[0].label}`, x + 20, y + 134);
   ctx.fillStyle = 'rgba(75, 43, 29, 0.72)';
   ctx.font = '700 14px "Noto Sans KR", sans-serif';
-  ctx.fillText('화면을 다시 누르면 바로 새 잔을 준비합니다.', x + 20, y + 168);
+  drawWrappedText('화면을 다시 누르면 바로 새 잔을 준비합니다.', x + 24, y + 168, panelW - 48, 20);
   ctx.restore();
 }
 
@@ -1786,6 +1837,7 @@ function onCanvasPointerDown(event) {
   }
 
   if (state === 'idle' || state === 'gameover') {
+    ignoreReleaseDrop = true;
     restartGame();
   }
 }
@@ -1811,6 +1863,11 @@ function onCanvasPointerUp(event) {
     canvas.releasePointerCapture(event.pointerId);
   }
 
+  if (ignoreReleaseDrop) {
+    ignoreReleaseDrop = false;
+    return;
+  }
+
   if (state === 'running') {
     dropCurrentPiece();
   }
@@ -1823,6 +1880,7 @@ function onCanvasPointerCancel(event) {
 
   pointerActive = false;
   pointerId = null;
+  ignoreReleaseDrop = false;
   if (canvas.releasePointerCapture && canvas.hasPointerCapture?.(event.pointerId)) {
     canvas.releasePointerCapture(event.pointerId);
   }
