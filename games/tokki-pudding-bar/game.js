@@ -1316,8 +1316,8 @@ function drawDangerLine() {
 function drawPreviewPanel() {
   const panelX = 24;
   const panelY = 22;
-  const panelW = 126;
-  const panelH = 84;
+  const panelW = 134;
+  const panelH = 108;
   const gradient = ctx.createLinearGradient(panelX, panelY, panelX, panelY + panelH);
   gradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
   gradient.addColorStop(1, 'rgba(255, 244, 234, 0.84)');
@@ -1331,18 +1331,29 @@ function drawPreviewPanel() {
     return;
   }
 
-  drawPiece(queuedPiece.tier, panelX + 38, panelY + 56, {
+  const piece = PIECES[queuedPiece.tier];
+  const previewScale = clamp(26 / piece.radius, 0.5, 0.92);
+  drawPiece(queuedPiece.tier, panelX + panelW * 0.5, panelY + 50, {
     preview: true,
+    scale: previewScale,
     bob: Math.sin(backgroundTick * 2.2 + queuedPiece.bob) * 1.5,
   });
 
+  const label = piece.short;
+  ctx.save();
+  ctx.font = '800 13px "Noto Sans KR", sans-serif';
+  ctx.textAlign = 'center';
+  const pillW = clamp(ctx.measureText(label).width + 24, 52, panelW - 24);
+  const pillX = panelX + (panelW - pillW) * 0.5;
+  const pillY = panelY + panelH - 30;
+  drawRoundedRect(pillX, pillY, pillW, 22, 11, 'rgba(255, 255, 255, 0.72)', 'rgba(103, 63, 39, 0.08)');
   ctx.fillStyle = '#4b2b1d';
-  ctx.font = '800 14px "Noto Sans KR", sans-serif';
-  ctx.fillText(PIECES[queuedPiece.tier].short, panelX + 62, panelY + 58);
+  ctx.fillText(label, panelX + panelW * 0.5, pillY + 15);
+  ctx.restore();
 }
 
 function drawAimGuide() {
-  if (!currentPiece || state === 'gameover') {
+  if (!currentPiece || state !== 'running') {
     return;
   }
 
@@ -1379,8 +1390,9 @@ function drawPiece(tier, x, y, options = {}) {
   const piece = PIECES[tier];
   const squish = options.preview ? 0.04 : options.squish ?? 0;
   const stretch = clamp(squish + Math.abs(options.vy || 0) * 0.00008, 0, 0.24);
-  const scaleX = 1 + stretch;
-  const scaleY = 1 - stretch * 0.58;
+  const baseScale = options.scale ?? 1;
+  const scaleX = baseScale * (1 + stretch);
+  const scaleY = baseScale * (1 - stretch * 0.58);
   const blinkScale = options.blinkTime > 0 ? 0.15 : 1;
 
   ctx.save();
@@ -1734,9 +1746,9 @@ function drawIdleOverlay() {
   ctx.fillStyle = 'rgba(82, 49, 27, 0.18)';
   ctx.fillRect(0, 0, W, H);
   const panelW = 306;
-  const panelH = 210;
+  const panelH = 262;
   const x = (W - panelW) * 0.5;
-  const y = 218;
+  const y = 192;
   const gradient = ctx.createLinearGradient(x, y, x + panelW, y + panelH);
   gradient.addColorStop(0, 'rgba(255, 255, 255, 0.98)');
   gradient.addColorStop(1, 'rgba(255, 242, 232, 0.98)');
@@ -1751,12 +1763,13 @@ function drawIdleOverlay() {
   ctx.font = '700 15px "Noto Sans KR", sans-serif';
   const textX = x + 24;
   const textWidth = panelW - 48;
-  drawWrappedText('손가락으로 위치를 잡고 놓아서 드롭하세요.', textX, y + 112, textWidth, 22);
-  drawWrappedText('같은 푸딩끼리 닿으면 더 큰 디저트로 합체합니다.', textX, y + 142, textWidth, 22);
-  drawWrappedText('넘침 라인을 오래 넘기면 게임 오버입니다.', textX, y + 172, textWidth, 22);
+  let cursorY = y + 112;
+  cursorY += drawWrappedText('손가락으로 위치를 잡고 놓아서 드롭하세요.', textX, cursorY, textWidth, 22) * 22 + 8;
+  cursorY += drawWrappedText('같은 푸딩끼리 닿으면 더 큰 디저트로 합체합니다.', textX, cursorY, textWidth, 22) * 22 + 8;
+  cursorY += drawWrappedText('넘침 라인을 오래 넘기면 게임 오버입니다.', textX, cursorY, textWidth, 22) * 22 + 14;
   ctx.fillStyle = '#c45f3d';
   ctx.font = '800 15px "Noto Sans KR", sans-serif';
-  ctx.fillText('화면을 눌러 시작', textX, y + 206);
+  ctx.fillText('화면을 눌러 시작', textX, cursorY);
   ctx.restore();
 }
 
