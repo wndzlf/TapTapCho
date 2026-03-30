@@ -1,0 +1,31 @@
+User-agent: *
+Disallow: /
+
+Allow: /$
+Allow: /index.html
+Allow: /about.html
+Allow: /contact.html
+Allow: /privacy.html
+Allow: /terms.html
+Allow: /dmca.html
+Allow: /ads.txt
+Allow: /robots.txt
+Allow: /sitemap.xml
+Allow: /style.css
+Allow: /assets/
+
+Allow: /resonance-district/
+Allow: /sunken-sixway-defense-2/
+Allow: /tokki-pudding-bar/
+Allow: /crimson-hunter-trials/
+Allow: /retro-hero-street-beat/
+Allow: /cassette-ab-world/
+Allow: /worm-arena-rush/
+Allow: /godot-air-striker-web/
+Allow: /godot-winter-ski-rush-web/
+Allow: /orbitSurvivor/
+Allow: /real-estate-watch/
+Allow: /commercial-area-radar/
+Allow: /officetel-watch/
+
+Sitemap: https://tap-tap-cho.vercel.app/sitemap.xml

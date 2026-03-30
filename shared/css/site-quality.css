@@ -110,6 +110,13 @@
   opacity: 0.9;
 }
 
+.site-quality-footer {
+  margin: 18px auto 22px;
+  width: min(960px, calc(100vw - 24px));
+  text-align: center;
+  color: #b8cbe8;
+}
+
 .top-links {
   margin-left: auto;
   display: flex;

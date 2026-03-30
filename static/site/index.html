@@ -1,728 +1,463 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="TapTapCho curated web game platform. Instant-play game library with quality-focused updates and clear game guides." />
+  <meta
+    name="description"
+    content="TapTapCho는 직접 제작한 웹게임과 데이터 유틸리티를 큐레이션 방식으로 소개하는 플레이 허브입니다. 각 프로젝트의 조작 방식, 설계 의도, 업데이트 이력을 함께 제공합니다."
+  />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="TapTapCho" />
+  <meta
+    property="og:description"
+    content="짧게 플레이하고, 왜 재미있는지까지 읽을 수 있는 직접 제작 웹게임 허브."
+  />
+  <meta property="og:url" content="https://tap-tap-cho.vercel.app/" />
+  <meta property="og:image" content="https://tap-tap-cho.vercel.app/assets/thumbs/resonance-district.svg" />
+  <link rel="canonical" href="https://tap-tap-cho.vercel.app/" />
   <title>TapTapCho</title>
   <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="/assets/css/site-quality.css" />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "name": "TapTapCho",
+          "url": "https://tap-tap-cho.vercel.app/",
+          "inLanguage": "ko-KR",
+          "description": "Directly-made web games and service prototypes with playable guides and update notes."
+        },
+        {
+          "@type": "Organization",
+          "name": "TapTapCho",
+          "url": "https://tap-tap-cho.vercel.app/",
+          "contactPoint": [
+            {
+              "@type": "ContactPoint",
+              "contactType": "customer support",
+              "email": "wndzlf@gmail.com",
+              "availableLanguage": ["Korean", "English"]
+            }
+          ]
+        }
+      ]
+    }
+  </script>
 </head>
 <body>
   <header class="top">
-    <div class="logo">TapTapCho</div>
-    <input class="search" placeholder="Search games (coming soon)" />
+    <a class="logo-link" href="/index.html" aria-label="TapTapCho home">
+      <div class="logo">
+        <span class="logo-mark">Direct-Made Web Arcade</span>
+        <span class="logo-name">TapTapCho</span>
+      </div>
+    </a>
+
+    <nav class="top-links" aria-label="Site">
+      <a href="#featured">Featured</a>
+      <a href="#principles">Editorial Notes</a>
+      <a href="#utilities">Utility Apps</a>
+      <a href="/about.html">About</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/privacy.html">Privacy</a>
+      <a href="/terms.html">Terms</a>
+      <a href="/dmca.html">DMCA</a>
+    </nav>
   </header>
 
   <main class="wrap">
-    <section>
-      <div class="section-head">
-        <h2>2D Games</h2>
-        <p class="section-note">Instant play · Touch friendly</p>
+    <section class="hero-home">
+      <div class="hero-copy">
+        <p class="hero-kicker">Curated Play Hub</p>
+        <h1>짧게 플레이하고, 왜 재미있는지까지 읽을 수 있는 웹게임 허브</h1>
+        <p class="hero-lede">
+          TapTapCho는 설치형 스토어 복제본이나 자동 생성 링크 모음을 지향하지 않습니다.
+          직접 만든 게임과 서비스 프로토타입만 남기고, 메인에 노출하는 프로젝트는 조작 방식,
+          설계 의도, 업데이트 이력, 운영 정보가 함께 읽히도록 편집합니다.
+        </p>
+        <p class="hero-note">
+          2026년 3월 30일 기준 메인 페이지는 실제로 관리 중인 대표 프로젝트만 큐레이션합니다.
+          완성도가 낮거나 설명이 부족한 실험 빌드는 메인 노출에서 제외하고, 상위 노출 페이지에는
+          고유 텍스트와 플레이 맥락을 직접 작성합니다.
+        </p>
+
+        <div class="hero-actions">
+          <a class="hero-action hero-action-primary" href="#featured">대표 프로젝트 보기</a>
+          <a class="hero-action hero-action-secondary" href="#principles">운영 원칙 읽기</a>
+        </div>
+
+        <ul class="hero-stats" aria-label="현재 운영 상태">
+          <li>
+            <strong>12</strong>
+            <span>현재 메인에서 직접 관리하는 대표 프로젝트 수</span>
+          </li>
+          <li>
+            <strong>3</strong>
+            <span>서울·경기 기반 정보 유틸리티 앱</span>
+          </li>
+          <li>
+            <strong>1st-Party</strong>
+            <span>모든 노출 프로젝트는 직접 제작 또는 직접 운영</span>
+          </li>
+        </ul>
       </div>
-      <div class="grid">
-        <a class="card" href="./resonance-district/index.html">
+
+      <aside class="hero-panel" aria-label="큐레이션 기준">
+        <h2>메인 노출 기준</h2>
+        <p>
+          홈에 실리는 프로젝트는 단순히 실행만 되는 상태로는 올리지 않습니다. 첫 화면에서 무엇을
+          할 수 있는지 보이고, 플레이 또는 데이터 사용 흐름이 독자적으로 설명되어야 합니다.
+        </p>
+        <ul class="check-list">
+          <li>직접 제작한 게임 또는 직접 운영하는 실사용형 데이터 앱만 노출</li>
+          <li>링크 클릭 전에 장르, 핵심 조작, 플레이 포인트를 홈에서 먼저 설명</li>
+          <li>대표 프로젝트는 출시 노트, 운영 정보, 문의 경로를 계속 유지</li>
+          <li>광고 슬롯보다 플레이 흐름과 문서 품질을 우선</li>
+        </ul>
+      </aside>
+    </section>
+
+    <section id="featured">
+      <div class="section-head">
+        <h2>Featured Projects</h2>
+        <p class="section-note">
+          장르와 플레이 구조가 서로 다른 대표작만 추렸습니다. 각 카드에는 실제 플레이 포인트를
+          설명하는 짧은 편집 메모를 함께 붙였습니다.
+        </p>
+      </div>
+
+      <div class="feature-grid">
+        <a class="feature-card" href="/resonance-district/index.html">
           <div class="thumb">
             <img class="thumb-image" src="/assets/thumbs/resonance-district.svg" alt="" loading="lazy" decoding="async" />
             <div class="thumb-title">잔향동</div>
           </div>
           <div class="meta">
-            <div class="title">잔향동</div>
-            <div class="tags">Horror · Cinematic Puzzle Platformer</div>
+            <p class="eyebrow">Puzzle Horror Platformer</p>
+            <h3 class="title">설명 없이 장면으로 읽는 무언극형 퍼즐 호러</h3>
+            <div class="tags">공포 연출 · 점프 플랫폼 · 장면 해석</div>
+            <p class="summary">
+              텍스트 설명을 최소화하고 사운드와 조명 변화로 퍼즐 문맥을 읽게 만드는 작품입니다.
+              단순 점프 액션보다 분위기 해석과 챕터별 압박 리듬이 핵심입니다.
+            </p>
+            <ul class="mini-list">
+              <li>추천 포인트: 짧은 세션에서도 세계관 밀도가 높습니다.</li>
+              <li>조작: 이동 + 점프만으로 설계 의도가 드러납니다.</li>
+            </ul>
           </div>
         </a>
 
-        <a class="card" href="./sunken-sixway-defense-2/index.html">
+        <a class="feature-card" href="/sunken-sixway-defense-2/index.html">
           <div class="thumb">
             <img class="thumb-image" src="/assets/thumbs/sunken-sixway-defense.svg" alt="" loading="lazy" decoding="async" />
             <div class="thumb-title">Sunken Sixway Defense 2</div>
           </div>
           <div class="meta">
-            <div class="title">Sunken Sixway Defense 2</div>
-            <div class="tags">Defense · Portrait Auto TD</div>
+            <p class="eyebrow">Portrait Tower Defense</p>
+            <h3 class="title">한 손으로 읽히는 세로형 타워 디펜스</h3>
+            <div class="tags">세로 화면 · 빌드 선택 · 웨이브 운영</div>
+            <p class="summary">
+              길목 옆 배치와 판매 전환만으로 전투 리듬을 만들 수 있게 구성했습니다. 짧은 세션 TD지만
+              속사, 탱커, 광역 조합의 선택이 확실하게 체감됩니다.
+            </p>
+            <ul class="mini-list">
+              <li>추천 포인트: 모바일에서 화면 점유율이 안정적입니다.</li>
+              <li>핵심 감상: 딜보다 경로 관리가 더 중요하게 설계돼 있습니다.</li>
+            </ul>
           </div>
         </a>
 
-        <a class="card" href="./cassette-ab-world/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/cassette-ab-world.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">카세트 A/B 월드</div>
-          </div>
-          <div class="meta">
-            <div class="title">카세트 A/B 월드</div>
-            <div class="tags">Arcade · A/B Switch</div>
-          </div>
-        </a>
-
-        <a class="card" href="./retro-hero-street-beat/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/retro-hero-street-beat.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Retro Hero: Street Beat</div>
-          </div>
-          <div class="meta">
-            <div class="title">Retro Hero: Street Beat</div>
-            <div class="tags">Arcade · Rhythm Action</div>
-          </div>
-        </a>
-
-        <a class="card" href="./nyang-jelly-cafe/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/nyang-jelly-cafe.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">냥젤리 카페</div>
-          </div>
-          <div class="meta">
-            <div class="title">냥젤리 카페</div>
-            <div class="tags">아케이드 · 원탭 서빙</div>
-          </div>
-        </a>
-
-        <a class="card" href="./tokki-pudding-bar/index.html">
+        <a class="feature-card" href="/tokki-pudding-bar/index.html">
           <div class="thumb">
             <img class="thumb-image" src="/assets/thumbs/tokki-pudding-bar.svg" alt="" loading="lazy" decoding="async" />
             <div class="thumb-title">토끼푸딩 바</div>
           </div>
           <div class="meta">
-            <div class="title">토끼푸딩 바</div>
-            <div class="tags">아케이드 · 원탭 서빙</div>
+            <p class="eyebrow">Physics Merge Arcade</p>
+            <h3 class="title">물리 낙하 감각이 먼저 오는 서빙형 머지 게임</h3>
+            <div class="tags">세로형 물리 드롭 · 서빙 콘셉트 · 짧은 반복 플레이</div>
+            <p class="summary">
+              귀여운 외형보다 손끝 위치 조절이 먼저 느껴지는 작품입니다. 드롭 위치와 다음 피스 예측이
+              점수 차이를 만들고, 짧은 실패도 바로 다시 시도하게 설계했습니다.
+            </p>
+            <ul class="mini-list">
+              <li>추천 포인트: 터치 중심 UI가 명확합니다.</li>
+              <li>핵심 감상: 귀여움과 실수 허용 폭의 균형이 좋습니다.</li>
+            </ul>
           </div>
         </a>
 
-        <a class="card" href="./hamjji-boba-shop/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/hamjji-boba-shop.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">햄찌보바샵</div>
-          </div>
-          <div class="meta">
-            <div class="title">햄찌보바샵</div>
-            <div class="tags">아케이드 · 원탭 서빙</div>
-          </div>
-        </a>
-
-        <a class="card" href="./momo-macaron-rush/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/momo-macaron-rush.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">모모마카롱 러시</div>
-          </div>
-          <div class="meta">
-            <div class="title">모모마카롱 러시</div>
-            <div class="tags">아케이드 · 원탭 서빙</div>
-          </div>
-        </a>
-
-        <a class="card" href="./otter-icecream-pop/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/otter-icecream-pop.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">수달아이스팝</div>
-          </div>
-          <div class="meta">
-            <div class="title">수달아이스팝</div>
-            <div class="tags">아케이드 · 원탭 서빙</div>
-          </div>
-        </a>
-
-        <a class="card" href="./berry-bear-bakery/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/berry-bear-bakery.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">베리베어 베이커리</div>
-          </div>
-          <div class="meta">
-            <div class="title">베리베어 베이커리</div>
-            <div class="tags">아케이드 · 원탭 서빙</div>
-          </div>
-        </a>
-
-        <a class="card" href="./mine-sweep-sprint/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/mine-sweep-sprint.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">지뢰찾기 스프린트</div>
-          </div>
-          <div class="meta">
-            <div class="title">지뢰찾기 스프린트</div>
-            <div class="tags">Puzzle · Minesweeper</div>
-          </div>
-        </a>
-
-        <a class="card" href="./twin-temple-escape/multi.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/twin-temple-escape.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Twin Temple Escape</div>
-          </div>
-          <div class="meta">
-            <div class="title">Twin Temple Escape</div>
-            <div class="tags">Co-op · Puzzle Platformer</div>
-          </div>
-        </a>
-
-        <a class="card" href="./godot-air-striker-web/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/godot-air-striker-web.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">에어 스트라이커 라이트</div>
-          </div>
-          <div class="meta">
-            <div class="title">에어 스트라이커 라이트</div>
-            <div class="tags">슈팅 · 2D 웹</div>
-          </div>
-        </a>
-
-        <a class="card" href="./godot-winter-ski-rush-web/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/godot-winter-ski-rush-web.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Winter Ski Rush</div>
-          </div>
-          <div class="meta">
-            <div class="title">Winter Ski Rush</div>
-            <div class="tags">Arcade · Ski</div>
-          </div>
-        </a>
-
-        <a class="card" href="./sunken-sixway-defense/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/sunken-sixway-defense.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Sunken Sixway Defense</div>
-          </div>
-          <div class="meta">
-            <div class="title">Sunken Sixway Defense</div>
-            <div class="tags">Defense · Maze TD</div>
-          </div>
-        </a>
-
-        <a class="card" href="./worm-arena-rush/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/worm-arena-rush.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Worm Arena Rush</div>
-          </div>
-          <div class="meta">
-            <div class="title">Worm Arena Rush</div>
-            <div class="tags">Arcade · Worm</div>
-          </div>
-        </a>
-
-        <a class="card" href="./orbitSurvivor/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/orbitSurvivor/thumbnail.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Orbit Survivor</div>
-          </div>
-          <div class="meta">
-            <div class="title">Orbit Survivor</div>
-            <div class="tags">Arcade · Survival</div>
-          </div>
-        </a>
-
-        <a class="card" href="./zigzag-memory-run/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/zigzag-memory-run.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Zigzag Memory Run</div>
-          </div>
-          <div class="meta">
-            <div class="title">Zigzag Memory Run</div>
-            <div class="tags">Puzzle · Memory</div>
-          </div>
-        </a>
-
-        <a class="card" href="./crimson-hunter-trials/index.html">
+        <a class="feature-card" href="/crimson-hunter-trials/index.html">
           <div class="thumb">
             <img class="thumb-image" src="/assets/thumbs/crimson-hunter-trials.svg" alt="" loading="lazy" decoding="async" />
             <div class="thumb-title">Crimson Hunter Trials</div>
           </div>
           <div class="meta">
-            <div class="title">Crimson Hunter Trials</div>
-            <div class="tags">Action · Vampire Hunt</div>
+            <p class="eyebrow">Action Roguelite</p>
+            <h3 class="title">모바일 조작을 전제로 다듬은 뱀파이어 헌트 프로토타입</h3>
+            <div class="tags">탑다운 액션 · Trial 구조 · 미니앱 대응</div>
+            <p class="summary">
+              고난도 액션을 작은 화면에서도 읽히게 하려는 실험이 들어간 프로젝트입니다. 자동 조준과
+              스틱 배치, 일시정지 흐름 같은 모바일 세부 요소가 계속 조정되고 있습니다.
+            </p>
+            <ul class="mini-list">
+              <li>추천 포인트: 한 세션 안에서 빌드 선택이 확실히 체감됩니다.</li>
+              <li>핵심 감상: 대시와 스킬 재사용 타이밍이 생존을 좌우합니다.</li>
+            </ul>
           </div>
         </a>
 
-        <a class="card" href="./color-switch-dot/index.html">
+        <a class="feature-card" href="/retro-hero-street-beat/index.html">
           <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/color-switch-dot.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Color Switch Dot</div>
+            <img class="thumb-image" src="/assets/thumbs/retro-hero-street-beat.svg" alt="" loading="lazy" decoding="async" />
+            <div class="thumb-title">Retro Hero: Street Beat</div>
           </div>
           <div class="meta">
-            <div class="title">Color Switch Dot</div>
-            <div class="tags">Color · Reflex</div>
+            <p class="eyebrow">Rhythm Action</p>
+            <h3 class="title">리듬과 타격 타이밍을 섞은 레트로 스트리트 액션</h3>
+            <div class="tags">박자 입력 · 아케이드 타격감 · 짧은 난전</div>
+            <p class="summary">
+              단순 횡스크롤처럼 보이지만 실제로는 타이밍과 반응음이 중심입니다. 리듬을 놓치면 전투가
+              무너지도록 설계해 시각보다 손의 박자가 먼저 기억에 남습니다.
+            </p>
+            <ul class="mini-list">
+              <li>추천 포인트: 피드백이 빠르고 반복 세션이 짧습니다.</li>
+              <li>핵심 감상: 비트에 맞춘 공격 감각이 분명합니다.</li>
+            </ul>
           </div>
         </a>
 
-        <a class="card" href="./neon-snake/index.html">
+        <a class="feature-card" href="/cassette-ab-world/index.html">
           <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/neon-snake.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Neon Snake</div>
+            <img class="thumb-image" src="/assets/thumbs/cassette-ab-world.svg" alt="" loading="lazy" decoding="async" />
+            <div class="thumb-title">카세트 A/B 월드</div>
           </div>
           <div class="meta">
-            <div class="title">Neon Snake</div>
-            <div class="tags">Arcade · Snake</div>
+            <p class="eyebrow">A/B Switch Arcade</p>
+            <h3 class="title">두 상태를 넘나드는 전환형 원탭 아케이드</h3>
+            <div class="tags">모드 전환 · 리듬 판단 · 원버튼 실험</div>
+            <p class="summary">
+              A/B 스위치를 눌러 같은 장면을 다른 규칙으로 읽게 만드는 실험형 프로젝트입니다. 설명을 길게
+              쓰지 않아도 손으로 패턴 차이를 느끼게 하는 것이 목표입니다.
+            </p>
+            <ul class="mini-list">
+              <li>추천 포인트: 규칙 전환이 명확해서 재시도가 빠릅니다.</li>
+              <li>핵심 감상: 상태 변환 타이밍이 난이도 전체를 만듭니다.</li>
+            </ul>
           </div>
         </a>
+      </div>
+    </section>
 
+    <section id="principles">
+      <div class="section-head">
+        <h2>Editorial Notes</h2>
+        <p class="section-note">
+          메인 페이지는 프로젝트 개수를 과시하는 곳이 아니라, 지금도 설명과 운영을 이어가는 페이지를
+          소개하는 허브로 유지합니다.
+        </p>
+      </div>
+
+      <div class="content-grid">
+        <article class="content-panel">
+          <h3>왜 홈에서 카드 수를 줄였나</h3>
+          <p>
+            과거에는 실험 빌드와 짧은 아케이드까지 한 화면에 모두 나열했습니다. 지금은 사용자가 실제로
+            읽고 플레이할 수 있는 밀도를 우선하기 위해, 상위 큐레이션 작품만 남기고 홈 카드를 정리했습니다.
+          </p>
+          <ul class="bullet-list">
+            <li>첫 진입에서 무엇을 플레이해야 하는지 바로 보이도록 편집</li>
+            <li>비슷한 장르라도 서로 다른 플레이 문법을 가진 프로젝트만 선택</li>
+            <li>설명과 운영 페이지가 없는 실험성 빌드는 메인 노출에서 제외</li>
+          </ul>
+        </article>
+
+        <article class="content-panel">
+          <h3>프로젝트 페이지에서 보는 것</h3>
+          <p>
+            대표 프로젝트는 단순 실행 화면에 머물지 않도록 조작, 목표, 플레이 포인트, 업데이트 의도를
+            함께 적습니다. 게임을 켜기 전과 후의 이해 차이를 줄이는 것이 목적입니다.
+          </p>
+          <ul class="bullet-list">
+            <li>장르와 핵심 조작을 홈 카드에서 먼저 표시</li>
+            <li>각 프로젝트는 직접 제작 코드와 자산 출처 문맥을 유지</li>
+            <li>문의, 정책, 저작권 신고 경로를 루트에서 항상 노출</li>
+          </ul>
+        </article>
+
+        <article class="content-panel">
+          <h3>운영 원칙</h3>
+          <p>
+            TapTapCho는 광고 클릭 유도형 배치보다 플레이 경험과 문서 품질을 우선합니다. 사이트 전체의
+            운영 정보, 개인정보 처리방침, 이용약관, DMCA 절차는 루트에서 언제나 확인할 수 있습니다.
+          </p>
+          <ul class="bullet-list">
+            <li>문의 응답 기준과 업데이트 날짜를 문서에 명시</li>
+            <li>서울·경기 데이터 앱은 출처와 사용 목적을 분리해서 설명</li>
+            <li>정책 문서는 정적 페이지로 유지해 심사와 사용자 확인이 쉽도록 구성</li>
+          </ul>
+        </article>
       </div>
     </section>
 
     <section>
       <div class="section-head">
-        <h2>Arcade Returns</h2>
-        <p class="section-note">Previously hidden games are visible again</p>
+        <h2>Recent Maintenance</h2>
+        <p class="section-note">
+          최근 한 달 동안의 대표 정리 내용을 남깁니다. 운영 흔적이 없는 정적 링크 모음처럼 보이지 않도록
+          날짜와 이유를 함께 기록합니다.
+        </p>
       </div>
-      <div class="grid">
-        <a class="card" href="./zigzag-rush/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/zigzag-rush.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Zigzag Rush</div>
-          </div>
-          <div class="meta">
-            <div class="title">Zigzag Rush</div>
-            <div class="tags">Reflex · Zigzag</div>
-          </div>
-        </a>
 
-        <a class="card" href="./lane-runner/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/lane-runner.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Lane Runner</div>
-          </div>
-          <div class="meta">
-            <div class="title">Lane Runner</div>
-            <div class="tags">Reflex · Lane</div>
-          </div>
-        </a>
+      <div class="timeline-grid">
+        <article class="timeline-card">
+          <h3>홈 구조 재편</h3>
+          <ul class="timeline-list">
+            <li>
+              <strong>2026-03-30</strong>
+              대표 게임 페이지에 개별 설명, 공략, FAQ, canonical 메타를 보강해 단순 캔버스 노출을 줄였습니다.
+            </li>
+            <li>
+              <strong>2026-03-29</strong>
+              대표 프로젝트 중심의 큐레이션 홈으로 재구성하고, 운영 정보 페이지를 보강했습니다.
+            </li>
+            <li>
+              <strong>2026-03-29</strong>
+              `robots.txt`와 `sitemap.xml`을 추가해 루트 사이트 구조를 명확히 했습니다.
+            </li>
+          </ul>
+        </article>
 
-        <a class="card" href="./ladder-draw/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/ladder-draw.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Ladder Draw</div>
-          </div>
-          <div class="meta">
-            <div class="title">Ladder Draw</div>
-            <div class="tags">Party · Ladder</div>
-          </div>
-        </a>
+        <article class="timeline-card">
+          <h3>게임 품질 정리</h3>
+          <ul class="timeline-list">
+            <li>
+              <strong>2026-03-22</strong>
+              `Crimson Hunter Trials` 모바일 조작과 토스 미니앱 흐름을 조정했습니다.
+            </li>
+            <li>
+              <strong>2026-03-24</strong>
+              `잔향동`의 챕터 기반 무드와 사운드 출처 표시를 정리했습니다.
+            </li>
+          </ul>
+        </article>
 
-        <a class="card" href="./party-roulette/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/party-roulette.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Party Roulette</div>
-          </div>
-          <div class="meta">
-            <div class="title">Party Roulette</div>
-            <div class="tags">Party · Roulette</div>
-          </div>
-        </a>
+        <article class="timeline-card">
+          <h3>정보 앱 정리</h3>
+          <ul class="timeline-list">
+            <li>
+              <strong>2026-03-28</strong>
+              상권/부동산 데이터 앱의 루트 설명과 법무 페이지 링크를 재검토했습니다.
+            </li>
+            <li>
+              <strong>2026-03-29</strong>
+              메인 소개 문구를 게임 허브와 정보 유틸리티가 혼재되지 않도록 재분류했습니다.
+            </li>
+          </ul>
+        </article>
+      </div>
+    </section>
 
-        <a class="card" href="./poop-escape/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/poop-escape.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Poop Escape</div>
-          </div>
-          <div class="meta">
-            <div class="title">Poop Escape</div>
-            <div class="tags">Comedy · Stealth</div>
-          </div>
-        </a>
+    <section id="utilities">
+      <div class="section-head">
+        <h2>Utility Apps</h2>
+        <p class="section-note">
+          게임 외에도 직접 관리하는 생활형 데이터 서비스가 있습니다. 공개 출처 데이터를 읽기 쉽게 정리하는
+          것이 목적이며, 각 앱에는 서비스별 약관과 개인정보 안내가 연결됩니다.
+        </p>
+      </div>
 
-        <a class="card" href="./neon-dodge/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/neon-dodge.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Neon Dodge</div>
-          </div>
-          <div class="meta">
-            <div class="title">Neon Dodge</div>
-            <div class="tags">Dodge · Arcade</div>
-          </div>
-        </a>
+      <div class="utility-grid">
+        <article class="utility-card">
+          <h3>Real Estate Watch</h3>
+          <p>
+            서울·경기 아파트 실거래 흐름을 빠르게 확인하는 미니앱입니다. 스냅샷 경량화, 출처 관리,
+            법무 문서 연결을 함께 유지합니다.
+          </p>
+          <a class="card-link" href="/real-estate-watch/index.html">서비스 열기</a>
+        </article>
 
-        <a class="card" href="./ball-bounce/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/ball-bounce.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Ball Bounce</div>
-          </div>
-          <div class="meta">
-            <div class="title">Ball Bounce</div>
-            <div class="tags">Reflex · Paddle</div>
-          </div>
-        </a>
+        <article class="utility-card">
+          <h3>Commercial Area Radar</h3>
+          <p>
+            상권별 업종 분포와 분위기를 요약해 보는 서비스입니다. 정적인 목록보다 구역별 브리핑을 읽는
+            방식으로 접근성을 높였습니다.
+          </p>
+          <a class="card-link" href="/commercial-area-radar/index.html">서비스 열기</a>
+        </article>
 
-        <a class="card" href="./taptap-tetris/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/taptap-tetris.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">TapTap Tetris</div>
-          </div>
-          <div class="meta">
-            <div class="title">TapTap Tetris</div>
-            <div class="tags">Puzzle · Blocks</div>
-          </div>
-        </a>
-
-        <a class="card" href="./lane-dash/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/lane-dash.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Lane Dash</div>
-          </div>
-          <div class="meta">
-            <div class="title">Lane Dash</div>
-            <div class="tags">Racing · Lane</div>
-          </div>
-        </a>
-
-        <a class="card" href="./weird-tetris/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/weird-tetris.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Weird Tetris</div>
-          </div>
-          <div class="meta">
-            <div class="title">Weird Tetris</div>
-            <div class="tags">Puzzle · Twist</div>
-          </div>
-        </a>
-
-        <a class="card" href="./stack-tower/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/stack-tower.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Stack Tower</div>
-          </div>
-          <div class="meta">
-            <div class="title">Stack Tower</div>
-            <div class="tags">Timing · Stack</div>
-          </div>
-        </a>
-
-        <a class="card" href="./knife-hit-lite/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/knife-hit-lite.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Knife Hit Lite</div>
-          </div>
-          <div class="meta">
-            <div class="title">Knife Hit Lite</div>
-            <div class="tags">Arcade · Aim</div>
-          </div>
-        </a>
-
-        <a class="card" href="./helix-fall-mini/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/helix-fall-mini.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Helix Fall Mini</div>
-          </div>
-          <div class="meta">
-            <div class="title">Helix Fall Mini</div>
-            <div class="tags">Arcade · Drop</div>
-          </div>
-        </a>
-
-        <a class="card" href="./drift-one-tap/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/drift-one-tap.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Drift One-Tap</div>
-          </div>
-          <div class="meta">
-            <div class="title">Drift One-Tap</div>
-            <div class="tags">Arcade · Drift</div>
-          </div>
-        </a>
-
-        <a class="card" href="./slide-puzzle-rush/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/slide-puzzle-rush.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Slide Puzzle Rush</div>
-          </div>
-          <div class="meta">
-            <div class="title">Slide Puzzle Rush</div>
-            <div class="tags">Puzzle · Slide</div>
-          </div>
-        </a>
-
-        <a class="card" href="./cross-road-micro/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/cross-road-micro.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Cross Road Micro</div>
-          </div>
-          <div class="meta">
-            <div class="title">Cross Road Micro</div>
-            <div class="tags">Arcade · Crossing</div>
-          </div>
-        </a>
-
-        <a class="card" href="./merge-2048-tiny/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/merge-2048-tiny.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Merge 2048 Tiny</div>
-          </div>
-          <div class="meta">
-            <div class="title">Merge 2048 Tiny</div>
-            <div class="tags">Puzzle · Merge</div>
-          </div>
-        </a>
-
-        <a class="card" href="./lights-out-rush/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/lights-out-rush.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Lights Out Rush</div>
-          </div>
-          <div class="meta">
-            <div class="title">Lights Out Rush</div>
-            <div class="tags">Puzzle · Toggle</div>
-          </div>
-        </a>
-
-        <a class="card" href="./winter-ski-rush/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/winter-ski-rush.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Winter Ski Rush</div>
-          </div>
-          <div class="meta">
-            <div class="title">Winter Ski Rush</div>
-            <div class="tags">Arcade · Canvas Ski</div>
-          </div>
-        </a>
+        <article class="utility-card">
+          <h3>Officetel Watch</h3>
+          <p>
+            오피스텔 매매 흐름을 빠르게 보는 정보 앱입니다. 앱 이름과 공개 표기를 일치시키고, 루트에서
+            서비스 성격이 분명하게 보이도록 유지합니다.
+          </p>
+          <a class="card-link" href="/officetel-watch/index.html">서비스 열기</a>
+        </article>
       </div>
     </section>
 
     <section>
       <div class="section-head">
-        <h2>Puzzle Shelf</h2>
-        <p class="section-note">Logic, match, and board-style games back on the front page</p>
+        <h2>Reader FAQ</h2>
+        <p class="section-note">
+          사용자가 가장 자주 묻는 운영 질문을 루트에서 바로 답합니다. 홈에서 실체와 운영 범위를 한 번에
+          확인할 수 있게 두었습니다.
+        </p>
       </div>
-      <div class="grid">
-        <a class="card" href="./neon-block-puzzle/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/neon-block-puzzle.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Neon Block Puzzle</div>
-          </div>
-          <div class="meta">
-            <div class="title">Neon Block Puzzle</div>
-            <div class="tags">Puzzle · Blocks</div>
-          </div>
-        </a>
 
-        <a class="card" href="./neon-bubble-shooter/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/neon-bubble-shooter.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Neon Bubble Shooter</div>
-          </div>
-          <div class="meta">
-            <div class="title">Neon Bubble Shooter</div>
-            <div class="tags">Arcade · Match</div>
-          </div>
-        </a>
+      <div class="faq-grid">
+        <article class="faq-card">
+          <h3>이 사이트는 직접 만든 프로젝트만 다루나요?</h3>
+          <p>
+            네. 메인에 노출하는 게임과 데이터 앱은 직접 제작하거나 직접 운영하는 프로젝트만 유지합니다.
+            외부 리디렉션 모음이나 임베드형 링크 농장은 올리지 않습니다.
+          </p>
+        </article>
 
-        <a class="card" href="./neon-escape-room/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/neon-escape-room.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Neon Escape Room</div>
-          </div>
-          <div class="meta">
-            <div class="title">Neon Escape Room</div>
-            <div class="tags">Puzzle · Escape</div>
-          </div>
-        </a>
+        <article class="faq-card">
+          <h3>왜 일부 오래된 게임이 홈에서 보이지 않나요?</h3>
+          <p>
+            홈은 현재도 설명과 운영이 이어지는 대표 페이지 위주로 정리했습니다. 완성도나 문서 밀도가
+            부족한 실험성 빌드는 공개 URL은 유지하되 메인 노출에서는 제외합니다.
+          </p>
+        </article>
 
-        <a class="card" href="./neon-gravity-drop/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/neon-gravity-drop.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Neon Gravity Drop</div>
-          </div>
-          <div class="meta">
-            <div class="title">Neon Gravity Drop</div>
-            <div class="tags">Arcade · Gravity</div>
-          </div>
-        </a>
-
-        <a class="card" href="./neon-hidden-object/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/neon-hidden-object.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Neon Hidden Object</div>
-          </div>
-          <div class="meta">
-            <div class="title">Neon Hidden Object</div>
-            <div class="tags">Puzzle · Search</div>
-          </div>
-        </a>
-
-        <a class="card" href="./neon-jigsaw/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/neon-jigsaw.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Neon Jigsaw</div>
-          </div>
-          <div class="meta">
-            <div class="title">Neon Jigsaw</div>
-            <div class="tags">Puzzle · Jigsaw</div>
-          </div>
-        </a>
-
-        <a class="card" href="./neon-lights-out/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/neon-lights-out.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Neon Lights Out</div>
-          </div>
-          <div class="meta">
-            <div class="title">Neon Lights Out</div>
-            <div class="tags">Puzzle · Logic</div>
-          </div>
-        </a>
-
-        <a class="card" href="./neon-mahjong-pair/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/neon-mahjong-pair.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Neon Mahjong Pair</div>
-          </div>
-          <div class="meta">
-            <div class="title">Neon Mahjong Pair</div>
-            <div class="tags">Puzzle · Match</div>
-          </div>
-        </a>
-
-        <a class="card" href="./neon-match-3/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/neon-match-3.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Neon Match-3</div>
-          </div>
-          <div class="meta">
-            <div class="title">Neon Match-3</div>
-            <div class="tags">Puzzle · Match-3</div>
-          </div>
-        </a>
-
-        <a class="card" href="./neon-solitaire-lite/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/neon-solitaire-lite.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Neon Solitaire Lite</div>
-          </div>
-          <div class="meta">
-            <div class="title">Neon Solitaire Lite</div>
-            <div class="tags">Card · Solitaire</div>
-          </div>
-        </a>
-
-        <a class="card" href="./neon-sudoku/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/neon-sudoku.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Neon Sudoku</div>
-          </div>
-          <div class="meta">
-            <div class="title">Neon Sudoku</div>
-            <div class="tags">Puzzle · Sudoku</div>
-          </div>
-        </a>
-
-        <a class="card" href="./neon-tile-connect/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/neon-tile-connect.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Neon Tile Connect</div>
-          </div>
-          <div class="meta">
-            <div class="title">Neon Tile Connect</div>
-            <div class="tags">Puzzle · Connect</div>
-          </div>
-        </a>
-
-        <a class="card" href="./neon-word-search/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/neon-word-search.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Neon Word Search</div>
-          </div>
-          <div class="meta">
-            <div class="title">Neon Word Search</div>
-            <div class="tags">Puzzle · Words</div>
-          </div>
-        </a>
+        <article class="faq-card">
+          <h3>문의나 권리 침해 신고는 어디서 하나요?</h3>
+          <p>
+            루트의 Contact, Privacy, Terms, DMCA 문서에서 즉시 확인할 수 있습니다. 이메일과 GitHub
+            이슈 채널을 모두 열어 두고, 권리 침해 신고는 우선 검토 대상으로 처리합니다.
+          </p>
+        </article>
       </div>
     </section>
 
-    <section class="section-3d">
-      <div class="section-head">
-        <h2>3D Corner (Beta)</h2>
-        <p class="section-note">Hidden 3D experiments are visible again</p>
-      </div>
-      <div class="grid">
-        <a class="card" href="./retro-village-3d/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/retro-village-3d.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Retro Village 3D</div>
-          </div>
-          <div class="meta">
-            <div class="title">Retro Village 3D</div>
-            <div class="tags">3D · Exploration</div>
-          </div>
+    <section class="feature-list-card">
+      <h2>Other Active Picks</h2>
+      <p>
+        홈 메인은 줄였지만, 현재도 유지 중인 프로젝트는 계속 있습니다. 아래 링크는 비슷한 패턴으로
+        묶이지 않도록 서로 다른 감각의 작품만 남긴 보조 리스트입니다.
+      </p>
+      <div class="feature-list-grid">
+        <a href="/worm-arena-rush/index.html">
+          <strong>Worm Arena Rush</strong>
+          <span>성장형 아레나 · 충돌 리스크 관리</span>
         </a>
-
-        <a class="card" href="./godot-platformer-web/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/godot-platformer-web.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Neon Village (Godot)</div>
-          </div>
-          <div class="meta">
-            <div class="title">Neon Village (Godot)</div>
-            <div class="tags">3D · Village Explorer</div>
-          </div>
+        <a href="/godot-air-striker-web/index.html">
+          <strong>Air Striker Lite</strong>
+          <span>웨이브 슈팅 · 보스 페이즈 구성</span>
         </a>
-
-        <a class="card" href="./godot-urban-maze-web/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/godot-urban-maze-web.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Urban Village Explorer</div>
-          </div>
-          <div class="meta">
-            <div class="title">Urban Village Explorer</div>
-            <div class="tags">3D · Maze Explorer</div>
-          </div>
+        <a href="/godot-winter-ski-rush-web/index.html">
+          <strong>Winter Ski Rush</strong>
+          <span>다운힐 타임어택 · 체크포인트 주행</span>
         </a>
-
-        <a class="card" href="./godot-thrillpark-manager-web/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/godot-thrillpark-manager-web.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">ThrillPark Manager (Godot)</div>
-          </div>
-          <div class="meta">
-            <div class="title">ThrillPark Manager (Godot)</div>
-            <div class="tags">3D · Park Builder</div>
-          </div>
-        </a>
-
-        <a class="card" href="./godot-hyperfold-web/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/godot-hyperfold-web.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Hyperfold: Golden Hunt</div>
-          </div>
-          <div class="meta">
-            <div class="title">Hyperfold: Golden Hunt</div>
-            <div class="tags">3D · Layer Race</div>
-          </div>
-        </a>
-      </div>
-    </section>
-
-    <section>
-      <div class="section-head">
-        <h2>Info Apps</h2>
-        <p class="section-note">Official data utilities and service prototypes</p>
-      </div>
-      <div class="grid">
-        <a class="card" href="./real-estate-watch/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/real-estate-watch.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Real Estate Watch</div>
-          </div>
-          <div class="meta">
-            <div class="title">Real Estate Watch</div>
-            <div class="tags">Official Data · Seoul/Gyeonggi</div>
-          </div>
-        </a>
-
-        <a class="card" href="./commercial-area-radar/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/commercial-area-radar.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Commercial Area Radar</div>
-          </div>
-          <div class="meta">
-            <div class="title">Commercial Area Radar</div>
-            <div class="tags">Official Data · Store / District</div>
-          </div>
-        </a>
-
-        <a class="card" href="./officetel-watch/index.html">
-          <div class="thumb">
-            <img class="thumb-image" src="/assets/thumbs/officetel-watch.svg" alt="" loading="lazy" decoding="async" />
-            <div class="thumb-title">Officetel Watch</div>
-          </div>
-          <div class="meta">
-            <div class="title">Officetel Watch</div>
-            <div class="tags">Official Data · Officetel / Sale</div>
-          </div>
+        <a href="/orbitSurvivor/index.html">
+          <strong>Orbit Survivor</strong>
+          <span>원탭 생존 · 궤도 전환 패턴 학습</span>
         </a>
       </div>
     </section>
@@ -737,122 +472,12 @@
       <a href="/terms.html">Terms</a><span>·</span>
       <a href="/dmca.html">Copyright/DMCA</a>
     </div>
+    <div class="footer-note">
+      직접 제작한 웹게임과 데이터 프로토타입을 큐레이션 방식으로 운영합니다.
+      문의는 <a href="mailto:wndzlf@gmail.com">wndzlf@gmail.com</a> 또는
+      <a href="https://github.com/wndzlf/TapTapCho/issues" target="_blank" rel="noopener noreferrer">GitHub Issues</a>
+      로 받습니다.
+    </div>
   </footer>
-  <script src="/assets/js/site-quality.js"></script>
-  <script>
-    (function () {
-      var params = new URLSearchParams(window.location.search);
-      var debugEnabled = params.has('thumbdebug');
-
-      function showDebugBanner(text, isError) {
-        if (!debugEnabled) return;
-        var banner = document.createElement('div');
-        banner.textContent = text;
-        banner.style.position = 'fixed';
-        banner.style.left = '12px';
-        banner.style.bottom = '12px';
-        banner.style.zIndex = '99999';
-        banner.style.padding = '8px 10px';
-        banner.style.fontSize = '12px';
-        banner.style.fontFamily = 'ui-monospace, Menlo, monospace';
-        banner.style.borderRadius = '8px';
-        banner.style.color = '#fff';
-        banner.style.background = isError ? 'rgba(180,40,40,0.92)' : 'rgba(24,36,70,0.92)';
-        banner.style.border = '1px solid ' + (isError ? '#ff8d8d' : '#6aa7ff');
-        document.body.appendChild(banner);
-      }
-
-      function keyFromHref(href) {
-        var path = '';
-        try {
-          path = new URL(href, window.location.origin + '/').pathname || '';
-        } catch (e) {
-          path = href || '';
-        }
-        return path
-          .replace(/^\/+/, '')
-          .replace(/\/index\.html$/, '')
-          .replace(/\//g, '__');
-      }
-
-      try {
-        var thumbs = Array.prototype.slice.call(document.querySelectorAll('.card .thumb'));
-        var checks = [];
-        var applied = 0;
-
-        thumbs.forEach(function (thumb) {
-          var card = thumb.closest('.card');
-          if (!card) return;
-          if (!card.hasAttribute('href')) return;
-          var href = card.getAttribute('href') || '';
-          var key = keyFromHref(href);
-          if (!key) return;
-
-          var imgEl = thumb.querySelector('.thumb-image');
-          if (!imgEl) {
-            imgEl = document.createElement('img');
-            imgEl.className = 'thumb-image';
-            imgEl.alt = '';
-            imgEl.loading = 'lazy';
-            imgEl.decoding = 'async';
-            imgEl.src = '/assets/thumbs/' + key + '.svg';
-            thumb.insertBefore(imgEl, thumb.firstChild);
-          }
-          applied += 1;
-
-          checks.push(new Promise(function (resolve) {
-            function finish(ok) { resolve({ key: key, ok: ok }); }
-            if (imgEl.complete) {
-              finish(imgEl.naturalWidth > 0);
-              return;
-            }
-            imgEl.addEventListener('load', function () { finish(true); }, { once: true });
-            imgEl.addEventListener('error', function () { finish(false); }, { once: true });
-          }));
-        });
-
-        Promise.all(checks).then(function (results) {
-          var ok = 0;
-          var fail = 0;
-          var failedKeys = [];
-          results.forEach(function (r) {
-            if (r.ok) ok += 1;
-            else {
-              fail += 1;
-              if (failedKeys.length < 8) failedKeys.push(r.key);
-            }
-          });
-
-          window.__thumbDebug = {
-            cards: thumbs.length,
-            applied: applied,
-            checked: results.length,
-            ok: ok,
-            fail: fail,
-            failedKeys: failedKeys,
-            path: window.location.pathname,
-            ts: new Date().toISOString()
-          };
-
-          console.info('[TapTapCho][thumb]', window.__thumbDebug);
-
-          if (fail > 0 || debugEnabled) {
-            showDebugBanner(
-              'thumb ok=' + ok + ' fail=' + fail + (failedKeys.length ? ' [' + failedKeys.join(',') + ']' : ''),
-              fail > 0
-            );
-          }
-        });
-      } catch (err) {
-        window.__thumbDebug = {
-          error: String(err && err.message ? err.message : err),
-          path: window.location.pathname,
-          ts: new Date().toISOString()
-        };
-        console.error('[TapTapCho][thumb] fatal', err);
-        showDebugBanner('thumb fatal: ' + window.__thumbDebug.error, true);
-      }
-    })();
-  </script>
 </body>
 </html>
