@@ -263,5 +263,38 @@
       로 받습니다.
     </div>
   </footer>
+  <script>
+    (function () {
+      var cards = document.querySelectorAll('.catalog-card');
+      cards.forEach(function (card) {
+        var href = card.getAttribute('href') || '';
+        var parts = href.split('/').filter(Boolean);
+        var slug = parts[0];
+        if (!slug) return;
+
+        var existingChildren = Array.prototype.slice.call(card.childNodes);
+        var body = document.createElement('div');
+        body.className = 'catalog-card-body';
+
+        existingChildren.forEach(function (node) {
+          body.appendChild(node);
+        });
+
+        var thumb = document.createElement('div');
+        thumb.className = 'catalog-thumb';
+
+        var image = document.createElement('img');
+        image.className = 'catalog-thumb-image';
+        image.src = '/assets/thumbs/' + slug + '.svg';
+        image.alt = '';
+        image.loading = 'lazy';
+        image.decoding = 'async';
+
+        thumb.appendChild(image);
+        card.appendChild(thumb);
+        card.appendChild(body);
+      });
+    })();
+  </script>
 </body>
 </html>
