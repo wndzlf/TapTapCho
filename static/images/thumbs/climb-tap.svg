@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="ClimbTap thumbnail">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a1420"/>
+      <stop offset="45%" stop-color="#1f3d4b"/>
+      <stop offset="100%" stop-color="#111625"/>
+    </linearGradient>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#56657a"/>
+      <stop offset="100%" stop-color="#344253"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.18" cy="0.12" r="0.9">
+      <stop offset="0%" stop-color="#7ee4ff" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="beam" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ffd870" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#7ee4ff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="640" height="360" fill="url(#bg)"/>
+  <rect width="640" height="360" fill="url(#glow)"/>
+  <path d="M392 0H640V360H316L392 0Z" fill="#0a111d" opacity="0.82"/>
+  <path d="M194 42L434 18L350 350L110 342L194 42Z" fill="url(#wall)" stroke="#92a7bb" stroke-opacity="0.18" stroke-width="2"/>
+  <path d="M166 328C262 284 356 292 470 244L540 360H120Z" fill="url(#beam)"/>
+
+  <g opacity="0.88">
+    <circle cx="254" cy="98" r="15" fill="#ff8b6b"/>
+    <circle cx="300" cy="146" r="12" fill="#74e1af"/>
+    <circle cx="224" cy="194" r="10" fill="#ffd870"/>
+    <circle cx="316" cy="220" r="12" fill="#7ee4ff"/>
+    <circle cx="274" cy="270" r="11" fill="#f1ba69"/>
+    <rect x="260" y="44" width="74" height="16" rx="8" fill="#ffe29b"/>
+  </g>
+
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M286 112L270 154L248 192L280 218L304 198L292 154L286 112Z" stroke="#f7efe3" stroke-width="10"/>
+    <path d="M270 154L234 162" stroke="#f7efe3" stroke-width="9"/>
+    <path d="M292 154L320 148" stroke="#f7efe3" stroke-width="9"/>
+    <path d="M280 218L252 276" stroke="#f7efe3" stroke-width="10"/>
+    <path d="M304 198L330 246" stroke="#f7efe3" stroke-width="10"/>
+  </g>
+
+  <g opacity="0.14" fill="#ffffff">
+    <circle cx="88" cy="58" r="18"/>
+    <circle cx="138" cy="42" r="7"/>
+    <circle cx="182" cy="78" r="10"/>
+    <circle cx="546" cy="62" r="9"/>
+    <circle cx="576" cy="86" r="13"/>
+  </g>
+
+  <text x="38" y="98" fill="#ffffff" fill-opacity="0.09" font-size="102" font-family="Arial, sans-serif" font-weight="700">C</text>
+  <rect x="24" y="256" width="592" height="84" rx="14" fill="#050916" fill-opacity="0.5"/>
+  <text x="40" y="300" fill="#f4f9ff" font-family="Arial, sans-serif" font-weight="700" font-size="34">ClimbTap</text>
+  <text x="40" y="328" fill="#d1ddf6" font-family="Arial, sans-serif" font-size="20">3D Grip Puzzle</text>
+</svg>
