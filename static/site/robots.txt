@@ -4,6 +4,7 @@ Disallow: /
 Allow: /$
 Allow: /index.html
 Allow: /about.html
+Allow: /projects.html
 Allow: /contact.html
 Allow: /privacy.html
 Allow: /terms.html

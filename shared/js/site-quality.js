@@ -4,6 +4,7 @@
   var LEGAL_LINKS = [
     { href: '/index.html', label: 'Home' },
     { href: '/about.html', label: 'About' },
+    { href: '/projects.html', label: 'Projects' },
     { href: '/contact.html', label: 'Contact' },
     { href: '/privacy.html', label: 'Privacy' },
     { href: '/terms.html', label: 'Terms' },
