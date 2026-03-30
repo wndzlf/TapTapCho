@@ -265,12 +265,17 @@
   </footer>
   <script>
     (function () {
+      var thumbAlias = {
+        'sunken-sixway-defense-2': 'sunken-sixway-defense'
+      };
+
       var cards = document.querySelectorAll('.catalog-card');
       cards.forEach(function (card) {
         var href = card.getAttribute('href') || '';
         var parts = href.split('/').filter(Boolean);
         var slug = parts[0];
         if (!slug) return;
+        var thumbSlug = thumbAlias[slug] || slug;
 
         var existingChildren = Array.prototype.slice.call(card.childNodes);
         var body = document.createElement('div');
@@ -285,9 +290,9 @@
 
         var image = document.createElement('img');
         image.className = 'catalog-thumb-image';
-        image.src = '/assets/thumbs/' + slug + '.svg';
+        image.src = '/assets/thumbs/' + thumbSlug + '.svg';
         image.alt = '';
-        image.loading = 'lazy';
+        image.loading = 'eager';
         image.decoding = 'async';
 
         thumb.appendChild(image);
