@@ -736,10 +736,10 @@
     };
 
     const limbTemplates = [
-      { id: 'lh', short: 'LH', name: 'Left Hand', role: 'hand', color: '#ffcfb7', socketX: -0.29, socketY: 0.24, socketZ: 0.03, upper: 0.5, lower: 0.48, preferred: 0.82, maxReach: 1.44, thickness: 0.06 },
-      { id: 'rh', short: 'RH', name: 'Right Hand', role: 'hand', color: '#cfefff', socketX: 0.29, socketY: 0.24, socketZ: 0.03, upper: 0.5, lower: 0.48, preferred: 0.82, maxReach: 1.44, thickness: 0.06 },
-      { id: 'lf', short: 'LF', name: 'Left Foot', role: 'foot', color: '#ffe0a8', socketX: -0.18, socketY: -0.46, socketZ: 0.04, upper: 0.58, lower: 0.54, preferred: 0.9, maxReach: 1.5, thickness: 0.07 },
-      { id: 'rf', short: 'RF', name: 'Right Foot', role: 'foot', color: '#d8ffbc', socketX: 0.18, socketY: -0.46, socketZ: 0.04, upper: 0.58, lower: 0.54, preferred: 0.9, maxReach: 1.5, thickness: 0.07 }
+      { id: 'lh', short: 'LH', name: 'Left Hand', role: 'hand', color: '#ffcfb7', socketX: -0.26, socketY: 0.34, socketZ: 0.02, upper: 0.52, lower: 0.5, preferred: 0.84, maxReach: 1.46, thickness: 0.055 },
+      { id: 'rh', short: 'RH', name: 'Right Hand', role: 'hand', color: '#cfefff', socketX: 0.26, socketY: 0.34, socketZ: 0.02, upper: 0.52, lower: 0.5, preferred: 0.84, maxReach: 1.46, thickness: 0.055 },
+      { id: 'lf', short: 'LF', name: 'Left Foot', role: 'foot', color: '#ffe0a8', socketX: -0.14, socketY: -0.58, socketZ: 0.03, upper: 0.62, lower: 0.58, preferred: 0.96, maxReach: 1.58, thickness: 0.07 },
+      { id: 'rf', short: 'RF', name: 'Right Foot', role: 'foot', color: '#d8ffbc', socketX: 0.14, socketY: -0.58, socketZ: 0.03, upper: 0.62, lower: 0.58, preferred: 0.96, maxReach: 1.58, thickness: 0.07 }
     ];
 
     const H = (id, x, y, kind, style, color, size, depth, extra = {}) => ({
@@ -1073,11 +1073,11 @@
       climberGroup.clear();
 
       const shirtMaterial = new THREE.MeshStandardMaterial({ color: 0xe8edf1, roughness: 0.48, metalness: 0.04 });
-      const shortsMaterial = new THREE.MeshStandardMaterial({ color: 0xc5cfb1, roughness: 0.56, metalness: 0.04 });
+      const shortsMaterial = new THREE.MeshStandardMaterial({ color: 0x8894a9, roughness: 0.58, metalness: 0.04 });
       const skinMaterial = new THREE.MeshStandardMaterial({ color: 0xe7bea9, roughness: 0.58, metalness: 0.02 });
       const harnessMaterial = new THREE.MeshStandardMaterial({ color: 0x111a27, roughness: 0.62, metalness: 0.12 });
       const chalkMaterial = new THREE.MeshStandardMaterial({ color: 0x2c4158, roughness: 0.56, metalness: 0.08 });
-      const shoeMaterial = new THREE.MeshStandardMaterial({ color: 0x9ea8c4, roughness: 0.54, metalness: 0.12 });
+      const shoeMaterial = new THREE.MeshStandardMaterial({ color: 0x2d3446, roughness: 0.54, metalness: 0.12 });
       const hairMaterial = new THREE.MeshStandardMaterial({ color: 0x7b5447, roughness: 0.8, metalness: 0.0 });
 
       const core = new THREE.Group();
@@ -1094,30 +1094,31 @@
       const harnessLoopL = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.018, 8, 20), harnessMaterial);
       const harnessLoopR = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.018, 8, 20), harnessMaterial);
 
-      core.position.set(0, 0.02, 0);
-      chest.position.set(0, 0.12, 0.02);
-      chest.scale.set(1.16, 1.08, 0.96);
-      abdomen.position.set(0, -0.14, 0.03);
-      abdomen.scale.set(1.0, 0.8, 0.82);
-      pelvis.position.set(0, -0.45, 0.03);
-      pelvis.scale.set(1.22, 1.08, 0.9);
+      core.position.set(0, -0.02, 0);
+      core.scale.set(1.14, 1.14, 1.14);
+      chest.position.set(0, 0.18, 0.02);
+      chest.scale.set(1.2, 1.18, 1.02);
+      abdomen.position.set(0, -0.16, 0.03);
+      abdomen.scale.set(1.02, 0.9, 0.84);
+      pelvis.position.set(0, -0.54, 0.03);
+      pelvis.scale.set(1.18, 1.1, 0.92);
       shoulderBar.rotation.z = Math.PI / 2;
-      shoulderBar.position.set(0, 0.25, 0.03);
-      shoulderBar.scale.set(1.28, 1.02, 0.96);
+      shoulderBar.position.set(0, 0.34, 0.03);
+      shoulderBar.scale.set(1.38, 1.02, 0.98);
       hipBar.rotation.z = Math.PI / 2;
-      hipBar.position.set(0, -0.46, 0.04);
-      hipBar.scale.set(1.02, 0.94, 0.9);
-      neck.position.set(0, 0.47, 0.01);
-      head.position.set(0, 0.72, 0.04);
-      head.scale.set(1.0, 1.08, 0.98);
+      hipBar.position.set(0, -0.56, 0.04);
+      hipBar.scale.set(0.96, 0.9, 0.9);
+      neck.position.set(0, 0.58, 0.01);
+      head.position.set(0, 0.88, 0.04);
+      head.scale.set(1.0, 1.12, 1.0);
       hair.position.copy(head.position).add(new THREE.Vector3(0, 0.05, -0.014));
       hair.scale.set(1.02, 0.74, 1.02);
-      harness.position.set(0, -0.1, 0.08);
+      harness.position.set(0, -0.16, 0.08);
       harness.rotation.x = Math.PI / 2;
-      chalkBag.position.set(0, -0.48, -0.18);
-      harnessLoopL.position.set(-0.17, -0.5, 0.03);
+      chalkBag.position.set(0, -0.58, -0.18);
+      harnessLoopL.position.set(-0.18, -0.6, 0.03);
       harnessLoopL.rotation.x = Math.PI / 2;
-      harnessLoopR.position.set(0.17, -0.5, 0.03);
+      harnessLoopR.position.set(0.18, -0.6, 0.03);
       harnessLoopR.rotation.x = Math.PI / 2;
 
       core.add(chest, abdomen, pelvis, shoulderBar, hipBar, neck, head, hair, harness, chalkBag, harnessLoopL, harnessLoopR);
@@ -1152,14 +1153,14 @@
       state.limbs = limbTemplates.map((template) => {
         const upper = new THREE.Mesh(
           segmentGeometry,
-          template.role === 'hand' ? shirtMaterial : shortsMaterial
+          template.role === 'hand' ? skinMaterial : shortsMaterial
         );
         const lower = new THREE.Mesh(
           segmentGeometry,
-          template.role === 'hand' ? skinMaterial : shortsMaterial
+          template.role === 'hand' ? skinMaterial : skinMaterial
         );
         const joint = new THREE.Mesh(
-          new THREE.SphereGeometry(template.role === 'hand' ? 0.068 : 0.076, 12, 12),
+          new THREE.SphereGeometry(template.role === 'hand' ? 0.062 : 0.07, 12, 12),
           template.role === 'hand' ? skinMaterial : shortsMaterial
         );
         const end = new THREE.Mesh(
@@ -1428,20 +1429,6 @@
       sideRight.rotation.y = -Math.PI / 2.4;
       environmentGroup.add(sideRight);
 
-      const beamMaterial = new THREE.MeshStandardMaterial({
-        color: 0xe7d9b8,
-        emissive: 0x7ee4ff,
-        emissiveIntensity: 0.18,
-        roughness: 0.36
-      });
-
-      for (const x of [-3.35, 3.35]) {
-        const beam = new THREE.Mesh(new THREE.BoxGeometry(0.16, 8.4, 0.16), beamMaterial);
-        beam.position.set(x, 4.1, 2.35);
-        beam.rotation.z = x < 0 ? 0.09 : -0.09;
-        environmentGroup.add(beam);
-      }
-
       problem.holds.forEach((holdDef) => {
         const hold = createHold(holdDef);
         state.holds.push(hold);
@@ -1457,8 +1444,8 @@
       ]);
       const spawn = startPos
         .clone()
-        .addScaledVector(state.wallUp, -0.72)
-        .addScaledVector(state.wallNormal, 0.92);
+        .addScaledVector(state.wallUp, -0.96)
+        .addScaledVector(state.wallNormal, 1.02);
 
       const bodyDesc = RAPIER.RigidBodyDesc.dynamic()
         .setTranslation(spawn.x, spawn.y, spawn.z)
@@ -1505,15 +1492,6 @@
       group.position.copy(mountPoint);
       mesh.userData.holdId = holdDef.id;
       group.add(mesh);
-
-      if (holdDef.start) {
-        const ring = new THREE.Mesh(
-          new THREE.TorusGeometry(0.16 * holdDef.size, 0.018, 10, 28),
-          new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.72 })
-        );
-        ring.position.copy(state.wallNormal).multiplyScalar(0.06);
-        group.add(ring);
-      }
 
       if (holdDef.top) {
         const glow = new THREE.Mesh(
@@ -1736,8 +1714,8 @@
         const vertical = bodyToCentroid.dot(state.wallUp);
         const wallDist = getWallDistance(bodyPos);
 
-        const balanceImpulse = state.wallTangent.clone().multiplyScalar(-lateral * 6.4 * step);
-        balanceImpulse.addScaledVector(state.wallUp, (-0.78 - vertical) * 4.8 * step);
+        const balanceImpulse = state.wallTangent.clone().multiplyScalar(-lateral * 6.2 * step);
+        balanceImpulse.addScaledVector(state.wallUp, (-0.96 - vertical) * 4.8 * step);
         balanceImpulse.addScaledVector(state.wallNormal, (-2.9 - wallDist * 4.2) * step);
         applyImpulse(balanceImpulse);
 
@@ -1857,9 +1835,9 @@
       state.limbs.forEach((limb) => {
         const socketWorld = getSocketWorld(limb, bodyPos);
         const targetWorld = getLimbTarget(limb, bodyPos, dt);
-        const bendHint = state.wallTangent.clone().multiplyScalar(limb.socketX >= 0 ? 1 : -1);
-        bendHint.addScaledVector(state.wallNormal, 0.4);
-        bendHint.addScaledVector(state.wallUp, limb.role === 'hand' ? -0.14 : 0.18);
+        const bendHint = state.wallTangent.clone().multiplyScalar((limb.socketX >= 0 ? 1 : -1) * (limb.role === 'hand' ? 0.72 : 0.38));
+        bendHint.addScaledVector(state.wallNormal, limb.role === 'hand' ? 0.18 : 0.52);
+        bendHint.addScaledVector(state.wallUp, limb.role === 'hand' ? -0.42 : 0.06);
         const jointWorld = solveTwoBone(socketWorld, targetWorld, limb.upper, limb.lower, bendHint);
         const socket = worldToClimberLocal(socketWorld);
         const joint = worldToClimberLocal(jointWorld);
