@@ -736,10 +736,10 @@
     };
 
     const limbTemplates = [
-      { id: 'lh', short: 'LH', name: 'Left Hand', role: 'hand', color: '#ffcfb7', socketX: -0.34, socketY: 0.32, socketZ: 0.02, upper: 0.52, lower: 0.51, preferred: 0.84, maxReach: 1.48, thickness: 0.06 },
-      { id: 'rh', short: 'RH', name: 'Right Hand', role: 'hand', color: '#cfefff', socketX: 0.34, socketY: 0.32, socketZ: 0.02, upper: 0.52, lower: 0.51, preferred: 0.84, maxReach: 1.48, thickness: 0.06 },
-      { id: 'lf', short: 'LF', name: 'Left Foot', role: 'foot', color: '#ffe0a8', socketX: -0.24, socketY: -0.42, socketZ: 0.05, upper: 0.56, lower: 0.54, preferred: 0.92, maxReach: 1.55, thickness: 0.07 },
-      { id: 'rf', short: 'RF', name: 'Right Foot', role: 'foot', color: '#d8ffbc', socketX: 0.24, socketY: -0.42, socketZ: 0.05, upper: 0.56, lower: 0.54, preferred: 0.92, maxReach: 1.55, thickness: 0.07 }
+      { id: 'lh', short: 'LH', name: 'Left Hand', role: 'hand', color: '#ffcfb7', socketX: -0.29, socketY: 0.24, socketZ: 0.03, upper: 0.5, lower: 0.48, preferred: 0.82, maxReach: 1.44, thickness: 0.06 },
+      { id: 'rh', short: 'RH', name: 'Right Hand', role: 'hand', color: '#cfefff', socketX: 0.29, socketY: 0.24, socketZ: 0.03, upper: 0.5, lower: 0.48, preferred: 0.82, maxReach: 1.44, thickness: 0.06 },
+      { id: 'lf', short: 'LF', name: 'Left Foot', role: 'foot', color: '#ffe0a8', socketX: -0.18, socketY: -0.46, socketZ: 0.04, upper: 0.58, lower: 0.54, preferred: 0.9, maxReach: 1.5, thickness: 0.07 },
+      { id: 'rf', short: 'RF', name: 'Right Foot', role: 'foot', color: '#d8ffbc', socketX: 0.18, socketY: -0.46, socketZ: 0.04, upper: 0.58, lower: 0.54, preferred: 0.9, maxReach: 1.5, thickness: 0.07 }
     ];
 
     const H = (id, x, y, kind, style, color, size, depth, extra = {}) => ({
@@ -1017,9 +1017,9 @@
       leanAnchor: null,
       leanTarget: new THREE.Vector2(),
       lean: new THREE.Vector2(),
-      orbitYaw: 0.24,
-      orbitPitch: 0.2,
-      orbitDistance: 7.6,
+      orbitYaw: 0.02,
+      orbitPitch: 0.13,
+      orbitDistance: 6.7,
       cameraTarget: new THREE.Vector3(0, 3.3, 0.7),
       cameraTargetDesired: new THREE.Vector3(0, 3.3, 0.7),
       wallTilt: 0,
@@ -1094,28 +1094,30 @@
       const harnessLoopL = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.018, 8, 20), harnessMaterial);
       const harnessLoopR = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.018, 8, 20), harnessMaterial);
 
-      chest.position.set(0, 0.16, 0.01);
-      chest.scale.set(1.05, 0.96, 0.84);
-      abdomen.position.set(0, -0.12, 0.01);
-      abdomen.scale.set(0.92, 0.72, 0.72);
-      pelvis.position.set(0, -0.42, 0.02);
-      pelvis.scale.set(1.1, 1.0, 0.82);
+      core.position.set(0, 0.02, 0);
+      chest.position.set(0, 0.12, 0.02);
+      chest.scale.set(1.16, 1.08, 0.96);
+      abdomen.position.set(0, -0.14, 0.03);
+      abdomen.scale.set(1.0, 0.8, 0.82);
+      pelvis.position.set(0, -0.45, 0.03);
+      pelvis.scale.set(1.22, 1.08, 0.9);
       shoulderBar.rotation.z = Math.PI / 2;
-      shoulderBar.position.set(0, 0.27, 0.01);
-      shoulderBar.scale.set(1, 1, 0.9);
+      shoulderBar.position.set(0, 0.25, 0.03);
+      shoulderBar.scale.set(1.28, 1.02, 0.96);
       hipBar.rotation.z = Math.PI / 2;
-      hipBar.position.set(0, -0.42, 0.03);
-      hipBar.scale.set(0.88, 0.88, 0.86);
-      neck.position.set(0, 0.52, -0.005);
-      head.position.set(0, 0.76, 0.01);
-      hair.position.copy(head.position).add(new THREE.Vector3(0, 0.04, -0.012));
+      hipBar.position.set(0, -0.46, 0.04);
+      hipBar.scale.set(1.02, 0.94, 0.9);
+      neck.position.set(0, 0.47, 0.01);
+      head.position.set(0, 0.72, 0.04);
+      head.scale.set(1.0, 1.08, 0.98);
+      hair.position.copy(head.position).add(new THREE.Vector3(0, 0.05, -0.014));
       hair.scale.set(1.02, 0.74, 1.02);
-      harness.position.set(0, -0.1, 0.04);
+      harness.position.set(0, -0.1, 0.08);
       harness.rotation.x = Math.PI / 2;
-      chalkBag.position.set(0, -0.46, -0.18);
-      harnessLoopL.position.set(-0.16, -0.48, 0.02);
+      chalkBag.position.set(0, -0.48, -0.18);
+      harnessLoopL.position.set(-0.17, -0.5, 0.03);
       harnessLoopL.rotation.x = Math.PI / 2;
-      harnessLoopR.position.set(0.16, -0.48, 0.02);
+      harnessLoopR.position.set(0.17, -0.5, 0.03);
       harnessLoopR.rotation.x = Math.PI / 2;
 
       core.add(chest, abdomen, pelvis, shoulderBar, hipBar, neck, head, hair, harness, chalkBag, harnessLoopL, harnessLoopR);
@@ -1433,10 +1435,10 @@
         roughness: 0.36
       });
 
-      for (let i = -2; i <= 2; i += 2) {
-        const beam = new THREE.Mesh(new THREE.BoxGeometry(0.18, 8.6, 0.18), beamMaterial);
-        beam.position.set(i, 4.1, 2.8);
-        beam.rotation.z = 0.08 * -i;
+      for (const x of [-3.35, 3.35]) {
+        const beam = new THREE.Mesh(new THREE.BoxGeometry(0.16, 8.4, 0.16), beamMaterial);
+        beam.position.set(x, 4.1, 2.35);
+        beam.rotation.z = x < 0 ? 0.09 : -0.09;
         environmentGroup.add(beam);
       }
 
@@ -1471,7 +1473,7 @@
         state.body
       );
 
-      state.cameraTargetDesired.copy(spawn).addScaledVector(state.wallUp, 0.12);
+      state.cameraTargetDesired.copy(spawn).addScaledVector(state.wallUp, 0.18);
       state.cameraTarget.copy(state.cameraTargetDesired);
     }
 
@@ -1853,12 +1855,15 @@
       }
 
       state.limbs.forEach((limb) => {
-        const socket = getSocketWorld(limb, bodyPos);
-        const target = getLimbTarget(limb, bodyPos, dt);
+        const socketWorld = getSocketWorld(limb, bodyPos);
+        const targetWorld = getLimbTarget(limb, bodyPos, dt);
         const bendHint = state.wallTangent.clone().multiplyScalar(limb.socketX >= 0 ? 1 : -1);
         bendHint.addScaledVector(state.wallNormal, 0.4);
         bendHint.addScaledVector(state.wallUp, limb.role === 'hand' ? -0.14 : 0.18);
-        const joint = solveTwoBone(socket, target, limb.upper, limb.lower, bendHint);
+        const jointWorld = solveTwoBone(socketWorld, targetWorld, limb.upper, limb.lower, bendHint);
+        const socket = worldToClimberLocal(socketWorld);
+        const joint = worldToClimberLocal(jointWorld);
+        const target = worldToClimberLocal(targetWorld);
         placeSegment(limb.meshes.upper, socket, joint, limb.role === 'hand' ? limb.thickness * 1.14 : limb.thickness * 1.26);
         placeSegment(limb.meshes.lower, joint, target, limb.role === 'hand' ? limb.thickness * 0.94 : limb.thickness * 1.06);
         limb.meshes.joint.position.copy(joint);
@@ -1875,7 +1880,12 @@
         state.cameraTarget.z + Math.cos(state.orbitYaw) * horizontal + 3.2
       );
       camera.position.lerp(desired, Math.min(1, dt * 6.4));
-      camera.lookAt(state.cameraTarget.clone().addScaledVector(state.wallNormal, -0.18));
+      camera.lookAt(
+        state.cameraTarget
+          .clone()
+          .addScaledVector(state.wallNormal, -0.18)
+          .addScaledVector(state.wallUp, 0.18)
+      );
     }
 
     function updateHoldVisuals(dt) {
@@ -2211,6 +2221,10 @@
       const right = state.wallTangent.clone().normalize();
       const matrix = new THREE.Matrix4().makeBasis(right, up, forward);
       return local.applyMatrix4(matrix).add(bodyPos);
+    }
+
+    function worldToClimberLocal(point) {
+      return climberGroup.worldToLocal(point.clone());
     }
 
     function getLimbTarget(limb, bodyPos, dt) {
