@@ -615,8 +615,8 @@
       <div class="beta" id="betaText">한 손 조작: 림프를 고르고 홀드를 탭하세요. 길게 누르면 강한 그립이지만 피로가 더 빨리 쌓입니다.</div>
       <div class="stat-grid">
         <div class="stat-card">
-          <span>Time</span>
-          <strong id="timeValue">90.0s</strong>
+          <span>Elapsed</span>
+          <strong id="timeValue">0.0s</strong>
         </div>
         <div class="stat-card">
           <span>Balance</span>
@@ -981,10 +981,17 @@
     const floorTexture = createFloorTexture();
     const holdGeometries = createHoldGeometryBank();
     const particleGeometry = new THREE.SphereGeometry(0.045, 6, 6);
-    const segmentGeometry = new THREE.CylinderGeometry(1, 1, 1, 10, 1, false);
-    const jointGeometry = new THREE.SphereGeometry(0.075, 10, 10);
-    const headGeometry = new THREE.SphereGeometry(0.17, 20, 18);
-    const torsoGeometry = new THREE.CapsuleGeometry(0.23, 0.62, 4, 10);
+    const segmentGeometry = new THREE.CylinderGeometry(1, 1, 1, 12, 1, false);
+    const jointGeometry = new THREE.SphereGeometry(0.075, 12, 12);
+    const headGeometry = new THREE.SphereGeometry(0.17, 22, 20);
+    const torsoGeometry = new THREE.CapsuleGeometry(0.23, 0.62, 4, 12);
+    const chestGeometry = new THREE.CapsuleGeometry(0.25, 0.34, 4, 12);
+    const pelvisGeometry = new THREE.CapsuleGeometry(0.21, 0.16, 4, 10);
+    const barGeometry = new THREE.CapsuleGeometry(0.05, 0.4, 4, 10);
+    const neckGeometry = new THREE.CylinderGeometry(0.07, 0.08, 0.12, 10);
+    const handGeometry = new THREE.BoxGeometry(0.12, 0.065, 0.17);
+    const footGeometry = new THREE.BoxGeometry(0.13, 0.085, 0.24);
+    const socketGeometry = new THREE.SphereGeometry(0.055, 10, 10);
 
     const audio = {
       context: null,
@@ -999,6 +1006,7 @@
       holdMap: new Map(),
       holds: [],
       limbs: [],
+      bodyRig: null,
       overlayMode: 'board',
       overlayVisible: true,
       selectedLimbId: 'rh',
@@ -1018,7 +1026,7 @@
       wallNormal: new THREE.Vector3(0, 0, 1),
       wallUp: new THREE.Vector3(0, 1, 0),
       wallTangent: new THREE.Vector3(1, 0, 0),
-      timeLeft: 90,
+      elapsedTime: 0,
       phase: 'preview',
       toastText: '',
       toastTimer: 0,
@@ -1062,28 +1070,100 @@
     }
 
     function createClimberVisuals() {
-      const torsoMaterial = new THREE.MeshStandardMaterial({ color: 0xe6ece8, roughness: 0.44, metalness: 0.06 });
-      const skinMaterial = new THREE.MeshStandardMaterial({ color: 0xf7d6c2, roughness: 0.54, metalness: 0.02 });
-      const harnessMaterial = new THREE.MeshStandardMaterial({ color: 0x152232, roughness: 0.62, metalness: 0.15 });
+      climberGroup.clear();
 
-      const torso = new THREE.Mesh(torsoGeometry, torsoMaterial);
+      const shirtMaterial = new THREE.MeshStandardMaterial({ color: 0xe8edf1, roughness: 0.48, metalness: 0.04 });
+      const shortsMaterial = new THREE.MeshStandardMaterial({ color: 0xc5cfb1, roughness: 0.56, metalness: 0.04 });
+      const skinMaterial = new THREE.MeshStandardMaterial({ color: 0xe7bea9, roughness: 0.58, metalness: 0.02 });
+      const harnessMaterial = new THREE.MeshStandardMaterial({ color: 0x111a27, roughness: 0.62, metalness: 0.12 });
+      const chalkMaterial = new THREE.MeshStandardMaterial({ color: 0x2c4158, roughness: 0.56, metalness: 0.08 });
+      const shoeMaterial = new THREE.MeshStandardMaterial({ color: 0x9ea8c4, roughness: 0.54, metalness: 0.12 });
+      const hairMaterial = new THREE.MeshStandardMaterial({ color: 0x7b5447, roughness: 0.8, metalness: 0.0 });
+
+      const core = new THREE.Group();
+      const chest = new THREE.Mesh(chestGeometry, shirtMaterial);
+      const abdomen = new THREE.Mesh(torsoGeometry, shirtMaterial);
+      const pelvis = new THREE.Mesh(pelvisGeometry, shortsMaterial);
+      const shoulderBar = new THREE.Mesh(barGeometry, shirtMaterial);
+      const hipBar = new THREE.Mesh(barGeometry, shortsMaterial);
+      const neck = new THREE.Mesh(neckGeometry, skinMaterial);
       const head = new THREE.Mesh(headGeometry, skinMaterial);
-      const harness = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.05, 12, 28), harnessMaterial);
-      head.position.set(0, 0.56, 0.06);
-      harness.position.set(0, -0.02, 0);
+      const hair = new THREE.Mesh(new THREE.SphereGeometry(0.172, 18, 16), hairMaterial);
+      const harness = new THREE.Mesh(new THREE.TorusGeometry(0.29, 0.045, 12, 30), harnessMaterial);
+      const chalkBag = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.16, 12), chalkMaterial);
+      const harnessLoopL = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.018, 8, 20), harnessMaterial);
+      const harnessLoopR = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.018, 8, 20), harnessMaterial);
+
+      chest.position.set(0, 0.16, 0.01);
+      chest.scale.set(1.05, 0.96, 0.84);
+      abdomen.position.set(0, -0.12, 0.01);
+      abdomen.scale.set(0.92, 0.72, 0.72);
+      pelvis.position.set(0, -0.42, 0.02);
+      pelvis.scale.set(1.1, 1.0, 0.82);
+      shoulderBar.rotation.z = Math.PI / 2;
+      shoulderBar.position.set(0, 0.27, 0.01);
+      shoulderBar.scale.set(1, 1, 0.9);
+      hipBar.rotation.z = Math.PI / 2;
+      hipBar.position.set(0, -0.42, 0.03);
+      hipBar.scale.set(0.88, 0.88, 0.86);
+      neck.position.set(0, 0.52, -0.005);
+      head.position.set(0, 0.76, 0.01);
+      hair.position.copy(head.position).add(new THREE.Vector3(0, 0.04, -0.012));
+      hair.scale.set(1.02, 0.74, 1.02);
+      harness.position.set(0, -0.1, 0.04);
       harness.rotation.x = Math.PI / 2;
-      climberGroup.add(torso, head, harness);
+      chalkBag.position.set(0, -0.46, -0.18);
+      harnessLoopL.position.set(-0.16, -0.48, 0.02);
+      harnessLoopL.rotation.x = Math.PI / 2;
+      harnessLoopR.position.set(0.16, -0.48, 0.02);
+      harnessLoopR.rotation.x = Math.PI / 2;
+
+      core.add(chest, abdomen, pelvis, shoulderBar, hipBar, neck, head, hair, harness, chalkBag, harnessLoopL, harnessLoopR);
+
+      const socketMat = new THREE.MeshStandardMaterial({ color: 0xf0f4f8, roughness: 0.5, metalness: 0.06 });
+      const socketMarkers = {};
+      limbTemplates.forEach((template) => {
+        const socket = new THREE.Mesh(socketGeometry, socketMat);
+        socket.position.set(template.socketX, template.socketY, template.socketZ);
+        core.add(socket);
+        socketMarkers[template.id] = socket;
+      });
+
+      climberGroup.add(core);
+      state.bodyRig = {
+        core,
+        chest,
+        abdomen,
+        pelvis,
+        shoulderBar,
+        hipBar,
+        neck,
+        head,
+        hair,
+        harness,
+        chalkBag,
+        harnessLoopL,
+        harnessLoopR,
+        socketMarkers
+      };
 
       state.limbs = limbTemplates.map((template) => {
-        const material = new THREE.MeshStandardMaterial({
-          color: new THREE.Color(template.color),
-          roughness: 0.58,
-          metalness: 0.02
-        });
-        const upper = new THREE.Mesh(segmentGeometry, material);
-        const lower = new THREE.Mesh(segmentGeometry, material);
-        const joint = new THREE.Mesh(jointGeometry, material);
-        const end = new THREE.Mesh(new THREE.SphereGeometry(template.role === 'hand' ? 0.09 : 0.1, 12, 12), material);
+        const upper = new THREE.Mesh(
+          segmentGeometry,
+          template.role === 'hand' ? shirtMaterial : shortsMaterial
+        );
+        const lower = new THREE.Mesh(
+          segmentGeometry,
+          template.role === 'hand' ? skinMaterial : shortsMaterial
+        );
+        const joint = new THREE.Mesh(
+          new THREE.SphereGeometry(template.role === 'hand' ? 0.068 : 0.076, 12, 12),
+          template.role === 'hand' ? skinMaterial : shortsMaterial
+        );
+        const end = new THREE.Mesh(
+          template.role === 'hand' ? handGeometry : footGeometry,
+          template.role === 'hand' ? skinMaterial : shoeMaterial
+        );
         climberGroup.add(upper, lower, joint, end);
         return {
           ...template,
@@ -1142,7 +1222,7 @@
           <p>${problem.beta}</p>
           <div class="stats">
             <span>${problem.angle}&deg; wall</span>
-            <span>${problem.limit}s limit</span>
+            <span>free climb</span>
             <span>par ${problem.par}s</span>
             ${best ? `<span>best ${best.bestTime.toFixed(1)}s</span><span>${'★'.repeat(best.bestStars)}</span>` : '<span>new line</span>'}
           </div>
@@ -1223,7 +1303,7 @@
     function setupProblem(preview = false) {
       const problem = state.currentProblem;
       state.phase = preview ? 'preview' : 'playing';
-      state.timeLeft = problem.limit;
+      state.elapsedTime = 0;
       state.autoDetaches = 0;
       state.moveCount = 0;
       state.resultDelay = 0;
@@ -1569,7 +1649,7 @@
       buildProblemGrid();
       state.overlayMode = success ? 'success' : 'fail';
       state.overlayVisible = true;
-      const elapsed = state.currentProblem.limit - state.timeLeft;
+      const elapsed = state.elapsedTime;
       const stars = computeStars(elapsed);
       const best = state.bests[state.currentProblem.id];
       dom.overlayEyebrow.textContent = success ? 'Top Out' : 'Fail';
@@ -1628,10 +1708,7 @@
 
     function updatePhase(dt) {
       if (state.phase === 'playing') {
-        state.timeLeft = Math.max(0, state.timeLeft - dt);
-        if (state.timeLeft <= 0) {
-          failProblem('시간 초과로 떨어졌습니다.');
-        }
+        state.elapsedTime += dt;
       }
 
       if (state.phase === 'failed' || state.phase === 'cleared') {
@@ -1761,6 +1838,20 @@
       climberGroup.quaternion.copy(baseQuat).multiply(leanQuatX).multiply(leanQuatZ);
       climberGroup.updateMatrixWorld(true);
 
+      if (state.bodyRig) {
+        const armBias = (getLimb('rh')?.stamina || 1) - (getLimb('lh')?.stamina || 1);
+        const legBias = (getLimb('rf')?.stamina || 1) - (getLimb('lf')?.stamina || 1);
+        const coreTwist = -state.lean.x * 0.12 + armBias * 0.05;
+        const coreCurl = 0.12 + state.lean.y * 0.08 + (1 - state.balance) * 0.08;
+        state.bodyRig.core.rotation.set(coreCurl, 0, coreTwist);
+        state.bodyRig.chest.rotation.z = -coreTwist * 0.55;
+        state.bodyRig.abdomen.rotation.z = -coreTwist * 0.24;
+        state.bodyRig.pelvis.rotation.z = legBias * 0.06 + state.lean.x * 0.04;
+        state.bodyRig.head.rotation.x = -0.08 - state.lean.y * 0.03;
+        state.bodyRig.head.rotation.z = coreTwist * 0.3;
+        state.bodyRig.hair.rotation.z = coreTwist * 0.22;
+      }
+
       state.limbs.forEach((limb) => {
         const socket = getSocketWorld(limb, bodyPos);
         const target = getLimbTarget(limb, bodyPos, dt);
@@ -1768,10 +1859,10 @@
         bendHint.addScaledVector(state.wallNormal, 0.4);
         bendHint.addScaledVector(state.wallUp, limb.role === 'hand' ? -0.14 : 0.18);
         const joint = solveTwoBone(socket, target, limb.upper, limb.lower, bendHint);
-        placeSegment(limb.meshes.upper, socket, joint, limb.thickness);
-        placeSegment(limb.meshes.lower, joint, target, limb.thickness * 0.95);
+        placeSegment(limb.meshes.upper, socket, joint, limb.role === 'hand' ? limb.thickness * 1.14 : limb.thickness * 1.26);
+        placeSegment(limb.meshes.lower, joint, target, limb.role === 'hand' ? limb.thickness * 0.94 : limb.thickness * 1.06);
         limb.meshes.joint.position.copy(joint);
-        limb.meshes.end.position.copy(target);
+        placeExtremity(limb.meshes.end, joint, target, limb);
       });
     }
 
@@ -1914,7 +2005,7 @@
     }
 
     function updateHud() {
-      dom.timeValue.textContent = `${state.timeLeft.toFixed(1)}s`;
+      dom.timeValue.textContent = `${state.elapsedTime.toFixed(1)}s`;
       dom.balanceValue.textContent = `${Math.round(state.balance * 100)}%`;
       dom.contactValue.textContent = `${state.contacts} / 4`;
       dom.phaseValue.textContent = phaseLabel();
@@ -1948,7 +2039,7 @@
       playSuccess();
       showToast('Top Out!');
 
-      const elapsed = state.currentProblem.limit - state.timeLeft;
+      const elapsed = state.elapsedTime;
       const stars = computeStars(elapsed);
       const existing = state.bests[state.currentProblem.id];
       const bestTime = existing ? Math.min(existing.bestTime, elapsed) : elapsed;
@@ -2174,6 +2265,21 @@
       mesh.position.copy(start).addScaledVector(TEMP_A.copy(end).sub(start), 0.5);
       mesh.quaternion.setFromUnitVectors(Y_AXIS, direction);
       mesh.scale.set(radius, length, radius);
+    }
+
+    function placeExtremity(mesh, joint, end, limb) {
+      const direction = TEMP_A.copy(end).sub(joint).normalize();
+      const aim = direction.clone();
+      if (limb.role === 'foot') {
+        aim.addScaledVector(state.wallNormal, -0.34).addScaledVector(state.wallUp, -0.08).normalize();
+      }
+      mesh.position.copy(end).addScaledVector(direction, limb.role === 'hand' ? 0.018 : 0.032);
+      mesh.quaternion.setFromUnitVectors(Z_AXIS, aim);
+      if (limb.role === 'hand') {
+        mesh.rotateY(limb.id === 'lh' ? 0.26 : -0.26);
+      } else {
+        mesh.rotateX(0.34);
+      }
     }
 
     function bodyPosition() {
