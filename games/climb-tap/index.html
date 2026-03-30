@@ -1,0 +1,2434 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+  />
+  <title>ClimbTap</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg-top: #102033;
+      --bg-mid: #13283b;
+      --bg-bottom: #071118;
+      --panel: rgba(10, 19, 28, 0.74);
+      --panel-strong: rgba(8, 15, 24, 0.88);
+      --panel-border: rgba(170, 214, 255, 0.18);
+      --text-main: #f4efe7;
+      --text-soft: rgba(244, 239, 231, 0.72);
+      --text-dim: rgba(244, 239, 231, 0.44);
+      --accent-sky: #7ee4ff;
+      --accent-mint: #73e1ae;
+      --accent-coral: #ff8a6d;
+      --accent-gold: #ffd870;
+      --accent-sand: #f2b86b;
+      --danger: #ff625c;
+      --shadow: 0 22px 54px rgba(0, 0, 0, 0.3);
+      font-family: "Avenir Next", "Pretendard", "SF Pro Display", "Apple SD Gothic Neo", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 12%, rgba(126, 228, 255, 0.12), transparent 32%),
+        radial-gradient(circle at 80% 18%, rgba(255, 216, 112, 0.12), transparent 24%),
+        linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 42%, var(--bg-bottom) 100%);
+      color: var(--text-main);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.018) 25%, transparent 25%) 0 0 / 26px 26px,
+        linear-gradient(225deg, rgba(255, 255, 255, 0.014) 25%, transparent 25%) 0 0 / 26px 26px;
+      opacity: 0.25;
+      pointer-events: none;
+    }
+
+    #scene {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      display: block;
+    }
+
+    .hud-top,
+    .hud-side,
+    .limb-dock,
+    .status-toast,
+    .overlay {
+      position: fixed;
+      z-index: 4;
+    }
+
+    .hud-top {
+      top: max(14px, env(safe-area-inset-top));
+      left: max(14px, env(safe-area-inset-left));
+      right: max(14px, env(safe-area-inset-right));
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      pointer-events: none;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .title-panel {
+      min-width: min(420px, 64vw);
+      max-width: 520px;
+      padding: 16px 18px 16px;
+      pointer-events: auto;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+    }
+
+    .title-line {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .title-line h1 {
+      margin: 0;
+      font-size: clamp(22px, 3.8vw, 34px);
+      letter-spacing: -0.04em;
+    }
+
+    .problem-name {
+      font-size: clamp(15px, 2.4vw, 20px);
+      color: var(--accent-sky);
+      letter-spacing: -0.02em;
+    }
+
+    .beta {
+      margin-top: 8px;
+      line-height: 1.45;
+      font-size: 13px;
+      color: var(--text-soft);
+      max-width: 52ch;
+    }
+
+    .stat-grid {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(72px, 1fr));
+      gap: 10px;
+    }
+
+    .stat-card {
+      padding: 10px 12px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.04);
+      min-width: 0;
+    }
+
+    .stat-card span {
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+    }
+
+    .stat-card strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 16px;
+      letter-spacing: -0.03em;
+    }
+
+    .mini-panel {
+      width: min(220px, 34vw);
+      padding: 12px;
+      pointer-events: auto;
+    }
+
+    #routeMap {
+      width: 100%;
+      aspect-ratio: 11 / 14;
+      border-radius: 18px;
+      display: block;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .route-tags {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .route-tags span {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      font-size: 11px;
+      color: var(--text-soft);
+      white-space: nowrap;
+    }
+
+    .hud-side {
+      top: calc(max(14px, env(safe-area-inset-top)) + 188px);
+      right: max(14px, env(safe-area-inset-right));
+      display: grid;
+      gap: 10px;
+      width: min(180px, 28vw);
+      pointer-events: auto;
+    }
+
+    .action-btn {
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 18px;
+      padding: 12px 14px;
+      background: var(--panel-strong);
+      color: var(--text-main);
+      font: inherit;
+      font-size: 13px;
+      letter-spacing: -0.01em;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .action-btn:active {
+      transform: translateY(1px) scale(0.99);
+    }
+
+    .action-btn.primary {
+      border-color: rgba(126, 228, 255, 0.36);
+      background:
+        linear-gradient(180deg, rgba(126, 228, 255, 0.22), rgba(126, 228, 255, 0.06)),
+        rgba(8, 15, 24, 0.9);
+    }
+
+    .action-btn.warning {
+      border-color: rgba(255, 138, 109, 0.4);
+    }
+
+    .hint-card {
+      padding: 12px 14px;
+      background: rgba(8, 15, 24, 0.76);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--text-soft);
+      box-shadow: var(--shadow);
+    }
+
+    .hint-card strong {
+      color: var(--text-main);
+    }
+
+    .limb-dock {
+      left: max(12px, env(safe-area-inset-left));
+      right: max(12px, env(safe-area-inset-right));
+      bottom: calc(max(12px, env(safe-area-inset-bottom)) + 8px);
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .limb-btn {
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 22px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
+        rgba(8, 15, 24, 0.84);
+      color: var(--text-main);
+      padding: 12px 14px 14px;
+      text-align: left;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      overflow: hidden;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .limb-btn:active {
+      transform: scale(0.985);
+    }
+
+    .limb-btn.selected {
+      border-color: rgba(255, 216, 112, 0.48);
+      background:
+        linear-gradient(180deg, rgba(255, 216, 112, 0.18), rgba(255, 216, 112, 0.04)),
+        rgba(8, 15, 24, 0.88);
+    }
+
+    .limb-btn.attached::after {
+      content: "";
+      position: absolute;
+      inset: auto 14px 14px 14px;
+      height: 2px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    .limb-btn .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .limb-btn .short {
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+    }
+
+    .limb-btn .name {
+      margin-top: 4px;
+      font-size: 16px;
+      letter-spacing: -0.03em;
+    }
+
+    .limb-btn .state {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--text-soft);
+    }
+
+    .bar {
+      margin-top: 10px;
+      height: 7px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+    }
+
+    .bar span {
+      display: block;
+      width: 100%;
+      height: 100%;
+      transform-origin: left center;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent-coral), var(--accent-gold), var(--accent-mint));
+      transition: transform 0.12s ease;
+    }
+
+    .status-toast {
+      left: 50%;
+      top: calc(max(14px, env(safe-area-inset-top)) + 162px);
+      transform: translateX(-50%);
+      padding: 12px 16px;
+      border-radius: 999px;
+      background: rgba(5, 11, 18, 0.84);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      font-size: 13px;
+      letter-spacing: 0.02em;
+      color: var(--text-main);
+      backdrop-filter: blur(14px);
+      opacity: 0;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .status-toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .overlay {
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(3, 8, 13, 0.56);
+      backdrop-filter: blur(18px);
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+    }
+
+    .overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .overlay-card {
+      width: min(980px, calc(100vw - 24px));
+      max-height: min(84vh, 920px);
+      overflow: auto;
+      padding: 22px;
+      border-radius: 28px;
+      background:
+        radial-gradient(circle at top right, rgba(126, 228, 255, 0.12), transparent 28%),
+        linear-gradient(180deg, rgba(20, 32, 44, 0.96), rgba(7, 13, 21, 0.96));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.42);
+    }
+
+    .overlay-card h2 {
+      margin: 12px 0 8px;
+      font-size: clamp(30px, 5vw, 44px);
+      letter-spacing: -0.05em;
+    }
+
+    .overlay-card p {
+      margin: 0;
+      color: var(--text-soft);
+      line-height: 1.5;
+    }
+
+    .overlay-meta {
+      margin-top: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .overlay-meta span {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-soft);
+      font-size: 12px;
+    }
+
+    .problem-grid {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .problem-card {
+      border-radius: 22px;
+      padding: 14px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
+        rgba(10, 18, 27, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      text-align: left;
+      color: var(--text-main);
+      font: inherit;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .problem-card:hover,
+    .problem-card:active {
+      transform: translateY(-1px);
+      border-color: rgba(126, 228, 255, 0.32);
+    }
+
+    .problem-card .grade {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 46px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--accent-gold);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
+    .problem-card h3 {
+      margin: 12px 0 8px;
+      font-size: 18px;
+      letter-spacing: -0.03em;
+    }
+
+    .problem-card p {
+      font-size: 12px;
+      min-height: 54px;
+    }
+
+    .problem-card .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .problem-card .stats span {
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    .overlay-actions {
+      margin-top: 18px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .footer-note {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-soft);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 900px) {
+      .hud-top {
+        flex-direction: column;
+      }
+
+      .title-panel,
+      .mini-panel {
+        width: 100%;
+        max-width: none;
+      }
+
+      .mini-panel {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      #routeMap {
+        width: 132px;
+        flex: 0 0 132px;
+      }
+
+      .route-tags {
+        margin-top: 0;
+      }
+
+      .hud-side {
+        top: auto;
+        bottom: calc(max(12px, env(safe-area-inset-bottom)) + 118px);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: min(320px, calc(100vw - 24px));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hud-top {
+        top: max(10px, env(safe-area-inset-top));
+        left: max(10px, env(safe-area-inset-left));
+        right: max(10px, env(safe-area-inset-right));
+        gap: 10px;
+      }
+
+      .title-panel {
+        padding: 14px;
+      }
+
+      .stat-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .mini-panel {
+        padding: 10px;
+      }
+
+      .hud-side {
+        right: max(10px, env(safe-area-inset-right));
+        left: max(10px, env(safe-area-inset-left));
+        width: auto;
+      }
+
+      .hint-card {
+        grid-column: 1 / -1;
+      }
+
+      .limb-dock {
+        gap: 8px;
+      }
+
+      .limb-btn {
+        padding: 10px 11px 12px;
+      }
+
+      .limb-btn .name {
+        font-size: 14px;
+      }
+
+      .limb-btn .state {
+        font-size: 11px;
+      }
+
+      .status-toast {
+        top: calc(max(10px, env(safe-area-inset-top)) + 144px);
+        max-width: calc(100vw - 28px);
+        white-space: normal;
+        text-align: center;
+      }
+
+      .overlay-card {
+        padding: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+
+  <div class="hud-top">
+    <div class="panel title-panel">
+      <div class="eyebrow" id="gradeLabel">Problem Board</div>
+      <div class="title-line">
+        <h1 id="gameTitle">ClimbTap</h1>
+        <div class="problem-name" id="problemName">Warm Slab</div>
+      </div>
+      <div class="beta" id="betaText">한 손 조작: 림프를 고르고 홀드를 탭하세요. 길게 누르면 강한 그립이지만 피로가 더 빨리 쌓입니다.</div>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <span>Time</span>
+          <strong id="timeValue">90.0s</strong>
+        </div>
+        <div class="stat-card">
+          <span>Balance</span>
+          <strong id="balanceValue">100%</strong>
+        </div>
+        <div class="stat-card">
+          <span>Contact</span>
+          <strong id="contactValue">4 / 4</strong>
+        </div>
+        <div class="stat-card">
+          <span>Status</span>
+          <strong id="phaseValue">Ready</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel mini-panel">
+      <canvas id="routeMap" width="330" height="420"></canvas>
+      <div>
+        <div class="eyebrow">Beta Tags</div>
+        <div class="route-tags" id="routeTags"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hud-side">
+    <button id="btnProblems" class="action-btn primary" type="button">문제 선택</button>
+    <button id="btnRestart" class="action-btn" type="button">재시작</button>
+    <button id="btnRelease" class="action-btn warning" type="button">선택 림프 놓기</button>
+    <button id="btnFullscreen" class="action-btn" type="button">전체 화면</button>
+    <div class="hint-card">
+      <strong>조작</strong><br />
+      림프 버튼 선택 -> 홀드 탭. 빈 공간 드래그는 카메라 회전. 두 손가락 드래그는 무게 중심 기울이기.
+    </div>
+  </div>
+
+  <div class="limb-dock" id="limbDock"></div>
+  <div class="status-toast" id="statusToast"></div>
+
+  <div class="overlay" id="overlay">
+    <div class="overlay-card">
+      <div class="eyebrow" id="overlayEyebrow">3D Physics Climbing</div>
+      <h2 id="overlayTitle">ClimbTap</h2>
+      <p id="overlayText">
+        실제 클라이밍 문제처럼 손발 4점을 따로 옮기며 밸런스를 맞추고, Rapier 물리 기반으로 몸을 유지한 채 탑 홀드까지 올라갑니다.
+      </p>
+      <div class="overlay-meta" id="overlayMeta">
+        <span>Three.js + Rapier.js</span>
+        <span>모바일 터치 최적화</span>
+        <span>5~6문제 프로토타입</span>
+      </div>
+      <div class="problem-grid" id="problemGrid"></div>
+      <div class="overlay-actions">
+        <button id="overlayPrimary" class="action-btn primary" type="button">현재 문제 시작</button>
+        <button id="overlaySecondary" class="action-btn" type="button">보드 닫기</button>
+      </div>
+      <div class="footer-note" id="overlayFootnote">
+        추천 플레이: 손은 위로 당기고 발은 아래에서 밀어 올린다는 느낌으로 움직이면 안정적입니다. 슬로퍼는 오래 버티기 어렵고, 강한 그립은 잠깐 버티는 대신 피로가 빠르게 쌓입니다.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.__climbTapBootError = function (message) {
+      const title = document.getElementById('overlayTitle');
+      const text = document.getElementById('overlayText');
+      const foot = document.getElementById('overlayFootnote');
+      if (title) title.textContent = 'ClimbTap Boot Error';
+      if (text) text.textContent = '페이지 초기화 중 오류가 발생했습니다.';
+      if (foot) foot.textContent = String(message || 'Unknown error');
+    };
+    window.addEventListener('error', (event) => {
+      window.__climbTapBootError(event.message || event.error?.message || 'script error');
+    });
+    window.addEventListener('unhandledrejection', (event) => {
+      const reason = event.reason?.message || event.reason;
+      window.__climbTapBootError(reason || 'unhandled rejection');
+    });
+  </script>
+
+  <script type="module">
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+    import RAPIER from 'https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.12.0/+esm';
+
+    const GAME_TITLE = 'ClimbTap';
+    const STORAGE_KEY = 'taptapcho-climb-tap-progress-v1';
+    const WALL_WIDTH = 4.6;
+    const WALL_HEIGHT = 7.4;
+    const WALL_THICKNESS = 0.28;
+    const WALL_BASE = new THREE.Vector3(0, 0.55, 0);
+    const X_AXIS = new THREE.Vector3(1, 0, 0);
+    const Y_AXIS = new THREE.Vector3(0, 1, 0);
+    const Z_AXIS = new THREE.Vector3(0, 0, 1);
+    const TEMP_A = new THREE.Vector3();
+    const TEMP_B = new THREE.Vector3();
+    const TEMP_C = new THREE.Vector3();
+    const CLOCK = new THREE.Clock();
+
+    const palette = {
+      sky: '#7ee4ff',
+      mint: '#74e1af',
+      coral: '#ff8b6b',
+      gold: '#ffd870',
+      sand: '#f1ba69',
+      stone: '#7a8896',
+      blush: '#f3a592'
+    };
+
+    const holdStyles = {
+      jug: { grip: 1.18, fatigue: 0.74, geometry: 'blob', roughness: 0.68 },
+      crimp: { grip: 0.82, fatigue: 1.1, geometry: 'edge', roughness: 0.76 },
+      sloper: { grip: 0.76, fatigue: 1.16, geometry: 'sloper', roughness: 0.84 },
+      pinch: { grip: 0.95, fatigue: 0.92, geometry: 'pinch', roughness: 0.72 },
+      chip: { grip: 0.88, fatigue: 1.04, geometry: 'chip', roughness: 0.8 },
+      volume: { grip: 1.02, fatigue: 0.9, geometry: 'volume', roughness: 0.92 },
+      top: { grip: 1.25, fatigue: 0.64, geometry: 'top', roughness: 0.58 }
+    };
+
+    const limbTemplates = [
+      { id: 'lh', short: 'LH', name: 'Left Hand', role: 'hand', color: '#ffcfb7', socketX: -0.34, socketY: 0.32, socketZ: 0.02, upper: 0.52, lower: 0.51, preferred: 0.84, maxReach: 1.48, thickness: 0.06 },
+      { id: 'rh', short: 'RH', name: 'Right Hand', role: 'hand', color: '#cfefff', socketX: 0.34, socketY: 0.32, socketZ: 0.02, upper: 0.52, lower: 0.51, preferred: 0.84, maxReach: 1.48, thickness: 0.06 },
+      { id: 'lf', short: 'LF', name: 'Left Foot', role: 'foot', color: '#ffe0a8', socketX: -0.24, socketY: -0.42, socketZ: 0.05, upper: 0.56, lower: 0.54, preferred: 0.92, maxReach: 1.55, thickness: 0.07 },
+      { id: 'rf', short: 'RF', name: 'Right Foot', role: 'foot', color: '#d8ffbc', socketX: 0.24, socketY: -0.42, socketZ: 0.05, upper: 0.56, lower: 0.54, preferred: 0.92, maxReach: 1.55, thickness: 0.07 }
+    ];
+
+    const H = (id, x, y, kind, style, color, size, depth, extra = {}) => ({
+      id,
+      x,
+      y,
+      kind,
+      style,
+      color,
+      size,
+      depth,
+      ...extra
+    });
+
+    const PROBLEMS = [
+      {
+        id: 'warm-slab',
+        grade: 'V0',
+        name: 'Warm Slab',
+        angle: 78,
+        limit: 90,
+        par: 44,
+        beta: 'Left hand start -> center jug -> top dish. 슬랩 감각을 익히는 입문 문제.',
+        tags: ['Static', 'Balance', 'Open Feet'],
+        start: { lh: 'lh0', rh: 'rh0', lf: 'lf0', rf: 'rf0' },
+        betaOrder: ['lh0', 'rh0', 'm1', 'm3', 'm5', 'top'],
+        holds: [
+          H('lf0', -1.10, 0.90, 'foot', 'chip', 'sand', 0.92, 0.08, { start: true }),
+          H('rf0', 0.15, 0.96, 'foot', 'chip', 'mint', 0.92, 0.08, { start: true }),
+          H('lh0', -0.92, 1.56, 'hand', 'jug', 'coral', 1.08, 0.16, { start: true }),
+          H('rh0', 0.42, 1.72, 'hand', 'jug', 'sky', 1.05, 0.16, { start: true }),
+          H('m1', -0.36, 2.52, 'mix', 'jug', 'mint', 1.0, 0.15, { beta: true }),
+          H('m2', 0.96, 2.82, 'hand', 'sloper', 'sand', 1.0, 0.18),
+          H('m3', 0.08, 3.66, 'mix', 'jug', 'coral', 1.08, 0.16, { beta: true }),
+          H('m4', -0.72, 4.08, 'foot', 'chip', 'sky', 0.86, 0.08),
+          H('m5', 0.56, 4.78, 'hand', 'jug', 'mint', 1.02, 0.16, { beta: true }),
+          H('m6', -0.94, 5.02, 'mix', 'sloper', 'blush', 0.98, 0.14),
+          H('m7', -0.08, 5.88, 'hand', 'pinch', 'sky', 0.98, 0.18, { beta: true }),
+          H('m8', 1.04, 6.16, 'foot', 'chip', 'sand', 0.84, 0.08),
+          H('top', 0.06, 7.02, 'top', 'top', 'gold', 1.26, 0.24, { beta: true, top: true })
+        ]
+      },
+      {
+        id: 'cross-beta',
+        grade: 'V1',
+        name: 'Cross Beta',
+        angle: 86,
+        limit: 90,
+        par: 50,
+        beta: '오른손 크로스 후 좌측 사이드풀로 몸을 닫아야 편합니다. 다른 손순서도 가능.',
+        tags: ['Cross', 'Side Pull', 'Route Choice'],
+        start: { lh: 'lh0', rh: 'rh0', lf: 'lf0', rf: 'rf0' },
+        betaOrder: ['lh0', 'rh0', 'm1', 'm2', 'm4', 'top'],
+        holds: [
+          H('lf0', -0.74, 0.96, 'foot', 'chip', 'sand', 0.9, 0.07, { start: true }),
+          H('rf0', 0.52, 1.02, 'foot', 'chip', 'sky', 0.88, 0.07, { start: true }),
+          H('lh0', -0.94, 1.62, 'hand', 'pinch', 'mint', 1.0, 0.16, { start: true }),
+          H('rh0', 0.34, 1.46, 'hand', 'jug', 'coral', 1.0, 0.14, { start: true }),
+          H('m1', 0.98, 2.30, 'hand', 'crimp', 'sand', 0.94, 0.14, { beta: true }),
+          H('m2', -0.22, 2.86, 'mix', 'jug', 'sky', 1.0, 0.16, { beta: true }),
+          H('m3', -1.18, 3.40, 'hand', 'sloper', 'coral', 1.04, 0.18),
+          H('m4', 0.42, 3.82, 'hand', 'pinch', 'mint', 0.98, 0.18, { beta: true }),
+          H('m5', -0.64, 4.18, 'foot', 'chip', 'sand', 0.84, 0.08),
+          H('m6', 1.18, 4.78, 'mix', 'sloper', 'blush', 0.98, 0.16),
+          H('m7', 0.02, 5.22, 'mix', 'jug', 'sky', 1.02, 0.15, { beta: true }),
+          H('m8', -0.94, 5.88, 'hand', 'crimp', 'sand', 0.9, 0.14),
+          H('top', 0.18, 7.00, 'top', 'top', 'gold', 1.24, 0.24, { beta: true, top: true })
+        ]
+      },
+      {
+        id: 'quiet-feet',
+        grade: 'V2',
+        name: 'Quiet Feet',
+        angle: 92,
+        limit: 90,
+        par: 54,
+        beta: '발 홀드가 작습니다. 손보다 발을 먼저 정리하면 훨씬 덜 흔들립니다.',
+        tags: ['Quiet Feet', 'Small Chips', 'Precision'],
+        start: { lh: 'lh0', rh: 'rh0', lf: 'lf0', rf: 'rf0' },
+        betaOrder: ['lf0', 'rf0', 'm2', 'm4', 'm6', 'top'],
+        holds: [
+          H('lf0', -1.04, 0.86, 'foot', 'chip', 'sand', 0.82, 0.07, { start: true }),
+          H('rf0', -0.04, 0.88, 'foot', 'chip', 'sky', 0.82, 0.07, { start: true }),
+          H('lh0', -0.88, 1.44, 'hand', 'jug', 'mint', 0.96, 0.15, { start: true }),
+          H('rh0', 0.52, 1.54, 'hand', 'pinch', 'coral', 0.98, 0.16, { start: true }),
+          H('m1', -0.58, 2.22, 'foot', 'chip', 'sand', 0.78, 0.07),
+          H('m2', 0.34, 2.34, 'foot', 'chip', 'sky', 0.8, 0.07, { beta: true }),
+          H('m3', -0.82, 3.02, 'hand', 'sloper', 'blush', 0.96, 0.16),
+          H('m4', 0.02, 3.42, 'mix', 'pinch', 'mint', 0.96, 0.17, { beta: true }),
+          H('m5', 0.96, 3.86, 'foot', 'chip', 'sand', 0.76, 0.07),
+          H('m6', -0.16, 4.54, 'hand', 'crimp', 'sky', 0.9, 0.15, { beta: true }),
+          H('m7', -1.14, 5.00, 'mix', 'sloper', 'coral', 0.98, 0.16),
+          H('m8', 0.72, 5.56, 'hand', 'pinch', 'mint', 0.94, 0.17, { beta: true }),
+          H('m9', 0.08, 6.08, 'foot', 'chip', 'sand', 0.8, 0.07),
+          H('top', 0.12, 7.02, 'top', 'top', 'gold', 1.24, 0.22, { beta: true, top: true })
+        ]
+      },
+      {
+        id: 'static-reach',
+        grade: 'V3',
+        name: 'Static Reach',
+        angle: 98,
+        limit: 90,
+        par: 58,
+        beta: '오버행에서 손을 급하게 떼면 바로 스윙합니다. 한 발을 오래 남겨 두는 정적인 해법이 안전합니다.',
+        tags: ['Overhang', 'Static', 'Tension'],
+        start: { lh: 'lh0', rh: 'rh0', lf: 'lf0', rf: 'rf0' },
+        betaOrder: ['rh0', 'm1', 'm3', 'm5', 'm7', 'top'],
+        holds: [
+          H('lf0', -0.62, 0.82, 'foot', 'chip', 'sand', 0.82, 0.07, { start: true }),
+          H('rf0', 0.56, 0.86, 'foot', 'chip', 'sky', 0.82, 0.07, { start: true }),
+          H('lh0', -0.88, 1.48, 'hand', 'pinch', 'mint', 0.98, 0.18, { start: true }),
+          H('rh0', 0.66, 1.58, 'hand', 'jug', 'coral', 0.98, 0.18, { start: true }),
+          H('m1', 1.12, 2.42, 'hand', 'crimp', 'sand', 0.88, 0.16, { beta: true }),
+          H('m2', -0.12, 2.54, 'foot', 'chip', 'sand', 0.78, 0.07),
+          H('m3', -0.24, 3.18, 'mix', 'jug', 'sky', 1.0, 0.18, { beta: true }),
+          H('m4', -1.18, 3.68, 'hand', 'sloper', 'blush', 0.98, 0.19),
+          H('m5', 0.42, 4.18, 'mix', 'pinch', 'mint', 0.94, 0.18, { beta: true }),
+          H('m6', 1.18, 4.58, 'foot', 'chip', 'sky', 0.8, 0.07),
+          H('m7', -0.32, 5.28, 'hand', 'crimp', 'coral', 0.9, 0.16, { beta: true }),
+          H('m8', 0.94, 5.94, 'hand', 'sloper', 'sand', 0.96, 0.18),
+          H('m9', 0.18, 6.28, 'mix', 'jug', 'mint', 1.0, 0.18, { beta: true }),
+          H('top', 0.14, 7.02, 'top', 'top', 'gold', 1.26, 0.24, { beta: true, top: true })
+        ]
+      },
+      {
+        id: 'heel-echo',
+        grade: 'V4',
+        name: 'Heel Echo',
+        angle: 103,
+        limit: 90,
+        par: 64,
+        beta: '오른발을 높게 걸면 몸이 벽에 붙고, 왼손 슬로퍼를 오래 유지할 수 있습니다. 힐훅 느낌으로 풀어보세요.',
+        tags: ['Heel Hook', 'Compression', 'Power Lock'],
+        start: { lh: 'lh0', rh: 'rh0', lf: 'lf0', rf: 'rf0' },
+        betaOrder: ['lh0', 'm1', 'm3', 'm4', 'm6', 'top'],
+        holds: [
+          H('lf0', -0.88, 0.84, 'foot', 'chip', 'sand', 0.82, 0.07, { start: true }),
+          H('rf0', 0.26, 0.82, 'foot', 'chip', 'sky', 0.82, 0.07, { start: true }),
+          H('lh0', -1.02, 1.38, 'hand', 'sloper', 'blush', 1.02, 0.18, { start: true }),
+          H('rh0', 0.52, 1.44, 'hand', 'jug', 'mint', 0.98, 0.17, { start: true }),
+          H('m1', -0.06, 2.18, 'foot', 'pinch', 'sand', 0.86, 0.12, { beta: true }),
+          H('m2', 1.10, 2.58, 'hand', 'crimp', 'coral', 0.9, 0.16),
+          H('m3', -0.44, 3.08, 'mix', 'volume', 'sky', 1.08, 0.22, { beta: true }),
+          H('m4', 0.68, 3.66, 'hand', 'pinch', 'mint', 0.94, 0.17, { beta: true }),
+          H('m5', -1.22, 4.18, 'foot', 'chip', 'sand', 0.78, 0.07),
+          H('m6', 0.14, 4.72, 'hand', 'crimp', 'coral', 0.88, 0.16, { beta: true }),
+          H('m7', 1.04, 5.18, 'mix', 'sloper', 'blush', 0.96, 0.18),
+          H('m8', -0.46, 5.88, 'hand', 'pinch', 'sky', 0.92, 0.16, { beta: true }),
+          H('m9', 0.42, 6.30, 'foot', 'chip', 'sand', 0.78, 0.07),
+          H('top', 0.10, 7.02, 'top', 'top', 'gold', 1.26, 0.24, { beta: true, top: true })
+        ]
+      },
+      {
+        id: 'dyno-press',
+        grade: 'V5',
+        name: 'Dyno Press',
+        angle: 108,
+        limit: 90,
+        par: 68,
+        beta: '짧게 비우는 접촉도 허용됩니다. 두 손가락 기울이기와 강한 그립을 섞어 크럭스를 넘기세요.',
+        tags: ['Dynamic Move', 'Overhang', 'Crux'],
+        start: { lh: 'lh0', rh: 'rh0', lf: 'lf0', rf: 'rf0' },
+        betaOrder: ['rh0', 'm1', 'm2', 'm4', 'm6', 'top'],
+        holds: [
+          H('lf0', -0.72, 0.82, 'foot', 'chip', 'sand', 0.8, 0.07, { start: true }),
+          H('rf0', 0.42, 0.84, 'foot', 'chip', 'sky', 0.8, 0.07, { start: true }),
+          H('lh0', -0.96, 1.32, 'hand', 'pinch', 'mint', 0.96, 0.17, { start: true }),
+          H('rh0', 0.42, 1.34, 'hand', 'jug', 'coral', 0.98, 0.17, { start: true }),
+          H('m1', 1.14, 2.08, 'hand', 'crimp', 'sand', 0.86, 0.16, { beta: true }),
+          H('m2', -0.12, 2.36, 'mix', 'volume', 'sky', 1.1, 0.22, { beta: true }),
+          H('m3', -1.20, 2.92, 'hand', 'sloper', 'blush', 0.98, 0.18),
+          H('m4', 0.58, 3.48, 'hand', 'pinch', 'mint', 0.92, 0.17, { beta: true }),
+          H('m5', -0.18, 4.10, 'foot', 'chip', 'sand', 0.78, 0.07),
+          H('m6', 0.04, 4.82, 'hand', 'crimp', 'coral', 0.88, 0.16, { beta: true }),
+          H('m7', 1.02, 5.22, 'mix', 'sloper', 'sky', 0.96, 0.18),
+          H('m8', -0.84, 5.82, 'hand', 'pinch', 'mint', 0.92, 0.16),
+          H('m9', 0.24, 6.12, 'mix', 'jug', 'sand', 0.98, 0.18, { beta: true }),
+          H('top', 0.08, 7.00, 'top', 'top', 'gold', 1.24, 0.24, { beta: true, top: true })
+        ]
+      }
+    ];
+
+    const dom = {
+      canvas: document.getElementById('scene'),
+      gradeLabel: document.getElementById('gradeLabel'),
+      gameTitle: document.getElementById('gameTitle'),
+      problemName: document.getElementById('problemName'),
+      betaText: document.getElementById('betaText'),
+      timeValue: document.getElementById('timeValue'),
+      balanceValue: document.getElementById('balanceValue'),
+      contactValue: document.getElementById('contactValue'),
+      phaseValue: document.getElementById('phaseValue'),
+      routeMap: document.getElementById('routeMap'),
+      routeTags: document.getElementById('routeTags'),
+      limbDock: document.getElementById('limbDock'),
+      statusToast: document.getElementById('statusToast'),
+      overlay: document.getElementById('overlay'),
+      overlayEyebrow: document.getElementById('overlayEyebrow'),
+      overlayTitle: document.getElementById('overlayTitle'),
+      overlayText: document.getElementById('overlayText'),
+      overlayMeta: document.getElementById('overlayMeta'),
+      overlayFootnote: document.getElementById('overlayFootnote'),
+      problemGrid: document.getElementById('problemGrid'),
+      overlayPrimary: document.getElementById('overlayPrimary'),
+      overlaySecondary: document.getElementById('overlaySecondary'),
+      btnProblems: document.getElementById('btnProblems'),
+      btnRestart: document.getElementById('btnRestart'),
+      btnRelease: document.getElementById('btnRelease'),
+      btnFullscreen: document.getElementById('btnFullscreen')
+    };
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x071118, 9, 18);
+    let renderer = null;
+
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 50);
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+
+    const worldGroup = new THREE.Group();
+    const holdGroup = new THREE.Group();
+    const environmentGroup = new THREE.Group();
+    const climberGroup = new THREE.Group();
+    const fxGroup = new THREE.Group();
+    worldGroup.add(environmentGroup, holdGroup);
+    scene.add(worldGroup, climberGroup, fxGroup);
+
+    const ambient = new THREE.HemisphereLight(0xbfe0ff, 0x0d131b, 0.94);
+    const sun = new THREE.DirectionalLight(0xfff0d7, 1.4);
+    sun.position.set(4.6, 7.4, 5.2);
+    const fill = new THREE.PointLight(0x7ee4ff, 2.6, 14, 2);
+    fill.position.set(-2.8, 4.2, 3.8);
+    const rim = new THREE.PointLight(0xffc06f, 2.1, 12, 2);
+    rim.position.set(2.6, 5.4, -2.6);
+    scene.add(ambient, sun, fill, rim);
+
+    const wallTexture = createWallTexture();
+    const floorTexture = createFloorTexture();
+    const holdGeometries = createHoldGeometryBank();
+    const particleGeometry = new THREE.SphereGeometry(0.045, 6, 6);
+    const segmentGeometry = new THREE.CylinderGeometry(1, 1, 1, 10, 1, false);
+    const jointGeometry = new THREE.SphereGeometry(0.075, 10, 10);
+    const headGeometry = new THREE.SphereGeometry(0.17, 20, 18);
+    const torsoGeometry = new THREE.CapsuleGeometry(0.23, 0.62, 4, 10);
+
+    const audio = {
+      context: null,
+      master: null
+    };
+
+    const state = {
+      world: null,
+      body: null,
+      currentProblemIndex: 0,
+      currentProblem: null,
+      holdMap: new Map(),
+      holds: [],
+      limbs: [],
+      overlayMode: 'board',
+      overlayVisible: true,
+      selectedLimbId: 'rh',
+      hoveredHoldId: null,
+      previewHoldId: null,
+      activePointers: new Map(),
+      gesture: null,
+      leanAnchor: null,
+      leanTarget: new THREE.Vector2(),
+      lean: new THREE.Vector2(),
+      orbitYaw: 0.24,
+      orbitPitch: 0.2,
+      orbitDistance: 7.6,
+      cameraTarget: new THREE.Vector3(0, 3.3, 0.7),
+      cameraTargetDesired: new THREE.Vector3(0, 3.3, 0.7),
+      wallTilt: 0,
+      wallNormal: new THREE.Vector3(0, 0, 1),
+      wallUp: new THREE.Vector3(0, 1, 0),
+      wallTangent: new THREE.Vector3(1, 0, 0),
+      timeLeft: 90,
+      phase: 'preview',
+      toastText: '',
+      toastTimer: 0,
+      balance: 1,
+      contacts: 4,
+      autoDetaches: 0,
+      moveCount: 0,
+      bests: loadProgress(),
+      resultDelay: 0,
+      styleLabel: 'Static climbing',
+      pendingResult: null,
+      physicsAccumulator: 0,
+      lastFrame: performance.now(),
+      topPulse: 0
+    };
+
+    init();
+
+    async function init() {
+      dom.gameTitle.textContent = GAME_TITLE;
+      createClimberVisuals();
+      buildLimbDock();
+      buildProblemGrid();
+      bindUI();
+      try {
+        renderer = new THREE.WebGLRenderer({ canvas: dom.canvas, antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.setClearColor(0x000000, 0);
+      } catch (error) {
+        renderOverlayBoard();
+        window.__climbTapBootError(error?.message || String(error));
+        return;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+      await RAPIER.init();
+      selectProblem(state.currentProblemIndex, { preview: true });
+      renderOverlayBoard();
+      renderer.setAnimationLoop(tick);
+    }
+
+    function createClimberVisuals() {
+      const torsoMaterial = new THREE.MeshStandardMaterial({ color: 0xe6ece8, roughness: 0.44, metalness: 0.06 });
+      const skinMaterial = new THREE.MeshStandardMaterial({ color: 0xf7d6c2, roughness: 0.54, metalness: 0.02 });
+      const harnessMaterial = new THREE.MeshStandardMaterial({ color: 0x152232, roughness: 0.62, metalness: 0.15 });
+
+      const torso = new THREE.Mesh(torsoGeometry, torsoMaterial);
+      const head = new THREE.Mesh(headGeometry, skinMaterial);
+      const harness = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.05, 12, 28), harnessMaterial);
+      head.position.set(0, 0.56, 0.06);
+      harness.position.set(0, -0.02, 0);
+      harness.rotation.x = Math.PI / 2;
+      climberGroup.add(torso, head, harness);
+
+      state.limbs = limbTemplates.map((template) => {
+        const material = new THREE.MeshStandardMaterial({
+          color: new THREE.Color(template.color),
+          roughness: 0.58,
+          metalness: 0.02
+        });
+        const upper = new THREE.Mesh(segmentGeometry, material);
+        const lower = new THREE.Mesh(segmentGeometry, material);
+        const joint = new THREE.Mesh(jointGeometry, material);
+        const end = new THREE.Mesh(new THREE.SphereGeometry(template.role === 'hand' ? 0.09 : 0.1, 12, 12), material);
+        climberGroup.add(upper, lower, joint, end);
+        return {
+          ...template,
+          holdId: null,
+          grip: 1,
+          stamina: 1,
+          shake: 0,
+          ui: null,
+          meshes: { upper, lower, joint, end },
+          pulse: Math.random() * Math.PI * 2
+        };
+      });
+    }
+
+    function buildLimbDock() {
+      dom.limbDock.innerHTML = '';
+      state.limbs.forEach((limb) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'limb-btn';
+        button.dataset.limb = limb.id;
+        button.innerHTML = `
+          <div class="row">
+            <span class="short">${limb.short}</span>
+            <span class="short">${limb.role}</span>
+          </div>
+          <div class="name">${limb.name}</div>
+          <div class="state">Ready</div>
+          <div class="bar"><span></span></div>
+        `;
+        button.addEventListener('click', () => {
+          state.selectedLimbId = limb.id;
+          updateLimbDock();
+          showToast(`${limb.name} selected`);
+        });
+        limb.ui = {
+          button,
+          stateText: button.querySelector('.state'),
+          barFill: button.querySelector('.bar span')
+        };
+        dom.limbDock.appendChild(button);
+      });
+      updateLimbDock();
+    }
+
+    function buildProblemGrid() {
+      dom.problemGrid.innerHTML = '';
+      PROBLEMS.forEach((problem, index) => {
+        const best = state.bests[problem.id];
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'problem-card';
+        button.innerHTML = `
+          <span class="grade">${problem.grade}</span>
+          <h3>${problem.name}</h3>
+          <p>${problem.beta}</p>
+          <div class="stats">
+            <span>${problem.angle}&deg; wall</span>
+            <span>${problem.limit}s limit</span>
+            <span>par ${problem.par}s</span>
+            ${best ? `<span>best ${best.bestTime.toFixed(1)}s</span><span>${'★'.repeat(best.bestStars)}</span>` : '<span>new line</span>'}
+          </div>
+        `;
+        button.addEventListener('click', () => {
+          selectProblem(index, { start: true });
+        });
+        dom.problemGrid.appendChild(button);
+      });
+    }
+
+    function bindUI() {
+      dom.overlayPrimary.addEventListener('click', () => {
+        if (state.overlayMode === 'board') {
+          startCurrentProblem();
+        } else if (state.overlayMode === 'success') {
+          const next = (state.currentProblemIndex + 1) % PROBLEMS.length;
+          selectProblem(next, { start: true });
+        } else {
+          startCurrentProblem();
+        }
+      });
+
+      dom.overlaySecondary.addEventListener('click', () => {
+        if (state.overlayMode === 'board') {
+          hideOverlay();
+          if (state.phase === 'preview') startCurrentProblem();
+        } else {
+          renderOverlayBoard();
+        }
+      });
+
+      dom.btnProblems.addEventListener('click', renderOverlayBoard);
+      dom.btnRestart.addEventListener('click', () => startCurrentProblem());
+      dom.btnRelease.addEventListener('click', () => detachLimb(state.selectedLimbId, 'manual'));
+      dom.btnFullscreen.addEventListener('click', toggleFullscreen);
+
+      dom.canvas.addEventListener('pointerdown', onPointerDown);
+      dom.canvas.addEventListener('pointermove', onPointerMove);
+      dom.canvas.addEventListener('pointerup', onPointerUp);
+      dom.canvas.addEventListener('pointercancel', onPointerUp);
+      dom.canvas.addEventListener('pointerleave', () => {
+        if (!state.gesture || state.gesture.mode === 'aim') {
+          state.hoveredHoldId = null;
+        }
+      });
+    }
+
+    function selectProblem(index, options = {}) {
+      state.currentProblemIndex = index;
+      state.currentProblem = PROBLEMS[index];
+      if (options.start) {
+        setupProblem(false);
+      } else {
+        setupProblem(options.preview === true);
+      }
+      if (options.start) {
+        state.phase = 'playing';
+        state.overlayVisible = false;
+        hideOverlay();
+        updateHud();
+        showToast(`${state.currentProblem.grade} ${state.currentProblem.name}`);
+      } else {
+        updateHud();
+        drawRouteMap();
+      }
+    }
+
+    function startCurrentProblem() {
+      setupProblem(false);
+      state.phase = 'playing';
+      state.overlayVisible = false;
+      hideOverlay();
+      updateHud();
+      showToast(`${state.currentProblem.grade} ${state.currentProblem.name}`);
+    }
+
+    function setupProblem(preview = false) {
+      const problem = state.currentProblem;
+      state.phase = preview ? 'preview' : 'playing';
+      state.timeLeft = problem.limit;
+      state.autoDetaches = 0;
+      state.moveCount = 0;
+      state.resultDelay = 0;
+      state.hoveredHoldId = null;
+      state.previewHoldId = null;
+      state.toastTimer = 0;
+      state.physicsAccumulator = 0;
+      state.topPulse = 0;
+      state.styleLabel = 'Static climbing';
+      state.lean.set(0, 0);
+      state.leanTarget.set(0, 0);
+      state.gesture = null;
+      state.leanAnchor = null;
+      state.activePointers.clear();
+
+      buildWorld(problem);
+      resetLimbs(problem);
+      attachStartingLimbs(problem);
+      updateHud();
+      drawRouteMap();
+      updateLimbDock();
+    }
+
+    function buildWorld(problem) {
+      clearGroup(environmentGroup);
+      clearGroup(holdGroup);
+      clearFx();
+      state.holdMap.clear();
+      state.holds = [];
+
+      state.wallTilt = THREE.MathUtils.degToRad(problem.angle - 90);
+      state.wallNormal.copy(Z_AXIS).applyAxisAngle(X_AXIS, state.wallTilt).normalize();
+      state.wallUp.copy(Y_AXIS).applyAxisAngle(X_AXIS, state.wallTilt).normalize();
+      state.wallTangent.set(1, 0, 0);
+
+      state.world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
+
+      const floorBody = state.world.createRigidBody(
+        RAPIER.RigidBodyDesc.fixed().setTranslation(0, -0.35, 0)
+      );
+      state.world.createCollider(
+        RAPIER.ColliderDesc.cuboid(10, 0.3, 10)
+          .setFriction(1.2)
+          .setRestitution(0.0),
+        floorBody
+      );
+
+      const wallCenter = wallLocalToWorld(0, WALL_HEIGHT * 0.5, 0);
+      const wallQuaternion = new THREE.Quaternion().setFromAxisAngle(X_AXIS, state.wallTilt);
+      const wallBody = state.world.createRigidBody(
+        RAPIER.RigidBodyDesc.fixed()
+          .setTranslation(wallCenter.x, wallCenter.y, wallCenter.z)
+          .setRotation({ x: wallQuaternion.x, y: wallQuaternion.y, z: wallQuaternion.z, w: wallQuaternion.w })
+      );
+
+      state.world.createCollider(
+        RAPIER.ColliderDesc.cuboid(WALL_WIDTH * 0.5, WALL_HEIGHT * 0.5, WALL_THICKNESS * 0.5)
+          .setFriction(1.55)
+          .setRestitution(0.0),
+        wallBody
+      );
+
+      const wallMaterial = new THREE.MeshStandardMaterial({
+        map: wallTexture,
+        roughness: 0.92,
+        metalness: 0.06,
+        color: new THREE.Color('#39485a')
+      });
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(WALL_WIDTH, WALL_HEIGHT, WALL_THICKNESS), wallMaterial);
+      wall.position.copy(wallCenter);
+      wall.quaternion.copy(wallQuaternion);
+      environmentGroup.add(wall);
+
+      const topPad = new THREE.Mesh(
+        new THREE.BoxGeometry(WALL_WIDTH * 0.96, 0.14, 0.22),
+        new THREE.MeshStandardMaterial({
+          color: 0xd6c6a2,
+          emissive: 0x5b4822,
+          emissiveIntensity: 0.28,
+          roughness: 0.58
+        })
+      );
+      topPad.position.copy(wallLocalToWorld(0, WALL_HEIGHT + 0.08, WALL_THICKNESS * 0.18));
+      topPad.quaternion.copy(wallQuaternion);
+      environmentGroup.add(topPad);
+
+      const floor = new THREE.Mesh(
+        new THREE.CylinderGeometry(5.6, 6.2, 0.12, 32),
+        new THREE.MeshStandardMaterial({
+          map: floorTexture,
+          roughness: 0.96,
+          metalness: 0.02,
+          color: 0x172433
+        })
+      );
+      floor.position.set(0, -0.1, 1.8);
+      environmentGroup.add(floor);
+
+      const backWall = new THREE.Mesh(
+        new THREE.PlaneGeometry(12, 10),
+        new THREE.MeshStandardMaterial({
+          color: 0x102034,
+          roughness: 0.92,
+          metalness: 0.04
+        })
+      );
+      backWall.position.set(0, 4.8, -3.6);
+      environmentGroup.add(backWall);
+
+      const sideLeft = new THREE.Mesh(
+        new THREE.PlaneGeometry(6, 10),
+        new THREE.MeshStandardMaterial({ color: 0x0c1620, roughness: 0.9 })
+      );
+      sideLeft.position.set(-4.8, 4.6, 0.6);
+      sideLeft.rotation.y = Math.PI / 2.4;
+      environmentGroup.add(sideLeft);
+
+      const sideRight = sideLeft.clone();
+      sideRight.position.x = 4.8;
+      sideRight.rotation.y = -Math.PI / 2.4;
+      environmentGroup.add(sideRight);
+
+      const beamMaterial = new THREE.MeshStandardMaterial({
+        color: 0xe7d9b8,
+        emissive: 0x7ee4ff,
+        emissiveIntensity: 0.18,
+        roughness: 0.36
+      });
+
+      for (let i = -2; i <= 2; i += 2) {
+        const beam = new THREE.Mesh(new THREE.BoxGeometry(0.18, 8.6, 0.18), beamMaterial);
+        beam.position.set(i, 4.1, 2.8);
+        beam.rotation.z = 0.08 * -i;
+        environmentGroup.add(beam);
+      }
+
+      problem.holds.forEach((holdDef) => {
+        const hold = createHold(holdDef);
+        state.holds.push(hold);
+        state.holdMap.set(hold.id, hold);
+        holdGroup.add(hold.group);
+      });
+
+      const startPos = averageVectors([
+        state.holdMap.get(problem.start.lh).anchor,
+        state.holdMap.get(problem.start.rh).anchor,
+        state.holdMap.get(problem.start.lf).anchor,
+        state.holdMap.get(problem.start.rf).anchor
+      ]);
+      const spawn = startPos
+        .clone()
+        .addScaledVector(state.wallUp, -0.72)
+        .addScaledVector(state.wallNormal, 0.92);
+
+      const bodyDesc = RAPIER.RigidBodyDesc.dynamic()
+        .setTranslation(spawn.x, spawn.y, spawn.z)
+        .setLinearDamping(1.9)
+        .setAngularDamping(6.5);
+      state.body = state.world.createRigidBody(bodyDesc);
+      state.world.createCollider(
+        RAPIER.ColliderDesc.ball(0.38)
+          .setDensity(1.4)
+          .setFriction(1.26)
+          .setRestitution(0.0),
+        state.body
+      );
+
+      state.cameraTargetDesired.copy(spawn).addScaledVector(state.wallUp, 0.12);
+      state.cameraTarget.copy(state.cameraTargetDesired);
+    }
+
+    function createHold(holdDef) {
+      const group = new THREE.Group();
+      const style = holdStyles[holdDef.style];
+      const material = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(palette[holdDef.color] || holdDef.color),
+        roughness: style.roughness,
+        metalness: holdDef.top ? 0.18 : 0.04,
+        emissive: holdDef.top ? new THREE.Color('#5b4519') : new THREE.Color('#000000'),
+        emissiveIntensity: holdDef.top ? 0.54 : 0.0
+      });
+      const geometry = holdGeometries[style.geometry];
+      const mesh = new THREE.Mesh(geometry, material);
+
+      mesh.scale.set(0.18 * holdDef.size, 0.14 * holdDef.size, Math.max(0.16, holdDef.depth * 0.9));
+      if (style.geometry === 'edge') mesh.scale.y *= 0.7;
+      if (style.geometry === 'top') mesh.scale.set(0.55, 0.14, 0.24);
+      if (style.geometry === 'volume') mesh.scale.set(0.28 * holdDef.size, 0.24 * holdDef.size, Math.max(0.18, holdDef.depth));
+      if (style.geometry === 'chip') mesh.scale.set(0.15 * holdDef.size, 0.08 * holdDef.size, 0.1 * holdDef.size);
+
+      const faceQuaternion = new THREE.Quaternion().setFromUnitVectors(Z_AXIS, state.wallNormal.clone());
+      const twist = new THREE.Quaternion().setFromAxisAngle(state.wallNormal, hashAngle(holdDef.id));
+      group.quaternion.copy(faceQuaternion.multiply(twist));
+
+      const mountPoint = wallLocalToWorld(holdDef.x, holdDef.y, WALL_THICKNESS * 0.5 + holdDef.depth * 0.42);
+      const anchor = wallLocalToWorld(holdDef.x, holdDef.y, WALL_THICKNESS * 0.5 + holdDef.depth * 0.98);
+      group.position.copy(mountPoint);
+      mesh.userData.holdId = holdDef.id;
+      group.add(mesh);
+
+      if (holdDef.start) {
+        const ring = new THREE.Mesh(
+          new THREE.TorusGeometry(0.16 * holdDef.size, 0.018, 10, 28),
+          new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.72 })
+        );
+        ring.position.copy(state.wallNormal).multiplyScalar(0.06);
+        group.add(ring);
+      }
+
+      if (holdDef.top) {
+        const glow = new THREE.Mesh(
+          new THREE.SphereGeometry(0.14, 12, 12),
+          new THREE.MeshBasicMaterial({ color: 0xffd870, transparent: true, opacity: 0.36 })
+        );
+        glow.position.copy(state.wallNormal).multiplyScalar(0.1);
+        group.add(glow);
+      }
+
+      return {
+        ...holdDef,
+        group,
+        mesh,
+        anchor,
+        mountPoint,
+        material,
+        pulse: Math.random() * Math.PI * 2
+      };
+    }
+
+    function resetLimbs(problem) {
+      state.limbs.forEach((limb) => {
+        limb.holdId = null;
+        limb.grip = 1;
+        limb.stamina = 1;
+        limb.shake = 0;
+      });
+      state.selectedLimbId = 'rh';
+      state.contacts = 4;
+      updateLimbDock();
+      dom.btnRelease.textContent = '선택 림프 놓기';
+      dom.gradeLabel.textContent = `${problem.grade} Problem`;
+      dom.problemName.textContent = problem.name;
+      dom.betaText.textContent = problem.beta;
+      dom.routeTags.innerHTML = '';
+      problem.tags.forEach((tag) => {
+        const chip = document.createElement('span');
+        chip.textContent = tag;
+        dom.routeTags.appendChild(chip);
+      });
+    }
+
+    function attachStartingLimbs(problem) {
+      attachLimb('lh', problem.start.lh, 1.06, true);
+      attachLimb('rh', problem.start.rh, 1.06, true);
+      attachLimb('lf', problem.start.lf, 0.98, true);
+      attachLimb('rf', problem.start.rf, 0.98, true);
+    }
+
+    function attachLimb(limbId, holdId, grip = 1, silent = false) {
+      const limb = getLimb(limbId);
+      const hold = state.holdMap.get(holdId);
+      if (!limb || !hold || !state.body) return false;
+
+      const reach = getReachDistance(limb, hold);
+      const allowedReach = isHoldCompatible(limb, hold) ? limb.maxReach + 0.12 : limb.maxReach - 0.16;
+      if (!silent && reach > allowedReach) {
+        showToast('Reach too far');
+        return false;
+      }
+
+      limb.holdId = holdId;
+      limb.grip = THREE.MathUtils.clamp(grip, 0.8, 1.56);
+      limb.stamina = Math.max(limb.stamina, 0.2);
+      state.moveCount += silent ? 0 : 1;
+      state.previewHoldId = null;
+      state.hoveredHoldId = holdId;
+
+      if (!silent) {
+        state.styleLabel = grip > 1.28 ? 'Power lock' : state.styleLabel;
+        spawnBurst(hold.anchor, palette[hold.color] || hold.color, 12, 1.1);
+        playAttach(grip);
+        showToast(`${limb.name} -> ${hold.id.toUpperCase()} x${grip.toFixed(2)}`);
+      }
+
+      updateLimbDock();
+      drawRouteMap();
+      return true;
+    }
+
+    function detachLimb(limbId, reason = 'manual') {
+      const limb = getLimb(limbId);
+      if (!limb || !limb.holdId) return;
+      const hold = state.holdMap.get(limb.holdId);
+      limb.holdId = null;
+      limb.grip = 1;
+      limb.shake = Math.max(limb.shake, 0.24);
+      if (reason !== 'manual') {
+        state.autoDetaches += 1;
+        state.styleLabel = reason === 'fatigue' ? 'Endurance leak' : 'Dynamic move';
+      }
+      if (hold) {
+        spawnBurst(hold.anchor, '#ffffff', 7, 0.78);
+      }
+      if (reason === 'manual') {
+        playDetach();
+        showToast(`${limb.name} released`);
+      } else if (reason === 'fatigue') {
+        playSlip();
+        showToast(`${limb.name} slipped`);
+      }
+      updateLimbDock();
+      drawRouteMap();
+    }
+
+    function updateLimbDock() {
+      state.limbs.forEach((limb) => {
+        limb.ui.button.classList.toggle('selected', state.selectedLimbId === limb.id);
+        limb.ui.button.classList.toggle('attached', Boolean(limb.holdId));
+        limb.ui.stateText.textContent = limb.holdId
+          ? `Grip ${Math.round(limb.grip * 100)} · ${Math.round(limb.stamina * 100)}%`
+          : `Free · ${Math.round(limb.stamina * 100)}%`;
+        limb.ui.barFill.style.transform = `scaleX(${THREE.MathUtils.clamp(limb.stamina, 0, 1)})`;
+      });
+      const selected = getSelectedLimb();
+      dom.btnRelease.textContent = `${selected ? selected.short : 'Selected'} 놓기`;
+    }
+
+    function renderOverlayBoard() {
+      buildProblemGrid();
+      state.overlayMode = 'board';
+      state.overlayVisible = true;
+      dom.overlayEyebrow.textContent = '3D Physics Climbing';
+      dom.overlayTitle.textContent = GAME_TITLE;
+      dom.overlayText.textContent = '실제 암벽 문제처럼 손발 4점을 따로 배치하고, Rapier 물리로 중심을 붙잡은 채 Top Hold에 도달하세요.';
+      dom.overlayMeta.innerHTML = '<span>Three.js + Rapier.js</span><span>한 파일 index.html</span><span>모바일 터치 조작</span>';
+      dom.overlayFootnote.textContent = '길게 누르면 강한 그립을 만들지만 피로가 빠르게 쌓입니다. 손은 당기고 발은 밀어 올린다는 느낌으로 움직이면 안정적입니다.';
+      dom.overlayPrimary.textContent = '현재 문제 시작';
+      dom.overlaySecondary.textContent = '보드 닫기';
+      showOverlay();
+    }
+
+    function renderResultOverlay(success, text) {
+      buildProblemGrid();
+      state.overlayMode = success ? 'success' : 'fail';
+      state.overlayVisible = true;
+      const elapsed = state.currentProblem.limit - state.timeLeft;
+      const stars = computeStars(elapsed);
+      const best = state.bests[state.currentProblem.id];
+      dom.overlayEyebrow.textContent = success ? 'Top Out' : 'Fail';
+      dom.overlayTitle.textContent = success ? `${state.currentProblem.grade} Cleared` : `${state.currentProblem.grade} Retry`;
+      dom.overlayText.textContent = text;
+      dom.overlayMeta.innerHTML = `
+        <span>${state.styleLabel}</span>
+        <span>${elapsed.toFixed(1)}s</span>
+        <span>${'★'.repeat(stars)}${'·'.repeat(3 - stars)}</span>
+        <span>slips ${state.autoDetaches}</span>
+        ${best ? `<span>best ${best.bestTime.toFixed(1)}s / ${'★'.repeat(best.bestStars)}</span>` : ''}
+      `;
+      dom.overlayFootnote.textContent = success
+        ? '다음 문제를 바로 열거나, 같은 문제를 다른 베타로 다시 풀어볼 수 있습니다.'
+        : '빈 공간 드래그로 카메라를 먼저 잡고, 발 하나를 더 오래 남겨 두면 급격한 스윙을 줄일 수 있습니다.';
+      dom.overlayPrimary.textContent = success ? '다음 문제' : '현재 문제 다시';
+      dom.overlaySecondary.textContent = '문제 보드';
+      showOverlay();
+    }
+
+    function showOverlay() {
+      dom.overlay.classList.remove('hidden');
+    }
+
+    function hideOverlay() {
+      state.overlayVisible = false;
+      dom.overlay.classList.add('hidden');
+    }
+
+    function tick() {
+      const now = performance.now();
+      const rawDt = Math.min((now - state.lastFrame) / 1000, 0.05);
+      state.lastFrame = now;
+
+      state.lean.lerp(state.leanTarget, 0.12);
+      updateToast(rawDt);
+      const overlayPause = state.overlayVisible && state.overlayMode === 'board';
+      updatePhase(overlayPause ? 0 : rawDt);
+      updateResultOverlayIfNeeded();
+
+      const timeScale = state.phase === 'failed' ? 0.34 : state.phase === 'cleared' ? 0.62 : 1;
+      const simDt = overlayPause ? 0 : rawDt * timeScale;
+      state.physicsAccumulator += simDt;
+
+      while (state.physicsAccumulator >= 1 / 60) {
+        physicsStep(1 / 60);
+        state.physicsAccumulator -= 1 / 60;
+      }
+
+      updateClimberVisuals(rawDt);
+      updateCamera(rawDt);
+      updateHoldVisuals(rawDt);
+      drawRouteMap();
+      renderer.render(scene, camera);
+    }
+
+    function updatePhase(dt) {
+      if (state.phase === 'playing') {
+        state.timeLeft = Math.max(0, state.timeLeft - dt);
+        if (state.timeLeft <= 0) {
+          failProblem('시간 초과로 떨어졌습니다.');
+        }
+      }
+
+      if (state.phase === 'failed' || state.phase === 'cleared') {
+        state.resultDelay -= dt;
+        if (state.resultDelay <= 0 && !state.overlayVisible) {
+          const success = state.phase === 'cleared';
+          renderResultOverlay(success, success ? 'Top Out! 한 손만으로도 정상 패널을 확보했습니다.' : '중심이 벽에서 멀어지며 떨어졌습니다.');
+        }
+      }
+    }
+
+    function physicsStep(step) {
+      if (!state.world || !state.body) return;
+
+      const bodyPos = bodyPosition();
+      const attached = state.limbs.filter((limb) => Boolean(limb.holdId));
+      state.contacts = attached.length;
+
+      if (attached.length > 0) {
+        const centroid = averageVectors(attached.map((limb) => state.holdMap.get(limb.holdId).anchor));
+        const bodyToCentroid = TEMP_A.copy(bodyPos).sub(centroid);
+        const lateral = bodyToCentroid.dot(state.wallTangent);
+        const vertical = bodyToCentroid.dot(state.wallUp);
+        const wallDist = getWallDistance(bodyPos);
+
+        const balanceImpulse = state.wallTangent.clone().multiplyScalar(-lateral * 6.4 * step);
+        balanceImpulse.addScaledVector(state.wallUp, (-0.78 - vertical) * 4.8 * step);
+        balanceImpulse.addScaledVector(state.wallNormal, (-2.9 - wallDist * 4.2) * step);
+        applyImpulse(balanceImpulse);
+
+        const leanImpulse = state.wallTangent.clone().multiplyScalar(state.lean.x * 4.8 * step);
+        leanImpulse.addScaledVector(state.wallUp, state.lean.y * 3.6 * step);
+        leanImpulse.addScaledVector(state.wallNormal, -Math.max(0, state.lean.y) * 2.6 * step);
+        applyImpulse(leanImpulse);
+
+        state.balance = THREE.MathUtils.clamp(
+          1 - Math.abs(lateral) * 0.54 - Math.max(0, wallDist - 0.66) * 0.52 - Math.max(0, Math.abs(vertical) - 1.1) * 0.16,
+          0,
+          1
+        );
+      } else {
+        state.balance = Math.max(0, state.balance - step * 1.6);
+      }
+
+      state.limbs.forEach((limb) => {
+        limb.pulse += step * 7.2;
+        if (!limb.holdId) {
+          limb.stamina = Math.min(1, limb.stamina + step * 0.15);
+          limb.shake = Math.max(0, limb.shake - step * 0.8);
+          return;
+        }
+
+        const hold = state.holdMap.get(limb.holdId);
+        const socket = getSocketWorld(limb, bodyPos);
+        const compatible = isHoldCompatible(limb, hold);
+        const mismatchPenalty = compatible ? 1 : 1.28;
+        const distance = socket.distanceTo(hold.anchor);
+        const stretch = THREE.MathUtils.clamp((distance - limb.preferred) / Math.max(0.1, limb.maxReach - limb.preferred), 0, 1.35);
+        const style = holdStyles[hold.style];
+        const supportScale = style.grip * (0.55 + limb.grip * 0.58) * (0.32 + limb.stamina * 0.86) * (1 - Math.min(stretch, 1) * 0.72) / mismatchPenalty;
+
+        let supportDir;
+        if (limb.role === 'hand') {
+          supportDir = hold.anchor.clone().sub(socket).normalize();
+        } else {
+          supportDir = socket.clone().sub(hold.anchor).normalize();
+          if (supportDir.dot(state.wallUp) < 0.1) {
+            supportDir.addScaledVector(state.wallUp, 0.36).normalize();
+          }
+        }
+
+        const baseForce = limb.role === 'hand' ? 16.2 : 12.8;
+        const impulse = supportDir.multiplyScalar(baseForce * supportScale * step);
+        if (limb.role === 'foot') {
+          impulse.addScaledVector(state.wallUp, 1.4 * supportScale * step);
+        }
+        applyImpulse(impulse);
+
+        const velocity = vectorFrom(state.body.linvel()).length();
+        const fatigue = step * (
+          0.1 * style.fatigue +
+          stretch * 0.78 +
+          Math.max(0, getWallDistance(bodyPos) - 0.76) * 0.42 +
+          Math.max(0, velocity - 1.6) * 0.04 +
+          (limb.grip - 0.8) * 0.22 +
+          (mismatchPenalty - 1) * 0.3
+        );
+        limb.stamina = Math.max(0, limb.stamina - fatigue);
+        limb.shake = THREE.MathUtils.clamp((0.34 - limb.stamina) * 2.2 + stretch * 0.85 + (mismatchPenalty - 1) * 0.5, 0, 1);
+
+        if (distance > limb.maxReach || limb.stamina <= 0.035) {
+          detachLimb(limb.id, 'fatigue');
+        }
+
+        if (hold.top && limb.role === 'hand' && state.phase === 'playing') {
+          clearProblem();
+        }
+      });
+
+      state.world.timestep = step;
+      state.world.step();
+      state.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+
+      const afterPos = bodyPosition();
+      const dist = getWallDistance(afterPos);
+      if (state.phase === 'playing') {
+        if (afterPos.y < -0.5 || dist > 2.4 || (state.contacts === 0 && afterPos.y < 5.8 && vectorFrom(state.body.linvel()).y < -0.4)) {
+          failProblem('중심이 벽에서 멀어지며 낙하했습니다.');
+        }
+      }
+
+      state.cameraTargetDesired.copy(afterPos).addScaledVector(state.wallUp, 0.2);
+      updateHud();
+      updateLimbDock();
+    }
+
+    function updateClimberVisuals(dt) {
+      const bodyPos = state.body ? bodyPosition() : wallLocalToWorld(0, 2.4, 1.0);
+      const forward = state.wallNormal.clone().negate();
+      const up = state.wallUp.clone().normalize();
+      const right = state.wallTangent.clone().normalize();
+      const bodyMatrix = new THREE.Matrix4().makeBasis(right, up, forward);
+      const baseQuat = new THREE.Quaternion().setFromRotationMatrix(bodyMatrix);
+      const leanQuatX = new THREE.Quaternion().setFromAxisAngle(right, -state.lean.y * 0.18);
+      const leanQuatZ = new THREE.Quaternion().setFromAxisAngle(forward, -state.lean.x * 0.22);
+      climberGroup.position.copy(bodyPos);
+      climberGroup.quaternion.copy(baseQuat).multiply(leanQuatX).multiply(leanQuatZ);
+      climberGroup.updateMatrixWorld(true);
+
+      state.limbs.forEach((limb) => {
+        const socket = getSocketWorld(limb, bodyPos);
+        const target = getLimbTarget(limb, bodyPos, dt);
+        const bendHint = state.wallTangent.clone().multiplyScalar(limb.socketX >= 0 ? 1 : -1);
+        bendHint.addScaledVector(state.wallNormal, 0.4);
+        bendHint.addScaledVector(state.wallUp, limb.role === 'hand' ? -0.14 : 0.18);
+        const joint = solveTwoBone(socket, target, limb.upper, limb.lower, bendHint);
+        placeSegment(limb.meshes.upper, socket, joint, limb.thickness);
+        placeSegment(limb.meshes.lower, joint, target, limb.thickness * 0.95);
+        limb.meshes.joint.position.copy(joint);
+        limb.meshes.end.position.copy(target);
+      });
+    }
+
+    function updateCamera(dt) {
+      state.cameraTarget.lerp(state.cameraTargetDesired, 0.08);
+      const horizontal = Math.cos(state.orbitPitch) * state.orbitDistance;
+      const desired = new THREE.Vector3(
+        state.cameraTarget.x + Math.sin(state.orbitYaw) * horizontal,
+        state.cameraTarget.y + Math.sin(state.orbitPitch) * state.orbitDistance + 1.2,
+        state.cameraTarget.z + Math.cos(state.orbitYaw) * horizontal + 3.2
+      );
+      camera.position.lerp(desired, Math.min(1, dt * 6.4));
+      camera.lookAt(state.cameraTarget.clone().addScaledVector(state.wallNormal, -0.18));
+    }
+
+    function updateHoldVisuals(dt) {
+      const selected = state.selectedLimbId;
+      state.topPulse += dt * (state.phase === 'cleared' ? 10 : 4);
+      state.holds.forEach((hold) => {
+        const isHovered = hold.id === (state.previewHoldId || state.hoveredHoldId);
+        const selectedAttached = getSelectedLimb()?.holdId === hold.id;
+        const pulse = hold.top ? 0.7 + Math.sin(state.topPulse + hold.pulse) * 0.16 : 0;
+        hold.material.emissiveIntensity = hold.top ? 0.5 + pulse * 0.35 : isHovered ? 0.18 : selectedAttached ? 0.12 : 0.0;
+        hold.mesh.scale.lerp(
+          new THREE.Vector3(
+            hold.mesh.scale.x,
+            hold.mesh.scale.y,
+            Math.max(0.09, hold.depth * 0.9) * (isHovered ? 1.1 : 1)
+          ),
+          0.18
+        );
+      });
+
+      for (let i = fxGroup.children.length - 1; i >= 0; i -= 1) {
+        const mesh = fxGroup.children[i];
+        mesh.userData.life -= dt;
+        if (mesh.userData.life <= 0) {
+          fxGroup.remove(mesh);
+          continue;
+        }
+        mesh.position.addScaledVector(mesh.userData.velocity, dt);
+        mesh.material.opacity = mesh.userData.life / mesh.userData.maxLife;
+      }
+    }
+
+    function drawRouteMap() {
+      const ctx = dom.routeMap.getContext('2d');
+      const w = dom.routeMap.width;
+      const h = dom.routeMap.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const gradient = ctx.createLinearGradient(0, 0, 0, h);
+      gradient.addColorStop(0, '#122436');
+      gradient.addColorStop(1, '#081118');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, w, h);
+
+      const pad = 24;
+      const wallRect = { x: pad, y: pad, w: w - pad * 2, h: h - pad * 2 };
+      ctx.fillStyle = 'rgba(244,239,231,0.05)';
+      ctx.strokeStyle = 'rgba(244,239,231,0.18)';
+      ctx.lineWidth = 2;
+      roundRect(ctx, wallRect.x, wallRect.y, wallRect.w, wallRect.h, 18);
+      ctx.fill();
+      ctx.stroke();
+
+      const problem = state.currentProblem;
+      if (!problem) return;
+
+      ctx.strokeStyle = 'rgba(126,228,255,0.28)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      problem.betaOrder.forEach((id, index) => {
+        const hold = state.holdMap.get(id);
+        if (!hold) return;
+        const p = mapPoint(hold);
+        if (index === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      });
+      ctx.stroke();
+
+      if (state.body) {
+        const p = mapWorldPoint(bodyPosition());
+        ctx.fillStyle = 'rgba(255,255,255,0.18)';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      state.holds.forEach((hold) => {
+        const p = mapPoint(hold);
+        const radius = 7 + hold.size * (hold.top ? 4.4 : 2.2);
+        ctx.fillStyle = palette[hold.color] || hold.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (hold.start) {
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, radius + 4, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        if (hold.id === (state.previewHoldId || state.hoveredHoldId)) {
+          ctx.strokeStyle = 'rgba(255,216,112,0.92)';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, radius + 6, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      });
+
+      state.limbs.forEach((limb) => {
+        if (!limb.holdId) return;
+        const hold = state.holdMap.get(limb.holdId);
+        const p = mapPoint(hold);
+        ctx.strokeStyle = limb.color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 16, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+
+      function mapPoint(hold) {
+        const x = wallRect.x + ((hold.x + WALL_WIDTH * 0.5) / WALL_WIDTH) * wallRect.w;
+        const y = wallRect.y + wallRect.h - (hold.y / WALL_HEIGHT) * wallRect.h;
+        return { x, y };
+      }
+
+      function mapWorldPoint(point) {
+        const localX = point.dot(state.wallTangent);
+        const localY = point.clone().sub(WALL_BASE).dot(state.wallUp);
+        return {
+          x: wallRect.x + ((localX + WALL_WIDTH * 0.5) / WALL_WIDTH) * wallRect.w,
+          y: wallRect.y + wallRect.h - (localY / WALL_HEIGHT) * wallRect.h
+        };
+      }
+    }
+
+    function updateHud() {
+      dom.timeValue.textContent = `${state.timeLeft.toFixed(1)}s`;
+      dom.balanceValue.textContent = `${Math.round(state.balance * 100)}%`;
+      dom.contactValue.textContent = `${state.contacts} / 4`;
+      dom.phaseValue.textContent = phaseLabel();
+    }
+
+    function phaseLabel() {
+      if (state.phase === 'preview') return 'Preview';
+      if (state.phase === 'playing') return state.previewHoldId ? 'Grip Ready' : 'Climbing';
+      if (state.phase === 'failed') return 'Fail';
+      if (state.phase === 'cleared') return 'Top Out';
+      return 'Ready';
+    }
+
+    function failProblem(text) {
+      if (state.phase !== 'playing') return;
+      state.phase = 'failed';
+      state.resultDelay = 1.2;
+      state.overlayVisible = false;
+      hideOverlay();
+      playFail();
+      showToast('Fail');
+      renderResultOverlayDeferred(false, text);
+    }
+
+    function clearProblem() {
+      if (state.phase !== 'playing') return;
+      state.phase = 'cleared';
+      state.resultDelay = 0.9;
+      state.overlayVisible = false;
+      hideOverlay();
+      playSuccess();
+      showToast('Top Out!');
+
+      const elapsed = state.currentProblem.limit - state.timeLeft;
+      const stars = computeStars(elapsed);
+      const existing = state.bests[state.currentProblem.id];
+      const bestTime = existing ? Math.min(existing.bestTime, elapsed) : elapsed;
+      const bestStars = existing ? Math.max(existing.bestStars, stars) : stars;
+      state.bests[state.currentProblem.id] = { bestTime, bestStars };
+      saveProgress(state.bests);
+
+      const topHold = state.holds.find((hold) => hold.top);
+      if (topHold) {
+        spawnBurst(topHold.anchor, '#ffd870', 26, 1.9);
+      }
+      renderResultOverlayDeferred(true, 'Top Out! 한 손으로 상단 패널을 잡아 올랐습니다.');
+    }
+
+    function renderResultOverlayDeferred(success, text) {
+      state.pendingResult = { success, text };
+    }
+
+    function showToast(text) {
+      state.toastText = text;
+      state.toastTimer = 1.6;
+      dom.statusToast.textContent = text;
+      dom.statusToast.classList.add('visible');
+    }
+
+    function updateToast(dt) {
+      if (state.toastTimer > 0) {
+        state.toastTimer -= dt;
+        if (state.toastTimer <= 0) {
+          dom.statusToast.classList.remove('visible');
+        }
+      }
+    }
+
+    function onPointerDown(event) {
+      ensureAudio();
+      dom.canvas.setPointerCapture(event.pointerId);
+      state.activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+      if (state.activePointers.size >= 2) {
+        const centroid = getPointerCentroid();
+        state.leanAnchor = {
+          x: centroid.x,
+          y: centroid.y,
+          startX: state.leanTarget.x,
+          startY: state.leanTarget.y
+        };
+        state.gesture = null;
+        return;
+      }
+
+      const hold = pickHold(event.clientX, event.clientY);
+      state.gesture = {
+        id: event.pointerId,
+        mode: hold && state.phase === 'playing' ? 'aim' : 'orbit',
+        startX: event.clientX,
+        startY: event.clientY,
+        lastX: event.clientX,
+        lastY: event.clientY,
+        startYaw: state.orbitYaw,
+        startPitch: state.orbitPitch,
+        startTime: performance.now(),
+        holdId: hold ? hold.id : null
+      };
+      state.hoveredHoldId = hold ? hold.id : null;
+      state.previewHoldId = hold ? hold.id : null;
+      event.preventDefault();
+    }
+
+    function onPointerMove(event) {
+      if (!state.activePointers.has(event.pointerId)) return;
+      state.activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+      if (state.activePointers.size >= 2 && state.leanAnchor) {
+        const centroid = getPointerCentroid();
+        state.leanTarget.x = THREE.MathUtils.clamp(state.leanAnchor.startX + (centroid.x - state.leanAnchor.x) / 120, -1, 1);
+        state.leanTarget.y = THREE.MathUtils.clamp(state.leanAnchor.startY + (state.leanAnchor.y - centroid.y) / 120, -1, 1);
+        return;
+      }
+
+      if (!state.gesture || state.gesture.id !== event.pointerId) {
+        const hover = pickHold(event.clientX, event.clientY);
+        state.hoveredHoldId = hover ? hover.id : null;
+        return;
+      }
+
+      const dx = event.clientX - state.gesture.startX;
+      const dy = event.clientY - state.gesture.startY;
+      state.gesture.lastX = event.clientX;
+      state.gesture.lastY = event.clientY;
+
+      if (state.gesture.mode === 'orbit') {
+        state.orbitYaw = state.gesture.startYaw - dx * 0.006;
+        state.orbitPitch = THREE.MathUtils.clamp(state.gesture.startPitch - dy * 0.0045, -0.12, 0.48);
+      } else {
+        if (Math.hypot(dx, dy) > 16) {
+          const hold = pickHold(event.clientX, event.clientY);
+          state.hoveredHoldId = hold ? hold.id : null;
+          state.previewHoldId = hold ? hold.id : null;
+          state.gesture.holdId = hold ? hold.id : null;
+        }
+      }
+    }
+
+    function onPointerUp(event) {
+      state.activePointers.delete(event.pointerId);
+
+      if (state.activePointers.size < 2) {
+        state.leanAnchor = null;
+        state.leanTarget.multiplyScalar(0.35);
+      }
+
+      if (state.gesture && state.gesture.id === event.pointerId) {
+        if (state.gesture.mode === 'aim' && state.phase === 'playing' && state.gesture.holdId) {
+          const gripTime = performance.now() - state.gesture.startTime;
+          const grip = THREE.MathUtils.clamp(0.82 + gripTime / 520, 0.84, 1.56);
+          attachLimb(state.selectedLimbId, state.gesture.holdId, grip, false);
+        }
+        state.gesture = null;
+      }
+
+      if (state.activePointers.size === 0) {
+        state.hoveredHoldId = null;
+        state.previewHoldId = null;
+      }
+    }
+
+    function pickHold(clientX, clientY) {
+      if (!state.holds.length) return null;
+      const rect = dom.canvas.getBoundingClientRect();
+      pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      const intersects = raycaster.intersectObjects(state.holds.map((hold) => hold.mesh), false);
+      if (!intersects.length) return null;
+      const id = intersects[0].object.userData.holdId;
+      return state.holdMap.get(id) || null;
+    }
+
+    function getPointerCentroid() {
+      let x = 0;
+      let y = 0;
+      state.activePointers.forEach((point) => {
+        x += point.x;
+        y += point.y;
+      });
+      const size = Math.max(1, state.activePointers.size);
+      return { x: x / size, y: y / size };
+    }
+
+    function getSelectedLimb() {
+      return state.limbs.find((limb) => limb.id === state.selectedLimbId) || null;
+    }
+
+    function getLimb(id) {
+      return state.limbs.find((limb) => limb.id === id) || null;
+    }
+
+    function getReachDistance(limb, hold) {
+      const pos = bodyPosition();
+      const socket = getSocketWorld(limb, pos);
+      return socket.distanceTo(hold.anchor);
+    }
+
+    function getSocketWorld(limb, bodyPos) {
+      const local = new THREE.Vector3(limb.socketX, limb.socketY, limb.socketZ);
+      const forward = state.wallNormal.clone().negate();
+      const up = state.wallUp.clone().normalize();
+      const right = state.wallTangent.clone().normalize();
+      const matrix = new THREE.Matrix4().makeBasis(right, up, forward);
+      return local.applyMatrix4(matrix).add(bodyPos);
+    }
+
+    function getLimbTarget(limb, bodyPos, dt) {
+      if (limb.holdId) {
+        const hold = state.holdMap.get(limb.holdId);
+        const shake = limb.shake * 0.026;
+        const jitter = state.wallTangent.clone().multiplyScalar(Math.sin(limb.pulse) * shake);
+        jitter.addScaledVector(state.wallUp, Math.cos(limb.pulse * 1.4) * shake * 0.5);
+        return hold.anchor.clone().add(jitter);
+      }
+
+      if (limb.id === state.selectedLimbId && state.previewHoldId) {
+        const hold = state.holdMap.get(state.previewHoldId);
+        if (hold) {
+          return hold.anchor.clone();
+        }
+      }
+
+      const sign = limb.socketX >= 0 ? 1 : -1;
+      const target = bodyPos
+        .clone()
+        .addScaledVector(state.wallTangent, sign * (limb.role === 'hand' ? 0.55 : 0.34))
+        .addScaledVector(state.wallUp, limb.role === 'hand' ? -0.18 : -0.88)
+        .addScaledVector(state.wallNormal, 0.58);
+      target.addScaledVector(state.wallTangent, Math.sin(CLOCK.elapsedTime * 2.4 + limb.pulse) * 0.03);
+      return target;
+    }
+
+    function solveTwoBone(start, end, upper, lower, bendHint) {
+      const dir = TEMP_A.copy(end).sub(start);
+      const distRaw = Math.max(dir.length(), 1e-4);
+      const dist = Math.min(distRaw, upper + lower - 1e-4);
+      dir.normalize();
+
+      const proj = TEMP_B.copy(bendHint);
+      proj.addScaledVector(dir, -proj.dot(dir));
+      if (proj.lengthSq() < 1e-6) {
+        proj.copy(state.wallNormal).addScaledVector(state.wallTangent, 0.1);
+        proj.addScaledVector(dir, -proj.dot(dir));
+      }
+      proj.normalize();
+
+      const x = (upper * upper - lower * lower + dist * dist) / (2 * dist);
+      const y = Math.sqrt(Math.max(upper * upper - x * x, 0));
+      return TEMP_C.copy(start).addScaledVector(dir, x).addScaledVector(proj, y).clone();
+    }
+
+    function placeSegment(mesh, start, end, radius) {
+      const direction = TEMP_A.copy(end).sub(start);
+      const length = Math.max(direction.length(), 1e-4);
+      direction.normalize();
+      mesh.position.copy(start).addScaledVector(TEMP_A.copy(end).sub(start), 0.5);
+      mesh.quaternion.setFromUnitVectors(Y_AXIS, direction);
+      mesh.scale.set(radius, length, radius);
+    }
+
+    function bodyPosition() {
+      if (!state.body) return wallLocalToWorld(0, 2.2, 1.0);
+      const t = state.body.translation();
+      return new THREE.Vector3(t.x, t.y, t.z);
+    }
+
+    function vectorFrom(v) {
+      return new THREE.Vector3(v.x, v.y, v.z);
+    }
+
+    function applyImpulse(vector) {
+      state.body.applyImpulse({ x: vector.x, y: vector.y, z: vector.z }, true);
+    }
+
+    function getWallDistance(point) {
+      const onBase = point.clone().sub(WALL_BASE);
+      return onBase.dot(state.wallNormal) - WALL_THICKNESS * 0.5;
+    }
+
+    function isHoldCompatible(limb, hold) {
+      if (hold.kind === 'mix' || hold.kind === 'top') return true;
+      return limb.role === hold.kind;
+    }
+
+    function wallLocalToWorld(x, y, depth = 0) {
+      return WALL_BASE
+        .clone()
+        .addScaledVector(state.wallTangent, x)
+        .addScaledVector(state.wallUp, y)
+        .addScaledVector(state.wallNormal, depth);
+    }
+
+    function averageVectors(points) {
+      const out = new THREE.Vector3();
+      points.forEach((point) => out.add(point));
+      return out.multiplyScalar(1 / Math.max(1, points.length));
+    }
+
+    function clearGroup(group) {
+      while (group.children.length) {
+        group.remove(group.children[0]);
+      }
+    }
+
+    function clearFx() {
+      clearGroup(fxGroup);
+    }
+
+    function computeStars(elapsed) {
+      let stars = 1;
+      if (elapsed <= state.currentProblem.par + 12) stars = 2;
+      if (elapsed <= state.currentProblem.par && state.autoDetaches <= 1) stars = 3;
+      return stars;
+    }
+
+    function updateResultOverlayIfNeeded() {
+      if (state.pendingResult && state.resultDelay <= 0 && !state.overlayVisible) {
+        const pending = state.pendingResult;
+        state.pendingResult = null;
+        renderResultOverlay(pending.success, pending.text);
+      }
+    }
+
+    function resize() {
+      if (!renderer) return;
+      renderer.setSize(window.innerWidth, window.innerHeight, false);
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.();
+      } else {
+        document.exitFullscreen?.();
+      }
+    }
+
+    function createWallTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, '#435166');
+      gradient.addColorStop(0.5, '#324050');
+      gradient.addColorStop(1, '#263341');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < 900; i += 1) {
+        const alpha = Math.random() * 0.08;
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const size = 1 + Math.random() * 3;
+        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        ctx.fillRect(x, y, size, size);
+      }
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.lineWidth = 6;
+      for (let y = 80; y < canvas.height; y += 112) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y + 36);
+        ctx.stroke();
+      }
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(1.6, 1.2);
+      return texture;
+    }
+
+    function createFloorTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      const gradient = ctx.createRadialGradient(256, 256, 20, 256, 256, 300);
+      gradient.addColorStop(0, '#314253');
+      gradient.addColorStop(1, '#15212d');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < 220; i += 1) {
+        ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.05})`;
+        ctx.beginPath();
+        ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 1.8 + 0.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(2, 2);
+      return texture;
+    }
+
+    function createHoldGeometryBank() {
+      return {
+        blob: new THREE.IcosahedronGeometry(1, 1),
+        edge: new THREE.BoxGeometry(1.2, 0.7, 0.7),
+        sloper: new THREE.SphereGeometry(1, 14, 12),
+        pinch: new THREE.CylinderGeometry(0.8, 1, 1.2, 10),
+        chip: new THREE.BoxGeometry(1.1, 0.45, 0.6),
+        volume: new THREE.OctahedronGeometry(1, 0),
+        top: new THREE.BoxGeometry(2.2, 0.7, 1)
+      };
+    }
+
+    function spawnBurst(position, color, count = 10, speed = 1.1) {
+      for (let i = 0; i < count; i += 1) {
+        const material = new THREE.MeshBasicMaterial({
+          color: new THREE.Color(color),
+          transparent: true,
+          opacity: 0.9
+        });
+        const mesh = new THREE.Mesh(particleGeometry, material);
+        mesh.position.copy(position);
+        const velocity = new THREE.Vector3(
+          (Math.random() - 0.5) * speed,
+          (Math.random() - 0.2) * speed,
+          (Math.random() - 0.5) * speed
+        );
+        mesh.userData = { velocity, life: 0.55 + Math.random() * 0.35, maxLife: 0.9 };
+        fxGroup.add(mesh);
+      }
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    function hashAngle(seed) {
+      let hash = 0;
+      for (let i = 0; i < seed.length; i += 1) {
+        hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+        hash |= 0;
+      }
+      return (hash % 360) * (Math.PI / 180);
+    }
+
+    function loadProgress() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      } catch {
+        return {};
+      }
+    }
+
+    function saveProgress(data) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      } catch {}
+    }
+
+    function ensureAudio() {
+      if (!audio.context) {
+        const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextCtor) return;
+        audio.context = new AudioContextCtor();
+        audio.master = audio.context.createGain();
+        audio.master.gain.value = 0.08;
+        audio.master.connect(audio.context.destination);
+      }
+      if (audio.context.state === 'suspended') {
+        audio.context.resume();
+      }
+    }
+
+    function beep(from, to, duration, gain, type = 'triangle') {
+      if (!audio.context || !audio.master) return;
+      const now = audio.context.currentTime;
+      const osc = audio.context.createOscillator();
+      const amp = audio.context.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(from, now);
+      osc.frequency.linearRampToValueAtTime(to, now + duration);
+      amp.gain.setValueAtTime(0.0001, now);
+      amp.gain.linearRampToValueAtTime(gain, now + 0.01);
+      amp.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      osc.connect(amp);
+      amp.connect(audio.master);
+      osc.start(now);
+      osc.stop(now + duration + 0.02);
+    }
+
+    function playAttach(grip) {
+      beep(260 + grip * 40, 430 + grip * 80, 0.08, 0.12, 'triangle');
+    }
+
+    function playDetach() {
+      beep(220, 160, 0.07, 0.08, 'square');
+    }
+
+    function playSlip() {
+      beep(190, 80, 0.18, 0.12, 'sawtooth');
+    }
+
+    function playFail() {
+      beep(180, 70, 0.26, 0.14, 'sawtooth');
+      setTimeout(() => beep(120, 60, 0.3, 0.1, 'triangle'), 60);
+    }
+
+    function playSuccess() {
+      beep(320, 520, 0.12, 0.12, 'triangle');
+      setTimeout(() => beep(520, 780, 0.18, 0.11, 'triangle'), 70);
+      setTimeout(() => beep(660, 980, 0.22, 0.09, 'sine'), 150);
+    }
+
+  </script>
+</body>
+</html>
