@@ -2,7 +2,10 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+  />
   <meta
     name="live-snapshot-url"
     content="https://tap-tap-cho.vercel.app/real-estate-watch/latest-transactions.json"
@@ -17,6 +20,8 @@
     content="서울경기실시간아파트 데이터를 카드형으로 보여주는 부동산 정보 서비스입니다."
   />
   <title>서울경기실시간아파트</title>
+  <script src="../viewport-guard.js"></script>
+  <script src="../toss-runtime.js" defer></script>
   <link rel="stylesheet" href="../styles.css" />
 </head>
 <body>
