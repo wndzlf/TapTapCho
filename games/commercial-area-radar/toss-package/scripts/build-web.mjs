@@ -11,6 +11,8 @@ const FILES_TO_COPY = [
   'terms.html',
   'privacy.html',
   'styles.css',
+  'toss-runtime.js',
+  'viewport-guard.js',
   'app.js',
   'latest-commercial-area-snapshot.json',
 ];

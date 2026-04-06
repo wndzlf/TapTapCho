@@ -16,6 +16,10 @@
   --medium: #0b7a6f;
   --low: #5f7182;
   --shadow: 0 24px 50px rgba(15, 43, 49, 0.12);
+  --safe-top: 0px;
+  --safe-right: 0px;
+  --safe-bottom: 0px;
+  --safe-left: 0px;
 }
 
 * {
@@ -26,6 +30,8 @@ html,
 body {
   margin: 0;
   min-height: 100%;
+  touch-action: pan-x pan-y;
+  overscroll-behavior: none;
 }
 
 body {
@@ -54,6 +60,148 @@ body {
     linear-gradient(140deg, rgba(11, 36, 46, 0.96), rgba(12, 92, 86, 0.92));
   color: #f6fcfb;
   box-shadow: var(--shadow);
+}
+
+.hero-controls {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding-top: var(--safe-top);
+}
+
+.hero-runtime-badge,
+.hero-exit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.hero-runtime-badge {
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(246, 252, 251, 0.92);
+}
+
+.hero-runtime-badge.is-live {
+  background: rgba(11, 122, 111, 0.28);
+  color: #f6fcfb;
+}
+
+.hero-runtime-badge.is-preview {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.hero-exit-button {
+  border: 0;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff7f1;
+  cursor: pointer;
+  transition: transform 0.14s ease, background-color 0.14s ease;
+}
+
+.hero-exit-button:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.runtime-modal[hidden] {
+  display: none;
+}
+
+.runtime-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding:
+    max(16px, var(--safe-top))
+    max(16px, var(--safe-right))
+    calc(max(16px, var(--safe-bottom)) + 8px)
+    max(16px, var(--safe-left));
+  background: rgba(10, 20, 26, 0.34);
+}
+
+.runtime-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: transparent;
+}
+
+.runtime-sheet {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 420px);
+  display: grid;
+  gap: 14px;
+  padding: 22px;
+  border: 1px solid rgba(17, 53, 55, 0.08);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 20px 48px rgba(9, 24, 28, 0.18);
+}
+
+.runtime-sheet-kicker {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.runtime-sheet-title {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.18;
+}
+
+.runtime-sheet-copy {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.runtime-sheet-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.runtime-sheet-button {
+  flex: 1 1 160px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(17, 53, 55, 0.12);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.runtime-sheet-button-danger {
+  border-color: rgba(207, 92, 46, 0.18);
+  background: linear-gradient(180deg, rgba(240, 137, 79, 0.18), rgba(207, 92, 46, 0.18));
+  color: #8c3d1f;
+}
+
+body.runtime-modal-open {
+  overflow: hidden;
 }
 
 .hero::after {
@@ -783,7 +931,7 @@ body {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.86);
   color: var(--ink);
-  font-size: 15px;
+  font-size: 16px;
   outline: none;
 }
 
@@ -1844,6 +1992,17 @@ body.picker-open {
 }
 
 @media (max-width: 759px) {
+  .hero-controls,
+  .runtime-sheet-actions {
+    flex-direction: column;
+  }
+
+  .hero-runtime-badge,
+  .hero-exit-button,
+  .runtime-sheet-button {
+    width: 100%;
+  }
+
   .legal-section h2 {
     font-size: 20px;
   }
