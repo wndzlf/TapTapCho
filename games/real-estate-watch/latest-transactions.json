@@ -1,7 +1,7 @@
 {
   "snapshotMode": "live",
   "snapshotFormat": "compact",
-  "updatedAt": "2026-04-07T22:27:41.422Z",
+  "updatedAt": "2026-04-08T22:28:52.835Z",
   "scope": "서울·경기 아파트 매매 자동 수집 스냅샷",
   "source": "국토교통부 실거래가 공개시스템 / 공공데이터포털 OpenAPI",
   "monthsQueried": [
@@ -10,12 +10,12 @@
     "202602"
   ],
   "regionCount": 67,
-  "itemCount": 32554,
+  "itemCount": 33281,
   "views": {
     "all": {
       "label": "서울·경기 전체",
-      "itemCount": 32554,
-      "averagePriceManwon": 71058,
+      "itemCount": 33281,
+      "averagePriceManwon": 71144,
       "highestPriceItem": {
         "id": "87c0c8c11a44d262",
         "region": "seoul",
@@ -32,25 +32,25 @@
         "lawdCode": "11170",
         "dealYearMonth": "202603",
         "firstSeenAt": "2026-03-24T22:20:17.605Z",
-        "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+        "officialCheckedAt": "2026-04-08T22:28:52.835Z"
       },
       "latestContractItem": {
-        "id": "49ad5b899d077513",
+        "id": "01e93bdd6340217b",
         "region": "seoul",
         "regionLabel": "서울",
         "district": "송파구",
-        "neighborhood": "잠실동",
-        "addressHint": "지번 22",
-        "apartmentName": "리센츠",
-        "exclusiveAreaM2": 84.99,
-        "floor": 22,
-        "contractDate": "2026-04-07",
-        "priceManwon": 336000,
+        "neighborhood": "가락동",
+        "addressHint": "지번 138",
+        "apartmentName": "가락미륭아파트",
+        "exclusiveAreaM2": 83.58,
+        "floor": 5,
+        "contractDate": "2026-04-08",
+        "priceManwon": 186000,
         "sourceUrl": "https://rt.molit.go.kr/",
         "lawdCode": "11710",
         "dealYearMonth": "202604",
-        "firstSeenAt": "2026-04-07T22:27:41.422Z",
-        "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+        "firstSeenAt": "2026-04-08T22:28:52.835Z",
+        "officialCheckedAt": "2026-04-08T22:28:52.835Z"
       },
       "priceTop10": [
         {
@@ -69,7 +69,7 @@
           "lawdCode": "11170",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-24T22:20:17.605Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "cdb063713de83e40",
@@ -87,7 +87,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-04-01T22:26:09.172Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "afe1af798fc60aa7",
@@ -105,7 +105,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-23T22:20:45.849Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "c60c2500f34c87b9",
@@ -123,7 +123,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "f5cf037007e3f679",
@@ -141,7 +141,7 @@
           "lawdCode": "11650",
           "dealYearMonth": "202604",
           "firstSeenAt": "2026-04-01T22:26:09.172Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "c2c1a5a078892785",
@@ -159,7 +159,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-26T22:16:59.760Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "c59e76ad13318e45",
@@ -177,7 +177,7 @@
           "lawdCode": "11650",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "44d335e43a326069",
@@ -195,7 +195,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "fb2f2087f385834b",
@@ -213,7 +213,7 @@
           "lawdCode": "11650",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "42bff3d1220a9a6f",
@@ -231,196 +231,196 @@
           "lawdCode": "11650",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         }
       ],
       "contractTop10": [
         {
-          "id": "49ad5b899d077513",
+          "id": "01e93bdd6340217b",
           "region": "seoul",
           "regionLabel": "서울",
           "district": "송파구",
-          "neighborhood": "잠실동",
-          "addressHint": "지번 22",
-          "apartmentName": "리센츠",
-          "exclusiveAreaM2": 84.99,
-          "floor": 22,
-          "contractDate": "2026-04-07",
-          "priceManwon": 336000,
+          "neighborhood": "가락동",
+          "addressHint": "지번 138",
+          "apartmentName": "가락미륭아파트",
+          "exclusiveAreaM2": 83.58,
+          "floor": 5,
+          "contractDate": "2026-04-08",
+          "priceManwon": 186000,
           "sourceUrl": "https://rt.molit.go.kr/",
           "lawdCode": "11710",
           "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
-          "id": "cb44161afa7bc94e",
-          "region": "seoul",
-          "regionLabel": "서울",
-          "district": "광진구",
-          "neighborhood": "광장동",
-          "addressHint": "지번 570",
-          "apartmentName": "상록타워아파트",
-          "exclusiveAreaM2": 59.4,
-          "floor": 1,
-          "contractDate": "2026-04-07",
-          "priceManwon": 160000,
-          "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "11215",
-          "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
-        },
-        {
-          "id": "7e09b713b209ed81",
-          "region": "seoul",
-          "regionLabel": "서울",
-          "district": "송파구",
-          "neighborhood": "오금동",
-          "addressHint": "지번 165",
-          "apartmentName": "상아2차아파트",
-          "exclusiveAreaM2": 45.77,
-          "floor": 11,
-          "contractDate": "2026-04-07",
-          "priceManwon": 134500,
-          "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "11710",
-          "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
-        },
-        {
-          "id": "17867d2350f72a00",
+          "id": "6b6ede9b88db2361",
           "region": "gyeonggi",
           "regionLabel": "경기",
-          "district": "수원시 영통구",
-          "neighborhood": "망포동",
-          "addressHint": "지번 805",
-          "apartmentName": "영통롯데캐슬엘클래스1단지",
-          "exclusiveAreaM2": 84.8531,
-          "floor": 6,
-          "contractDate": "2026-04-07",
-          "priceManwon": 93500,
+          "district": "성남시 수정구",
+          "neighborhood": "창곡동",
+          "addressHint": "지번 531",
+          "apartmentName": "위례자이",
+          "exclusiveAreaM2": 113.5609,
+          "floor": 7,
+          "contractDate": "2026-04-08",
+          "priceManwon": 150000,
           "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "41117",
+          "lawdCode": "41131",
           "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
-          "id": "028bb70d8da47a9a",
+          "id": "002fdc44a1839acc",
+          "region": "seoul",
+          "regionLabel": "서울",
+          "district": "동작구",
+          "neighborhood": "대방동",
+          "addressHint": "지번 508",
+          "apartmentName": "대방1차e-편한세상",
+          "exclusiveAreaM2": 84.32,
+          "floor": 13,
+          "contractDate": "2026-04-08",
+          "priceManwon": 105150,
+          "sourceUrl": "https://rt.molit.go.kr/",
+          "lawdCode": "11590",
+          "dealYearMonth": "202604",
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
+        },
+        {
+          "id": "b1b6d2c01972425d",
+          "region": "gyeonggi",
+          "regionLabel": "경기",
+          "district": "용인시 수지구",
+          "neighborhood": "동천동",
+          "addressHint": "지번 862",
+          "apartmentName": "동천마을현대홈타운2차",
+          "exclusiveAreaM2": 84.975,
+          "floor": 4,
+          "contractDate": "2026-04-08",
+          "priceManwon": 105000,
+          "sourceUrl": "https://rt.molit.go.kr/",
+          "lawdCode": "41465",
+          "dealYearMonth": "202604",
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
+        },
+        {
+          "id": "a2af7912c3d72da3",
+          "region": "seoul",
+          "regionLabel": "서울",
+          "district": "송파구",
+          "neighborhood": "방이동",
+          "addressHint": "지번 120-2",
+          "apartmentName": "광명아파트",
+          "exclusiveAreaM2": 70.55,
+          "floor": 6,
+          "contractDate": "2026-04-08",
+          "priceManwon": 80000,
+          "sourceUrl": "https://rt.molit.go.kr/",
+          "lawdCode": "11710",
+          "dealYearMonth": "202604",
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
+        },
+        {
+          "id": "4048aa2024e95ee9",
+          "region": "seoul",
+          "regionLabel": "서울",
+          "district": "도봉구",
+          "neighborhood": "방학동",
+          "addressHint": "지번 720-18",
+          "apartmentName": "방학동삼성래미안1",
+          "exclusiveAreaM2": 118.381,
+          "floor": 18,
+          "contractDate": "2026-04-08",
+          "priceManwon": 75300,
+          "sourceUrl": "https://rt.molit.go.kr/",
+          "lawdCode": "11320",
+          "dealYearMonth": "202604",
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
+        },
+        {
+          "id": "9269313dd777d87f",
+          "region": "gyeonggi",
+          "regionLabel": "경기",
+          "district": "하남시",
+          "neighborhood": "창우동",
+          "addressHint": "지번 518",
+          "apartmentName": "부영",
+          "exclusiveAreaM2": 59.97,
+          "floor": 4,
+          "contractDate": "2026-04-08",
+          "priceManwon": 73700,
+          "sourceUrl": "https://rt.molit.go.kr/",
+          "lawdCode": "41450",
+          "dealYearMonth": "202604",
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
+        },
+        {
+          "id": "2c2764ca16084ebc",
           "region": "seoul",
           "regionLabel": "서울",
           "district": "송파구",
           "neighborhood": "풍납동",
-          "addressHint": "지번 251-2",
-          "apartmentName": "토성현대",
-          "exclusiveAreaM2": 57.24,
-          "floor": 9,
-          "contractDate": "2026-04-07",
-          "priceManwon": 84300,
+          "addressHint": "지번 261",
+          "apartmentName": "현대리버빌2지구",
+          "exclusiveAreaM2": 40.95,
+          "floor": 5,
+          "contractDate": "2026-04-08",
+          "priceManwon": 71000,
           "sourceUrl": "https://rt.molit.go.kr/",
           "lawdCode": "11710",
           "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
-          "id": "759120866f0471e1",
+          "id": "83753328b8d311a4",
           "region": "gyeonggi",
           "regionLabel": "경기",
-          "district": "고양시 덕양구",
-          "neighborhood": "토당동",
-          "addressHint": "지번 930",
-          "apartmentName": "대곡역롯데캐슬엘클라씨",
-          "exclusiveAreaM2": 84.9297,
-          "floor": 4,
-          "contractDate": "2026-04-07",
-          "priceManwon": 79800,
+          "district": "하남시",
+          "neighborhood": "풍산동",
+          "addressHint": "지번 630",
+          "apartmentName": "하남힐즈파크푸르지오1단지",
+          "exclusiveAreaM2": 52.349,
+          "floor": 8,
+          "contractDate": "2026-04-08",
+          "priceManwon": 71000,
           "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "41281",
+          "lawdCode": "41450",
           "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
-          "id": "b2af7930673909df",
+          "id": "0f7d2081af6b8209",
           "region": "seoul",
           "regionLabel": "서울",
           "district": "중랑구",
-          "neighborhood": "신내동",
-          "addressHint": "지번 785",
-          "apartmentName": "건영2차",
-          "exclusiveAreaM2": 84.96,
-          "floor": 10,
-          "contractDate": "2026-04-07",
-          "priceManwon": 74500,
+          "neighborhood": "면목동",
+          "addressHint": "지번 1500",
+          "apartmentName": "두산1",
+          "exclusiveAreaM2": 84.87,
+          "floor": 12,
+          "contractDate": "2026-04-08",
+          "priceManwon": 70000,
           "sourceUrl": "https://rt.molit.go.kr/",
           "lawdCode": "11260",
           "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
-        },
-        {
-          "id": "9ad71d421d4df36c",
-          "region": "gyeonggi",
-          "regionLabel": "경기",
-          "district": "수원시 권선구",
-          "neighborhood": "곡반정동",
-          "addressHint": "지번 652",
-          "apartmentName": "수원하늘채더퍼스트1단지",
-          "exclusiveAreaM2": 74.88,
-          "floor": 11,
-          "contractDate": "2026-04-07",
-          "priceManwon": 70400,
-          "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "41113",
-          "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
-        },
-        {
-          "id": "2b9f12aef8ee28db",
-          "region": "gyeonggi",
-          "regionLabel": "경기",
-          "district": "광명시",
-          "neighborhood": "철산동",
-          "addressHint": "지번 630",
-          "apartmentName": "브라운스톤2차",
-          "exclusiveAreaM2": 59.757,
-          "floor": 12,
-          "contractDate": "2026-04-07",
-          "priceManwon": 60000,
-          "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "41210",
-          "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
-        },
-        {
-          "id": "c69c026930902403",
-          "region": "gyeonggi",
-          "regionLabel": "경기",
-          "district": "고양시 덕양구",
-          "neighborhood": "성사동",
-          "addressHint": "지번 869",
-          "apartmentName": "원당대림e-편한세상",
-          "exclusiveAreaM2": 84.86,
-          "floor": 12,
-          "contractDate": "2026-04-07",
-          "priceManwon": 59000,
-          "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "41281",
-          "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         }
       ]
     },
     "seoul": {
       "label": "서울",
-      "itemCount": 10060,
-      "averagePriceManwon": 106023,
+      "itemCount": 10297,
+      "averagePriceManwon": 106074,
       "highestPriceItem": {
         "id": "87c0c8c11a44d262",
         "region": "seoul",
@@ -437,25 +437,25 @@
         "lawdCode": "11170",
         "dealYearMonth": "202603",
         "firstSeenAt": "2026-03-24T22:20:17.605Z",
-        "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+        "officialCheckedAt": "2026-04-08T22:28:52.835Z"
       },
       "latestContractItem": {
-        "id": "49ad5b899d077513",
+        "id": "01e93bdd6340217b",
         "region": "seoul",
         "regionLabel": "서울",
         "district": "송파구",
-        "neighborhood": "잠실동",
-        "addressHint": "지번 22",
-        "apartmentName": "리센츠",
-        "exclusiveAreaM2": 84.99,
-        "floor": 22,
-        "contractDate": "2026-04-07",
-        "priceManwon": 336000,
+        "neighborhood": "가락동",
+        "addressHint": "지번 138",
+        "apartmentName": "가락미륭아파트",
+        "exclusiveAreaM2": 83.58,
+        "floor": 5,
+        "contractDate": "2026-04-08",
+        "priceManwon": 186000,
         "sourceUrl": "https://rt.molit.go.kr/",
         "lawdCode": "11710",
         "dealYearMonth": "202604",
-        "firstSeenAt": "2026-04-07T22:27:41.422Z",
-        "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+        "firstSeenAt": "2026-04-08T22:28:52.835Z",
+        "officialCheckedAt": "2026-04-08T22:28:52.835Z"
       },
       "priceTop10": [
         {
@@ -474,7 +474,7 @@
           "lawdCode": "11170",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-24T22:20:17.605Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "cdb063713de83e40",
@@ -492,7 +492,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-04-01T22:26:09.172Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "afe1af798fc60aa7",
@@ -510,7 +510,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-23T22:20:45.849Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "c60c2500f34c87b9",
@@ -528,7 +528,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "f5cf037007e3f679",
@@ -546,7 +546,7 @@
           "lawdCode": "11650",
           "dealYearMonth": "202604",
           "firstSeenAt": "2026-04-01T22:26:09.172Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "c2c1a5a078892785",
@@ -564,7 +564,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-03-26T22:16:59.760Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "c59e76ad13318e45",
@@ -582,7 +582,7 @@
           "lawdCode": "11650",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "44d335e43a326069",
@@ -600,7 +600,7 @@
           "lawdCode": "11680",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "fb2f2087f385834b",
@@ -618,7 +618,7 @@
           "lawdCode": "11650",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "42bff3d1220a9a6f",
@@ -636,10 +636,118 @@
           "lawdCode": "11650",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         }
       ],
       "contractTop10": [
+        {
+          "id": "01e93bdd6340217b",
+          "region": "seoul",
+          "regionLabel": "서울",
+          "district": "송파구",
+          "neighborhood": "가락동",
+          "addressHint": "지번 138",
+          "apartmentName": "가락미륭아파트",
+          "exclusiveAreaM2": 83.58,
+          "floor": 5,
+          "contractDate": "2026-04-08",
+          "priceManwon": 186000,
+          "sourceUrl": "https://rt.molit.go.kr/",
+          "lawdCode": "11710",
+          "dealYearMonth": "202604",
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
+        },
+        {
+          "id": "002fdc44a1839acc",
+          "region": "seoul",
+          "regionLabel": "서울",
+          "district": "동작구",
+          "neighborhood": "대방동",
+          "addressHint": "지번 508",
+          "apartmentName": "대방1차e-편한세상",
+          "exclusiveAreaM2": 84.32,
+          "floor": 13,
+          "contractDate": "2026-04-08",
+          "priceManwon": 105150,
+          "sourceUrl": "https://rt.molit.go.kr/",
+          "lawdCode": "11590",
+          "dealYearMonth": "202604",
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
+        },
+        {
+          "id": "a2af7912c3d72da3",
+          "region": "seoul",
+          "regionLabel": "서울",
+          "district": "송파구",
+          "neighborhood": "방이동",
+          "addressHint": "지번 120-2",
+          "apartmentName": "광명아파트",
+          "exclusiveAreaM2": 70.55,
+          "floor": 6,
+          "contractDate": "2026-04-08",
+          "priceManwon": 80000,
+          "sourceUrl": "https://rt.molit.go.kr/",
+          "lawdCode": "11710",
+          "dealYearMonth": "202604",
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
+        },
+        {
+          "id": "4048aa2024e95ee9",
+          "region": "seoul",
+          "regionLabel": "서울",
+          "district": "도봉구",
+          "neighborhood": "방학동",
+          "addressHint": "지번 720-18",
+          "apartmentName": "방학동삼성래미안1",
+          "exclusiveAreaM2": 118.381,
+          "floor": 18,
+          "contractDate": "2026-04-08",
+          "priceManwon": 75300,
+          "sourceUrl": "https://rt.molit.go.kr/",
+          "lawdCode": "11320",
+          "dealYearMonth": "202604",
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
+        },
+        {
+          "id": "2c2764ca16084ebc",
+          "region": "seoul",
+          "regionLabel": "서울",
+          "district": "송파구",
+          "neighborhood": "풍납동",
+          "addressHint": "지번 261",
+          "apartmentName": "현대리버빌2지구",
+          "exclusiveAreaM2": 40.95,
+          "floor": 5,
+          "contractDate": "2026-04-08",
+          "priceManwon": 71000,
+          "sourceUrl": "https://rt.molit.go.kr/",
+          "lawdCode": "11710",
+          "dealYearMonth": "202604",
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
+        },
+        {
+          "id": "0f7d2081af6b8209",
+          "region": "seoul",
+          "regionLabel": "서울",
+          "district": "중랑구",
+          "neighborhood": "면목동",
+          "addressHint": "지번 1500",
+          "apartmentName": "두산1",
+          "exclusiveAreaM2": 84.87,
+          "floor": 12,
+          "contractDate": "2026-04-08",
+          "priceManwon": 70000,
+          "sourceUrl": "https://rt.molit.go.kr/",
+          "lawdCode": "11260",
+          "dealYearMonth": "202604",
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
+        },
         {
           "id": "49ad5b899d077513",
           "region": "seoul",
@@ -656,7 +764,7 @@
           "lawdCode": "11710",
           "dealYearMonth": "202604",
           "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "cb44161afa7bc94e",
@@ -674,7 +782,25 @@
           "lawdCode": "11215",
           "dealYearMonth": "202604",
           "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
+        },
+        {
+          "id": "89825f577fa94091",
+          "region": "seoul",
+          "regionLabel": "서울",
+          "district": "성동구",
+          "neighborhood": "마장동",
+          "addressHint": "지번 817",
+          "apartmentName": "왕십리삼성아파트",
+          "exclusiveAreaM2": 84.93,
+          "floor": 10,
+          "contractDate": "2026-04-07",
+          "priceManwon": 153000,
+          "sourceUrl": "https://rt.molit.go.kr/",
+          "lawdCode": "11200",
+          "dealYearMonth": "202604",
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "7e09b713b209ed81",
@@ -692,140 +818,14 @@
           "lawdCode": "11710",
           "dealYearMonth": "202604",
           "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
-        },
-        {
-          "id": "028bb70d8da47a9a",
-          "region": "seoul",
-          "regionLabel": "서울",
-          "district": "송파구",
-          "neighborhood": "풍납동",
-          "addressHint": "지번 251-2",
-          "apartmentName": "토성현대",
-          "exclusiveAreaM2": 57.24,
-          "floor": 9,
-          "contractDate": "2026-04-07",
-          "priceManwon": 84300,
-          "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "11710",
-          "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
-        },
-        {
-          "id": "b2af7930673909df",
-          "region": "seoul",
-          "regionLabel": "서울",
-          "district": "중랑구",
-          "neighborhood": "신내동",
-          "addressHint": "지번 785",
-          "apartmentName": "건영2차",
-          "exclusiveAreaM2": 84.96,
-          "floor": 10,
-          "contractDate": "2026-04-07",
-          "priceManwon": 74500,
-          "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "11260",
-          "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
-        },
-        {
-          "id": "bf2d759dc7fe4218",
-          "region": "seoul",
-          "regionLabel": "서울",
-          "district": "송파구",
-          "neighborhood": "방이동",
-          "addressHint": "지번 89",
-          "apartmentName": "올림픽선수기자촌1단지",
-          "exclusiveAreaM2": 84.96,
-          "floor": 1,
-          "contractDate": "2026-04-06",
-          "priceManwon": 280000,
-          "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "11710",
-          "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-06T22:24:05.711Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
-        },
-        {
-          "id": "2313804744ef022b",
-          "region": "seoul",
-          "regionLabel": "서울",
-          "district": "광진구",
-          "neighborhood": "광장동",
-          "addressHint": "지번 218-1",
-          "apartmentName": "극동2",
-          "exclusiveAreaM2": 84.55,
-          "floor": 11,
-          "contractDate": "2026-04-06",
-          "priceManwon": 252000,
-          "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "11215",
-          "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
-        },
-        {
-          "id": "01e955ab08fa6d4f",
-          "region": "seoul",
-          "regionLabel": "서울",
-          "district": "양천구",
-          "neighborhood": "목동",
-          "addressHint": "지번 903",
-          "apartmentName": "목동신시가지3",
-          "exclusiveAreaM2": 64.98,
-          "floor": 7,
-          "contractDate": "2026-04-06",
-          "priceManwon": 226000,
-          "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "11470",
-          "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
-        },
-        {
-          "id": "807bfe31e62ff7ee",
-          "region": "seoul",
-          "regionLabel": "서울",
-          "district": "관악구",
-          "neighborhood": "신림동",
-          "addressHint": "지번 1730",
-          "apartmentName": "신림푸르지오",
-          "exclusiveAreaM2": 114.84,
-          "floor": 21,
-          "contractDate": "2026-04-06",
-          "priceManwon": 105000,
-          "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "11620",
-          "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
-        },
-        {
-          "id": "8aa427cccc87829c",
-          "region": "seoul",
-          "regionLabel": "서울",
-          "district": "송파구",
-          "neighborhood": "가락동",
-          "addressHint": "지번 70-19",
-          "apartmentName": "대림",
-          "exclusiveAreaM2": 113.08,
-          "floor": 12,
-          "contractDate": "2026-04-06",
-          "priceManwon": 100000,
-          "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "11710",
-          "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         }
       ]
     },
     "gyeonggi": {
       "label": "경기",
-      "itemCount": 22494,
-      "averagePriceManwon": 55421,
+      "itemCount": 22984,
+      "averagePriceManwon": 55494,
       "highestPriceItem": {
         "id": "0f307efb3c127782",
         "region": "gyeonggi",
@@ -842,25 +842,25 @@
         "lawdCode": "41135",
         "dealYearMonth": "202602",
         "firstSeenAt": "2026-03-20T14:47:16.708Z",
-        "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+        "officialCheckedAt": "2026-04-08T22:28:52.835Z"
       },
       "latestContractItem": {
-        "id": "17867d2350f72a00",
+        "id": "6b6ede9b88db2361",
         "region": "gyeonggi",
         "regionLabel": "경기",
-        "district": "수원시 영통구",
-        "neighborhood": "망포동",
-        "addressHint": "지번 805",
-        "apartmentName": "영통롯데캐슬엘클래스1단지",
-        "exclusiveAreaM2": 84.8531,
-        "floor": 6,
-        "contractDate": "2026-04-07",
-        "priceManwon": 93500,
+        "district": "성남시 수정구",
+        "neighborhood": "창곡동",
+        "addressHint": "지번 531",
+        "apartmentName": "위례자이",
+        "exclusiveAreaM2": 113.5609,
+        "floor": 7,
+        "contractDate": "2026-04-08",
+        "priceManwon": 150000,
         "sourceUrl": "https://rt.molit.go.kr/",
-        "lawdCode": "41117",
+        "lawdCode": "41131",
         "dealYearMonth": "202604",
-        "firstSeenAt": "2026-04-07T22:27:41.422Z",
-        "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+        "firstSeenAt": "2026-04-08T22:28:52.835Z",
+        "officialCheckedAt": "2026-04-08T22:28:52.835Z"
       },
       "priceTop10": [
         {
@@ -879,7 +879,7 @@
           "lawdCode": "41135",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "f3a679b08222519b",
@@ -897,7 +897,7 @@
           "lawdCode": "41135",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "4e35b14e2d7f0a5e",
@@ -915,7 +915,7 @@
           "lawdCode": "41135",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "b93a22c8c5d8907d",
@@ -933,7 +933,7 @@
           "lawdCode": "41135",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "df79e60d5a422152",
@@ -951,7 +951,7 @@
           "lawdCode": "41135",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "79a5a206261f60eb",
@@ -969,7 +969,7 @@
           "lawdCode": "41135",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "2df4db0db95bbbeb",
@@ -987,7 +987,7 @@
           "lawdCode": "41135",
           "dealYearMonth": "202602",
           "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "aa2a51180e501005",
@@ -1005,7 +1005,7 @@
           "lawdCode": "41135",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-04-03T22:21:48.760Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
           "id": "d94aac048a32db84",
@@ -1023,10 +1023,10 @@
           "lawdCode": "41135",
           "dealYearMonth": "202603",
           "firstSeenAt": "2026-04-01T22:26:09.172Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
-          "id": "05d6c97b6ac5e0c9",
+          "id": "34bc99c1f1ee0b0c",
           "region": "gyeonggi",
           "regionLabel": "경기",
           "district": "수원시 영통구",
@@ -1034,109 +1034,91 @@
           "addressHint": "지번 589",
           "apartmentName": "광교중흥에스클래스",
           "exclusiveAreaM2": 129.4158,
-          "floor": 5,
-          "contractDate": "2026-02-12",
+          "floor": 32,
+          "contractDate": "2026-03-13",
           "priceManwon": 290000,
           "sourceUrl": "https://rt.molit.go.kr/",
           "lawdCode": "41117",
-          "dealYearMonth": "202602",
-          "firstSeenAt": "2026-03-20T14:47:16.708Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "dealYearMonth": "202603",
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         }
       ],
       "contractTop10": [
         {
-          "id": "17867d2350f72a00",
+          "id": "6b6ede9b88db2361",
           "region": "gyeonggi",
           "regionLabel": "경기",
-          "district": "수원시 영통구",
-          "neighborhood": "망포동",
-          "addressHint": "지번 805",
-          "apartmentName": "영통롯데캐슬엘클래스1단지",
-          "exclusiveAreaM2": 84.8531,
-          "floor": 6,
-          "contractDate": "2026-04-07",
-          "priceManwon": 93500,
+          "district": "성남시 수정구",
+          "neighborhood": "창곡동",
+          "addressHint": "지번 531",
+          "apartmentName": "위례자이",
+          "exclusiveAreaM2": 113.5609,
+          "floor": 7,
+          "contractDate": "2026-04-08",
+          "priceManwon": 150000,
           "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "41117",
+          "lawdCode": "41131",
           "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
-          "id": "759120866f0471e1",
+          "id": "b1b6d2c01972425d",
           "region": "gyeonggi",
           "regionLabel": "경기",
-          "district": "고양시 덕양구",
-          "neighborhood": "토당동",
-          "addressHint": "지번 930",
-          "apartmentName": "대곡역롯데캐슬엘클라씨",
-          "exclusiveAreaM2": 84.9297,
+          "district": "용인시 수지구",
+          "neighborhood": "동천동",
+          "addressHint": "지번 862",
+          "apartmentName": "동천마을현대홈타운2차",
+          "exclusiveAreaM2": 84.975,
           "floor": 4,
-          "contractDate": "2026-04-07",
-          "priceManwon": 79800,
+          "contractDate": "2026-04-08",
+          "priceManwon": 105000,
           "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "41281",
+          "lawdCode": "41465",
           "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
-          "id": "9ad71d421d4df36c",
+          "id": "9269313dd777d87f",
           "region": "gyeonggi",
           "regionLabel": "경기",
-          "district": "수원시 권선구",
-          "neighborhood": "곡반정동",
-          "addressHint": "지번 652",
-          "apartmentName": "수원하늘채더퍼스트1단지",
-          "exclusiveAreaM2": 74.88,
-          "floor": 11,
-          "contractDate": "2026-04-07",
-          "priceManwon": 70400,
+          "district": "하남시",
+          "neighborhood": "창우동",
+          "addressHint": "지번 518",
+          "apartmentName": "부영",
+          "exclusiveAreaM2": 59.97,
+          "floor": 4,
+          "contractDate": "2026-04-08",
+          "priceManwon": 73700,
           "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "41113",
+          "lawdCode": "41450",
           "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
-          "id": "2b9f12aef8ee28db",
+          "id": "83753328b8d311a4",
           "region": "gyeonggi",
           "regionLabel": "경기",
-          "district": "광명시",
-          "neighborhood": "철산동",
+          "district": "하남시",
+          "neighborhood": "풍산동",
           "addressHint": "지번 630",
-          "apartmentName": "브라운스톤2차",
-          "exclusiveAreaM2": 59.757,
-          "floor": 12,
-          "contractDate": "2026-04-07",
-          "priceManwon": 60000,
+          "apartmentName": "하남힐즈파크푸르지오1단지",
+          "exclusiveAreaM2": 52.349,
+          "floor": 8,
+          "contractDate": "2026-04-08",
+          "priceManwon": 71000,
           "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "41210",
+          "lawdCode": "41450",
           "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
-          "id": "c69c026930902403",
-          "region": "gyeonggi",
-          "regionLabel": "경기",
-          "district": "고양시 덕양구",
-          "neighborhood": "성사동",
-          "addressHint": "지번 869",
-          "apartmentName": "원당대림e-편한세상",
-          "exclusiveAreaM2": 84.86,
-          "floor": 12,
-          "contractDate": "2026-04-07",
-          "priceManwon": 59000,
-          "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "41281",
-          "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
-        },
-        {
-          "id": "12bc10e6f75c9594",
+          "id": "9d0d983f4791c059",
           "region": "gyeonggi",
           "regionLabel": "경기",
           "district": "수원시 영통구",
@@ -1144,71 +1126,53 @@
           "addressHint": "지번 970-3",
           "apartmentName": "벽적골9단지주공",
           "exclusiveAreaM2": 59.39,
-          "floor": 11,
-          "contractDate": "2026-04-07",
-          "priceManwon": 57000,
+          "floor": 7,
+          "contractDate": "2026-04-08",
+          "priceManwon": 60000,
           "sourceUrl": "https://rt.molit.go.kr/",
           "lawdCode": "41117",
           "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
-          "id": "369612b5ef2c5d85",
+          "id": "3b461b8f5375c3f4",
           "region": "gyeonggi",
           "regionLabel": "경기",
-          "district": "남양주시",
-          "neighborhood": "와부읍 덕소리",
-          "addressHint": "지번 613",
-          "apartmentName": "동부센트레빌",
-          "exclusiveAreaM2": 84.98,
-          "floor": 1,
-          "contractDate": "2026-04-07",
+          "district": "수원시 권선구",
+          "neighborhood": "곡반정동",
+          "addressHint": "지번 654",
+          "apartmentName": "수원하늘채더퍼스트2단지",
+          "exclusiveAreaM2": 59.96,
+          "floor": 3,
+          "contractDate": "2026-04-08",
+          "priceManwon": 58200,
+          "sourceUrl": "https://rt.molit.go.kr/",
+          "lawdCode": "41113",
+          "dealYearMonth": "202604",
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
+        },
+        {
+          "id": "806ea56fd3e0ff35",
+          "region": "gyeonggi",
+          "regionLabel": "경기",
+          "district": "수원시 팔달구",
+          "neighborhood": "우만동",
+          "addressHint": "지번 28",
+          "apartmentName": "우만주공2단지",
+          "exclusiveAreaM2": 58.01,
+          "floor": 12,
+          "contractDate": "2026-04-08",
           "priceManwon": 55000,
           "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "41360",
+          "lawdCode": "41115",
           "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         },
         {
-          "id": "cea636f00c4d2ae2",
-          "region": "gyeonggi",
-          "regionLabel": "경기",
-          "district": "안양시 동안구",
-          "neighborhood": "호계동",
-          "addressHint": "지번 1296",
-          "apartmentName": "평촌어바인퍼스트",
-          "exclusiveAreaM2": 39.26,
-          "floor": 20,
-          "contractDate": "2026-04-07",
-          "priceManwon": 51500,
-          "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "41173",
-          "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
-        },
-        {
-          "id": "90ced909efe51be7",
-          "region": "gyeonggi",
-          "regionLabel": "경기",
-          "district": "용인시 기흥구",
-          "neighborhood": "동백동",
-          "addressHint": "지번 689",
-          "apartmentName": "동문굿모닝힐",
-          "exclusiveAreaM2": 84.935,
-          "floor": 4,
-          "contractDate": "2026-04-07",
-          "priceManwon": 51300,
-          "sourceUrl": "https://rt.molit.go.kr/",
-          "lawdCode": "41463",
-          "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
-        },
-        {
-          "id": "9b0e36cd1fdba7af",
+          "id": "9871c76a92500542",
           "region": "gyeonggi",
           "regionLabel": "경기",
           "district": "수원시 영통구",
@@ -1216,14 +1180,50 @@
           "addressHint": "지번 1048-2",
           "apartmentName": "청명마을(주공)",
           "exclusiveAreaM2": 59.99,
-          "floor": 9,
-          "contractDate": "2026-04-07",
-          "priceManwon": 49700,
+          "floor": 16,
+          "contractDate": "2026-04-08",
+          "priceManwon": 55000,
           "sourceUrl": "https://rt.molit.go.kr/",
           "lawdCode": "41117",
           "dealYearMonth": "202604",
-          "firstSeenAt": "2026-04-07T22:27:41.422Z",
-          "officialCheckedAt": "2026-04-07T22:27:41.422Z"
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
+        },
+        {
+          "id": "dae8762a3d23948b",
+          "region": "gyeonggi",
+          "regionLabel": "경기",
+          "district": "시흥시",
+          "neighborhood": "배곧동",
+          "addressHint": "지번 245",
+          "apartmentName": "한라비발디캠퍼스2차",
+          "exclusiveAreaM2": 84.8275,
+          "floor": 24,
+          "contractDate": "2026-04-08",
+          "priceManwon": 54300,
+          "sourceUrl": "https://rt.molit.go.kr/",
+          "lawdCode": "41390",
+          "dealYearMonth": "202604",
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
+        },
+        {
+          "id": "df8d5c73d970a074",
+          "region": "gyeonggi",
+          "regionLabel": "경기",
+          "district": "오산시",
+          "neighborhood": "외삼미동",
+          "addressHint": "지번 650",
+          "apartmentName": "서동탄역더샵파크시티",
+          "exclusiveAreaM2": 84.9772,
+          "floor": 2,
+          "contractDate": "2026-04-08",
+          "priceManwon": 53500,
+          "sourceUrl": "https://rt.molit.go.kr/",
+          "lawdCode": "41370",
+          "dealYearMonth": "202604",
+          "firstSeenAt": "2026-04-08T22:28:52.835Z",
+          "officialCheckedAt": "2026-04-08T22:28:52.835Z"
         }
       ]
     }
