@@ -539,6 +539,24 @@ body.runtime-modal-open {
   margin-top: 16px;
 }
 
+.transaction-compare {
+  margin: 12px 0 0;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.transaction-compare.is-match {
+  color: var(--teal);
+  background: rgba(15, 108, 109, 0.1);
+}
+
+.transaction-compare.is-miss {
+  color: var(--accent-deep);
+  background: rgba(184, 107, 47, 0.1);
+}
+
 .transaction-kv {
   padding: 10px 12px;
   border-radius: 16px;

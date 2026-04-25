@@ -5,6 +5,8 @@ const state = {
   historyIndex: null,
   compareBaseDate: "",
   compareTargetDate: "",
+  compareLookup: new Map(),
+  compareLoadedDate: "",
 };
 
 const regionOptions = [
@@ -201,6 +203,15 @@ function getRegionView() {
 function buildTransactionCards(items) {
   return items
     .map((item) => {
+      const compareItem = state.compareLoadedDate === state.compareTargetDate
+        ? state.compareLookup.get(item.id)
+        : null;
+      const compareText = state.compareTargetDate
+        ? (compareItem
+            ? `비교일(${state.compareTargetDate})에도 동일 거래가 있습니다.`
+            : `비교일(${state.compareTargetDate})에는 동일 거래가 없습니다.`)
+        : "";
+
       return `
         <article class="transaction-card">
           <div class="transaction-top">
@@ -235,6 +246,8 @@ function buildTransactionCards(items) {
               <span class="value">${formatManwon(item.priceManwon)}</span>
             </div>
           </div>
+
+          ${compareText ? `<p class="transaction-compare ${compareItem ? "is-match" : "is-miss"}">${compareText}</p>` : ""}
 
         </article>
       `;
@@ -317,6 +330,71 @@ function renderCompareOptions(selectElement, entries, selectedDate) {
     }
     selectElement.appendChild(option);
   });
+}
+
+function extractCompareLookup(snapshotPayload) {
+  const lookup = new Map();
+  const views = snapshotPayload?.views || {};
+  const collectItems = [];
+
+  Object.values(views).forEach((view) => {
+    if (Array.isArray(view?.priceTop10)) {
+      collectItems.push(...view.priceTop10);
+    }
+    if (Array.isArray(view?.contractTop10)) {
+      collectItems.push(...view.contractTop10);
+    }
+  });
+
+  collectItems.forEach((item) => {
+    if (item?.id && !lookup.has(item.id)) {
+      lookup.set(item.id, item);
+    }
+  });
+
+  return lookup;
+}
+
+async function loadCompareSnapshotByEntry(entry) {
+  if (!entry?.snapshotDate) {
+    state.compareLookup = new Map();
+    state.compareLoadedDate = "";
+    return;
+  }
+
+  if (state.compareLoadedDate === entry.snapshotDate) {
+    return;
+  }
+
+  const backupHistoryIndexUrl = getMetaContent("backup-history-index-url") || "";
+  const backupSnapshotBase = backupHistoryIndexUrl.endsWith("/index.json")
+    ? backupHistoryIndexUrl.replace(/\/index\.json$/, "")
+    : "";
+
+  const candidates = [
+    entry.filePath,
+    `./snapshots/${entry.fileName || `snapshot-${entry.snapshotDate}.json`}`,
+    backupSnapshotBase ? `${backupSnapshotBase}/${entry.fileName || `snapshot-${entry.snapshotDate}.json`}` : "",
+  ].filter(Boolean);
+
+  for (const url of candidates) {
+    try {
+      const response = await fetchSnapshotCandidate({ url, label: "compare-snapshot" });
+      if (!response.ok) {
+        continue;
+      }
+
+      const payload = await response.json();
+      state.compareLookup = extractCompareLookup(payload);
+      state.compareLoadedDate = entry.snapshotDate;
+      return;
+    } catch (error) {
+      console.warn(`[real-estate-watch] Failed to load compare snapshot: ${url}`, error);
+    }
+  }
+
+  state.compareLookup = new Map();
+  state.compareLoadedDate = "";
 }
 
 function renderCompareSection() {
@@ -480,13 +558,23 @@ async function init() {
 
     compareBaseDate?.addEventListener("change", (event) => {
       state.compareBaseDate = event.target.value;
-      renderCompareSection();
+      render();
     });
 
-    compareTargetDate?.addEventListener("change", (event) => {
+    compareTargetDate?.addEventListener("change", async (event) => {
       state.compareTargetDate = event.target.value;
-      renderCompareSection();
+      const entry = state.historyIndex?.entries?.find((item) => item.snapshotDate === state.compareTargetDate);
+      await loadCompareSnapshotByEntry(entry);
+      render();
     });
+
+    const initialTargetEntry = state.historyIndex?.entries?.find((item) => item.snapshotDate === state.compareTargetDate)
+      || state.historyIndex?.entries?.[1]
+      || state.historyIndex?.entries?.[0];
+    if (initialTargetEntry) {
+      state.compareTargetDate = initialTargetEntry.snapshotDate;
+      await loadCompareSnapshotByEntry(initialTargetEntry);
+    }
 
     render();
   } catch (error) {
