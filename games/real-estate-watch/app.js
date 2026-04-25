@@ -224,16 +224,49 @@ function buildTransactionCards(items) {
 
       let compareClass = "";
       let compareText = "";
+      let compareDetailHtml = "";
 
       if (state.compareTargetDate) {
         if (exactItem) {
           compareClass = "is-match";
           compareText = `비교일(${state.compareTargetDate})에도 동일 거래가 있습니다.`;
+          compareDetailHtml = `
+            <div class="compare-detail-grid">
+              <div class="transaction-kv">
+                <span class="key">비교일 계약일</span>
+                <span class="value">${formatDate(exactItem.contractDate)}</span>
+              </div>
+              <div class="transaction-kv">
+                <span class="key">비교일 실거래가</span>
+                <span class="value">${formatManwon(exactItem.priceManwon || 0)}</span>
+              </div>
+            </div>
+          `;
         } else if (similarItem) {
           const priceDelta = (item.priceManwon || 0) - (similarItem.priceManwon || 0);
           const sign = priceDelta > 0 ? "+" : "";
           compareClass = "is-similar";
           compareText = `비교일(${state.compareTargetDate}) 유사 거래 있음 · 금액차 ${sign}${priceDelta.toLocaleString("ko-KR")}만원`;
+          compareDetailHtml = `
+            <div class="compare-detail-grid">
+              <div class="transaction-kv">
+                <span class="key">비교일 계약일</span>
+                <span class="value">${formatDate(similarItem.contractDate)}</span>
+              </div>
+              <div class="transaction-kv">
+                <span class="key">비교일 실거래가</span>
+                <span class="value">${formatManwon(similarItem.priceManwon || 0)}</span>
+              </div>
+              <div class="transaction-kv">
+                <span class="key">비교일 법정동</span>
+                <span class="value">${similarItem.neighborhood || "-"}</span>
+              </div>
+              <div class="transaction-kv">
+                <span class="key">비교일 지번</span>
+                <span class="value">${similarItem.addressHint || "-"}</span>
+              </div>
+            </div>
+          `;
         } else {
           compareClass = "is-miss";
           compareText = `비교일(${state.compareTargetDate})에는 동일/유사 거래가 없습니다.`;
@@ -276,6 +309,7 @@ function buildTransactionCards(items) {
           </div>
 
           ${compareText ? `<p class="transaction-compare ${compareClass}">${compareText}</p>` : ""}
+          ${compareDetailHtml}
 
         </article>
       `;

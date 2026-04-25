@@ -562,6 +562,13 @@ body.runtime-modal-open {
   background: rgba(214, 177, 63, 0.18);
 }
 
+.compare-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
 .transaction-kv {
   padding: 10px 12px;
   border-radius: 16px;
@@ -704,6 +711,7 @@ body.runtime-modal-open {
   .toolbar,
   .stats-grid,
   .transaction-grid,
+  .compare-detail-grid,
   .compare-controls {
     grid-template-columns: 1fr;
   }
