@@ -6,6 +6,7 @@ const state = {
   compareBaseDate: "",
   compareTargetDate: "",
   compareLookup: new Map(),
+  compareSignatureLookup: new Map(),
   compareLoadedDate: "",
 };
 
@@ -200,17 +201,44 @@ function getRegionView() {
   return buildViewFromItems(getFilteredItems(), state.region);
 }
 
+function createTradeSignature(item) {
+  const area = Number(item?.exclusiveAreaM2 || 0).toFixed(2);
+  return [
+    item?.region || "",
+    item?.district || "",
+    item?.apartmentName || "",
+    area,
+    String(item?.floor || ""),
+  ].join("|");
+}
+
 function buildTransactionCards(items) {
   return items
     .map((item) => {
-      const compareItem = state.compareLoadedDate === state.compareTargetDate
-        ? state.compareLookup.get(item.id)
+      const isCompareReady = state.compareLoadedDate === state.compareTargetDate;
+      const exactItem = isCompareReady ? state.compareLookup.get(item.id) : null;
+      const signature = createTradeSignature(item);
+      const similarItem = !exactItem && isCompareReady
+        ? state.compareSignatureLookup.get(signature)
         : null;
-      const compareText = state.compareTargetDate
-        ? (compareItem
-            ? `비교일(${state.compareTargetDate})에도 동일 거래가 있습니다.`
-            : `비교일(${state.compareTargetDate})에는 동일 거래가 없습니다.`)
-        : "";
+
+      let compareClass = "";
+      let compareText = "";
+
+      if (state.compareTargetDate) {
+        if (exactItem) {
+          compareClass = "is-match";
+          compareText = `비교일(${state.compareTargetDate})에도 동일 거래가 있습니다.`;
+        } else if (similarItem) {
+          const priceDelta = (item.priceManwon || 0) - (similarItem.priceManwon || 0);
+          const sign = priceDelta > 0 ? "+" : "";
+          compareClass = "is-similar";
+          compareText = `비교일(${state.compareTargetDate}) 유사 거래 있음 · 금액차 ${sign}${priceDelta.toLocaleString("ko-KR")}만원`;
+        } else {
+          compareClass = "is-miss";
+          compareText = `비교일(${state.compareTargetDate})에는 동일/유사 거래가 없습니다.`;
+        }
+      }
 
       return `
         <article class="transaction-card">
@@ -247,7 +275,7 @@ function buildTransactionCards(items) {
             </div>
           </div>
 
-          ${compareText ? `<p class="transaction-compare ${compareItem ? "is-match" : "is-miss"}">${compareText}</p>` : ""}
+          ${compareText ? `<p class="transaction-compare ${compareClass}">${compareText}</p>` : ""}
 
         </article>
       `;
@@ -333,7 +361,8 @@ function renderCompareOptions(selectElement, entries, selectedDate) {
 }
 
 function extractCompareLookup(snapshotPayload) {
-  const lookup = new Map();
+  const exactLookup = new Map();
+  const signatureLookup = new Map();
   const views = snapshotPayload?.views || {};
   const collectItems = [];
 
@@ -347,17 +376,23 @@ function extractCompareLookup(snapshotPayload) {
   });
 
   collectItems.forEach((item) => {
-    if (item?.id && !lookup.has(item.id)) {
-      lookup.set(item.id, item);
+    if (item?.id && !exactLookup.has(item.id)) {
+      exactLookup.set(item.id, item);
+    }
+
+    const signature = createTradeSignature(item);
+    if (signature && !signatureLookup.has(signature)) {
+      signatureLookup.set(signature, item);
     }
   });
 
-  return lookup;
+  return { exactLookup, signatureLookup };
 }
 
 async function loadCompareSnapshotByEntry(entry) {
   if (!entry?.snapshotDate) {
     state.compareLookup = new Map();
+    state.compareSignatureLookup = new Map();
     state.compareLoadedDate = "";
     return;
   }
@@ -385,7 +420,9 @@ async function loadCompareSnapshotByEntry(entry) {
       }
 
       const payload = await response.json();
-      state.compareLookup = extractCompareLookup(payload);
+      const { exactLookup, signatureLookup } = extractCompareLookup(payload);
+      state.compareLookup = exactLookup;
+      state.compareSignatureLookup = signatureLookup;
       state.compareLoadedDate = entry.snapshotDate;
       return;
     } catch (error) {
@@ -394,6 +431,7 @@ async function loadCompareSnapshotByEntry(entry) {
   }
 
   state.compareLookup = new Map();
+  state.compareSignatureLookup = new Map();
   state.compareLoadedDate = "";
 }
 

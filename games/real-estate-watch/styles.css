@@ -557,6 +557,11 @@ body.runtime-modal-open {
   background: rgba(184, 107, 47, 0.1);
 }
 
+.transaction-compare.is-similar {
+  color: #6b4b10;
+  background: rgba(214, 177, 63, 0.18);
+}
+
 .transaction-kv {
   padding: 10px 12px;
   border-radius: 16px;
