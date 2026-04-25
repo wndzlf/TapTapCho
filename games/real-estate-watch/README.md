@@ -5,11 +5,13 @@
 ## 자동수집 방식
 
 - 수집 스크립트: `/Users/user/TapTapCho/scripts/sync-real-estate-watch.mjs`
-- 앱용 출력 파일: `/Users/user/TapTapCho/real-estate-watch/latest-transactions.json`
-- 전체 거래 보관 파일: `/Users/user/TapTapCho/real-estate-watch/latest-transactions-full.json`
+- 앱용 출력 파일: `/Users/user/TapTapCho/games/real-estate-watch/latest-transactions.json`
+- 전체 거래 보관 파일: `/Users/user/TapTapCho/games/real-estate-watch/latest-transactions-full.json`
+- 날짜별 스냅샷 폴더: `/Users/user/TapTapCho/games/real-estate-watch/snapshots/`
+- 날짜 인덱스 파일: `/Users/user/TapTapCho/games/real-estate-watch/snapshots/index.json`
 - GitHub Actions: `/Users/user/TapTapCho/.github/workflows/real-estate-watch-sync.yml`
 
-GitHub Actions는 공공데이터포털 OpenAPI를 호출해 최근 계약월 데이터를 모으고, 거래 고유 키를 기준으로 전체 스냅샷을 갱신합니다. 앱이 실제로 읽는 `latest-transactions.json`은 토스 웹뷰 로딩을 위해 요약 지표와 상위 10건 목록만 담는 경량 스냅샷이며, 전체 거래 데이터는 `latest-transactions-full.json`에 별도로 보관합니다.
+GitHub Actions는 공공데이터포털 OpenAPI를 호출해 최근 계약월 데이터를 모으고, 거래 고유 키를 기준으로 전체 스냅샷을 갱신합니다. 앱이 실제로 읽는 `latest-transactions.json`은 토스 웹뷰 로딩을 위해 요약 지표와 상위 10건 목록만 담는 경량 스냅샷이며, 전체 거래 데이터는 `latest-transactions-full.json`에 별도로 보관합니다. 또한 실행 시점 기준으로 `snapshots/snapshot-YYYY-MM-DD.json`을 생성하고 `snapshots/index.json`을 갱신해, 웹 UI에서 날짜별 비교를 할 수 있습니다.
 
 ## GitHub Secret
 

@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { readFile, writeFile } from "fs/promises";
+import { mkdir, readFile, readdir, writeFile } from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -8,6 +8,8 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "..", "..");
 const appSnapshotPath = path.join(rootDir, "games", "real-estate-watch", "latest-transactions.json");
 const fullSnapshotPath = path.join(rootDir, "games", "real-estate-watch", "latest-transactions-full.json");
+const historyDirPath = path.join(rootDir, "games", "real-estate-watch", "snapshots");
+const historyIndexPath = path.join(historyDirPath, "index.json");
 const sourceUrl = "https://rt.molit.go.kr/";
 const apiUrl = "https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade";
 const regionLabelMap = {
@@ -260,6 +262,74 @@ async function readSnapshotFile(snapshotPath) {
   }
 }
 
+function getSnapshotDateLabel(updatedAt) {
+  const iso = String(updatedAt || "");
+  if (!/^\d{4}-\d{2}-\d{2}/.test(iso)) {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  return iso.slice(0, 10);
+}
+
+function createHistoryEntry(compactPayload, fileName) {
+  const view = compactPayload?.views?.all || {};
+  const highest = view.highestPriceItem || null;
+  const latest = view.latestContractItem || null;
+
+  return {
+    snapshotDate: getSnapshotDateLabel(compactPayload.updatedAt),
+    updatedAt: compactPayload.updatedAt,
+    fileName,
+    filePath: `./snapshots/${fileName}`,
+    itemCount: compactPayload.itemCount || 0,
+    averagePriceManwon: view.averagePriceManwon || 0,
+    highestPriceManwon: highest?.priceManwon || 0,
+    highestPriceTitle: highest ? `${highest.district} · ${highest.apartmentName}` : "",
+    latestContractDate: latest?.contractDate || "",
+    latestContractTitle: latest ? `${latest.district} · ${latest.apartmentName}` : ""
+  };
+}
+
+async function writeHistorySnapshot(compactPayload) {
+  await mkdir(historyDirPath, { recursive: true });
+
+  const snapshotDate = getSnapshotDateLabel(compactPayload.updatedAt);
+  const fileName = `snapshot-${snapshotDate}.json`;
+  const snapshotPath = path.join(historyDirPath, fileName);
+
+  await writeFile(snapshotPath, `${JSON.stringify(compactPayload, null, 2)}\n`, "utf8");
+
+  const previousIndex = await readSnapshotFile(historyIndexPath);
+  const entries = Array.isArray(previousIndex?.entries) ? [...previousIndex.entries] : [];
+  const nextEntry = createHistoryEntry(compactPayload, fileName);
+  const dedupedEntries = entries.filter((entry) => entry.fileName !== fileName);
+  dedupedEntries.push(nextEntry);
+  dedupedEntries.sort((left, right) => String(right.snapshotDate).localeCompare(String(left.snapshotDate)));
+
+  const fileNames = new Set(dedupedEntries.map((entry) => entry.fileName));
+  const staleSnapshotNames = (await readdir(historyDirPath))
+    .filter((name) => /^snapshot-\d{4}-\d{2}-\d{2}\.json$/.test(name))
+    .filter((name) => !fileNames.has(name));
+
+  if (staleSnapshotNames.length) {
+    process.stdout.write(`history index updated, stale snapshots pending cleanup: ${staleSnapshotNames.length}\n`);
+  }
+
+  const historyPayload = {
+    updatedAt: compactPayload.updatedAt,
+    itemCount: dedupedEntries.length,
+    entries: dedupedEntries
+  };
+
+  await writeFile(historyIndexPath, `${JSON.stringify(historyPayload, null, 2)}\n`, "utf8");
+
+  return {
+    snapshotPath,
+    indexPath: historyIndexPath,
+    entryCount: dedupedEntries.length
+  };
+}
+
 async function loadPreviousSnapshot() {
   const previousFullSnapshot = await readSnapshotFile(fullSnapshotPath);
   if (Array.isArray(previousFullSnapshot?.items)) {
@@ -452,8 +522,11 @@ async function main() {
 
   await writeFile(fullSnapshotPath, `${JSON.stringify(fullPayload, null, 2)}\n`, "utf8");
   await writeFile(appSnapshotPath, `${JSON.stringify(compactPayload, null, 2)}\n`, "utf8");
+  const historyResult = await writeHistorySnapshot(compactPayload);
   process.stdout.write(`wrote ${items.length} items to ${fullSnapshotPath}\n`);
   process.stdout.write(`wrote compact app snapshot to ${appSnapshotPath}\n`);
+  process.stdout.write(`wrote dated snapshot to ${historyResult.snapshotPath}\n`);
+  process.stdout.write(`updated snapshot index (${historyResult.entryCount} days) at ${historyResult.indexPath}\n`);
 }
 
 main().catch((error) => {

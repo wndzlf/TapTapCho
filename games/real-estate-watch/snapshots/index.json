@@ -1,0 +1,18 @@
+{
+  "updatedAt": "2026-04-24T22:31:17.150Z",
+  "itemCount": 1,
+  "entries": [
+    {
+      "snapshotDate": "2026-04-24",
+      "updatedAt": "2026-04-24T22:31:17.150Z",
+      "fileName": "snapshot-2026-04-24.json",
+      "filePath": "./snapshots/snapshot-2026-04-24.json",
+      "itemCount": 44250,
+      "averagePriceManwon": 72178,
+      "highestPriceManwon": 1565000,
+      "highestPriceTitle": "용산구 · 나인원한남",
+      "latestContractDate": "2026-04-24",
+      "latestContractTitle": "성남시 분당구 · THESHARP판교퍼스트파크"
+    }
+  ]
+}

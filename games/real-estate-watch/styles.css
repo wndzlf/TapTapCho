@@ -373,9 +373,49 @@ body.runtime-modal-open {
 }
 
 .feed-panel,
-.note-panel {
+.note-panel,
+.compare-panel {
   margin-top: 16px;
   padding: 24px;
+}
+
+.compare-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.compare-controls {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.compare-field {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.compare-field select {
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px 10px;
+  color: var(--ink);
+  background: rgba(255, 252, 247, 0.92);
+  font-size: 14px;
+}
+
+.compare-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
 }
 
 .ranked-sections {
@@ -640,7 +680,8 @@ body.runtime-modal-open {
 @media (max-width: 860px) {
   .toolbar,
   .stats-grid,
-  .transaction-grid {
+  .transaction-grid,
+  .compare-controls {
     grid-template-columns: 1fr;
   }
 

@@ -3,31 +3,13 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
+    "worm-lan-server": "node scripts/worm-lan-server.js",
     "sunken-multi-server": "node scripts/sunken-multi-server.js",
     "twin-temple-multi-server": "node scripts/twin-temple-multi-server.js",
     "multi-hub-server": "node scripts/taptap-multi-hub-server.js",
-    "generate-thumbnails": "node meta/tools/generate-thumbnails.js",
-    "sync-real-estate-watch": "node meta/tools/sync-real-estate-watch.mjs",
-    "sync-commercial-area-radar": "node meta/tools/sync-commercial-area-radar.mjs",
-    "sync-officetel-watch": "node meta/tools/sync-officetel-watch.mjs",
-    "real-estate-watch:toss:build": "npm --prefix games/real-estate-watch/toss-package run build",
-    "real-estate-watch:toss:dev": "npm --prefix games/real-estate-watch/toss-package run dev",
-    "commercial-area-radar:toss:build": "npm --prefix games/commercial-area-radar/toss-package run build",
-    "commercial-area-radar:toss:dev": "npm --prefix games/commercial-area-radar/toss-package run dev",
-    "officetel-watch:toss:build": "npm --prefix games/officetel-watch/toss-package run build",
-    "officetel-watch:toss:dev": "npm --prefix games/officetel-watch/toss-package run dev",
-    "cassette-ab-world:toss:build": "npm --prefix games/cassette-ab-world/toss-package run build",
-    "cassette-ab-world:toss:dev": "npm --prefix games/cassette-ab-world/toss-package run dev",
-    "crimson-hunter-trials:toss:build": "npm --prefix games/crimson-hunter-trials/toss-package run build",
-    "crimson-hunter-trials:toss:dev": "npm --prefix games/crimson-hunter-trials/toss-package run dev",
-    "air-striker-lite:toss:build": "npm --prefix games/godot-air-striker-web/toss-package run build",
-    "air-striker-lite:toss:dev": "npm --prefix games/godot-air-striker-web/toss-package run dev"
+    "generate-thumbnails": "node scripts/generate-thumbnails.js"
   },
   "dependencies": {
-    "ws": "^8.18.0"
-  },
-  "devDependencies": {
-    "@apps-in-toss/web-framework": "^2.0.9",
-    "esbuild": "^0.27.4"
+    "ws": "^8.19.0"
   }
 }

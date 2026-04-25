@@ -15,6 +15,11 @@
     content="https://raw.githubusercontent.com/wndzlf/TapTapCho/main/real-estate-watch/latest-transactions.json"
   />
   <meta name="snapshot-path" content="./latest-transactions.json" />
+  <meta name="history-index-path" content="./snapshots/index.json" />
+  <meta
+    name="backup-history-index-url"
+    content="https://raw.githubusercontent.com/wndzlf/TapTapCho/main/games/real-estate-watch/snapshots/index.json"
+  />
   <meta
     name="description"
     content="서울경기실시간아파트 데이터를 카드형으로 보여주는 부동산 정보 서비스입니다."
@@ -56,6 +61,29 @@
 
       <section class="toolbar toolbar-single">
         <div class="toolbar-block" id="region-filter" aria-label="지역 필터"></div>
+      </section>
+
+      <section class="panel compare-panel" aria-label="날짜별 비교">
+        <div class="compare-head">
+          <div>
+            <h2>날짜별 스냅샷 비교</h2>
+            <p class="feed-note" id="compare-note">누적 스냅샷을 불러오는 중입니다.</p>
+          </div>
+          <span class="chip muted" id="history-chip">히스토리 로딩 중</span>
+        </div>
+        <div class="compare-controls">
+          <label class="compare-field">
+            기준일
+            <select id="compare-base-date" aria-label="기준일 선택"></select>
+          </label>
+          <label class="compare-field">
+            비교일
+            <select id="compare-target-date" aria-label="비교일 선택"></select>
+          </label>
+        </div>
+        <div class="compare-grid" id="compare-grid">
+          <article class="placeholder-card">비교 데이터를 준비하고 있습니다.</article>
+        </div>
       </section>
 
       <section class="stats-grid" id="stats-grid" aria-label="요약 지표"></section>

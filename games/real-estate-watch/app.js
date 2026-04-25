@@ -2,6 +2,9 @@ const state = {
   region: "all",
   data: null,
   snapshotSource: "",
+  historyIndex: null,
+  compareBaseDate: "",
+  compareTargetDate: "",
 };
 
 const regionOptions = [
@@ -18,6 +21,11 @@ const contractFeedNote = document.getElementById("contract-feed-note");
 const snapshotChip = document.getElementById("snapshot-chip");
 const heroStatus = document.getElementById("hero-status");
 const regionFilter = document.getElementById("region-filter");
+const compareBaseDate = document.getElementById("compare-base-date");
+const compareTargetDate = document.getElementById("compare-target-date");
+const compareGrid = document.getElementById("compare-grid");
+const compareNote = document.getElementById("compare-note");
+const historyChip = document.getElementById("history-chip");
 
 function getMetaContent(name) {
   return document
@@ -33,6 +41,18 @@ function getSnapshotCandidates() {
     { url: getMetaContent("snapshot-path"), label: "번들 JSON" },
     { url: "./latest-transactions.json", label: "번들 JSON" },
     { url: "../latest-transactions.json", label: "번들 JSON" },
+  ].filter((candidate) => candidate.url);
+
+  return candidates.filter((candidate, index, array) => {
+    return array.findIndex((entry) => entry.url === candidate.url) === index;
+  });
+}
+
+function getHistoryCandidates() {
+  const candidates = [
+    { url: getMetaContent("history-index-path"), label: "로컬 히스토리" },
+    { url: getMetaContent("backup-history-index-url"), label: "GitHub 히스토리" },
+    { url: "./snapshots/index.json", label: "로컬 히스토리" },
   ].filter((candidate) => candidate.url);
 
   return candidates.filter((candidate, index, array) => {
@@ -78,6 +98,11 @@ function formatDateTime(value) {
     minute: "2-digit",
     hour12: false,
   }).format(date);
+}
+
+function formatDelta(value, unit = "") {
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toLocaleString("ko-KR")}${unit}`;
 }
 
 function renderFilters(target, options, selectedId, onChange) {
@@ -281,6 +306,78 @@ function renderRankedFeed(target, noteTarget, view, mode) {
   target.innerHTML = buildTransactionCards(visibleItems);
 }
 
+function renderCompareOptions(selectElement, entries, selectedDate) {
+  selectElement.innerHTML = "";
+  entries.forEach((entry) => {
+    const option = document.createElement("option");
+    option.value = entry.snapshotDate;
+    option.textContent = `${entry.snapshotDate} (${entry.itemCount.toLocaleString("ko-KR")}건)`;
+    if (entry.snapshotDate === selectedDate) {
+      option.selected = true;
+    }
+    selectElement.appendChild(option);
+  });
+}
+
+function renderCompareSection() {
+  const entries = state.historyIndex?.entries || [];
+  if (!entries.length) {
+    historyChip.textContent = "히스토리 없음";
+    compareNote.textContent = "누적 스냅샷 데이터가 아직 없습니다.";
+    compareGrid.innerHTML = `<article class="placeholder-card">누적 스냅샷이 생성되면 날짜별 비교가 활성화됩니다.</article>`;
+    return;
+  }
+
+  if (!state.compareBaseDate || !entries.find((entry) => entry.snapshotDate === state.compareBaseDate)) {
+    state.compareBaseDate = entries[0].snapshotDate;
+  }
+
+  if (!state.compareTargetDate || !entries.find((entry) => entry.snapshotDate === state.compareTargetDate)) {
+    state.compareTargetDate = entries[Math.min(1, entries.length - 1)]?.snapshotDate || state.compareBaseDate;
+  }
+
+  renderCompareOptions(compareBaseDate, entries, state.compareBaseDate);
+  renderCompareOptions(compareTargetDate, entries, state.compareTargetDate);
+
+  const base = entries.find((entry) => entry.snapshotDate === state.compareBaseDate);
+  const target = entries.find((entry) => entry.snapshotDate === state.compareTargetDate);
+
+  if (!base || !target) {
+    compareGrid.innerHTML = `<article class="placeholder-card">비교 대상 날짜를 선택해 주세요.</article>`;
+    return;
+  }
+
+  const itemDelta = base.itemCount - target.itemCount;
+  const avgDelta = base.averagePriceManwon - target.averagePriceManwon;
+  const highestDelta = base.highestPriceManwon - target.highestPriceManwon;
+
+  compareNote.textContent = `${base.snapshotDate} 기준, ${target.snapshotDate} 대비 변화량입니다.`;
+  historyChip.textContent = `누적 ${entries.length}일`;
+
+  compareGrid.innerHTML = `
+    <article class="stat-card">
+      <div class="stat-label">거래건수 변화</div>
+      <div class="stat-value">${formatDelta(itemDelta, "건")}</div>
+      <div class="stat-foot">${base.itemCount.toLocaleString("ko-KR")}건 vs ${target.itemCount.toLocaleString("ko-KR")}건</div>
+    </article>
+    <article class="stat-card">
+      <div class="stat-label">평균 거래금액 변화</div>
+      <div class="stat-value">${formatDelta(Math.round(avgDelta / 10000 * 10) / 10, "억")}</div>
+      <div class="stat-foot">${formatManwon(base.averagePriceManwon)} vs ${formatManwon(target.averagePriceManwon)}</div>
+    </article>
+    <article class="stat-card">
+      <div class="stat-label">최고 거래 변화</div>
+      <div class="stat-value">${formatDelta(Math.round(highestDelta / 10000 * 10) / 10, "억")}</div>
+      <div class="stat-foot">${base.highestPriceTitle || "-"} ↔ ${target.highestPriceTitle || "-"}</div>
+    </article>
+    <article class="stat-card">
+      <div class="stat-label">최근 계약일 비교</div>
+      <div class="stat-value">${formatDate(base.latestContractDate || "-")}</div>
+      <div class="stat-foot">기준: ${base.latestContractTitle || "-"}<br/>비교: ${formatDate(target.latestContractDate || "-")} · ${target.latestContractTitle || "-"}</div>
+    </article>
+  `;
+}
+
 function render() {
   const view = getRegionView();
   renderStats(view);
@@ -290,6 +387,7 @@ function render() {
     state.region = regionId;
     render();
   });
+  renderCompareSection();
 }
 
 async function fetchSnapshotCandidate(candidate) {
@@ -301,6 +399,53 @@ async function fetchSnapshotCandidate(candidate) {
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+async function loadHistoryIndex() {
+  for (const candidate of getHistoryCandidates()) {
+    try {
+      const response = await fetchSnapshotCandidate(candidate);
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data?.entries) && data.entries.length) {
+          return {
+            ...data,
+            entries: [...data.entries].sort((left, right) => String(right.snapshotDate).localeCompare(String(left.snapshotDate))),
+          };
+        }
+      }
+    } catch (error) {
+      console.warn(`[real-estate-watch] Failed to fetch history ${candidate.label}: ${candidate.url}`, error);
+    }
+  }
+
+  return null;
+}
+
+function buildFallbackHistoryFromCurrentSnapshot() {
+  if (!state.data?.updatedAt) {
+    return { entries: [] };
+  }
+
+  const allView = state.data.views?.all || {};
+  return {
+    entries: [
+      {
+        snapshotDate: String(state.data.updatedAt).slice(0, 10),
+        updatedAt: state.data.updatedAt,
+        itemCount: state.data.itemCount || allView.itemCount || 0,
+        averagePriceManwon: allView.averagePriceManwon || 0,
+        highestPriceManwon: allView.highestPriceItem?.priceManwon || 0,
+        highestPriceTitle: allView.highestPriceItem
+          ? `${allView.highestPriceItem.district} · ${allView.highestPriceItem.apartmentName}`
+          : "",
+        latestContractDate: allView.latestContractItem?.contractDate || "",
+        latestContractTitle: allView.latestContractItem
+          ? `${allView.latestContractItem.district} · ${allView.latestContractItem.apartmentName}`
+          : "",
+      },
+    ],
+  };
 }
 
 async function init() {
@@ -327,15 +472,30 @@ async function init() {
 
     state.data = await response.json();
     state.snapshotSource = snapshotSource;
+    state.historyIndex = (await loadHistoryIndex()) || buildFallbackHistoryFromCurrentSnapshot();
+
     snapshotChip.textContent = state.data.snapshotMode === "demo"
       ? `예시 스냅샷${snapshotSource ? ` · ${snapshotSource}` : ""}`
       : `자동 스냅샷${snapshotSource ? ` · ${snapshotSource}` : ""}`;
+
+    compareBaseDate?.addEventListener("change", (event) => {
+      state.compareBaseDate = event.target.value;
+      renderCompareSection();
+    });
+
+    compareTargetDate?.addEventListener("change", (event) => {
+      state.compareTargetDate = event.target.value;
+      renderCompareSection();
+    });
+
     render();
   } catch (error) {
     console.error(error);
     heroStatus.textContent = "데이터를 불러오지 못했습니다.";
     priceFeedNote.textContent = "JSON 스냅샷을 확인해 주세요.";
     contractFeedNote.textContent = "JSON 스냅샷을 확인해 주세요.";
+    compareNote.textContent = "비교 데이터를 불러오지 못했습니다.";
+    historyChip.textContent = "히스토리 오류";
     const placeholder = `
       <article class="placeholder-card">
         정적 데이터를 불러오지 못했습니다. <br />
@@ -344,6 +504,7 @@ async function init() {
     `;
     priceFeedList.innerHTML = placeholder;
     contractFeedList.innerHTML = placeholder;
+    compareGrid.innerHTML = placeholder;
   }
 }
 
