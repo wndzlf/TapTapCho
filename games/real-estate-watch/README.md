@@ -28,6 +28,13 @@ cd /Users/user/TapTapCho
 REAL_ESTATE_API_SERVICE_KEY="your-key" npm run sync-real-estate-watch
 ```
 
+과거 커밋 히스토리에서 날짜별 스냅샷을 복원하려면 아래 명령을 실행합니다.
+
+```bash
+cd /Users/user/TapTapCho
+node meta/tools/backfill-real-estate-watch-history.mjs
+```
+
 ## 토스 앱 번들
 
 - 패키지 루트: `/Users/user/TapTapCho/real-estate-watch/toss-package`
