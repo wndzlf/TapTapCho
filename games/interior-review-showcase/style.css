@@ -9,6 +9,26 @@
   --accent: #e2c39a;
   --accent-strong: #f3d9b7;
   --shadow: 0 30px 80px rgba(0, 0, 0, 0.42);
+  --font-body:
+    "Pretendard Variable",
+    "Pretendard",
+    "SUIT Variable",
+    "SUIT",
+    "Noto Sans KR",
+    "Apple SD Gothic Neo",
+    "Malgun Gothic",
+    "Segoe UI",
+    sans-serif;
+  --font-display:
+    "Pretendard Variable",
+    "Pretendard",
+    "SUIT Variable",
+    "SUIT",
+    "Noto Sans KR",
+    "Apple SD Gothic Neo",
+    "Malgun Gothic",
+    "Segoe UI",
+    sans-serif;
 }
 
 * {
@@ -21,12 +41,13 @@ html {
 
 body {
   margin: 0;
-  font-family: "SUIT Variable", "Pretendard Variable", "Avenir Next", "Apple SD Gothic Neo", sans-serif;
+  font-family: var(--font-body);
   color: var(--text);
   background:
     radial-gradient(circle at 10% 0%, rgba(113, 95, 75, 0.24), transparent 28%),
     radial-gradient(circle at 84% 6%, rgba(92, 92, 92, 0.18), transparent 22%),
     linear-gradient(180deg, #070707 0%, #090909 36%, #050505 100%);
+  text-rendering: optimizeLegibility;
 }
 
 .atmosphere {
@@ -95,6 +116,7 @@ a {
 }
 
 .brand-copy strong {
+  font-family: var(--font-display);
   font-size: 17px;
   letter-spacing: 0.02em;
 }
@@ -218,9 +240,9 @@ a {
 
 .hero-note h2 {
   margin: 8px 0 10px;
-  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+  font-family: var(--font-display);
   font-size: clamp(26px, 3vw, 36px);
-  line-height: 1.04;
+  line-height: 1.16;
 }
 
 .hero-note p,
@@ -260,14 +282,15 @@ a {
 .section-head h2,
 .contact-banner h2,
 .editor-head h2 {
-  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
-  letter-spacing: -0.03em;
+  font-family: var(--font-display);
+  letter-spacing: -0.04em;
 }
 
 .hero-copy h1 {
   margin: 18px 0 0;
   font-size: clamp(42px, 5vw, 72px);
-  line-height: 0.97;
+  line-height: 1.1;
+  max-width: 11em;
 }
 
 .hero-text,
@@ -348,6 +371,7 @@ a {
 .about-copy h2 {
   margin: 0;
   font-size: clamp(34px, 3.8vw, 52px);
+  line-height: 1.12;
 }
 
 .about-body {
@@ -404,6 +428,7 @@ a {
 .comparison-caption strong {
   font-size: 20px;
   font-weight: 800;
+  line-height: 1.35;
 }
 
 .section-head {
@@ -417,7 +442,8 @@ a {
 .section-head h2 {
   margin: 10px 0 0;
   font-size: clamp(32px, 3.5vw, 48px);
-  line-height: 1;
+  line-height: 1.12;
+  max-width: 12em;
 }
 
 .section-note {
@@ -540,7 +566,7 @@ a {
 .review-card h3 {
   margin: 10px 0 10px;
   font-size: 24px;
-  line-height: 1.15;
+  line-height: 1.28;
 }
 
 .signature-body p,
@@ -663,7 +689,8 @@ a {
 .contact-banner h2 {
   margin: 10px 0 0;
   font-size: clamp(34px, 3.8vw, 56px);
-  line-height: 0.98;
+  line-height: 1.12;
+  max-width: 11em;
 }
 
 .contact-banner p {
@@ -784,7 +811,43 @@ a {
 .editor-head h2 {
   margin: 10px 0 0;
   font-size: 34px;
-  line-height: 1;
+  line-height: 1.15;
+}
+
+.hero-note h2,
+.hero-copy h1,
+.about-copy h2,
+.section-head h2,
+.contact-banner h2,
+.editor-head h2,
+.comparison-caption strong,
+.signature-body h3,
+.space-body h3,
+.review-card h3 {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  line-break: strict;
+  text-wrap: balance;
+}
+
+.hero-note p,
+.hero-note-meta,
+.hero-text,
+.about-body,
+.about-points li,
+.section-note,
+.signature-body p,
+.space-body p,
+.review-name,
+.review-project,
+.review-quote,
+.contact-banner p,
+.editor-help,
+.editor-form label {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  line-break: strict;
+  text-wrap: pretty;
 }
 
 .editor-close {
@@ -903,6 +966,7 @@ a {
 
   .hero-copy h1 {
     font-size: clamp(32px, 11vw, 56px);
+    max-width: none;
   }
 
   .metric-strip,
@@ -930,6 +994,11 @@ a {
   .section-note {
     max-width: none;
     text-align: left;
+  }
+
+  .section-head h2,
+  .contact-banner h2 {
+    max-width: none;
   }
 
   .contact-banner,
