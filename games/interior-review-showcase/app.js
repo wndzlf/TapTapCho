@@ -1,15 +1,25 @@
-const storageKey = "interior-review-showcase-v1";
+const storageKey = "interior-review-showcase-v2";
 
 const defaultState = {
   companyName: "남서울 인테리어",
-  companyCategory: "타일 · 인테리어 · 블라인드",
+  companyCategory: "Tile · Interior · Blind",
   heroBadge: "용인 수지 · 광교 · 성복 시공 사례",
-  heroTitle: "카페에 쌓인 시공 후기를, 상담으로 연결되는 쇼케이스로",
+  heroTitle: "공간을 설명하는 대신, 장면으로 먼저 설득하는 인테리어 포트폴리오",
   heroSubtitle:
-    "네이버 카페에 흩어진 시공 사진과 후기를 한 페이지에서 보여주도록 재구성한 홍보용 데모입니다.",
+    "카페에 쌓인 사진형 후기와 공간별 사례를 브랜드 사이트 톤으로 재구성한 프리미엄 쇼케이스입니다.",
+  heroImage: "",
+  aboutBody:
+    "전체 인테리어와 공간별 시공 사례를 장면 중심으로 정리해, 첫 방문 고객도 분위기와 마감 감도를 빠르게 이해할 수 있게 구성합니다.",
+  aboutBullets: [
+    "전체인테리어와 공간별모음 카테고리를 그대로 유지합니다.",
+    "대표 장면부터 보여주고, 설명은 그 뒤에 따라오게 편집합니다.",
+    "실제 사진만 연결되면 바로 브랜드 사이트 톤으로 전환됩니다.",
+  ],
+  filmImage: "",
+  filmCaption:
+    "실제 영상이 없어도 대표 이미지 한 장과 짧은 문장으로 브랜드 톤을 먼저 전달할 수 있습니다.",
   contactHref: "tel:01012345678",
-  contactLabel: "빠른 상담",
-  areas: ["동천동", "광교", "성복동", "풍덕천동", "수지구"],
+  contactLabel: "상담 문의",
   projects: [
     {
       category: "전체인테리어",
@@ -188,27 +198,35 @@ const els = {
   heroBadge: document.getElementById("heroBadge"),
   heroTitle: document.getElementById("heroTitle"),
   heroSubtitle: document.getElementById("heroSubtitle"),
+  heroMedia: document.getElementById("heroMedia"),
+  heroNoteTitle: document.getElementById("heroNoteTitle"),
+  heroNoteExcerpt: document.getElementById("heroNoteExcerpt"),
+  heroNoteArea: document.getElementById("heroNoteArea"),
+  heroNoteViews: document.getElementById("heroNoteViews"),
   primaryCta: document.getElementById("primaryCta"),
   projectCount: document.getElementById("projectCount"),
   reviewCount: document.getElementById("reviewCount"),
   averageScore: document.getElementById("averageScore"),
   areaCount: document.getElementById("areaCount"),
-  portfolioGroups: document.getElementById("portfolioGroups"),
-  spaceOverview: document.getElementById("spaceOverview"),
-  reviewGrid: document.getElementById("reviewGrid"),
-  featuredCategory: document.getElementById("featuredCategory"),
-  featuredThumb: document.getElementById("featuredThumb"),
-  featuredArea: document.getElementById("featuredArea"),
-  featuredTitle: document.getElementById("featuredTitle"),
-  featuredExcerpt: document.getElementById("featuredExcerpt"),
-  featuredDate: document.getElementById("featuredDate"),
-  featuredViews: document.getElementById("featuredViews"),
+  aboutTitle: document.getElementById("aboutTitle"),
+  aboutBody: document.getElementById("aboutBody"),
+  aboutBullets: document.getElementById("aboutBullets"),
+  beforeMedia: document.getElementById("beforeMedia"),
+  afterMedia: document.getElementById("afterMedia"),
+  beforeTitle: document.getElementById("beforeTitle"),
+  afterTitle: document.getElementById("afterTitle"),
+  filmMedia: document.getElementById("filmMedia"),
+  filmCaption: document.getElementById("filmCaption"),
+  signatureGrid: document.getElementById("signatureGrid"),
+  spaceRibbon: document.getElementById("spaceRibbon"),
+  spaceStoryGrid: document.getElementById("spaceStoryGrid"),
+  reviewStage: document.getElementById("reviewStage"),
   contactTitle: document.getElementById("contactTitle"),
   contactText: document.getElementById("contactText"),
   contactPrimary: document.getElementById("contactPrimary"),
   contactSecondary: document.getElementById("contactSecondary"),
-  editorPanel: document.getElementById("editorPanel"),
   editorToggle: document.getElementById("editorToggle"),
+  editorPanel: document.getElementById("editorPanel"),
   editorClose: document.getElementById("editorClose"),
   editorBackdrop: document.getElementById("editorBackdrop"),
   editorForm: document.getElementById("editorForm"),
@@ -227,13 +245,9 @@ function loadState() {
 
     return mergeState(JSON.parse(saved));
   } catch (error) {
-    console.warn("Failed to load saved showcase state.", error);
+    console.warn("Failed to load showcase state.", error);
     return structuredClone(defaultState);
   }
-}
-
-function saveState() {
-  localStorage.setItem(storageKey, JSON.stringify(state));
 }
 
 function mergeState(candidate) {
@@ -245,14 +259,22 @@ function mergeState(candidate) {
     merged.heroBadge = candidate.heroBadge || merged.heroBadge;
     merged.heroTitle = candidate.heroTitle || merged.heroTitle;
     merged.heroSubtitle = candidate.heroSubtitle || merged.heroSubtitle;
+    merged.heroImage = candidate.heroImage || merged.heroImage;
+    merged.aboutBody = candidate.aboutBody || merged.aboutBody;
+    merged.aboutBullets = normalizeBullets(candidate.aboutBullets?.length ? candidate.aboutBullets : merged.aboutBullets);
+    merged.filmImage = candidate.filmImage || merged.filmImage;
+    merged.filmCaption = candidate.filmCaption || merged.filmCaption;
     merged.contactHref = candidate.contactHref || merged.contactHref;
     merged.contactLabel = candidate.contactLabel || merged.contactLabel;
-    merged.areas = Array.isArray(candidate.areas) && candidate.areas.length ? candidate.areas : merged.areas;
     merged.projects = normalizeProjects(candidate.projects?.length ? candidate.projects : merged.projects);
     merged.reviews = normalizeReviews(candidate.reviews?.length ? candidate.reviews : merged.reviews);
   }
 
   return merged;
+}
+
+function normalizeBullets(bullets) {
+  return bullets.map((item) => String(item).trim()).filter(Boolean);
 }
 
 function normalizeProjects(projects) {
@@ -318,132 +340,140 @@ function bindEvents() {
   els.editorToggle.addEventListener("click", openEditor);
   els.editorClose.addEventListener("click", closeEditor);
   els.editorBackdrop.addEventListener("click", closeEditor);
-  els.resetButton.addEventListener("click", resetState);
   els.editorForm.addEventListener("submit", onEditorSubmit);
+  els.resetButton.addEventListener("click", resetState);
 }
 
 function render() {
-  renderBranding();
-  renderStats();
-  renderFeatured();
-  renderPortfolioGroups();
-  renderSpaceOverview();
+  const featured = getFeaturedProject();
+  const signatureProjects = getProjectsByCategory("전체인테리어");
+  const spaceProjects = getProjectsByCategory("공간별모음");
+  const averageScore = getAverageScore();
+  const distinctAreas = new Set(state.projects.map((project) => project.area).filter(Boolean));
+
+  document.title = `${state.companyName} | 프리미엄 포트폴리오`;
+  updateMetaDescription(
+    `${state.companyName}의 ${[...distinctAreas].slice(0, 3).join(", ")} 시공 사례와 고객 후기를 한눈에 보는 프리미엄 포트폴리오 페이지`
+  );
+
+  els.brandName.textContent = state.companyName;
+  els.brandCategory.textContent = state.companyCategory;
+  els.headerCta.textContent = state.contactLabel;
+  els.headerCta.href = state.contactHref;
+  els.heroBadge.textContent = state.heroBadge;
+  els.heroTitle.textContent = state.heroTitle;
+  els.heroSubtitle.textContent = state.heroSubtitle;
+  els.primaryCta.textContent = state.contactLabel;
+  els.primaryCta.href = state.contactHref;
+  els.projectCount.textContent = String(state.projects.length);
+  els.reviewCount.textContent = String(state.reviews.length);
+  els.averageScore.textContent = averageScore.toFixed(1);
+  els.areaCount.textContent = String(distinctAreas.size);
+
+  els.contactTitle.textContent = `${state.companyName} 상담 문의`;
+  els.contactText.textContent =
+    `${state.companyName}의 실제 시공 사진과 후기 데이터를 한 화면에 정리해, 방문 고객이 분위기와 마감 감도를 바로 이해할 수 있게 구성했습니다.`;
+  els.contactPrimary.textContent = state.contactLabel;
+  els.contactPrimary.href = state.contactHref;
+
+  renderHero(featured);
+  renderAbout(signatureProjects, featured);
+  renderFilm(signatureProjects, featured);
+  renderSignatureGrid(signatureProjects);
+  renderSpaceSection(spaceProjects);
   renderReviews();
   populateEditor();
 }
 
-function renderBranding() {
-  els.brandName.textContent = state.companyName;
-  els.brandCategory.textContent = state.companyCategory;
-  els.heroBadge.textContent = state.heroBadge;
-  els.heroTitle.textContent = state.heroTitle;
-  els.heroSubtitle.textContent = state.heroSubtitle;
-  els.headerCta.textContent = state.contactLabel;
-  els.headerCta.href = state.contactHref;
-  els.primaryCta.href = state.contactHref;
-  els.primaryCta.textContent = state.contactLabel;
-  els.contactPrimary.href = state.contactHref;
-  els.contactPrimary.textContent = `${state.contactLabel} 하기`;
-  els.contactTitle.textContent = `${state.companyName}용 전용 쇼케이스 제안`;
-  els.contactText.textContent =
-    `${state.companyName}의 기존 카페 사례와 후기를 그대로 살리면서, 검색과 상담 전환에 맞는 단일 소개 페이지로 재구성한 데모입니다.`;
+function renderHero(featured) {
+  setMediaShell(els.heroMedia, state.heroImage || featured?.photo || "", featured?.space || "living");
+  els.heroNoteTitle.textContent = featured?.title || `${state.companyName} 대표 사례`;
+  els.heroNoteExcerpt.textContent =
+    featured?.excerpt ||
+    "대표 장면 하나만으로도 이 업체가 어떤 공간 분위기를 만드는지 먼저 인식하게 하는 구간입니다.";
+  els.heroNoteArea.textContent = featured?.area || "Portfolio";
+  els.heroNoteViews.textContent = `조회 ${featured?.views || 0}`;
 }
 
-function renderStats() {
-  const average =
-    state.reviews.reduce((sum, review) => sum + review.score, 0) / Math.max(state.reviews.length, 1);
-  const areas = new Set(state.projects.map((project) => project.area).filter(Boolean));
+function renderAbout(signatureProjects, featured) {
+  const first = signatureProjects[0] || featured;
+  const second = signatureProjects[1] || state.projects.find((project) => project !== first) || featured;
 
-  els.projectCount.textContent = String(state.projects.length);
-  els.reviewCount.textContent = String(state.reviews.length);
-  els.averageScore.textContent = average.toFixed(1);
-  els.areaCount.textContent = String(areas.size || state.areas.length);
+  els.aboutTitle.textContent = `About ${state.companyName}`;
+  els.aboutBody.textContent = state.aboutBody;
+  els.aboutBullets.innerHTML = state.aboutBullets
+    .map((bullet) => `<li>${escapeHtml(bullet)}</li>`)
+    .join("");
+
+  setMediaShell(els.beforeMedia, first?.photo || "", first?.space || "hallway");
+  setMediaShell(els.afterMedia, second?.photo || "", second?.space || "window");
+  els.beforeTitle.textContent = first?.title || "대표 사례 A";
+  els.afterTitle.textContent = second?.title || "대표 사례 B";
 }
 
-function renderFeatured() {
-  const featured = [...state.projects].sort((left, right) => right.views - left.views)[0];
-  if (!featured) {
-    return;
-  }
-
-  els.featuredCategory.textContent = featured.category;
-  els.featuredArea.textContent = featured.area;
-  els.featuredTitle.textContent = featured.title;
-  els.featuredExcerpt.textContent = featured.excerpt;
-  els.featuredDate.textContent = featured.date;
-  els.featuredViews.textContent = String(featured.views);
-  els.featuredThumb.dataset.space = featured.space;
-  els.featuredThumb.textContent = featured.spaceLabel;
-
-  if (featured.photo) {
-    setPhotoThumb(els.featuredThumb, featured.photo);
-  } else {
-    clearPhotoThumb(els.featuredThumb);
-  }
+function renderFilm(signatureProjects, featured) {
+  const filmProject = signatureProjects[2] || featured;
+  setMediaShell(els.filmMedia, state.filmImage || filmProject?.photo || "", filmProject?.space || "living");
+  els.filmCaption.textContent = state.filmCaption;
 }
 
-function renderPortfolioGroups() {
-  const orderedCategories = ["전체인테리어", "공간별모음"];
-  const grouped = orderedCategories
-    .map((category) => ({
-      category,
-      items: state.projects.filter((project) => project.category === category),
-    }))
-    .filter((group) => group.items.length);
+function renderSignatureGrid(projects) {
+  els.signatureGrid.innerHTML = projects
+    .map((project, index) => {
+      const cardClass = index === 0 ? "signature-card lead" : index === 1 ? "signature-card tall" : "signature-card";
 
-  els.portfolioGroups.innerHTML = grouped
-    .map(
-      (group) => `
-        <section class="category-showcase">
-          <div class="category-head">
-            <div>
-              <p class="section-kicker">${escapeHtml(group.category)}</p>
-              <h3>${escapeHtml(group.category === "전체인테리어" ? "전체 인테리어 모음" : "공간별 모음")}</h3>
-              <p>${escapeHtml(
-                group.category === "전체인테리어"
-                  ? "거실, 주방, 현관, 복도까지 한 번에 보여주는 사례입니다."
-                  : "욕실, 중문, 블라인드처럼 고객이 특정 공간만 찾을 때 바로 보여줄 수 있는 사례입니다."
-              )}</p>
+      return `
+        <article class="${cardClass}">
+          <div class="signature-media media-shell" data-space="${escapeHtml(project.space)}" data-photo="${project.photo ? "1" : ""}" style="${project.photo ? inlinePhoto(project.photo) : ""}"></div>
+          <div class="signature-body">
+            <div class="card-meta">
+              <span>${escapeHtml(project.category)}</span>
+              <span>${escapeHtml(project.area)}</span>
+              <span>${escapeHtml(project.date)}</span>
             </div>
-            <div class="category-copy">${escapeHtml(String(group.items.length))}개 사례</div>
+            <h3>${escapeHtml(project.title)}</h3>
+            <p>${escapeHtml(project.excerpt)}</p>
           </div>
-          <div class="project-grid">
-            ${group.items.map(renderProjectCard).join("")}
-          </div>
-        </section>
-      `
-    )
+        </article>
+      `;
+    })
     .join("");
 }
 
-function renderSpaceOverview() {
+function renderSpaceSection(projects) {
   const grouped = new Map();
 
-  state.projects
-    .filter((project) => project.category === "공간별모음")
-    .forEach((project) => {
-      const existing = grouped.get(project.space) || {
-        label: project.spaceLabel,
-        count: 0,
-        examples: [],
-      };
-      existing.count += 1;
-      existing.examples.push(project.title);
-      grouped.set(project.space, existing);
-    });
+  projects.forEach((project) => {
+    const existing = grouped.get(project.space) || { label: project.spaceLabel, count: 0 };
+    existing.count += 1;
+    grouped.set(project.space, existing);
+  });
 
-  els.spaceOverview.innerHTML = [...grouped.values()]
+  els.spaceRibbon.innerHTML = [...grouped.entries()]
     .map(
-      (group) => `
+      ([space, data]) => `
+        <div class="space-pill" data-space="${escapeHtml(space)}">
+          <span>${escapeHtml(String(data.count))}</span>
+          <strong>${escapeHtml(data.label)}</strong>
+        </div>
+      `
+    )
+    .join("");
+
+  els.spaceStoryGrid.innerHTML = projects
+    .map(
+      (project) => `
         <article class="space-card">
-          <strong>${escapeHtml(String(group.count))}</strong>
-          <h3>${escapeHtml(group.label)}</h3>
-          <ul>
-            ${group.examples
-              .slice(0, 3)
-              .map((example) => `<li>${escapeHtml(example)}</li>`)
-              .join("")}
-          </ul>
+          <div class="space-media media-shell" data-space="${escapeHtml(project.space)}" data-photo="${project.photo ? "1" : ""}" style="${project.photo ? inlinePhoto(project.photo) : ""}"></div>
+          <div class="space-body">
+            <div class="card-meta">
+              <span>${escapeHtml(project.spaceLabel)}</span>
+              <span>${escapeHtml(project.area)}</span>
+              <span>조회 ${escapeHtml(String(project.views))}</span>
+            </div>
+            <h3>${escapeHtml(project.title)}</h3>
+            <p>${escapeHtml(project.excerpt)}</p>
+          </div>
         </article>
       `
     )
@@ -451,46 +481,60 @@ function renderSpaceOverview() {
 }
 
 function renderReviews() {
-  els.reviewGrid.innerHTML = state.reviews
-    .map(
-      (review) => `
-        <article class="review-card">
-          <div class="review-top">
-            <div>
-              <p class="review-name">${escapeHtml(review.name)}</p>
-              <p class="review-project">${escapeHtml(review.project)}</p>
-            </div>
-            <span class="review-score">${escapeHtml(review.score.toFixed(1))} / 5</span>
+  els.reviewStage.innerHTML = state.reviews
+    .map((review, index) => `
+      <article class="review-card ${index === 0 ? "lead" : ""}">
+        <div class="review-top">
+          <div>
+            <p class="review-name">${escapeHtml(review.name)}</p>
+            <p class="review-project">${escapeHtml(review.project)}</p>
           </div>
-          <p>${escapeHtml(review.quote)}</p>
-          <div class="tag-list">
-            ${review.tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
-          </div>
-        </article>
-      `
-    )
+          <span class="review-score">${escapeHtml(review.score.toFixed(1))} / 5</span>
+        </div>
+        <p class="review-quote">${escapeHtml(review.quote)}</p>
+        <div class="tag-list">
+          ${review.tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
+        </div>
+      </article>
+    `)
     .join("");
 }
 
-function renderProjectCard(project) {
-  return `
-    <article class="project-card">
-      <div class="project-thumb" data-space="${escapeHtml(project.space)}" data-photo="${project.photo ? "1" : ""}">
-        ${project.photo ? `<img src="${escapeAttribute(project.photo)}" alt="${escapeAttribute(project.title)}" />` : ""}
-        <span class="project-thumb-label">${escapeHtml(project.spaceLabel)}</span>
-      </div>
-      <div class="project-body">
-        <p class="project-category">${escapeHtml(project.category)}</p>
-        <h3>${escapeHtml(project.title)}</h3>
-        <p>${escapeHtml(project.excerpt)}</p>
-        <div class="project-meta">
-          <span>${escapeHtml(project.area)}</span>
-          <span>${escapeHtml(project.date)}</span>
-          <span>조회 ${escapeHtml(String(project.views))}</span>
-        </div>
-      </div>
-    </article>
-  `;
+function getFeaturedProject() {
+  return [...state.projects].sort((left, right) => right.views - left.views)[0];
+}
+
+function getProjectsByCategory(category) {
+  return state.projects
+    .filter((project) => project.category === category)
+    .sort((left, right) => right.views - left.views);
+}
+
+function getAverageScore() {
+  return state.reviews.reduce((sum, review) => sum + review.score, 0) / Math.max(state.reviews.length, 1);
+}
+
+function setMediaShell(element, photo, space) {
+  element.dataset.space = space || "living";
+
+  if (photo) {
+    element.dataset.photo = "1";
+    element.style.setProperty("--photo-url", `url("${photo}")`);
+  } else {
+    delete element.dataset.photo;
+    element.style.removeProperty("--photo-url");
+  }
+}
+
+function inlinePhoto(photo) {
+  return `--photo-url: url("${escapeAttribute(photo)}");`;
+}
+
+function updateMetaDescription(content) {
+  const tag = document.querySelector('meta[name="description"]');
+  if (tag) {
+    tag.setAttribute("content", content);
+  }
 }
 
 function populateEditor() {
@@ -500,9 +544,13 @@ function populateEditor() {
   form.set("heroBadge", state.heroBadge);
   form.set("heroTitle", state.heroTitle);
   form.set("heroSubtitle", state.heroSubtitle);
+  form.set("heroImage", state.heroImage);
+  form.set("aboutBody", state.aboutBody);
+  form.set("aboutBulletsText", state.aboutBullets.join("\n"));
+  form.set("filmImage", state.filmImage);
+  form.set("filmCaption", state.filmCaption);
   form.set("contactHref", state.contactHref);
   form.set("contactLabel", state.contactLabel);
-  form.set("areasText", state.areas.join(", "));
   form.set("projectsText", toProjectsText(state.projects));
   form.set("reviewsText", toReviewsText(state.reviews));
 
@@ -561,14 +609,21 @@ function onEditorSubmit(event) {
     heroBadge: String(formData.get("heroBadge") || "").trim(),
     heroTitle: String(formData.get("heroTitle") || "").trim(),
     heroSubtitle: String(formData.get("heroSubtitle") || "").trim(),
+    heroImage: String(formData.get("heroImage") || "").trim(),
+    aboutBody: String(formData.get("aboutBody") || "").trim(),
+    aboutBullets: String(formData.get("aboutBulletsText") || "")
+      .split("\n")
+      .map((item) => item.trim())
+      .filter(Boolean),
+    filmImage: String(formData.get("filmImage") || "").trim(),
+    filmCaption: String(formData.get("filmCaption") || "").trim(),
     contactHref: String(formData.get("contactHref") || "").trim(),
     contactLabel: String(formData.get("contactLabel") || "").trim(),
-    areas: splitList(String(formData.get("areasText") || "")),
     projects: nextProjects,
     reviews: nextReviews,
   });
 
-  saveState();
+  localStorage.setItem(storageKey, JSON.stringify(state));
   render();
   closeEditor();
 }
@@ -610,18 +665,14 @@ function parseReviewsText(text) {
         name,
         project,
         score: Number(score) || 0,
-        tags: splitList(tags),
+        tags: tags
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean),
         quote,
       };
     })
     .filter((review) => review.name && review.project && review.quote);
-}
-
-function splitList(text) {
-  return text
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean);
 }
 
 function spaceKeyFromLabel(label) {
@@ -661,16 +712,6 @@ function resetState() {
   localStorage.removeItem(storageKey);
   state = structuredClone(defaultState);
   render();
-}
-
-function setPhotoThumb(element, photo) {
-  element.dataset.photo = "1";
-  element.style.setProperty("--photo-url", `url("${photo}")`);
-}
-
-function clearPhotoThumb(element) {
-  delete element.dataset.photo;
-  element.style.removeProperty("--photo-url");
 }
 
 function escapeHtml(value) {

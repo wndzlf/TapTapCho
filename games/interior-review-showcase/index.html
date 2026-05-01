@@ -3,205 +3,190 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>남서울 인테리어 쇼케이스</title>
+  <title>남서울 인테리어 | 프리미엄 포트폴리오</title>
   <meta
     name="description"
-    content="카페에 흩어진 시공 사례와 후기를 한 페이지에 정리한 인테리어 홍보용 데모 사이트"
+    content="남서울 인테리어의 용인 수지, 광교, 성복 시공 사례와 고객 후기를 한눈에 보는 프리미엄 포트폴리오 페이지"
   />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="남서울 인테리어 | 프리미엄 포트폴리오" />
+  <meta
+    property="og:description"
+    content="전체인테리어와 공간별모음 시공 사례를 사진 중심으로 정리한 남서울 인테리어 브랜드 쇼케이스"
+  />
+  <meta property="og:url" content="https://tap-tap-cho.vercel.app/interior-review-showcase/" />
+  <link rel="canonical" href="https://tap-tap-cho.vercel.app/interior-review-showcase/" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="site-bg" aria-hidden="true"></div>
+  <div class="atmosphere" aria-hidden="true"></div>
 
   <header class="topbar">
     <a class="brand" href="#hero" aria-label="맨 위로 이동">
       <span class="brand-mark"></span>
       <span class="brand-copy">
         <strong id="brandName">남서울 인테리어</strong>
-        <small id="brandCategory">타일 · 인테리어 · 블라인드</small>
+        <small id="brandCategory">Tile · Interior · Blind</small>
       </span>
     </a>
 
     <nav class="topnav" aria-label="주요 메뉴">
-      <a href="#portfolio">시공사례</a>
-      <a href="#reviews">고객후기</a>
-      <a href="#contact">상담문의</a>
+      <a href="#about">About</a>
+      <a href="#portfolio">Portfolio</a>
+      <a href="#spaces">Spaces</a>
+      <a href="#reviews">Review</a>
+      <a href="#contact">Contact</a>
     </nav>
 
-    <a id="headerCta" class="chip-link" href="tel:01012345678">빠른 상담</a>
+    <a id="headerCta" class="header-cta" href="tel:01012345678">빠른 상담</a>
   </header>
 
-  <main>
-    <section class="hero" id="hero">
-      <div class="hero-copy" data-animate style="--delay: 0.05s;">
+  <main class="site-main">
+    <section class="hero-stage" id="hero">
+      <div class="hero-media media-shell" id="heroMedia" data-space="living">
+        <div class="hero-note">
+          <p class="eyebrow">Featured Residence</p>
+          <h2 id="heroNoteTitle">용인 수지 동천동 전체 리모델링</h2>
+          <p id="heroNoteExcerpt">
+            큰 사진 한 장으로 공간 인상을 먼저 전달하고, 이후에 시공 설명과 후기가 따라오는 구조입니다.
+          </p>
+          <div class="hero-note-meta">
+            <span id="heroNoteArea">동천동</span>
+            <span id="heroNoteViews">조회 86</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-copy">
         <p class="eyebrow" id="heroBadge">용인 수지 · 광교 · 성복 시공 사례</p>
-        <h1 id="heroTitle">카페에 쌓인 시공 후기를, 상담으로 연결되는 쇼케이스로</h1>
+        <h1 id="heroTitle">공간을 설명하는 대신, 장면으로 먼저 설득하는 인테리어 포트폴리오</h1>
         <p class="hero-text" id="heroSubtitle">
-          기존 카페의 후기와 사진 흐름은 유지하면서, 고객이 보기 쉽고 문의하기 쉬운
-          홍보형 웹사이트 데모입니다.
+          카페에 쌓인 사진형 후기와 공간별 사례를 브랜드 사이트 톤으로 재구성한 프리미엄 쇼케이스입니다.
         </p>
 
         <div class="cta-row">
-          <a id="primaryCta" class="button primary" href="tel:01012345678">전화 상담</a>
-          <a class="button ghost" href="#portfolio">시공 보기</a>
+          <a id="primaryCta" class="button primary" href="tel:01012345678">상담 문의</a>
+          <a class="button secondary" href="#portfolio">포트폴리오 보기</a>
         </div>
 
-        <ul class="hero-points">
-          <li>실제 시공 사례를 공간별로 빠르게 탐색</li>
-          <li>후기 요약과 조회 반응을 한 화면에서 정리</li>
-          <li>문의 버튼과 상담 동선을 별도 설계</li>
-        </ul>
+        <dl class="metric-strip">
+          <div>
+            <dt>Projects</dt>
+            <dd id="projectCount">11</dd>
+          </div>
+          <div>
+            <dt>Reviews</dt>
+            <dd id="reviewCount">6</dd>
+          </div>
+          <div>
+            <dt>Average</dt>
+            <dd id="averageScore">4.9</dd>
+          </div>
+          <div>
+            <dt>Areas</dt>
+            <dd id="areaCount">5</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="about-block" id="about">
+      <div class="about-copy">
+        <p class="eyebrow">About</p>
+        <h2 id="aboutTitle">About 남서울 인테리어</h2>
+        <p class="about-body" id="aboutBody">
+          전체 인테리어와 공간별 시공 사례를 장면 중심으로 정리해, 첫 방문 고객도 분위기와 마감 감도를 빠르게 이해할 수 있게 구성합니다.
+        </p>
+        <ul class="about-points" id="aboutBullets"></ul>
       </div>
 
-      <aside class="hero-panel" data-animate style="--delay: 0.12s;">
-        <div class="hero-panel-head">
-          <span class="badge">대표 사례</span>
-          <strong id="featuredCategory">전체인테리어</strong>
-        </div>
-
-        <article class="feature-card">
-          <div class="feature-thumb" id="featuredThumb" data-space="living">거실 · 주방</div>
-          <div class="feature-body">
-            <p class="feature-location" id="featuredArea">동천동</p>
-            <h2 id="featuredTitle">용인 수지 동천동 전체 리모델링</h2>
-            <p id="featuredExcerpt">
-              밝은 톤의 벽면과 우드 바닥 조합으로 첫인상을 정리한 전체 리모델링 사례입니다.
-            </p>
-            <dl class="feature-meta">
-              <div>
-                <dt>등록일</dt>
-                <dd id="featuredDate">2026.03.20</dd>
-              </div>
-              <div>
-                <dt>조회</dt>
-                <dd id="featuredViews">86</dd>
-              </div>
-            </dl>
+      <div class="comparison-frame">
+        <article class="comparison-card">
+          <div class="comparison-media media-shell" id="beforeMedia" data-space="hallway"></div>
+          <div class="comparison-caption">
+            <span class="comparison-label">Signature Scene A</span>
+            <strong id="beforeTitle">동천동 동천 디이스트 전체 인테리어</strong>
           </div>
         </article>
-      </aside>
+
+        <article class="comparison-card">
+          <div class="comparison-media media-shell" id="afterMedia" data-space="window"></div>
+          <div class="comparison-caption">
+            <span class="comparison-label">Signature Scene B</span>
+            <strong id="afterTitle">성복역 롯데캐슬 골드타운 거실 정리</strong>
+          </div>
+        </article>
+      </div>
     </section>
 
-    <section class="stats" aria-label="요약 지표">
-      <article class="stat-card" data-animate style="--delay: 0.16s;">
-        <strong id="projectCount">11</strong>
-        <span>시공 사례</span>
-      </article>
-      <article class="stat-card" data-animate style="--delay: 0.2s;">
-        <strong id="reviewCount">6</strong>
-        <span>후기 요약</span>
-      </article>
-      <article class="stat-card" data-animate style="--delay: 0.24s;">
-        <strong id="averageScore">4.9</strong>
-        <span>평균 만족도</span>
-      </article>
-      <article class="stat-card" data-animate style="--delay: 0.28s;">
-        <strong id="areaCount">5</strong>
-        <span>주요 시공권역</span>
-      </article>
-    </section>
-
-    <section class="section reasons" data-animate style="--delay: 0.12s;">
+    <section class="film-block" id="story">
       <div class="section-head">
         <div>
-          <p class="section-kicker">왜 이 구성이 필요한가</p>
-          <h2>카페 구조는 유지하고, 영업 흐름은 더 선명하게</h2>
+          <p class="eyebrow">Story Reel</p>
+          <h2>사진을 넘기기 전에 브랜드 인상을 먼저 만드는 인트로</h2>
         </div>
+        <p class="section-note" id="filmCaption">
+          실제 영상이 없어도 대표 이미지 한 장과 짧은 문장으로 브랜드 톤을 먼저 전달할 수 있습니다.
+        </p>
       </div>
 
-      <div class="reason-grid">
-        <article class="reason-card">
-          <span>01</span>
-          <h3>공간별 탐색이 더 빠릅니다</h3>
-          <p>전체 인테리어와 공간별 모음을 분리해 고객이 원하는 시공만 빠르게 찾을 수 있습니다.</p>
-        </article>
-        <article class="reason-card">
-          <span>02</span>
-          <h3>후기가 상담 근거가 됩니다</h3>
-          <p>카페 후기 본문을 짧은 문장으로 재구성해 전화 전환에 필요한 신뢰를 앞단에서 만듭니다.</p>
-        </article>
-        <article class="reason-card">
-          <span>03</span>
-          <h3>플랫폼 의존도를 줄일 수 있습니다</h3>
-          <p>검색, 링크 공유, 명함 QR, 블로그 연결까지 한 페이지에서 처리할 수 있는 독립 랜딩 구조입니다.</p>
-        </article>
+      <div class="film-frame media-shell" id="filmMedia" data-space="living">
+        <button class="play-button" type="button" aria-label="브랜드 필름 재생 예시">
+          <span class="play-icon"></span>
+          <span>Play Mood Cut</span>
+        </button>
       </div>
     </section>
 
-    <section class="section portfolio" id="portfolio" data-animate style="--delay: 0.14s;">
+    <section class="portfolio-block" id="portfolio">
       <div class="section-head">
         <div>
-          <p class="section-kicker">카페 범주 유지</p>
-          <h2>시공 사례</h2>
+          <p class="eyebrow">Portfolio</p>
+          <h2>전체인테리어</h2>
         </div>
-        <p class="section-note">현재 보이는 카페 범주를 그대로 유지하면서 모든 사례를 전시형으로 재구성한 데모입니다.</p>
+        <p class="section-note">카페의 전체인테리어 범주를 그대로 유지하면서, 사진 중심 편집으로 재정렬했습니다.</p>
       </div>
 
-      <div class="category-stack" id="portfolioGroups" aria-live="polite"></div>
+      <div class="signature-grid" id="signatureGrid" aria-live="polite"></div>
     </section>
 
-    <section class="section categories" data-animate style="--delay: 0.16s;">
+    <section class="portfolio-block alt" id="spaces">
       <div class="section-head">
         <div>
-          <p class="section-kicker">공간별모음 강조</p>
-          <h2>주요 시공 분야</h2>
+          <p class="eyebrow">Space Focus</p>
+          <h2>공간별모음</h2>
         </div>
+        <p class="section-note">욕실, 블라인드, 중문처럼 고객이 먼저 찾는 공간부터 보여주는 구간입니다.</p>
       </div>
 
-      <div class="space-overview" id="spaceOverview"></div>
+      <div class="space-ribbon" id="spaceRibbon"></div>
+      <div class="space-story-grid" id="spaceStoryGrid" aria-live="polite"></div>
     </section>
 
-    <section class="section reviews" id="reviews" data-animate style="--delay: 0.18s;">
+    <section class="quote-block" id="reviews">
       <div class="section-head">
         <div>
-          <p class="section-kicker">후기 기반 설득</p>
-          <h2>고객 후기 요약</h2>
+          <p class="eyebrow">Review</p>
+          <h2>시공 후기가 신뢰 문장으로 남는 방식</h2>
         </div>
       </div>
 
-      <div class="review-grid" id="reviewGrid"></div>
+      <div class="review-stage" id="reviewStage"></div>
     </section>
 
-    <section class="section process" data-animate style="--delay: 0.2s;">
-      <div class="section-head">
-        <div>
-          <p class="section-kicker">문의 전환 동선</p>
-          <h2>페이지가 대신 설명하는 순서</h2>
-        </div>
+    <section class="contact-banner" id="contact">
+      <div>
+        <p class="eyebrow">Contact</p>
+        <h2 id="contactTitle">남서울 인테리어 상담 문의</h2>
+        <p id="contactText">
+          실제 시공 사진과 고객 후기를 함께 보며, 공간별 제안과 시공 흐름을 편하게 상담받을 수 있습니다.
+        </p>
       </div>
 
-      <div class="process-grid">
-        <article>
-          <span>1</span>
-          <h3>고객이 공간을 찾습니다</h3>
-          <p>전체 인테리어, 욕실, 블라인드처럼 목적에 맞는 카테고리를 먼저 고릅니다.</p>
-        </article>
-        <article>
-          <span>2</span>
-          <h3>시공 사례와 후기를 확인합니다</h3>
-          <p>사진, 지역, 조회, 후기 요약을 연속해서 확인하며 업체 이해도를 높입니다.</p>
-        </article>
-        <article>
-          <span>3</span>
-          <h3>즉시 상담으로 넘어갑니다</h3>
-          <p>전화나 카카오 문의 버튼을 고정해 관심이 생긴 순간 바로 연락하게 만듭니다.</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="section contact" id="contact" data-animate style="--delay: 0.22s;">
-      <div class="contact-card">
-        <div>
-          <p class="section-kicker">영업용 마무리</p>
-          <h2 id="contactTitle">카페 후기를 정리한 전용 쇼케이스를 제안해보세요</h2>
-          <p id="contactText">
-            업체가 이미 쌓아둔 후기 자산을 버리지 않고, 검색과 상담 전환에 맞는 소개 페이지로 재구성하는 방식입니다.
-          </p>
-        </div>
-        <div class="contact-actions">
-          <a id="contactPrimary" class="button primary" href="tel:01012345678">전화로 제안하기</a>
-          <a id="contactSecondary" class="button ghost" href="#editorPanel">후기 데이터 바꾸기</a>
-        </div>
+      <div class="contact-actions">
+        <a id="contactPrimary" class="button primary" href="tel:01012345678">전화 상담</a>
+        <a id="contactSecondary" class="button secondary" href="#editorPanel">이미지/문구 편집</a>
       </div>
     </section>
   </main>
@@ -219,8 +204,8 @@
   <aside class="editor-panel" id="editorPanel" aria-hidden="true">
     <div class="editor-head">
       <div>
-        <p class="section-kicker">편집 패널</p>
-        <h2>후기와 사례 바꾸기</h2>
+        <p class="eyebrow">Editor</p>
+        <h2>실제 이미지와 문구 연결</h2>
       </div>
       <button class="editor-close" id="editorClose" type="button" aria-label="편집 패널 닫기">닫기</button>
     </div>
@@ -231,11 +216,11 @@
         <input name="companyName" type="text" />
       </label>
       <label>
-        업종 설명
+        업종 영문 서브카피
         <input name="companyCategory" type="text" />
       </label>
       <label>
-        지역/커버리지
+        상단 배지
         <input name="heroBadge" type="text" />
       </label>
       <label>
@@ -247,31 +232,47 @@
         <textarea name="heroSubtitle" rows="3"></textarea>
       </label>
       <label>
-        전화 링크
+        대표 히어로 이미지
+        <input name="heroImage" type="text" placeholder="./photos/hero.jpg 또는 https://..." />
+      </label>
+      <label>
+        About 본문
+        <textarea name="aboutBody" rows="4"></textarea>
+      </label>
+      <label>
+        About 포인트
+        <textarea
+          name="aboutBulletsText"
+          rows="4"
+          placeholder="공간별 모음 유지&#10;실사진 중심 편집&#10;상담 전환 버튼 고정"
+        ></textarea>
+      </label>
+      <label>
+        필름/인트로 이미지
+        <input name="filmImage" type="text" placeholder="./photos/story.jpg 또는 https://..." />
+      </label>
+      <label>
+        필름 설명
+        <textarea name="filmCaption" rows="3"></textarea>
+      </label>
+      <label>
+        전화 또는 문의 링크
         <input name="contactHref" type="text" />
       </label>
       <label>
-        상단 버튼 라벨
+        버튼 라벨
         <input name="contactLabel" type="text" />
-      </label>
-      <label>
-        주요 권역
-        <textarea
-          name="areasText"
-          rows="2"
-          placeholder="동천동, 성복동, 광교, 풍덕천동"
-        ></textarea>
       </label>
       <label>
         프로젝트 데이터
         <textarea
           name="projectsText"
           rows="12"
-          placeholder="카테고리 | 공간 | 제목 | 지역 | 날짜 | 조회수 | 사진종류 | 요약 | 이미지URL(optional)"
+          placeholder="카테고리 | 공간표시명 | 제목 | 지역 | 날짜 | 조회수 | 사진종류키 | 요약 | 이미지URL(optional)"
         ></textarea>
       </label>
       <p class="editor-help">
-        예시: <code>전체인테리어 | 거실/주방 | 용인 수지 동천동 전체 리모델링 | 동천동 | 2026.03.20 | 86 | living | 밝은 톤의 전체 리모델링 | https://...</code>
+        이미지 URL은 <code>./photos/living-01.jpg</code> 같은 상대경로나 외부 URL 둘 다 가능합니다.
       </p>
       <label>
         후기 데이터
@@ -281,13 +282,10 @@
           placeholder="이름 | 프로젝트 제목 | 별점 | 태그1,태그2 | 후기 요약"
         ></textarea>
       </label>
-      <p class="editor-help">
-        예시: <code>수지구 고객 A | 용인 수지 동천동 전체 리모델링 | 5 | 마감,상담 | 마감 정리가 깔끔하고 공정 설명이 명확했습니다.</code>
-      </p>
 
       <div class="editor-actions">
         <button class="button primary" type="submit">적용하고 저장</button>
-        <button class="button ghost" id="resetButton" type="button">샘플 복원</button>
+        <button class="button secondary" id="resetButton" type="button">샘플 복원</button>
       </div>
     </form>
   </aside>
