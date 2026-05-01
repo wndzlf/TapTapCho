@@ -1,0 +1,44 @@
+<svg width="1200" height="720" viewBox="0 0 1200 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="720" rx="36" fill="#0F1724"/>
+  <rect x="46" y="46" width="1108" height="628" rx="28" fill="url(#bg)"/>
+  <rect x="84" y="92" width="458" height="536" rx="22" fill="#F5EDE1"/>
+  <rect x="118" y="126" width="392" height="248" rx="18" fill="url(#room)"/>
+  <rect x="150" y="420" width="206" height="18" rx="9" fill="#9B5B31"/>
+  <rect x="150" y="454" width="308" height="16" rx="8" fill="#7E6856" fill-opacity="0.88"/>
+  <rect x="150" y="488" width="276" height="16" rx="8" fill="#7E6856" fill-opacity="0.68"/>
+  <rect x="594" y="92" width="522" height="238" rx="24" fill="#131F31"/>
+  <rect x="632" y="132" width="174" height="138" rx="18" fill="url(#bath)"/>
+  <rect x="830" y="132" width="248" height="138" rx="18" fill="url(#blind)"/>
+  <rect x="632" y="370" width="484" height="208" rx="24" fill="#172538"/>
+  <rect x="672" y="414" width="178" height="18" rx="9" fill="#EFC769"/>
+  <rect x="672" y="450" width="376" height="16" rx="8" fill="#B7C8E5"/>
+  <rect x="672" y="484" width="336" height="16" rx="8" fill="#8096B7"/>
+  <rect x="672" y="528" width="120" height="30" rx="15" fill="#6DE7FF"/>
+  <path d="M160 330H470" stroke="#D5C1A8" stroke-width="24" stroke-linecap="round"/>
+  <path d="M694 237H774" stroke="#EDF4FF" stroke-width="20" stroke-linecap="round"/>
+  <path d="M866 182H1030" stroke="#CDD4DC" stroke-width="18" stroke-linecap="round"/>
+  <path d="M866 216H1030" stroke="#B0B8C1" stroke-width="18" stroke-linecap="round"/>
+  <path d="M866 250H1030" stroke="#909AA4" stroke-width="18" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="bg" x1="46" y1="46" x2="1154" y2="674" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#18273D"/>
+      <stop offset="1" stop-color="#0A121D"/>
+    </linearGradient>
+    <linearGradient id="room" x1="118" y1="126" x2="510" y2="374" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFDF8"/>
+      <stop offset="0.68" stop-color="#F0E6D8"/>
+      <stop offset="0.69" stop-color="#B88858"/>
+      <stop offset="1" stop-color="#7F522C"/>
+    </linearGradient>
+    <linearGradient id="bath" x1="632" y1="132" x2="806" y2="270" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FBFF"/>
+      <stop offset="0.58" stop-color="#E1E9F2"/>
+      <stop offset="1" stop-color="#30496E"/>
+    </linearGradient>
+    <linearGradient id="blind" x1="830" y1="132" x2="1078" y2="270" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8F5F0"/>
+      <stop offset="0.28" stop-color="#CFD4D9"/>
+      <stop offset="1" stop-color="#8A9097"/>
+    </linearGradient>
+  </defs>
+</svg>
