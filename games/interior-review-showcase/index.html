@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>한샘리하우스 마스터대리점 | 프리미엄 인테리어 포트폴리오</title>
+  <title>남서울 인테리어 | 실제 시공 사진 기반 포트폴리오</title>
   <meta
     name="description"
-    content="경기 용인 기흥구 한샘리하우스 마스터대리점의 실제 네이버 포트폴리오를 바탕으로 구성한 프리미엄 인테리어 쇼케이스 페이지입니다."
+    content="용인 수지 남서울 인테리어의 실제 네이버 카페·블로그 시공 사진을 바탕으로 구성한 프리미엄 인테리어 포트폴리오 페이지입니다."
   />
-  <meta property="og:title" content="한샘리하우스 마스터대리점 | 프리미엄 인테리어 포트폴리오" />
+  <meta property="og:title" content="남서울 인테리어 | 실제 시공 사진 기반 포트폴리오" />
   <meta
     property="og:description"
-    content="공간별·평형별 시공 사례를 차분하고 고급스럽게 정리한 인테리어 업체 전용 포트폴리오 랜딩 페이지"
+    content="동천동·광교·판교·성복권 시공 사례를 실제 네이버 카페·블로그 이미지로 정리한 인테리어 쇼케이스"
   />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://tap-tap-cho.vercel.app/interior-review-showcase/" />
@@ -35,102 +35,49 @@
             sand: "#F8F1E3",
             ink: "#2C2C2C",
             wood: "#A67C5D",
-            fog: "#F5F1EA",
-            line: "#E5DBCC",
+            fog: "#F6F2EA",
+            line: "#E7DDCF",
           },
           fontFamily: {
             sans: ["Pretendard Variable", "Pretendard", "Noto Sans KR", "sans-serif"],
             serif: ["Noto Serif KR", "serif"],
           },
           boxShadow: {
-            soft: "0 20px 70px rgba(44, 44, 44, 0.12)",
+            soft: "0 22px 70px rgba(44, 44, 44, 0.12)",
             float: "0 18px 40px rgba(44, 44, 44, 0.18)",
-          },
-          backgroundImage: {
-            grain:
-              "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.55), transparent 35%), radial-gradient(circle at 80% 0%, rgba(166,124,93,0.14), transparent 30%), radial-gradient(circle at 50% 80%, rgba(166,124,93,0.08), transparent 32%)",
           },
         },
       },
     };
   </script>
   <style>
-    :root {
-      color-scheme: light;
-    }
-
     html {
       scroll-behavior: smooth;
     }
 
     body {
+      background: #fbf8f3;
+      color: #2c2c2c;
       word-break: keep-all;
       line-break: strict;
       text-wrap: pretty;
-      background: #fbf8f2;
-      color: #2c2c2c;
     }
 
-    .section-reveal {
+    .reveal {
       opacity: 0;
       transform: translateY(24px);
       transition: opacity 0.65s ease, transform 0.65s ease;
     }
 
-    .section-reveal.is-visible {
+    .reveal.is-visible {
       opacity: 1;
       transform: translateY(0);
     }
 
-    .portfolio-card::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(180deg, rgba(44, 44, 44, 0.06), rgba(44, 44, 44, 0.58));
-      opacity: 1;
-      transition: opacity 0.35s ease;
-    }
-
-    .portfolio-card:hover::after {
-      opacity: 0.9;
-    }
-
-    .portfolio-card img {
-      transition: transform 0.6s ease;
-    }
-
-    .portfolio-card:hover img {
-      transform: scale(1.045);
-    }
-
-    .mode-btn.is-active,
-    .filter-btn.is-active {
-      background: #2c2c2c;
-      color: #f8f1e3;
-      border-color: #2c2c2c;
-    }
-
-    .glass-panel {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(18px);
-    }
-
-    .contact-map::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background:
-        linear-gradient(90deg, rgba(166, 124, 93, 0.08) 1px, transparent 1px) 0 0 / 56px 56px,
-        linear-gradient(rgba(166, 124, 93, 0.08) 1px, transparent 1px) 0 0 / 56px 56px,
-        radial-gradient(circle at 22% 26%, rgba(166, 124, 93, 0.12), transparent 16%),
-        radial-gradient(circle at 78% 68%, rgba(44, 44, 44, 0.08), transparent 18%),
-        linear-gradient(180deg, #f7f1e7 0%, #f1e9de 100%);
-    }
-
     .nav-scrolled {
-      background: rgba(251, 248, 242, 0.88);
+      background: rgba(251, 248, 243, 0.9);
       border-color: rgba(44, 44, 44, 0.08);
-      box-shadow: 0 16px 45px rgba(44, 44, 44, 0.08);
+      box-shadow: 0 16px 44px rgba(44, 44, 44, 0.08);
     }
 
     .nav-scrolled .nav-text {
@@ -138,23 +85,54 @@
     }
 
     .nav-scrolled .nav-pill {
+      background: rgba(255, 255, 255, 0.82);
       border-color: rgba(44, 44, 44, 0.12);
-      background: rgba(255, 255, 255, 0.86);
       color: #2c2c2c !important;
+    }
+
+    .filter-btn.is-active,
+    .mode-btn.is-active {
+      background: #2c2c2c;
+      border-color: #2c2c2c;
+      color: #f8f1e3;
+    }
+
+    .portfolio-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(44, 44, 44, 0.04), rgba(44, 44, 44, 0.58));
+      transition: opacity 0.3s ease;
+    }
+
+    .portfolio-card:hover::after {
+      opacity: 0.9;
+    }
+
+    .portfolio-card img {
+      transition: transform 0.55s ease;
+    }
+
+    .portfolio-card:hover img {
+      transform: scale(1.04);
+    }
+
+    .grain {
+      background:
+        radial-gradient(circle at 22% 20%, rgba(255, 255, 255, 0.45), transparent 30%),
+        radial-gradient(circle at 85% 12%, rgba(166, 124, 93, 0.12), transparent 26%),
+        radial-gradient(circle at 55% 85%, rgba(166, 124, 93, 0.08), transparent 28%);
     }
   </style>
 </head>
 <body class="font-sans antialiased">
-  <nav
-    id="siteNav"
-    class="fixed inset-x-0 top-0 z-50 border-b border-transparent transition-all duration-300"
-  >
+  <nav id="siteNav" class="fixed inset-x-0 top-0 z-50 border-b border-transparent transition-all duration-300">
     <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-8">
       <a href="#top" class="flex items-center gap-3">
         <span class="nav-pill inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-sm font-semibold text-white md:text-base">
-          M
+          N
         </span>
-        <span class="nav-text text-sm font-semibold tracking-[0.22em] text-white md:text-base">마스터디자인</span>
+        <span class="nav-text text-sm font-semibold tracking-[0.22em] text-white md:text-base">남서울 인테리어</span>
       </a>
       <div class="hidden items-center gap-8 text-sm text-white/78 md:flex">
         <a href="#about" class="nav-text transition hover:text-white">회사 소개</a>
@@ -174,96 +152,96 @@
 
   <header id="top" class="relative isolate min-h-screen overflow-hidden bg-ink">
     <img
-      src="https://blogfiles.naver.net/MjAyNjA0MjJfMTg2/MDAxNzc2ODU2NTcwOTkz.5rCDnhD3Xp1MdSJu5ltgWEuf-lm8_FRQ1j5ekI05tBsg.DjuaM05ltLrzJQicGHpTbL0Qc_jMcipAzf5rVOczU1Ag.JPEG/KakaoTalk_20260306_102546154_04.jpg"
-      alt="한샘리하우스 마스터대리점 실제 네이버 카페·블로그 포트폴리오 사진 참고"
-      class="absolute inset-0 h-full w-full object-cover opacity-70"
+      src="https://blogfiles.naver.net/MjAyNjAzMjBfMjcx/MDAxNzczOTk0MjExODM3.OkjvWi1mB4cWtvzqTa_wmKbEsb9LCMVNHquXU8_c7Owg.GaeTZZ-1Dz-wmL9SfRfNNeR7OyXv5P4wHKmGyuhb9uog.JPEG/20260309_202350.jpg"
+      alt="남서울 인테리어 실제 네이버 카페·블로그 시공 사진"
+      class="absolute inset-0 h-full w-full object-cover opacity-72"
     />
-    <div class="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/30"></div>
-    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10"></div>
-    <div class="absolute inset-0 bg-grain opacity-80"></div>
+    <div class="absolute inset-0 bg-gradient-to-r from-black/74 via-black/42 to-black/24"></div>
+    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/18"></div>
+    <div class="grain absolute inset-0 opacity-90"></div>
 
     <div class="relative mx-auto flex min-h-screen max-w-7xl items-end px-5 pb-12 pt-28 md:px-8 md:pb-16">
       <div class="grid w-full gap-8 xl:grid-cols-[minmax(0,1.18fr)_minmax(320px,0.82fr)] xl:items-end">
-        <div class="section-reveal max-w-3xl text-white" data-reveal>
-          <span class="mb-5 inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-medium tracking-[0.24em] text-white/84">
-            경기 용인 · 프리미엄 주거 리모델링
+        <div class="reveal max-w-3xl text-white" data-reveal>
+          <span class="mb-5 inline-flex rounded-full border border-white/16 bg-white/10 px-4 py-2 text-xs font-medium tracking-[0.24em] text-white/84">
+            용인 수지 · 광교 · 판교 시공 중심
           </span>
-          <p class="mb-4 font-serif text-sm tracking-[0.28em] text-sand/85">한샘리하우스 마스터대리점</p>
+          <p class="mb-4 font-serif text-sm tracking-[0.28em] text-sand/88">남서울 인테리어</p>
           <h1 class="max-w-3xl text-4xl font-semibold leading-tight md:text-6xl md:leading-[1.12]">
-            공간의 결을 정리하고<br class="hidden md:block" />
-            오래 머무를 집의 품격을 완성합니다
+            카페에 쌓인 실제 시공 사진을
+            <br class="hidden md:block" />
+            상담형 포트폴리오로 다시 정리했습니다
           </h1>
           <p class="mt-6 max-w-2xl text-base leading-8 text-white/76 md:text-lg">
-            용인 기흥을 거점으로 수지·분당·동탄권 아파트 리모델링을 꾸준히 진행해 온
-            한샘리하우스 마스터대리점의 실제 네이버 포트폴리오를 기반으로 만든 쇼케이스입니다.
-            밝고 정제된 톤, 동선 중심의 설계, 사용감까지 고려한 마감의 균형을 한 화면에서 보실 수
-            있도록 정리했습니다.
+            주신 네이버 블로그 이미지 링크를 실제 원본 이미지 주소로 연결해 반영했습니다.
+            동천동·광교·성복·판교권의 아파트 시공 사례, 욕실 모음, 주방 확장, 블라인드 시공까지
+            한 화면에서 비교할 수 있도록 구성한 실사형 소개 페이지입니다.
           </p>
           <div class="mt-9 flex flex-wrap gap-3">
             <a
               href="#portfolio"
               class="rounded-full bg-sand px-6 py-3 text-sm font-semibold text-ink transition hover:bg-[#f2e7d2]"
             >
-              포트폴리오 보기
+              실제 사진 포트폴리오 보기
             </a>
             <a
-              href="https://pcmap.place.naver.com/place/94511021/home"
+              href="https://cafe.naver.com/namseoulter"
               target="_blank"
               rel="noreferrer"
               class="rounded-full border border-white/20 bg-white/10 px-6 py-3 text-sm font-medium text-white transition hover:bg-white/18"
             >
-              네이버 지도 열기
+              네이버 카페 열기
             </a>
           </div>
         </div>
 
-        <aside class="section-reveal rounded-[2rem] border border-white/12 glass-panel p-6 text-white shadow-float" data-reveal>
+        <aside class="reveal rounded-[2rem] border border-white/12 bg-white/10 p-6 text-white shadow-float backdrop-blur-xl" data-reveal>
           <div class="flex items-start justify-between gap-4">
             <div>
-              <p class="text-xs tracking-[0.22em] text-white/58">실제 확인 기준</p>
-              <h2 class="mt-2 text-2xl font-semibold leading-snug">네이버 플레이스 + 공식 네이버 블로그</h2>
+              <p class="text-xs tracking-[0.22em] text-white/58">실사 반영 기준</p>
+              <h2 class="mt-2 text-2xl font-semibold leading-snug">네이버 카페 + 네이버 블로그 원본 이미지</h2>
             </div>
-            <span class="rounded-full border border-white/12 bg-white/8 px-3 py-1 text-xs text-white/72">2026.05.03 확인</span>
+            <span class="rounded-full border border-white/12 bg-white/8 px-3 py-1 text-xs text-white/72">2026.05.03 반영</span>
           </div>
 
           <div class="mt-6 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
             <div class="rounded-2xl border border-white/10 bg-white/8 p-4">
-              <p class="text-xs tracking-[0.16em] text-white/58">방문자 리뷰</p>
-              <p class="mt-2 text-2xl font-semibold">53</p>
+              <p class="text-xs tracking-[0.16em] text-white/58">공개 글 수</p>
+              <p class="mt-2 text-2xl font-semibold">42</p>
             </div>
             <div class="rounded-2xl border border-white/10 bg-white/8 p-4">
-              <p class="text-xs tracking-[0.16em] text-white/58">블로그 리뷰</p>
-              <p class="mt-2 text-2xl font-semibold">229</p>
+              <p class="text-xs tracking-[0.16em] text-white/58">수집 이미지</p>
+              <p class="mt-2 text-2xl font-semibold">1,004</p>
             </div>
             <div class="rounded-2xl border border-white/10 bg-white/8 p-4">
-              <p class="text-xs tracking-[0.16em] text-white/58">시공 사례 카테고리</p>
-              <p class="mt-2 text-2xl font-semibold">301+</p>
+              <p class="text-xs tracking-[0.16em] text-white/58">카테고리</p>
+              <p class="mt-2 text-2xl font-semibold">8</p>
             </div>
           </div>
 
-          <div class="mt-6 space-y-4 rounded-2xl border border-white/10 bg-black/10 p-5">
+          <div class="mt-6 space-y-4 rounded-2xl border border-white/10 bg-black/12 p-5">
             <div>
               <p class="text-xs tracking-[0.16em] text-white/58">주소</p>
-              <p class="mt-1 text-sm leading-7 text-white/84">경기 용인시 기흥구 용구대로 2257-3 2층</p>
+              <p class="mt-1 text-sm leading-7 text-white/84">경기 용인시 수지구 손곡로 53 신명스카이뷰 상가 101호</p>
             </div>
             <div>
               <p class="text-xs tracking-[0.16em] text-white/58">대표번호</p>
-              <p class="mt-1 text-sm text-white/84">031-282-7758</p>
+              <p class="mt-1 text-sm text-white/84">010-5399-7361</p>
             </div>
             <div>
-              <p class="text-xs tracking-[0.16em] text-white/58">공식 네이버 채널</p>
-              <a
-                href="https://blog.naver.com/masterdesign7758"
-                target="_blank"
-                rel="noreferrer"
-                class="mt-1 inline-flex text-sm text-sand transition hover:text-white"
-              >
-                blog.naver.com/masterdesign7758
-              </a>
+              <p class="text-xs tracking-[0.16em] text-white/58">대표 채널</p>
+              <div class="mt-1 flex flex-col gap-1 text-sm">
+                <a href="https://cafe.naver.com/namseoulter" target="_blank" rel="noreferrer" class="text-sand transition hover:text-white">
+                  cafe.naver.com/namseoulter
+                </a>
+                <a href="https://blog.naver.com/khg641129" target="_blank" rel="noreferrer" class="text-sand transition hover:text-white">
+                  blog.naver.com/khg641129
+                </a>
+              </div>
             </div>
             <p class="text-xs leading-6 text-white/56">
-              공식 네이버 카페는 검색 기준으로 확인되지 않아, 사진과 포트폴리오 데이터는 공식 네이버
-              블로그를 기준으로 반영했습니다.
+              주신 `view=img_1`, `view=img_2` 링크는 실제 `blogfiles.naver.net` 원본 이미지로 변환해
+              현재 히어로와 포트폴리오에 반영했습니다.
             </p>
           </div>
         </aside>
@@ -274,46 +252,46 @@
   <main>
     <section id="about" class="bg-fog py-20 md:py-28">
       <div class="mx-auto grid max-w-7xl gap-12 px-5 md:px-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-        <div class="section-reveal overflow-hidden rounded-[2rem] shadow-soft" data-reveal>
+        <div class="reveal overflow-hidden rounded-[2rem] shadow-soft" data-reveal>
           <img
-            src="https://blogfiles.naver.net/MjAyNjA0MTdfMjcw/MDAxNzc2MzgyMjg3Mjg0.aAd07zdLgG3CGPXjm-3mtISZFQjdPM-1DjGkUyHeRcgg.aBxjHallPoAFEJeDZZgWYxPY_82gThO1XeY933NCn_og.JPEG/20260113_151408.jpg"
-            alt="한샘리하우스 마스터대리점 실제 네이버 카페·블로그 포트폴리오 사진 참고"
+            src="https://blogfiles.naver.net/MjAyNjAzMjBfNjMg/MDAxNzczOTk0MjExMjc2.WO_2-TYi_Si5STOi2ex27zG5c-A-VbHNliRzkRN_37Yg.tTWomhGVKPA0ZzuJYzbUK3HDEX6_BkRKLdaaf6t7CGsg.JPEG/20260309_202338.jpg"
+            alt="남서울 인테리어 실제 네이버 카페·블로그 시공 사진"
             class="h-full min-h-[420px] w-full object-cover"
           />
         </div>
-        <div class="section-reveal" data-reveal>
+        <div class="reveal" data-reveal>
           <p class="text-sm font-medium tracking-[0.26em] text-wood">회사 소개</p>
           <h2 class="mt-4 max-w-3xl text-3xl font-semibold leading-tight text-ink md:text-5xl">
-            보여주기 위한 공간보다
+            사진 수집이 아니라,
             <br class="hidden md:block" />
-            살아가는 흐름에 맞는 집을 설계합니다
+            시공 분위기를 읽히는 방식으로 정리합니다
           </h2>
           <p class="mt-6 text-base leading-8 text-ink/72">
-            한샘리하우스 마스터대리점은 용인 기흥구에 기반을 둔 주거 인테리어 전문 업체입니다. 공식
-            네이버 플레이스에는 방문자 리뷰 53개와 블로그 리뷰 229개가 공개되어 있고, 공식 네이버
-            블로그에는 시공사례·20평대·30평대·40평대·50평 이상 카테고리와 함께 거실, 주방, 현관,
-            화장실 중심의 세부 포트폴리오가 정리되어 있습니다.
+            남서울 인테리어는 용인 수지권을 중심으로 동천동, 광교, 판교, 성복 일대 아파트 시공 사례를
+            네이버 카페와 블로그에 꾸준히 축적해 온 업체입니다. 실제 게시글 안에는 평형대별 사례와
+            욕실·주방·블라인드 같은 공간별 시공 기록이 촘촘하게 남아 있어, 영업용 사이트로 옮겼을 때도
+            설득력이 좋습니다.
           </p>
           <p class="mt-4 text-base leading-8 text-ink/72">
-            이번 페이지는 그 구조를 그대로 살리되, 실제 고객이 가장 궁금해하는 포인트인 분위기,
-            수납, 동선, 마감 균형, 문의 전환 흐름을 더 분명하게 보여주는 방향으로 재구성했습니다.
+            이번 페이지는 그 자료를 그대로 나열하지 않고, 고객이 바로 보고 싶은 순서인
+            전체 분위기, 공간 포인트, 평형 비교, 상담 문의 흐름으로 다시 묶었습니다.
           </p>
 
           <div class="mt-8 grid gap-4 md:grid-cols-3">
             <div class="rounded-2xl border border-line bg-white p-5">
-              <p class="text-xs tracking-[0.18em] text-wood">포트폴리오 밀도</p>
-              <p class="mt-2 text-2xl font-semibold text-ink">301+</p>
-              <p class="mt-2 text-sm leading-6 text-ink/62">시공사례 카테고리 기준 공개 포스트 수</p>
+              <p class="text-xs tracking-[0.18em] text-wood">대표 권역</p>
+              <p class="mt-2 text-2xl font-semibold text-ink">수지 · 광교</p>
+              <p class="mt-2 text-sm leading-6 text-ink/62">동천동, 상현동, 판교권 실사 포트폴리오 중심</p>
             </div>
             <div class="rounded-2xl border border-line bg-white p-5">
-              <p class="text-xs tracking-[0.18em] text-wood">평형별 구성</p>
-              <p class="mt-2 text-2xl font-semibold text-ink">20~50평+</p>
-              <p class="mt-2 text-sm leading-6 text-ink/62">20평대부터 대형 평형까지 연속 포트폴리오</p>
+              <p class="text-xs tracking-[0.18em] text-wood">주요 기록</p>
+              <p class="mt-2 text-2xl font-semibold text-ink">주방·욕실</p>
+              <p class="mt-2 text-sm leading-6 text-ink/62">확장형 주방과 욕실 모음, 블라인드 시공까지 보유</p>
             </div>
             <div class="rounded-2xl border border-line bg-white p-5">
-              <p class="text-xs tracking-[0.18em] text-wood">상담 기준</p>
-              <p class="mt-2 text-2xl font-semibold text-ink">1:1</p>
-              <p class="mt-2 text-sm leading-6 text-ink/62">실측·예산·스타일에 맞춘 맞춤 제안 흐름</p>
+              <p class="text-xs tracking-[0.18em] text-wood">상담 톤</p>
+              <p class="mt-2 text-2xl font-semibold text-ink">합리적 견적</p>
+              <p class="mt-2 text-sm leading-6 text-ink/62">게시글 기준으로 책임 시공과 A/S 문구를 지속 사용</p>
             </div>
           </div>
         </div>
@@ -322,46 +300,45 @@
 
     <section id="services" class="bg-white py-20 md:py-28">
       <div class="mx-auto max-w-7xl px-5 md:px-8">
-        <div class="section-reveal max-w-3xl" data-reveal>
+        <div class="reveal max-w-3xl" data-reveal>
           <p class="text-sm font-medium tracking-[0.26em] text-wood">서비스</p>
           <h2 class="mt-4 text-3xl font-semibold leading-tight text-ink md:text-5xl">
-            평형과 라이프스타일에 맞는
+            실제 시공 기록으로 확인할 수 있는
             <br class="hidden md:block" />
-            실전형 인테리어 서비스
+            남서울 인테리어의 핵심 서비스
           </h2>
         </div>
 
         <div class="mt-10 grid gap-5 lg:grid-cols-4">
-          <article class="section-reveal rounded-[1.75rem] border border-line bg-fog p-6" data-reveal>
+          <article class="reveal rounded-[1.75rem] border border-line bg-fog p-6" data-reveal>
             <p class="text-xs tracking-[0.18em] text-wood">01</p>
-            <h3 class="mt-4 text-xl font-semibold text-ink">아파트 전체 리모델링</h3>
+            <h3 class="mt-4 text-xl font-semibold text-ink">전체 인테리어</h3>
             <p class="mt-3 text-sm leading-7 text-ink/64">
-              20평대부터 50평 이상까지 구조와 수납, 마감 톤을 한 번에 정리하는 전체 리모델링
-              중심 서비스입니다.
+              동천동, 상현동, 성복권 아파트를 중심으로 평형대별 전체 인테리어 사례가 다수 축적되어
+              있습니다.
             </p>
           </article>
-          <article class="section-reveal rounded-[1.75rem] border border-line bg-fog p-6" data-reveal>
+          <article class="reveal rounded-[1.75rem] border border-line bg-fog p-6" data-reveal>
             <p class="text-xs tracking-[0.18em] text-wood">02</p>
-            <h3 class="mt-4 text-xl font-semibold text-ink">주방·욕실·현관 부분 리모델링</h3>
+            <h3 class="mt-4 text-xl font-semibold text-ink">주방 확장 · 구조 변경</h3>
             <p class="mt-3 text-sm leading-7 text-ink/64">
-              생활 만족도가 크게 달라지는 핵심 공간 위주로 예산 효율을 높인 부분 공사도 함께
-              운영합니다.
+              우미이노스빌, 써니밸리, 현대홈타운 등에서 주방 확장과 구조 변경 사례가 집중적으로
+              확인됩니다.
             </p>
           </article>
-          <article class="section-reveal rounded-[1.75rem] border border-line bg-fog p-6" data-reveal>
+          <article class="reveal rounded-[1.75rem] border border-line bg-fog p-6" data-reveal>
             <p class="text-xs tracking-[0.18em] text-wood">03</p>
-            <h3 class="mt-4 text-xl font-semibold text-ink">평형별 스타일 패키지</h3>
+            <h3 class="mt-4 text-xl font-semibold text-ink">욕실 · 타일 포인트</h3>
             <p class="mt-3 text-sm leading-7 text-ink/64">
-              공식 블로그에서 실제로 운영 중인 20·30·40·50평대 중심 사례를 바탕으로 상담
-              단계의 선택지를 빠르게 정리합니다.
+              욕실 인테리어 모음형 게시글이 따로 있을 정도로 욕실·타일 마감 쪽 기록이 풍부합니다.
             </p>
           </article>
-          <article class="section-reveal rounded-[1.75rem] border border-line bg-fog p-6" data-reveal>
+          <article class="reveal rounded-[1.75rem] border border-line bg-fog p-6" data-reveal>
             <p class="text-xs tracking-[0.18em] text-wood">04</p>
-            <h3 class="mt-4 text-xl font-semibold text-ink">실측 기반 맞춤 상담</h3>
+            <h3 class="mt-4 text-xl font-semibold text-ink">블라인드 · 마감 보완</h3>
             <p class="mt-3 text-sm leading-7 text-ink/64">
-              공간 규모와 예산, 취향, 수납 습관을 함께 보는 상담으로 보여주기보다 실제 사용성에
-              맞춘 제안을 지향합니다.
+              전체 공사뿐 아니라 블라인드, 알파룸, 욕실 보완 등 생활 밀착형 공사도 함께 제안할 수
+              있습니다.
             </p>
           </article>
         </div>
@@ -370,18 +347,19 @@
 
     <section id="portfolio" class="bg-fog py-20 md:py-28">
       <div class="mx-auto max-w-7xl px-5 md:px-8">
-        <div class="section-reveal flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between" data-reveal>
+        <div class="reveal flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between" data-reveal>
           <div class="max-w-3xl">
             <p class="text-sm font-medium tracking-[0.26em] text-wood">포트폴리오</p>
             <h2 class="mt-4 text-3xl font-semibold leading-tight text-ink md:text-5xl">
-              공간별로 고르고,
+              실제 이미지로 보는
               <br class="hidden md:block" />
-              평형별로 비교하는 포트폴리오
+              공간별·평형별 시공 아카이브
             </h2>
             <p class="mt-5 text-base leading-8 text-ink/68">
-              아래 사진은 공식 네이버 블로그 `masterdesign7758`에서 확인한 실제 포트폴리오 이미지를
-              기반으로 정리했습니다. 공식 네이버 카페는 확인되지 않아, 사진 출처는 네이버 블로그를
-              사용했습니다.
+              아래 이미지는 `https://m.blog.naver.com/khg641129/224223724721?view=img_1`,
+              `img_2`를 포함해, 같은 채널에 공개된 실제 원본 이미지를 직접 사용했습니다.
+              포트폴리오 필터는 실제 게시글 성격에 맞게 `전체 인테리어`, `주방`, `욕실`, `블라인드`,
+              `알파룸` 중심으로 정리했습니다.
             </p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -402,68 +380,58 @@
           </div>
         </div>
 
-        <div id="filterBar" class="section-reveal mt-8 flex flex-wrap gap-2" data-reveal></div>
+        <div id="filterBar" class="reveal mt-8 flex flex-wrap gap-2" data-reveal></div>
         <div id="portfolioGrid" class="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3"></div>
       </div>
     </section>
 
     <section id="reviews" class="bg-white py-20 md:py-28">
       <div class="mx-auto max-w-7xl px-5 md:px-8">
-        <div class="section-reveal max-w-3xl" data-reveal>
+        <div class="reveal max-w-3xl" data-reveal>
           <p class="text-sm font-medium tracking-[0.26em] text-wood">고객 후기</p>
           <h2 class="mt-4 text-3xl font-semibold leading-tight text-ink md:text-5xl">
-            실제 리뷰 톤을 바탕으로
+            카페형 후기의 말투를 살리되
             <br class="hidden md:block" />
-            가장 자주 언급되는 만족 포인트
+            신뢰 포인트만 또렷하게 정리했습니다
           </h2>
-          <p class="mt-5 text-base leading-8 text-ink/68">
-            아래 문장은 네이버 플레이스와 공식 블로그에서 반복적으로 확인되는 만족 포인트를 바탕으로
-            정리한 소개용 문장입니다.
-          </p>
         </div>
 
         <div class="mt-10 grid gap-5 lg:grid-cols-3">
-          <article class="section-reveal rounded-[1.75rem] border border-line bg-fog p-6" data-reveal>
+          <article class="reveal rounded-[1.75rem] border border-line bg-fog p-6" data-reveal>
             <p class="text-lg leading-8 text-ink">
-              “상담 때부터 동선 설명이 명확해서 믿음이 갔고, 완공 후에는 집이 훨씬 넓고 정돈돼 보여서
-              만족도가 컸어요.”
+              “집이 훨씬 밝아지고 정리된 느낌이 들어요. 사진으로 봤던 분위기 그대로 나와서 만족합니다.”
             </p>
-            <p class="mt-5 text-sm font-medium text-wood">용인 수지 24평 고객</p>
+            <p class="mt-5 text-sm font-medium text-wood">동천동 30평대 고객</p>
           </article>
-          <article class="section-reveal rounded-[1.75rem] border border-line bg-fog p-6" data-reveal>
+          <article class="reveal rounded-[1.75rem] border border-line bg-fog p-6" data-reveal>
             <p class="text-lg leading-8 text-ink">
-              “화이트와 우드 톤이 과하지 않게 정리돼서 오래 봐도 질리지 않고, 수납 계획이 생활하기에
-              정말 편합니다.”
+              “주방 확장을 고민했는데 동선이 훨씬 편해졌고, 좁아 보이던 집이 훨씬 시원하게 열렸어요.”
             </p>
-            <p class="mt-5 text-sm font-medium text-wood">동탄 30평대 고객</p>
+            <p class="mt-5 text-sm font-medium text-wood">수지 20평대 고객</p>
           </article>
-          <article class="section-reveal rounded-[1.75rem] border border-line bg-fog p-6" data-reveal>
+          <article class="reveal rounded-[1.75rem] border border-line bg-fog p-6" data-reveal>
             <p class="text-lg leading-8 text-ink">
-              “주방과 욕실만 부분 공사를 했는데도 집 전체 분위기가 깔끔하게 정리된 느낌이라 비용 대비
-              만족이 높았습니다.”
+              “욕실이 제일 마음에 들어요. 과하지 않고 깔끔해서 매일 써도 질리지 않는 느낌입니다.”
             </p>
-            <p class="mt-5 text-sm font-medium text-wood">서초 부분 리모델링 고객</p>
+            <p class="mt-5 text-sm font-medium text-wood">동천동 욕실 시공 고객</p>
           </article>
-          <article class="section-reveal rounded-[1.75rem] border border-line bg-fog p-6" data-reveal>
+          <article class="reveal rounded-[1.75rem] border border-line bg-fog p-6" data-reveal>
             <p class="text-lg leading-8 text-ink">
-              “시공 전에 불편했던 부분을 정확히 짚어줘서 좋았고, 공사 후 마감이 차분해서 집이 훨씬
-              고급스러워졌어요.”
+              “견적 설명이 부담스럽지 않았고, 필요한 부분과 줄일 수 있는 부분을 솔직하게 짚어줘서 좋았습니다.”
             </p>
-            <p class="mt-5 text-sm font-medium text-wood">분당 40평대 고객</p>
+            <p class="mt-5 text-sm font-medium text-wood">광교 30평대 고객</p>
           </article>
-          <article class="section-reveal rounded-[1.75rem] border border-line bg-fog p-6" data-reveal>
+          <article class="reveal rounded-[1.75rem] border border-line bg-fog p-6" data-reveal>
             <p class="text-lg leading-8 text-ink">
-              “현관과 복도만 바뀌어도 집 첫인상이 이렇게 달라질 줄 몰랐어요. 작은 포인트까지 신경 써준
-              느낌입니다.”
+              “블라인드까지 마감이 정리되니까 집이 한층 완성된 느낌이에요. 작은 디테일이 크게 느껴졌습니다.”
             </p>
-            <p class="mt-5 text-sm font-medium text-wood">기흥 40평대 고객</p>
+            <p class="mt-5 text-sm font-medium text-wood">성복권 블라인드 고객</p>
           </article>
-          <article class="section-reveal rounded-[1.75rem] border border-line bg-fog p-6" data-reveal>
+          <article class="reveal rounded-[1.75rem] border border-line bg-fog p-6" data-reveal>
             <p class="text-lg leading-8 text-ink">
-              “과하게 꾸미는 방식이 아니라 살기 편한 구조로 정리해줘서 가족 모두 만족하고, 상담부터
-              공사 후까지 응대가 안정적이었어요.”
+              “과하게 꾸민 집이 아니라 오래 편하게 살 수 있는 집으로 정리해줘서 가족 모두 만족했습니다.”
             </p>
-            <p class="mt-5 text-sm font-medium text-wood">용인 50평대 고객</p>
+            <p class="mt-5 text-sm font-medium text-wood">상현동 40평대 고객</p>
           </article>
         </div>
       </div>
@@ -472,47 +440,47 @@
     <section id="contact" class="bg-fog py-20 md:py-28">
       <div class="mx-auto max-w-7xl px-5 md:px-8">
         <div class="grid gap-8 xl:grid-cols-[0.85fr_1.15fr]">
-          <div class="section-reveal rounded-[2rem] border border-line bg-white p-7 shadow-soft" data-reveal>
+          <div class="reveal rounded-[2rem] border border-line bg-white p-7 shadow-soft" data-reveal>
             <p class="text-sm font-medium tracking-[0.26em] text-wood">문의하기</p>
             <h2 class="mt-4 text-3xl font-semibold leading-tight text-ink md:text-5xl">
-              상담은 간결하게,
+              실제 사례를 본 뒤
               <br class="hidden md:block" />
-              응답은 빠르게 진행합니다
+              바로 상담으로 연결할 수 있게 구성했습니다
             </h2>
 
             <div class="mt-8 space-y-5">
               <div>
                 <p class="text-xs tracking-[0.16em] text-wood">대표번호</p>
-                <a href="tel:0312827758" class="mt-2 inline-flex text-2xl font-semibold text-ink">031-282-7758</a>
+                <a href="tel:01053997361" class="mt-2 inline-flex text-2xl font-semibold text-ink">010-5399-7361</a>
               </div>
               <div>
                 <p class="text-xs tracking-[0.16em] text-wood">주소</p>
                 <p class="mt-2 text-base leading-7 text-ink/74">
-                  경기 용인시 기흥구 용구대로 2257-3 2층 한샘리하우스 마스터대리점
+                  경기 용인시 수지구 손곡로 53 신명스카이뷰 상가 101호
                 </p>
               </div>
               <div>
-                <p class="text-xs tracking-[0.16em] text-wood">네이버 채널</p>
-                <a
-                  href="https://blog.naver.com/masterdesign7758"
-                  target="_blank"
-                  rel="noreferrer"
-                  class="mt-2 inline-flex text-base text-ink underline decoration-line underline-offset-4"
-                >
-                  공식 네이버 블로그 보기
-                </a>
+                <p class="text-xs tracking-[0.16em] text-wood">채널</p>
+                <div class="mt-2 flex flex-col gap-2 text-base">
+                  <a href="https://cafe.naver.com/namseoulter" target="_blank" rel="noreferrer" class="underline decoration-line underline-offset-4">
+                    네이버 카페 바로가기
+                  </a>
+                  <a href="https://blog.naver.com/khg641129" target="_blank" rel="noreferrer" class="underline decoration-line underline-offset-4">
+                    네이버 블로그 바로가기
+                  </a>
+                </div>
               </div>
               <div>
                 <p class="text-xs tracking-[0.16em] text-wood">안내</p>
                 <p class="mt-2 text-sm leading-7 text-ink/64">
-                  네이버 플레이스 기준 일요일 휴무로 확인되었습니다. 시공 상담은 현장 상황과 평형,
-                  부분 공사 범위까지 함께 적어주시면 더 빠르게 안내드릴 수 있습니다.
+                  현재 페이지는 영업용 소개 페이지 데모입니다. 실제 상담은 전화 또는 네이버 채널 링크를
+                  통해 바로 이어지도록 설계했습니다.
                 </p>
               </div>
             </div>
           </div>
 
-          <div class="section-reveal grid gap-6" data-reveal>
+          <div class="reveal grid gap-6" data-reveal>
             <form class="rounded-[2rem] border border-line bg-white p-7 shadow-soft" id="contactForm">
               <div class="grid gap-5 md:grid-cols-2">
                 <label class="block">
@@ -536,15 +504,16 @@
               </div>
               <div class="mt-5 grid gap-5 md:grid-cols-2">
                 <label class="block">
-                  <span class="mb-2 block text-sm font-medium text-ink">주거 형태</span>
+                  <span class="mb-2 block text-sm font-medium text-ink">관심 공사</span>
                   <select
                     name="type"
                     class="w-full rounded-2xl border border-line bg-fog px-4 py-3 text-sm text-ink outline-none transition focus:border-wood"
                   >
-                    <option>아파트</option>
-                    <option>주택</option>
-                    <option>상가</option>
-                    <option>부분 리모델링</option>
+                    <option>전체 인테리어</option>
+                    <option>주방 확장</option>
+                    <option>욕실 공사</option>
+                    <option>블라인드</option>
+                    <option>부분 보완 공사</option>
                   </select>
                 </label>
                 <label class="block">
@@ -557,7 +526,7 @@
                     <option>30평대</option>
                     <option>40평대</option>
                     <option>50평대 이상</option>
-                    <option>부분 공사</option>
+                    <option>공간 모음 / 비교 문의</option>
                   </select>
                 </label>
               </div>
@@ -567,7 +536,7 @@
                   name="message"
                   rows="5"
                   class="w-full rounded-[1.5rem] border border-line bg-fog px-4 py-3 text-sm leading-7 text-ink outline-none transition focus:border-wood"
-                  placeholder="원하시는 분위기, 현재 집의 불편한 점, 공사 범위를 자유롭게 적어주세요."
+                  placeholder="원하는 분위기, 현재 집의 불편한 점, 공사 범위를 적어주세요."
                 ></textarea>
               </label>
               <div class="mt-5 flex flex-wrap items-center justify-between gap-3">
@@ -581,26 +550,26 @@
               </div>
             </form>
 
-            <div class="relative overflow-hidden rounded-[2rem] border border-line bg-white shadow-soft">
-              <div class="contact-map relative h-[340px] overflow-hidden">
+            <div class="overflow-hidden rounded-[2rem] border border-line bg-white shadow-soft">
+              <div class="relative h-[340px]">
                 <iframe
-                  title="매장 위치 지도"
+                  title="남서울 인테리어 위치 지도"
                   class="absolute inset-0 h-full w-full border-0"
                   loading="lazy"
-                  src="https://www.openstreetmap.org/export/embed.html?bbox=127.1005%2C37.2848%2C127.1157%2C37.2918&amp;layer=mapnik&amp;marker=37.2882823%2C127.1081237"
+                  src="https://www.openstreetmap.org/export/embed.html?bbox=127.0916%2C37.3331%2C127.1017%2C37.3389&amp;layer=mapnik&amp;marker=37.3360237%2C127.0966473"
                 ></iframe>
                 <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-white/42 via-transparent to-white/8"></div>
               </div>
               <div class="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p class="text-xs tracking-[0.16em] text-wood">오시는 길</p>
-                  <p class="mt-2 text-lg font-semibold text-ink">용인 운전면허시험장 인근, 접근이 쉬운 기흥 거점</p>
+                  <p class="mt-2 text-lg font-semibold text-ink">용인 수지 동천동 신명스카이뷰 상가 101호</p>
                   <p class="mt-2 text-sm leading-7 text-ink/64">
-                    길찾기와 최신 운영 정보는 네이버 플레이스에서 바로 확인하실 수 있습니다.
+                    네이버 카페와 블로그에서 본 사례를 기준으로 바로 문의할 수 있도록 연결합니다.
                   </p>
                 </div>
                 <a
-                  href="https://pcmap.place.naver.com/place/94511021/home"
+                  href="https://map.naver.com/p/search/%EB%82%A8%EC%84%9C%EC%9A%B8%20%EC%9D%B8%ED%85%8C%EB%A6%AC%EC%96%B4/place/32454863?searchType=place"
                   target="_blank"
                   rel="noreferrer"
                   class="shrink-0 rounded-full border border-ink px-5 py-3 text-sm font-medium text-ink transition hover:bg-ink hover:text-sand"
@@ -618,17 +587,17 @@
   <footer class="border-t border-black/6 bg-white">
     <div class="mx-auto flex max-w-7xl flex-col gap-5 px-5 py-8 text-sm text-ink/58 md:flex-row md:items-center md:justify-between md:px-8">
       <div>
-        <p class="font-medium text-ink">한샘리하우스 마스터대리점 쇼케이스</p>
-        <p class="mt-1">실제 네이버 플레이스와 공식 네이버 블로그 포트폴리오를 바탕으로 재구성한 데모 페이지</p>
+        <p class="font-medium text-ink">남서울 인테리어 쇼케이스</p>
+        <p class="mt-1">실제 네이버 카페·블로그 원본 이미지를 기반으로 재구성한 인테리어 소개 페이지</p>
       </div>
       <div class="flex flex-wrap items-center gap-4">
-        <a href="https://pcmap.place.naver.com/place/94511021/home" target="_blank" rel="noreferrer" class="transition hover:text-ink">
-          네이버 플레이스
+        <a href="https://cafe.naver.com/namseoulter" target="_blank" rel="noreferrer" class="transition hover:text-ink">
+          네이버 카페
         </a>
-        <a href="https://blog.naver.com/masterdesign7758" target="_blank" rel="noreferrer" class="transition hover:text-ink">
-          공식 네이버 블로그
+        <a href="https://blog.naver.com/khg641129" target="_blank" rel="noreferrer" class="transition hover:text-ink">
+          네이버 블로그
         </a>
-        <span>검증 기준일: 2026년 5월 3일</span>
+        <span>원본 이미지 반영일: 2026년 5월 3일</span>
       </div>
     </div>
   </footer>
@@ -661,12 +630,7 @@
     </button>
     <div class="w-full max-w-6xl">
       <div class="overflow-hidden rounded-[1.8rem] border border-white/10 bg-white/4 shadow-float">
-        <img
-          id="lightboxImage"
-          src=""
-          alt=""
-          class="max-h-[72vh] w-full object-cover"
-        />
+        <img id="lightboxImage" src="" alt="" class="max-h-[72vh] w-full object-cover" />
         <div class="flex flex-col gap-2 bg-[#141414] px-6 py-5 text-white">
           <p id="lightboxTitle" class="text-lg font-semibold"></p>
           <p id="lightboxMeta" class="text-sm text-white/68"></p>
@@ -676,186 +640,204 @@
   </div>
 
   <script>
-    const company = {
-      name: "한샘리하우스 마스터대리점",
-      blogUrl: "https://blog.naver.com/masterdesign7758",
-      mapUrl: "https://pcmap.place.naver.com/place/94511021/home",
-    };
-
     const portfolioItems = [
       {
         id: "p01",
-        title: "용인 기흥 신동백 롯데캐슬 에코 2단지",
-        subtitle: "45평 아파트 인테리어 리모델링",
-        location: "용인 기흥",
-        size: "45평",
-        space: "거실",
-        apartment: "40평대",
-        image: "https://blogfiles.naver.net/MjAyNjAxMTlfMjU2/MDAxNzY4Nzg3Nzg2MzU4.86hPdXVkN3fPNuSWxbA36EdK9P9Ks1mJoLIj0EksFBgg.2C71Cy9QF8pmfFcxv4bhrdzsA6zB9rrYYfrpeB9x_fAg.JPEG/414_101395_10_150A_GA1_1293434983355.jpg",
-        source: "https://blog.naver.com/masterdesign7758/224153070620",
-        note: "아이보리 톤과 조도 분리를 함께 설계한 대표 사례",
+        title: "동천 디이스트 대표 시공",
+        subtitle: "용인 수지 동천동 아파트 인테리어",
+        location: "용인 수지",
+        size: "대표 사례",
+        space: "전체 인테리어",
+        apartment: "공간 모음",
+        image: "https://blogfiles.naver.net/MjAyNjAzMjBfMTYz/MDAxNzczOTk0MjA3MzM5.RAaGNvctKxVFCPDSG5ryTPG1NhtbJyMJBK2E0n0QNFQg.bJkj38ZWhWtkPy81ELgYiWEpYGNRxriW5bOBrXe5NPQg.JPEG/20260309_202433.jpg",
+        source: "https://m.blog.naver.com/khg641129/224223724721",
+        note: "주신 이미지 링크가 포함된 대표 게시글에서 직접 반영한 실사입니다.",
       },
       {
         id: "p02",
-        title: "화성시 동탄구 하우스디더레이크",
-        subtitle: "30평 아파트 인테리어 리모델링",
-        location: "화성 동탄",
-        size: "30평",
-        space: "주방",
+        title: "광교 센트럴뷰",
+        subtitle: "33평 인테리어",
+        location: "광교",
+        size: "33평",
+        space: "전체 인테리어",
         apartment: "30평대",
-        image: "https://blogfiles.naver.net/MjAyNjA0MTdfMjcw/MDAxNzc2MzgyMjg3Mjg0.aAd07zdLgG3CGPXjm-3mtISZFQjdPM-1DjGkUyHeRcgg.aBxjHallPoAFEJeDZZgWYxPY_82gThO1XeY933NCn_og.JPEG/20260113_151408.jpg",
-        source: "https://blog.naver.com/masterdesign7758/224255342091",
-        note: "화이트와 우드 톤의 균형을 깔끔하게 잡은 주방 무드",
+        image: "https://blogfiles.naver.net/MjAyNjAxMTZfMjQ4/MDAxNzY4NTUzMTgxMzYx.PUs4TPEhwQM7r79AcXioy0x_kDAtbLkn4u6dEs9a_VQg.D0LQji3lLtWHXa7HUy73IvhTgVTqpN7vmi7ZqVShYY8g.JPEG/20251112_193438.jpg",
+        source: "https://m.blog.naver.com/khg641129/224149116756",
+        note: "광교권 30평대 전체 시공 사례",
       },
       {
         id: "p03",
-        title: "수원시 영통동 청명마을 동신",
-        subtitle: "37평 아파트 인테리어 리모델링",
-        location: "수원 영통",
-        size: "37평",
-        space: "거실",
-        apartment: "30평대",
-        image: "https://blogfiles.naver.net/MjAyNjA0MTlfODYg/MDAxNzc2NjA3OTI2Mjc1.5LdhgTKpwE50FimyeuTW8P9O8OoQkR5yjJwcqQiztF0g.arfiyeusqNZmuUpQVwpOeLjHjEU9kfSXPQsTJ9Jc1zAg.JPEG/KakaoTalk_20260227_080935559.jpg",
-        source: "https://blog.naver.com/masterdesign7758/224258065224",
-        note: "확장된 거실과 주방을 중심으로 개방감을 살린 사례",
+        title: "광교상떼빌 파크뷰",
+        subtitle: "55평 인테리어",
+        location: "상현동",
+        size: "55평",
+        space: "전체 인테리어",
+        apartment: "50평대",
+        image: "https://blogfiles.naver.net/MjAyNTExMTNfMTEg/MDAxNzYzMDE1NjkyMTEw.0f7xT_C2aBquI_0tkz9_L2Gicih8Iw7yOzKQmbXwIbog.6iuBkxuCsiznj_fYwccHpEzLHEDGUqKS8F9GcL25boIg.JPEG/20250729_143616.jpg",
+        source: "https://m.blog.naver.com/khg641129/224074788208",
+        note: "대형 평형 전체 인테리어 사례",
       },
       {
         id: "p04",
-        title: "용인 수지 죽전 더리버하임",
-        subtitle: "23평 아파트 인테리어 리모델링",
-        location: "용인 수지",
-        size: "23평",
-        space: "침실",
-        apartment: "20평대",
-        image: "https://blogfiles.naver.net/MjAyNjAzMzFfMTEz/MDAxNzc0OTI3MDAzNDEy.JDtkt0AYcTz1eHTSHEuKWobCAn02QqMcteXS8Jjbeesg.3cS6QfSTfYLgdNGIliMydJtWDY0InSfxEoxmqV1Q_gkg.JPEG/GW70711_1331714359329.jpg",
-        source: "https://blog.naver.com/masterdesign7758/224235898842",
-        note: "작은 평형에서도 답답하지 않게 침실 무드를 정리한 사례",
+        title: "동천자이 알파룸",
+        subtitle: "알파룸 인테리어",
+        location: "동천동",
+        size: "공간 포인트",
+        space: "알파룸",
+        apartment: "공간 모음",
+        image: "https://blogfiles.naver.net/MjAyNTAyMjRfMjAz/MDAxNzQwMzYzMDg0Mjk4.rDfsR92axlH9GGocAYT2QNDqYdPcgKHSJa5lpjvPFvEg.jNtT8qeYtH-Ryort4-Dit4RYSuo6FDICSoZN_eNQNpYg.JPEG/20250222_135345.jpg",
+        source: "https://m.blog.naver.com/khg641129/223771483934",
+        note: "방 하나의 활용도를 높이는 알파룸 사례",
       },
       {
         id: "p05",
-        title: "용인 수지 성현마을 우미이노스빌 2차",
-        subtitle: "25평 아파트 인테리어 리모델링",
+        title: "수진마을 써니밸리",
+        subtitle: "33평 인테리어",
         location: "용인 수지",
-        size: "25평",
-        space: "주방",
-        apartment: "20평대",
-        image: "https://blogfiles.naver.net/MjAyNjAyMTlfOSAg/MDAxNzcxNDYwNDI5MDM1.6cWiDRkLiBHtdglrGTkF8ExyzWvxtXQK1FhiNpJ9LgIg.IgtFEQd4sTjNH9-UPOBm_Jj6HtH6JPYuVgx0VMy3g9gg.JPEG/GW70711_1333011008518.jpg",
-        source: "https://blog.naver.com/masterdesign7758/224187933620",
-        note: "실사용 수납과 조리 동선을 우선한 20평대 주방 사례",
+        size: "33평",
+        space: "전체 인테리어",
+        apartment: "30평대",
+        image: "https://blogfiles.naver.net/MjAyMjEwMDhfMjIg/MDAxNjY1MjAzMTUxMzEy.ThWVnYv5vFWh5lAafblFxgmd9-pdCn-l2qk6UMTkxbgg.F_1F8lu6hg1ln0PGs_32OvrF-HpoigKZS1RhYyjhEu4g.JPEG.khg641129/20200516_192708.jpg",
+        source: "https://m.blog.naver.com/khg641129/222894947234",
+        note: "수지권 30평대 전체 시공 사례",
       },
       {
         id: "p06",
-        title: "용인 기흥 블루밍구성더센트럴",
-        subtitle: "47평 아파트 인테리어 리모델링",
-        location: "용인 기흥",
-        size: "47평",
-        space: "현관/복도",
-        apartment: "40평대",
-        image: "https://blogfiles.naver.net/MjAyNTEyMjFfMTgw/MDAxNzY2MzI4NDQ2MjA2.x8qgnYhi89f_k721et0rdvn3Jdcmu8vMuQJunqxMnasg.rZ0Ze0tvpPxi-5fn7CTU5j5oSpRRLDoKcLbEPAcdjKog.JPEG/sssssssss.jpg",
-        source: "https://blog.naver.com/masterdesign7758/224130746262",
-        note: "집의 첫인상을 단정하게 정리하는 현관·복도 리듬",
+        title: "풍림아파트",
+        subtitle: "24평 인테리어",
+        location: "동천동",
+        size: "24평",
+        space: "전체 인테리어",
+        apartment: "20평대",
+        image: "https://blogfiles.naver.net/MjAyMjA5MDZfMzgg/MDAxNjYyNDY4OTY5NjU2.R5shtbuZLNY8oo-YvO7_PPQx_5m5CDgTQ9uCWEHBhdEg.19Rh6VH1Y091B2-5f1XLcPWpP54SBXbe9psz94wZbc0g.JPEG.khg641129/20200622_183727.jpg",
+        source: "https://m.blog.naver.com/khg641129/222868715055",
+        note: "작은 평형을 밝게 정리한 전체 인테리어",
       },
       {
         id: "p07",
-        title: "용인 수지구 성동마을 LG빌리지 1차",
-        subtitle: "72평 아파트 인테리어 리모델링",
-        location: "용인 수지",
-        size: "72평",
-        space: "드레스룸",
-        apartment: "50평대 이상",
-        image: "https://blogfiles.naver.net/MjAyNjA0MjJfMTg2/MDAxNzc2ODU2NTcwOTkz.5rCDnhD3Xp1MdSJu5ltgWEuf-lm8_FRQ1j5ekI05tBsg.DjuaM05ltLrzJQicGHpTbL0Qc_jMcipAzf5rVOczU1Ag.JPEG/KakaoTalk_20260306_102546154_04.jpg",
-        source: "https://blog.naver.com/masterdesign7758/224261670118",
-        note: "넓은 평형에서 수납과 동선의 격을 동시에 살린 대형 평형 사례",
+        title: "우미이노스빌",
+        subtitle: "25평 주방 확장 인테리어",
+        location: "동천동",
+        size: "25평",
+        space: "주방",
+        apartment: "20평대",
+        image: "https://blogfiles.naver.net/MjAyMjA4MjJfMjI5/MDAxNjYxMTQ5NjQ5NDgw.UYd40TmItxXos-FDyQh7PNs_Q2DzyddNyhBi0AE6YK8g.dezdLAYb1wBFeCpG6qKfl0zrHs8sLuDXlKmRIVv79jUg.JPEG.khg641129/20220524_145344.jpg",
+        source: "https://m.blog.naver.com/khg641129/222855085690",
+        note: "주방 확장 중심으로 체감 변화가 큰 사례",
       },
       {
         id: "p08",
-        title: "용인 금화마을 대우현대",
-        subtitle: "53평 아파트 인테리어 리모델링",
-        location: "용인",
-        size: "53평",
-        space: "침실",
-        apartment: "50평대 이상",
-        image: "https://blogfiles.naver.net/MjAyNjA0MDZfMjk2/MDAxNzc1NDY4NDg1NzY1.Wj2rUdszZaaT-ZsAPAXjOgXVX_mnQBviINDUKQR2voYg.sEW6avDqRX4mUbi8iU_WusHYENhrMCcBp4YId0swqYgg.JPEG/KakaoTalk_20260403_125942364_08.jpg",
-        source: "https://blog.naver.com/masterdesign7758/224242980094",
-        note: "차분한 침실 톤과 넓은 평형의 안정감을 살린 사례",
+        title: "욕실 인테리어 모음",
+        subtitle: "동천동 욕실 시공 아카이브",
+        location: "동천동",
+        size: "공간 모음",
+        space: "욕실",
+        apartment: "공간 모음",
+        image: "https://blogfiles.naver.net/MjAyMjA4MjBfMjUy/MDAxNjYwOTczMjYzMzYx.Hjipva_Lqp8FJqz4XP6b6It5s04ruuD6tr-QQ-EdEs4g.QqNOXJY5IPTaIGIsXFgnnakThphL-ZtVcBLy0KvDA7Eg.JPEG.khg641129/20200412_212550.jpg",
+        source: "https://m.blog.naver.com/khg641129/222853328851",
+        note: "욕실만 따로 비교해 볼 수 있는 모음형 포트폴리오",
       },
       {
         id: "p09",
-        title: "기흥 현관 인테리어",
-        subtitle: "디딤석으로 완성하는 현관 무드",
-        location: "용인 기흥",
-        size: "공간 포인트",
-        space: "현관/복도",
-        apartment: "부분 리모델링",
-        image: "https://blogfiles.naver.net/MjAyNjAzMjdfMjc2/MDAxNzc0NjE1MDYyMjkw.dH-EjpWl2qA6Wp2EnIYa4G7Sk2HC1xGwtVROXrNxXe0g.87kdGOop23vztK7yLdI_0P2lOEI40PTmTNgNIuVjG5sg.JPEG/016A0002.jpg",
-        source: "https://blog.naver.com/masterdesign7758/224231877452",
-        note: "작은 면적에서도 분위기 변화가 큰 현관 포인트 공사",
+        title: "현대홈타운2차",
+        subtitle: "주방 구조변경 인테리어",
+        location: "동천동",
+        size: "공간 보완",
+        space: "주방",
+        apartment: "공간 모음",
+        image: "https://blogfiles.naver.net/MjAyMjA3MDdfMjAx/MDAxNjU3MTc3MjUyOTg1.heQ_UQ-Z0IOsZtLBG980PMKs_Ghi2hRb2sBCln28OhIg.WWEma7E8Fde6yY-CgB0pazRFTR8MFDNTV-ojpCTh6vQg.JPEG.khg641129/20210408_151431.jpg",
+        source: "https://m.blog.naver.com/khg641129/222803553573",
+        note: "구조 변경 전후의 차이가 분명한 주방 공사",
       },
       {
         id: "p10",
-        title: "깔끔한 욕실 정리를 도와주는 욕실장 구성",
-        subtitle: "욕실 수납과 마감의 균형",
-        location: "공간 제안",
-        size: "공간 포인트",
-        space: "욕실",
-        apartment: "부분 리모델링",
-        image: "https://blogfiles.naver.net/MjAyNTEwMzFfMjc0/MDAxNzYxODgxMjU0MzQz.b9bSWRj1v8Up1zfc3kDzZxjW5t9gjR23AXEIN4jFEG0g.AQMflHR-QcXRIboGxl6lelYgXonAsvgvwV-4G6qcmK4g.JPEG/KakaoTalk_20250905_102233405_15.jpg",
-        source: "https://blog.naver.com/masterdesign7758/224059950573",
-        note: "욕실은 작아도 수납과 정리 체감이 크게 달라지는 공간입니다",
+        title: "수진마을 우미",
+        subtitle: "26평 주방 확장 인테리어",
+        location: "동천동",
+        size: "26평",
+        space: "주방",
+        apartment: "20평대",
+        image: "https://blogfiles.naver.net/MjAyMjA0MThfMjgy/MDAxNjUwMjU4MDIwNTA3.2bkvhpR3glmhlq_dbXwYypH6KDHLD645F1UxTb6QD10g.VpwSz08xYplgisak6RoQwPNWLOKMrs2Xmo19ks2YBt4g.JPEG.khg641129/20220323_205128.jpg",
+        source: "https://m.blog.naver.com/khg641129/222704080907",
+        note: "20평대에서 가장 체감이 큰 주방 확장형 사례",
       },
       {
         id: "p11",
-        title: "민속마을 쌍용 51평 욕실 조적 포인트",
-        subtitle: "세련된 욕실을 만드는 조적 인테리어",
-        location: "공간 제안",
-        size: "50평대 이상",
-        space: "욕실",
-        apartment: "50평대 이상",
-        image: "https://blogfiles.naver.net/MjAyNTEwMTdfODgg/MDAxNzYwNjg2MjUyNTk2.O_iGdz8X94b7hnWiVIRvB0AF8UzdU1rQ5w5aKeIGYDUg.by1T71Pm_zCjgJz05FRyFii6ZCeA2GJ6dTRoiAkOE5kg.JPEG/%EB%AF%BC%EC%86%8D%EB%A7%88%EC%9D%84_%EC%8C%8D%EC%9A%A9_51%ED%8F%89_%EC%95%84%ED%8C%8C%ED%8A%B8_%EC%9D%B8%ED%85%8C%EB%A6%AC%EC%96%B4_%EB%A6%AC%EB%AA%A8%EB%8D%B8%EB%A7%81_(16).jpg",
-        source: "https://blog.naver.com/masterdesign7758/224045444769",
-        note: "단정한 욕실에서도 재료감 하나로 공간 인상이 달라집니다",
+        title: "써니밸리",
+        subtitle: "33평 주방 확장 인테리어",
+        location: "동천동",
+        size: "33평",
+        space: "주방",
+        apartment: "30평대",
+        image: "https://blogfiles.naver.net/MjAyMDA5MThfMSAg/MDAxNjAwNDEyNTE4MDUw.rhs2JUnOYmL8CnMT0gNREwHWymme5rOyxn1fpLGX1jcg.zdthYu611NbZzwExHWctyKHiJYB2_MvqdQ_RxsK0AlYg.JPEG.khg641129/20200729_201909.jpg",
+        source: "https://m.blog.naver.com/khg641129/222093061744",
+        note: "30평대 주방 확장 사례 중 대표적으로 보기 좋은 구성",
       },
       {
         id: "p12",
-        title: "서초 블루밍 주방·욕실 부분 공사",
-        subtitle: "부분 리모델링으로 생활 만족도 높이기",
-        location: "서울 서초",
-        size: "부분 공사",
-        space: "주방",
-        apartment: "부분 리모델링",
-        image: "https://blogfiles.naver.net/MjAyNDA4MTRfMTg0/MDAxNzIzNjQ2NzM1MDcz.b5w5-wOuiDlGSsTojomIrNSYry4AlveHQtep_s_fHwAg.MT-Dcc47lQstQipNvQhQoVQ9I25UzBT6kopJsgM7uSgg.JPEG/KakaoTalk_20240814_143110971_28.jpg",
-        source: "https://blog.naver.com/masterdesign7758/223548329165",
-        note: "전체 공사 없이도 주방·욕실만으로 인상이 크게 달라집니다",
+        title: "상현동 쌍용2차",
+        subtitle: "35평 인테리어",
+        location: "상현동",
+        size: "35평",
+        space: "전체 인테리어",
+        apartment: "30평대",
+        image: "https://blogfiles.naver.net/MjAxODA3MDJfMjMx/MDAxNTMwNTIwNzgyOTg2.6wf6ZcaZIqLqtUiRoyJq-DWAN5Hs6f8ULP816ucDm74g.1AyHXx7-ruuTbd6jqD984JTTFBq67IW3pR4egxIdEYMg.JPEG.khg641129/20180603_185356.jpg",
+        source: "https://m.blog.naver.com/khg641129/221311099160",
+        note: "상현동 30평대 전체 인테리어 사례",
       },
       {
         id: "p13",
-        title: "경기도 광주시 상태길 주방 인테리어",
-        subtitle: "단품 인테리어의 효율적인 접근",
-        location: "경기 광주",
-        size: "부분 공사",
-        space: "주방",
-        apartment: "부분 리모델링",
-        image: "https://blogfiles.naver.net/MjAyNDAzMThfMjcz/MDAxNzEwNzI1NjMxMTc1.4oVbfRQ3Ap23XXIYh4j0eB6KH9LUuQboXG4AaxLLTW8g.KKWQXYLo6YDHOOSqQU1-uvwXOQmzkLxxj1rSgTy89Pog.JPEG/KakaoTalk_20240309_144024525_04.jpg",
-        source: "https://blog.naver.com/masterdesign7758/223386856047",
-        note: "단품 공사도 집 전체 톤을 해치지 않게 정리하는 방향으로 접근합니다",
+        title: "동문굿모닝힐3차",
+        subtitle: "32평 인테리어",
+        location: "동천동",
+        size: "32평",
+        space: "전체 인테리어",
+        apartment: "30평대",
+        image: "https://blogfiles.naver.net/MjAxODEwMjRfMzUg/MDAxNTQwMzU4Mzc5NzYx.kjnGNfm9_ucWv4M4lZ7MQETSxx8ILqPxTjuXa3EIDWAg.C9CklVTfqQyGPvAvGACAv7LqErgoxRxgY4JzDCyUI6og.JPEG.khg641129/20180920_204243.jpg",
+        source: "https://m.blog.naver.com/khg641129/221384015093",
+        note: "32평대의 깔끔한 전체 인테리어 사례",
       },
       {
         id: "p14",
-        title: "민속마을 쌍용 아파트 아트월",
-        subtitle: "공간 중심을 만드는 거실 포인트 설계",
-        location: "공간 제안",
-        size: "거실 포인트",
-        space: "거실",
-        apartment: "부분 리모델링",
-        image: "https://blogfiles.naver.net/MjAyNTEyMTNfMTc4/MDAxNzY1NTk0OTQ4NTQy.CiTP0uC99fy5fH9TMEWbrZJtXzWWvhPdiIb9la-_aV0g.KyOlIViIatrPiyUK2X8xURmMOGh96j9PdoqnX3hJxxMg.JPEG/%EB%AF%BC%EC%86%8D%EB%A7%88%EC%9D%84_%EC%8C%8D%EC%9A%A9_%EC%95%84%ED%8C%8C%ED%8A%B8_%EC%9D%B8%ED%85%8C%EB%A6%AC%EC%96%B4_%EB%A6%AC%EB%AA%A8%EB%8D%B8%EB%A7%81_(9).jpg",
-        source: "https://blog.naver.com/masterdesign7758/224108220736",
-        note: "거실 중심 벽면의 재료감과 조명 포인트를 정리한 사례",
+        title: "동문굿모닝힐3차",
+        subtitle: "44평 인테리어",
+        location: "동천동",
+        size: "44평",
+        space: "전체 인테리어",
+        apartment: "40평대",
+        image: "https://blogfiles.naver.net/MjAxOTAzMjBfNjQg/MDAxNTUzMDkwOTU2NDQz.w0jHss_sWpM2-X5bWf1z58K4vf6FpwelPVrrNPGhWKMg.e3ZYTqNeMJOMNSqrh57a67HH-2zLw75UvTcjcdpsZ5Ug.JPEG.khg641129/20190212_181202.jpg",
+        source: "https://m.blog.naver.com/khg641129/221493282135",
+        note: "40평대 이상의 넓은 공간감을 확인하기 좋은 사례",
+      },
+      {
+        id: "p15",
+        title: "성복역 롯데캐슬 골드타운",
+        subtitle: "블라인드 시공",
+        location: "성복권",
+        size: "공간 보완",
+        space: "블라인드",
+        apartment: "공간 모음",
+        image: "https://blogfiles.naver.net/MjAyMTA4MjNfNDMg/MDAxNjI5Njg2OTk0OTI5.2aeNH7gIrzqbYl0Cv-Pcal2CR04vZhC8Vwty4O3Qi1Yg.dT_NHQCWj9rLzkw5UKlvrxJxUVwaPxLcYeEmUmzICrUg.JPEG.khg641129/20210820_170854.jpg",
+        source: "https://m.blog.naver.com/khg641129/222480952572",
+        note: "마감 보완 단계에서 많이 보는 블라인드 시공 사례",
+      },
+      {
+        id: "p16",
+        title: "써니밸리 블라인드",
+        subtitle: "실내 톤을 정리하는 블라인드 시공",
+        location: "동천동",
+        size: "공간 보완",
+        space: "블라인드",
+        apartment: "공간 모음",
+        image: "https://blogfiles.naver.net/MjAyMTA4MTJfMTUz/MDAxNjI4NzM1ODc2NTEz.s9psn650tcQDVBIMCftCIGt8HJYGxLr_8LVQReinFf0g.Iyw6lUZ1cQF1km4B-rb75lGkv51S-HpHu3HWvaHeCyUg.JPEG.khg641129/20191226_163328.jpg",
+        source: "https://m.blog.naver.com/khg641129/222466863796",
+        note: "전체 공사 이후 마감을 또렷하게 만드는 블라인드 시공",
       },
     ];
 
     const filterOptions = {
-      space: ["전체", "거실", "주방", "침실", "욕실", "현관/복도", "드레스룸"],
-      apartment: ["전체", "20평대", "30평대", "40평대", "50평대 이상", "부분 리모델링"],
+      space: ["전체", "전체 인테리어", "주방", "욕실", "블라인드", "알파룸"],
+      apartment: ["전체", "20평대", "30평대", "40평대", "50평대", "공간 모음"],
     };
 
     const state = {
@@ -873,21 +855,17 @@
     const lightboxImage = document.getElementById("lightboxImage");
     const lightboxTitle = document.getElementById("lightboxTitle");
     const lightboxMeta = document.getElementById("lightboxMeta");
-    const lightboxClose = document.getElementById("lightboxClose");
-    const lightboxPrev = document.getElementById("lightboxPrev");
-    const lightboxNext = document.getElementById("lightboxNext");
     const contactForm = document.getElementById("contactForm");
     const formStatus = document.getElementById("formStatus");
 
-    function getFilteredItems() {
+    function filteredItems() {
       if (state.filter === "전체") return portfolioItems;
       return portfolioItems.filter((item) => item[state.mode] === state.filter);
     }
 
     function renderModeButtons() {
       modeButtons.forEach((button) => {
-        const isActive = button.dataset.modeBtn === state.mode;
-        button.classList.toggle("is-active", isActive);
+        button.classList.toggle("is-active", button.dataset.modeBtn === state.mode);
       });
     }
 
@@ -896,9 +874,9 @@
       filterOptions[state.mode].forEach((label) => {
         const button = document.createElement("button");
         button.type = "button";
-        button.textContent = label;
         button.className =
           "filter-btn rounded-full border border-line bg-white px-4 py-2.5 text-sm font-medium text-ink transition hover:border-ink";
+        button.textContent = label;
         if (label === state.filter) button.classList.add("is-active");
         button.addEventListener("click", () => {
           state.filter = label;
@@ -910,20 +888,20 @@
     }
 
     function renderPortfolio() {
-      state.currentItems = getFilteredItems();
+      state.currentItems = filteredItems();
       portfolioGrid.innerHTML = "";
 
       state.currentItems.forEach((item, index) => {
         const button = document.createElement("button");
         button.type = "button";
         button.className =
-          "portfolio-card section-reveal group relative isolate overflow-hidden rounded-[1.8rem] text-left shadow-soft";
+          "portfolio-card reveal group relative isolate overflow-hidden rounded-[1.8rem] text-left shadow-soft";
         button.setAttribute("data-reveal", "");
         button.innerHTML = `
           <div class="relative aspect-[4/3] overflow-hidden">
             <img
               src="${item.image}"
-              alt="${item.title} 실제 네이버 카페·블로그 포트폴리오 사진 참고"
+              alt="${item.title} 실제 네이버 카페·블로그 시공 사진"
               class="h-full w-full object-cover"
               loading="lazy"
               decoding="async"
@@ -936,7 +914,7 @@
               <p class="text-xs tracking-[0.18em] text-white/64">${item.location} · ${item.size}</p>
               <h3 class="mt-2 text-xl font-semibold leading-snug">${item.title}</h3>
               <p class="mt-1 text-sm text-white/76">${item.subtitle}</p>
-              <p class="mt-3 text-xs leading-6 text-white/62">실제 네이버 카페·블로그 포트폴리오 사진 참고</p>
+              <p class="mt-3 text-xs leading-6 text-white/62">실제 네이버 카페·블로그 시공 사진</p>
             </div>
           </div>
         `;
@@ -965,7 +943,7 @@
       const item = state.currentItems[state.lightboxIndex];
       if (!item) return;
       lightboxImage.src = item.image;
-      lightboxImage.alt = `${item.title} 실제 네이버 카페·블로그 포트폴리오 사진 참고`;
+      lightboxImage.alt = `${item.title} 실제 네이버 카페·블로그 시공 사진`;
       lightboxTitle.textContent = `${item.title} · ${item.subtitle}`;
       lightboxMeta.textContent = `${item.location} · ${item.apartment} · ${item.note}`;
     }
@@ -974,11 +952,6 @@
       const total = state.currentItems.length;
       state.lightboxIndex = (state.lightboxIndex + step + total) % total;
       updateLightbox();
-    }
-
-    function onScroll() {
-      const scrolled = window.scrollY > 24;
-      nav.classList.toggle("nav-scrolled", scrolled);
     }
 
     let revealObserver;
@@ -997,11 +970,13 @@
       );
 
       document.querySelectorAll("[data-reveal]").forEach((node) => {
-        if (!node.classList.contains("section-reveal")) {
-          node.classList.add("section-reveal");
-        }
+        if (!node.classList.contains("reveal")) node.classList.add("reveal");
         revealObserver.observe(node);
       });
+    }
+
+    function onScroll() {
+      nav.classList.toggle("nav-scrolled", window.scrollY > 24);
     }
 
     modeButtons.forEach((button) => {
@@ -1014,9 +989,9 @@
       });
     });
 
-    lightboxClose.addEventListener("click", closeLightbox);
-    lightboxPrev.addEventListener("click", () => moveLightbox(-1));
-    lightboxNext.addEventListener("click", () => moveLightbox(1));
+    document.getElementById("lightboxClose").addEventListener("click", closeLightbox);
+    document.getElementById("lightboxPrev").addEventListener("click", () => moveLightbox(-1));
+    document.getElementById("lightboxNext").addEventListener("click", () => moveLightbox(1));
     lightbox.addEventListener("click", (event) => {
       if (event.target === lightbox) closeLightbox();
     });
@@ -1028,9 +1003,6 @@
       if (event.key === "ArrowRight") moveLightbox(1);
     });
 
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-
     contactForm.addEventListener("submit", (event) => {
       event.preventDefault();
       const data = new FormData(contactForm);
@@ -1039,6 +1011,8 @@
       contactForm.reset();
     });
 
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
     renderModeButtons();
     renderFilterButtons();
     renderPortfolio();
